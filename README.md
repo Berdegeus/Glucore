@@ -1,16 +1,37 @@
-# glucore
+# Glucore (Flutter + Clean Architecture)
 
-A new Flutter project.
+Setup inicial de projeto Flutter com autenticação local (sessão) usando `SharedPreferences` e estrutura em Clean Architecture.
 
-## Getting Started
+## O que foi implementado
 
-This project is a starting point for a Flutter application.
+- Estrutura por camadas:
+  - `features/auth/domain`
+  - `features/auth/data`
+  - `features/auth/presentation`
+- Caso de uso de login e logout.
+- Persistência local da sessão (`is_logged_in`) via `SharedPreferences`.
+- `AuthCubit` para controle de estado na apresentação.
+- Injeção de dependências com `get_it` no bootstrap do app.
+- UI inicial com:
+  - `LoginPage`
+  - `HomePage`
+  - Navegação por estado (autenticado vs não autenticado).
 
-A few resources to get you started if this is your first Flutter project:
+## Como rodar
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+> Neste ambiente de automação não há SDK Flutter instalado. Na sua máquina local:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Instale Flutter SDK.
+2. Na raiz do projeto:
+
+```bash
+flutter pub get
+flutter run
+```
+
+## Próximos passos recomendados
+
+- Injetar dependências com `get_it`.
+- Adicionar validação robusta de formulário.
+- Trocar autenticação fake por API real (token + refresh).
+- Cobertura de testes para Cubit e camada data.
