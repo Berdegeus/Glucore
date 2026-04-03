@@ -1,14 +1,18 @@
 import 'package:flutter/services.dart';
 
-import '../../domain/models.dart';
 import '../../domain/events.dart';
+import '../../domain/models.dart';
 
 class SensorSessionSnapshot {
   final String sensorId;
   final String? transmitterId;
   final bool connected;
 
-  SensorSessionSnapshot({required this.sensorId, this.transmitterId, required this.connected});
+  SensorSessionSnapshot({
+    required this.sensorId,
+    this.transmitterId,
+    required this.connected,
+  });
 
   factory SensorSessionSnapshot.fromMap(Map<dynamic, dynamic> map) {
     return SensorSessionSnapshot(
@@ -24,7 +28,8 @@ class SensorSessionSnapshot {
         'connected': connected,
       };
 
-  SensorSession toSession() => SensorSession(sensorId: sensorId, transmitterId: transmitterId);
+  SensorSession toSession() =>
+      SensorSession(sensorId: sensorId, transmitterId: transmitterId);
 }
 
 class SensorPlatformEvent {
@@ -41,19 +46,28 @@ class SensorPlatformEvent {
 
     SensorFailure? failure;
     if (map['failure'] != null) {
-      failure = SensorFailure(map['failure']['message']?.toString() ?? 'unknown');
+      failure = SensorFailure(
+        SensorFailureCode.unknown,
+        details: map['failure']['message']?.toString(),
+      );
     }
 
     SensorSession? session;
     if (map['session'] != null) {
       final s = map['session'] as Map<dynamic, dynamic>;
-      session = SensorSession(sensorId: s['sensorId'].toString(), transmitterId: s['transmitterId']?.toString());
+      session = SensorSession(
+        sensorId: s['sensorId'].toString(),
+        transmitterId: s['transmitterId']?.toString(),
+      );
     }
 
     WarmupInfo? warmup;
     if (map['warmup'] != null) {
       final w = map['warmup'] as Map<dynamic, dynamic>;
-      warmup = WarmupInfo(elapsed: Duration(milliseconds: w['elapsedMs'] ?? 0), total: Duration(milliseconds: w['totalMs'] ?? 0));
+      warmup = WarmupInfo(
+        elapsed: Duration(milliseconds: w['elapsedMs'] ?? 0),
+        total: Duration(milliseconds: w['totalMs'] ?? 0),
+      );
     }
 
     GlucoseReading? reading;
@@ -64,14 +78,16 @@ class SensorPlatformEvent {
 
     final connected = map['connected'] == true;
 
-    return SensorPlatformEvent(event: SensorEvent(
-      status: state,
-      session: session,
-      connected: connected,
-      warmupInfo: warmup,
-      reading: reading,
-      failure: failure,
-    ));
+    return SensorPlatformEvent(
+      event: SensorEvent(
+        status: state,
+        session: session,
+        connected: connected,
+        warmupInfo: warmup,
+        reading: reading,
+        failure: failure,
+      ),
+    );
   }
 }
 
@@ -90,7 +106,9 @@ class SensorPlatform {
   }
 
   Future<void> submitTransmitter(String transmitterBarcode) async {
-    await _methodChannel.invokeMethod('submitTransmitter', {'transmitterBarcode': transmitterBarcode});
+    await _methodChannel.invokeMethod('submitTransmitter', {
+      'transmitterBarcode': transmitterBarcode,
+    });
   }
 
   Future<void> startMonitoring() async {

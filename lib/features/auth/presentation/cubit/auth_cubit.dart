@@ -18,7 +18,7 @@ class AuthCubit extends Cubit<AuthState> {
   final GetAuthStatusUseCase getAuthStatusUseCase;
 
   Future<void> checkAuthStatus() async {
-    emit(state.copyWith(status: AuthStatus.loading, errorMessage: null));
+    emit(state.copyWith(status: AuthStatus.loading, error: null));
 
     final loggedIn = await getAuthStatusUseCase(const NoParams());
 
@@ -30,9 +30,11 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> login({required String email, required String password}) async {
-    emit(state.copyWith(status: AuthStatus.loading, errorMessage: null));
+    emit(state.copyWith(status: AuthStatus.loading, error: null));
 
-    final result = await loginUseCase(LoginParams(email: email, password: password));
+    final result = await loginUseCase(
+      LoginParams(email: email, password: password),
+    );
 
     if (result) {
       emit(state.copyWith(status: AuthStatus.authenticated));
@@ -40,7 +42,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           status: AuthStatus.failure,
-          errorMessage: 'Credenciais inválidas. Use email e senha com 4+ caracteres.',
+          error: AuthError.invalidCredentials,
         ),
       );
       emit(state.copyWith(status: AuthStatus.unauthenticated));
@@ -48,7 +50,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
-    emit(state.copyWith(status: AuthStatus.loading, errorMessage: null));
+    emit(state.copyWith(status: AuthStatus.loading, error: null));
     await logoutUseCase(const NoParams());
     emit(state.copyWith(status: AuthStatus.unauthenticated));
   }

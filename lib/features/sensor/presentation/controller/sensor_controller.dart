@@ -1,8 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-import '../../domain/models.dart';
 import '../../domain/events.dart';
+import '../../domain/models.dart';
 import '../../domain/sensor_repository.dart';
 
 class SensorController extends ChangeNotifier {
@@ -14,18 +15,35 @@ class SensorController extends ChangeNotifier {
 
   SensorController({required this.repository});
 
+  SensorFailure _mapFailure(Object error) {
+    if (error is SensorFailure) {
+      return error;
+    }
+
+    return SensorFailure(
+      SensorFailureCode.unknown,
+      details: error.toString(),
+    );
+  }
+
   Future<void> init() async {
     _listenToEvents();
     try {
       final restored = await repository.restoreSession();
       if (restored != null) {
-        _state = _state.copyWith(status: SensorConnectionStatus.disconnected, session: restored);
+        _state = _state.copyWith(
+          status: SensorConnectionStatus.disconnected,
+          session: restored,
+        );
       } else {
         _state = SensorUiState.initial;
       }
       notifyListeners();
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: _mapFailure(e),
+      );
       notifyListeners();
     }
   }
@@ -42,18 +60,28 @@ class SensorController extends ChangeNotifier {
       );
       notifyListeners();
     }, onError: (error) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(error.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: _mapFailure(error),
+      );
       notifyListeners();
     });
   }
 
   Future<void> registerSensor(String barcode) async {
-    _state = _state.copyWith(status: SensorConnectionStatus.scanning, failure: null);
+    _state = _state.copyWith(
+      status: SensorConnectionStatus.scanning,
+      failure: null,
+      clearFailure: true,
+    );
     notifyListeners();
     try {
       await repository.registerSensor(barcode);
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: _mapFailure(e),
+      );
       notifyListeners();
     }
   }
@@ -62,22 +90,34 @@ class SensorController extends ChangeNotifier {
     try {
       await repository.submitTransmitter(transmitterBarcode);
       if (_state.session != null) {
-        _state = _state.copyWith(session: _state.session!.copyWith(transmitterId: transmitterBarcode));
+        _state = _state.copyWith(
+          session: _state.session!.copyWith(transmitterId: transmitterBarcode),
+        );
         notifyListeners();
       }
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: _mapFailure(e),
+      );
       notifyListeners();
     }
   }
 
   Future<void> startMonitoring() async {
-    _state = _state.copyWith(status: SensorConnectionStatus.scanning, failure: null);
+    _state = _state.copyWith(
+      status: SensorConnectionStatus.scanning,
+      failure: null,
+      clearFailure: true,
+    );
     notifyListeners();
     try {
       await repository.startMonitoring();
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: _mapFailure(e),
+      );
       notifyListeners();
     }
   }
@@ -86,7 +126,10 @@ class SensorController extends ChangeNotifier {
     try {
       await repository.stopMonitoring();
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: _mapFailure(e),
+      );
       notifyListeners();
     }
   }
@@ -97,7 +140,10 @@ class SensorController extends ChangeNotifier {
       _state = SensorUiState.initial;
       notifyListeners();
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: _mapFailure(e),
+      );
       notifyListeners();
     }
   }

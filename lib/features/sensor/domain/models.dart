@@ -1,14 +1,36 @@
 // Domain models for Sibionics MVP
 
-enum SensorConnectionStatus { idle, scanning, connecting, connected, warmingUp, readingAvailable, disconnected, error }
+enum SensorConnectionStatus {
+  idle,
+  scanning,
+  connecting,
+  connected,
+  warmingUp,
+  readingAvailable,
+  disconnected,
+  error,
+}
+
+enum SensorFailureCode {
+  invalidSensorBarcode,
+  invalidTransmitterBarcode,
+  noActiveSensor,
+  noSensorRegistered,
+  unknown,
+}
 
 class SensorFailure {
-  final String message;
+  final SensorFailureCode code;
+  final String? details;
 
-  const SensorFailure(this.message);
+  const SensorFailure(this.code, {this.details});
 
   @override
-  String toString() => 'SensorFailure: $message';
+  String toString() {
+    return details == null
+        ? 'SensorFailure($code)'
+        : 'SensorFailure($code, $details)';
+  }
 }
 
 class SensorSession {
@@ -16,9 +38,17 @@ class SensorSession {
   final String? transmitterId;
   final DateTime createdAt;
 
-  SensorSession({required this.sensorId, this.transmitterId, DateTime? createdAt}) : createdAt = createdAt ?? DateTime.now();
+  SensorSession({
+    required this.sensorId,
+    this.transmitterId,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
-  SensorSession copyWith({String? sensorId, String? transmitterId, DateTime? createdAt}) {
+  SensorSession copyWith({
+    String? sensorId,
+    String? transmitterId,
+    DateTime? createdAt,
+  }) {
     return SensorSession(
       sensorId: sensorId ?? this.sensorId,
       transmitterId: transmitterId ?? this.transmitterId,
@@ -31,7 +61,8 @@ class GlucoseReading {
   final double value;
   final DateTime timestamp;
 
-  GlucoseReading({required this.value, DateTime? timestamp}) : timestamp = timestamp ?? DateTime.now();
+  GlucoseReading({required this.value, DateTime? timestamp})
+      : timestamp = timestamp ?? DateTime.now();
 }
 
 class WarmupInfo {
@@ -40,7 +71,9 @@ class WarmupInfo {
 
   WarmupInfo({required this.elapsed, required this.total});
 
-  double get progress => total.inMilliseconds == 0 ? 0 : elapsed.inMilliseconds / total.inMilliseconds;
+  double get progress => total.inMilliseconds == 0
+      ? 0
+      : elapsed.inMilliseconds / total.inMilliseconds;
 }
 
 class SensorUiState {
@@ -64,13 +97,14 @@ class SensorUiState {
     WarmupInfo? warmupInfo,
     GlucoseReading? reading,
     SensorFailure? failure,
+    bool clearFailure = false,
   }) {
     return SensorUiState(
       status: status ?? this.status,
       session: session ?? this.session,
       warmupInfo: warmupInfo ?? this.warmupInfo,
       reading: reading ?? this.reading,
-      failure: failure ?? this.failure,
+      failure: clearFailure ? null : failure ?? this.failure,
     );
   }
 

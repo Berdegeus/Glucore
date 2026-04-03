@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:glucore/l10n/l10n.dart';
 
 import '../cubit/auth_cubit.dart';
 
@@ -8,19 +9,21 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: Text(l10n.homeTitle),
         actions: [
           IconButton(
             onPressed: () => context.read<AuthCubit>().logout(),
             icon: const Icon(Icons.logout),
-            tooltip: 'Sair',
+            tooltip: l10n.homeLogoutTooltip,
           ),
         ],
       ),
-      body: const Center(
-        child: Text('Usuário autenticado com sucesso!'),
+      body: Center(
+        child: Text(l10n.homeAuthenticatedMessage),
       ),
     );
   }

@@ -1,0 +1,257 @@
+{
+  "@@locale": "pt_BR",
+  "appName": "Glucore",
+  "appSensorMvpTitle": "Glucore Sensor MVP",
+  "splashSubtitle": "Monitoramento glicêmico claro e confiável",
+  "onboardingQuickGlucoseTitle": "Leitura rápida da glicose",
+  "onboardingQuickGlucoseText": "Veja glicose atual, tendência e previsão de 15 minutos em poucos segundos.",
+  "onboardingHelpfulAlertsTitle": "Alertas úteis e discretos",
+  "onboardingHelpfulAlertsText": "Receba avisos de risco de baixa ou alta sem linguagem alarmista.",
+  "onboardingAllInOneTitle": "Tudo em um só lugar",
+  "onboardingAllInOneText": "Consolide glicose, carboidratos, insulina e eventos no mesmo fluxo.",
+  "onboardingSkipButton": "Pular",
+  "onboardingNextButton": "Próximo",
+  "onboardingStartButton": "Começar",
+  "genericStatusLabel": "Status: {status}",
+  "@genericStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "genericErrorLabel": "Erro: {message}",
+  "@genericErrorLabel": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "genericEmailLabel": "E-mail",
+  "genericPasswordLabel": "Senha",
+  "genericInvalidEmailError": "Informe um e-mail válido",
+  "genericPasswordMinLengthError": "A senha deve ter ao menos 4 caracteres",
+  "genericNumericValueError": "Informe um valor numérico",
+  "genericRequiredFieldError": "Campo obrigatório",
+  "genericResetButton": "Resetar",
+  "genericCancelButton": "Cancelar",
+  "genericDisconnectButton": "Desconectar",
+  "genericTimeLabel": "Horário: {time}",
+  "@genericTimeLabel": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "genericUpdatedAtLabel": "Atualizado: {timestamp}",
+  "@genericUpdatedAtLabel": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "genericGlucoseUnit": "mg/dL",
+  "genericGlucoseValue": "{value} mg/dL",
+  "@genericGlucoseValue": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "loginTitle": "Entrar",
+  "loginWelcomeTitle": "Bem-vindo ao Glucore",
+  "loginSubtitle": "Acompanhe seus dados de CGM com clareza e confiança.",
+  "loginEmailRequiredError": "Informe um e-mail",
+  "loginForgotPasswordButton": "Esqueci minha senha",
+  "loginSubmitButton": "Entrar",
+  "loginSubmittingButton": "Entrando...",
+  "loginCreateAccountButton": "Criar conta",
+  "loginInvalidCredentialsError": "Credenciais inválidas. Use e-mail e senha com 4 ou mais caracteres.",
+  "forgotPasswordTitle": "Recuperar senha",
+  "forgotPasswordRegisteredEmailLabel": "E-mail cadastrado",
+  "forgotPasswordSubmitButton": "Enviar instruções",
+  "forgotPasswordSuccessMessage": "Instruções de recuperação enviadas por e-mail.",
+  "registerTitle": "Cadastro",
+  "registerFullNameLabel": "Nome completo",
+  "registerFullNameError": "Informe seu nome completo",
+  "registerSubmitButton": "Criar conta",
+  "registerSuccessMessage": "Cadastro realizado. Faça login para continuar.",
+  "homeTitle": "Home",
+  "homeLogoutTooltip": "Sair",
+  "homeAuthenticatedMessage": "Usuário autenticado com sucesso!",
+  "navigationMonitorLabel": "Monitorar",
+  "navigationHistoryLabel": "Histórico",
+  "navigationAlertsLabel": "Alertas",
+  "navigationSettingsLabel": "Ajustes",
+  "monitoringLinkSensorTooltip": "Vincular sensor",
+  "monitoringEmptyStateTitle": "Sem leituras no momento",
+  "monitoringEmptyStateMessage": "Conecte um sensor para visualizar dados glicêmicos.",
+  "monitoringCurrentGlucoseTitle": "Glicose atual",
+  "monitoringTrendRising": "↑ Subindo",
+  "monitoringTrendStable": "→ Estável",
+  "monitoringTrendFalling": "↓ Descendo",
+  "monitoringLastReading": "Última leitura: {time}",
+  "@monitoringLastReading": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "monitoringPredictionUnavailableTitle": "Previsão indisponível",
+  "monitoringPredictionUnavailableSubtitle": "Tentaremos atualizar automaticamente em breve.",
+  "monitoringPredictionIn15Minutes": "Previsão 15 min: {value} mg/dL",
+  "@monitoringPredictionIn15Minutes": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "monitoringSensorConnectedTitle": "Sensor conectado",
+  "monitoringSensorConnectedSubtitle": "Leituras sincronizadas em tempo adequado.",
+  "monitoringSensorDisconnectedTitle": "Sensor desconectado",
+  "monitoringSensorDisconnectedSubtitle": "Verifique a conexão para continuar recebendo leituras atuais.",
+  "monitoringNoRecentReadingTitle": "Sem leitura recente",
+  "monitoringNoRecentReadingSubtitle": "Os dados podem estar desatualizados no momento.",
+  "monitoringSyncFailureTitle": "Falha temporária de sincronização",
+  "monitoringSyncFailureSubtitle": "Estamos tentando sincronizar novamente.",
+  "monitoringCarbButton": "Carboidrato",
+  "monitoringInsulinButton": "Insulina",
+  "monitoringRecentReadingsTitle": "Leituras recentes",
+  "monitoringRecentReadingTime": "Horário: {time}",
+  "@monitoringRecentReadingTime": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "historyTitle": "Histórico",
+  "historyEmptyStateTitle": "Sem histórico ainda",
+  "historyEmptyStateMessage": "As leituras aparecerão aqui assim que o sensor enviar dados.",
+  "historyCarbsSectionTitle": "Carboidratos",
+  "historyInsulinSectionTitle": "Insulina",
+  "historyCarbEntryTitle": "{grams} g - {description}",
+  "@historyCarbEntryTitle": {
+    "placeholders": {
+      "grams": {},
+      "description": {}
+    }
+  },
+  "historyInsulinEntryTitle": "{units} U - {type}",
+  "@historyInsulinEntryTitle": {
+    "placeholders": {
+      "units": {},
+      "type": {}
+    }
+  },
+  "alertsTitle": "Alertas recentes",
+  "alertsEmptyStateTitle": "Nenhum alerta recente",
+  "alertsEmptyStateMessage": "Quando ocorrerem eventos importantes, eles aparecerão aqui.",
+  "alertsItemSubtitle": "{message}\n{timestamp}",
+  "@alertsItemSubtitle": {
+    "placeholders": {
+      "message": {},
+      "timestamp": {}
+    }
+  },
+  "alertTypeImminentHypoTitle": "Risco de hipo iminente",
+  "alertTypeImminentHypoMessage": "Tendência de queda nas próximas leituras. Considere monitorar de perto.",
+  "alertTypeSensorReconnectedTitle": "Sensor reconectado",
+  "alertTypeSensorReconnectedMessage": "Coleta de glicose normalizada com sucesso.",
+  "settingsTitle": "Configurações",
+  "settingsProfileAndHealthTile": "Perfil e dados de saúde",
+  "settingsSensorLinkTile": "Vinculação de sensor CGM",
+  "settingsAlertSettingsTile": "Configuração de alertas",
+  "settingsLogoutTile": "Sair da conta",
+  "sensorLinkTitle": "Vincular sensor CGM",
+  "sensorLinkRebindAttemptMessage": "Tentando revincular sensor...",
+  "sensorLinkRebindButton": "Revincular sensor",
+  "sensorLinkStatusSearchingLabel": "Buscando",
+  "sensorLinkStatusPermissionPendingLabel": "Permissão pendente",
+  "sensorLinkStatusConnectedLabel": "Conectado",
+  "sensorLinkStatusCompatibilityErrorLabel": "Compatibilidade",
+  "sensorLinkStatusReconnectingLabel": "Revinculando",
+  "sensorLinkStatusUnavailableLabel": "Indisponível",
+  "sensorLinkStatusDisconnectedLabel": "Desconectado",
+  "sensorLinkSearchingTitle": "Buscando sensor",
+  "sensorLinkSearchingSubtitle": "Aproxime o sensor do dispositivo.",
+  "sensorLinkPermissionPendingTitle": "Permissão pendente",
+  "sensorLinkPermissionPendingSubtitle": "Permita o Bluetooth para conectar o sensor.",
+  "sensorLinkConnectedTitle": "Sensor conectado",
+  "sensorLinkConnectedSubtitle": "Leituras em tempo quase real.",
+  "sensorLinkCompatibilityErrorTitle": "Erro de compatibilidade",
+  "sensorLinkCompatibilityErrorSubtitle": "Modelo não suportado no momento.",
+  "sensorLinkReconnectingTitle": "Revinculando",
+  "sensorLinkReconnectingSubtitle": "Aguarde, estamos restabelecendo a conexão.",
+  "sensorLinkUnavailableTitle": "Sensor indisponível",
+  "sensorLinkUnavailableSubtitle": "Não foi possível localizar um sensor próximo.",
+  "sensorLinkDisconnectedTitle": "Sensor desconectado",
+  "sensorLinkDisconnectedSubtitle": "Reconecte para retomar leituras atualizadas.",
+  "alertSettingsTitle": "Configuração de alertas",
+  "alertSettingsLowThresholdLabel": "Limite baixo (mg/dL)",
+  "alertSettingsHighThresholdLabel": "Limite alto (mg/dL)",
+  "alertSettingsLowMustBeLowerError": "O limite baixo deve ser menor que o alto.",
+  "alertSettingsUpdatedSuccessMessage": "Alertas atualizados com sucesso.",
+  "alertSettingsSaveButton": "Salvar alertas",
+  "profileTitle": "Perfil",
+  "profileDefaultName": "Paciente Glucore",
+  "profileNameLabel": "Nome",
+  "profileBirthDateLabel": "Data de nascimento",
+  "profileWeightLabel": "Peso (kg)",
+  "profileTargetRangeLabel": "Faixa alvo de glicose (mg/dL)",
+  "profileUpdatedSuccessMessage": "Perfil atualizado com sucesso.",
+  "profileSaveChangesButton": "Salvar alterações",
+  "carbEntryTitle": "Registrar carboidrato",
+  "carbEntryQuantityLabel": "Quantidade (g)",
+  "carbEntryDescriptionLabel": "Descrição da refeição",
+  "carbEntryQuantityError": "Informe uma quantidade válida",
+  "carbEntryDescriptionError": "Informe a descrição",
+  "carbEntrySavedSuccessMessage": "Carboidrato registrado com sucesso.",
+  "carbEntrySaveButton": "Salvar registro",
+  "insulinEntryTitle": "Registrar insulina",
+  "insulinEntryDoseTypeLabel": "Tipo de dose",
+  "insulinTypeBolus": "Bolus",
+  "insulinTypeBasal": "Basal",
+  "insulinTypeCorrection": "Correção",
+  "insulinEntryQuantityLabel": "Quantidade (U)",
+  "insulinEntryQuantityError": "Informe uma quantidade válida",
+  "insulinEntrySavedSuccessMessage": "Aplicação de insulina registrada.",
+  "insulinEntrySaveButton": "Salvar aplicação",
+  "sensorPageTitle": "Glucore Sensor MVP",
+  "sensorPageNoActiveSessionMessage": "Nenhuma sessão ativa de sensor.",
+  "sensorPageBarcodeLabel": "Código de barras do sensor",
+  "sensorPageRegisterButton": "Registrar sensor",
+  "sensorPageRegisteredSensor": "Sensor registrado: {sensorId}",
+  "@sensorPageRegisteredSensor": {
+    "placeholders": {
+      "sensorId": {}
+    }
+  },
+  "sensorPageStartMonitoringButton": "Iniciar monitoramento",
+  "sensorPageConnecting": "Conectando... ({status})",
+  "@sensorPageConnecting": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "sensorPageWarmupProgress": "Aquecimento: {elapsed}/{total} s",
+  "@sensorPageWarmupProgress": {
+    "placeholders": {
+      "elapsed": {},
+      "total": {}
+    }
+  },
+  "sensorPageConnectedMessage": "Sensor conectado. Aguardando aquecimento e leituras.",
+  "sensorPageBeginWarmupButton": "Iniciar aquecimento",
+  "sensorPageCurrentGlucose": "Glicose atual: {value} mg/dL",
+  "@sensorPageCurrentGlucose": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "sensorPageStopMonitoringButton": "Parar monitoramento",
+  "sensorPageClearSessionButton": "Limpar sessão",
+  "sensorStatusIdle": "Inativo",
+  "sensorStatusScanning": "Buscando",
+  "sensorStatusConnecting": "Conectando",
+  "sensorStatusConnected": "Conectado",
+  "sensorStatusWarmingUp": "Aquecendo",
+  "sensorStatusReadingAvailable": "Leitura disponível",
+  "sensorStatusDisconnected": "Desconectado",
+  "sensorStatusError": "Erro",
+  "sensorFailureInvalidSensorBarcode": "Código de barras do sensor inválido.",
+  "sensorFailureInvalidTransmitterBarcode": "Código de barras do transmissor inválido.",
+  "sensorFailureNoActiveSensor": "Nenhum sensor ativo.",
+  "sensorFailureNoSensorRegistered": "Nenhum sensor registrado.",
+  "sensorFailureUnknown": "Não foi possível concluir a operação com o sensor."
+}

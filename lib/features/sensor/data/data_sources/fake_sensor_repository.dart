@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../../domain/models.dart';
 import '../../domain/events.dart';
+import '../../domain/models.dart';
 import '../../domain/sensor_repository.dart';
 
 class FakeSensorRepository implements SensorRepository {
@@ -23,7 +23,9 @@ class FakeSensorRepository implements SensorRepository {
 
   @override
   Future<void> registerSensor(String barcode) async {
-    if (barcode.isEmpty) throw SensorFailure('Invalid sensor barcode');
+    if (barcode.isEmpty) {
+      throw const SensorFailure(SensorFailureCode.invalidSensorBarcode);
+    }
 
     _activeSession = SensorSession(sensorId: barcode);
     _events.add(SensorEvent.scanning());
@@ -35,14 +37,24 @@ class FakeSensorRepository implements SensorRepository {
   @override
   Future<void> submitTransmitter(String transmitterBarcode) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    if (transmitterBarcode.isEmpty) throw SensorFailure('Invalid transmitter barcode');
-    if (_activeSession == null) throw SensorFailure('No active sensor');
-    _activeSession = _activeSession!.copyWith(transmitterId: transmitterBarcode);
+    if (transmitterBarcode.isEmpty) {
+      throw const SensorFailure(
+        SensorFailureCode.invalidTransmitterBarcode,
+      );
+    }
+    if (_activeSession == null) {
+      throw const SensorFailure(SensorFailureCode.noActiveSensor);
+    }
+    _activeSession = _activeSession!.copyWith(
+      transmitterId: transmitterBarcode,
+    );
   }
 
   @override
   Future<void> startMonitoring() async {
-    if (_activeSession == null) throw SensorFailure('No sensor registered');
+    if (_activeSession == null) {
+      throw const SensorFailure(SensorFailureCode.noSensorRegistered);
+    }
 
     _events.add(SensorEvent.connecting());
     await Future.delayed(const Duration(milliseconds: 500));
@@ -54,7 +66,10 @@ class FakeSensorRepository implements SensorRepository {
     _warmupTimer?.cancel();
     _warmupTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       _warmupElapsed += 3;
-      final warmup = WarmupInfo(elapsed: Duration(seconds: _warmupElapsed), total: Duration(seconds: totalWarmup));
+      final warmup = WarmupInfo(
+        elapsed: Duration(seconds: _warmupElapsed),
+        total: const Duration(seconds: totalWarmup),
+      );
       _events.add(SensorEvent.warmingUp(warmup, session: _activeSession));
 
       if (_warmupElapsed >= totalWarmup) {
@@ -67,10 +82,17 @@ class FakeSensorRepository implements SensorRepository {
   void _emitReading() {
     if (!_connected || _activeSession == null) return;
     _readingTimer?.cancel();
-    _events.add(SensorEvent.reading(GlucoseReading(value: 120), session: _activeSession));
+    _events.add(
+      SensorEvent.reading(GlucoseReading(value: 120), session: _activeSession),
+    );
     _readingTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       final value = 90 + (timer.tick % 40);
-      _events.add(SensorEvent.reading(GlucoseReading(value: value.toDouble()), session: _activeSession));
+      _events.add(
+        SensorEvent.reading(
+          GlucoseReading(value: value.toDouble()),
+          session: _activeSession,
+        ),
+      );
     });
   }
 

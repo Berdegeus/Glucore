@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../patient/presentation/shell/patient_shell_page.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
-import 'home_page.dart';
 import 'login_page.dart';
 
 class AuthGate extends StatelessWidget {
@@ -22,7 +22,7 @@ class AuthGate extends StatelessWidget {
         }
 
         if (state.status == AuthStatus.authenticated) {
-          return const HomePage();
+          return const PatientShellPage();
         }
 
         return const LoginPage();
