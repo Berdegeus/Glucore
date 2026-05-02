@@ -5,6 +5,6 @@ void main() {
   testWidgets('App launches smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const GlucoreApp());
     await tester.pumpAndSettle();
-    expect(find.text('Glucore Sensor MVP'), findsOneWidget);
+    expect(find.text('Glucore Sensor'), findsOneWidget);
   });
 }

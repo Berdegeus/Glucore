@@ -1,104 +1,77 @@
 # Glucore
 
-## Visão geral
+Glucore e um app mobile em Flutter com foco em um MVP Android-first para integracao com sensor CGM Sibionics.
 
-Glucore é um aplicativo mobile em Flutter com foco em um MVP Android-first para integração com sensor CGM Sibionics.
+O estado atual do repositorio ja nao e mais o template Flutter puro: o app Flutter agora sobe pelo caminho Android-backed, existe bootstrap JNI/C++, ha bibliotecas proprietarias empacotadas no Android e a sessao nativa/com cache local ja esta em progresso. Ao mesmo tempo, o monitoramento real via BLE/GATT ainda nao entrou no caminho ativo. O projeto esta, portanto, em um estado hibrido e inacabado.
 
-A direção técnica pretendida do projeto é:
+Este README serve para alinhar outros desenvolvedores ao estado real do repo de hoje: o que esta implementado, o que esta parcialmente implementado, o que ainda e simulado e qual deve ser a leitura correta antes de continuar o trabalho.
 
-- Flutter para app, domínio e apresentação
-- Kotlin para integração Android, sessão, BLE e boundary de plataforma
-- uma ponte JNI/C++ mínima para isolar chamadas nativas/proprietárias
-- bibliotecas proprietárias `.so` empacotadas no app Android quando a integração nativa estiver presente
+## Objetivo tecnico do MVP
 
-O objetivo funcional discutido até agora para o MVP é estreito:
+Direcao pretendida:
 
-- um único sensor Sibionics ativo
-- restauração de sessão
-- estado de warmup
-- exibição da glicose atual
+- Flutter para app, dominio e apresentacao
+- Kotlin para sessao, boundary de plataforma, BLE e integracao Android
+- JNI/C++ minimo para isolar a chamada ao stack nativo/proprietario
+- bibliotecas proprietarias `.so` empacotadas dentro do app Android
 
-Este README existe para registrar duas coisas ao mesmo tempo:
+Escopo funcional pretendido:
 
-1. o estado real do checkout atual
-2. o contexto técnico já validado em iterações anteriores do projeto, mesmo que esse estado mais avançado não esteja presente neste snapshot
+- um sensor Sibionics ativo
+- restauracao de sessao
+- warmup
+- leitura atual de glicose
+- app Android-first
 
-Isso é importante porque o repositório atual não contém toda a camada Android/native que já foi discutida e validada em outros estados de trabalho.
+## Leitura rapida do estado atual
 
-## Estado real deste checkout
+O que ja e real neste checkout:
 
-Data de referência deste levantamento: `2026-05-02`.
+- o app Flutter ja sobe pelo `AndroidSensorRepository`, nao mais pelo fake
+- o boundary Flutter <-> Android via `MethodChannel` e `EventChannel` esta ativo
+- `MainActivity` registra os channels manualmente
+- existe `SensorPlatformImpl` como implementacao Android ativa
+- existe `SensorSessionManager` com cache local persistido
+- existe `SibionicsNativeBridgeAdapter` encapsulando o bridge JNI
+- existe `GlucoreSibionicsBridge.kt` + `glucore_sibionics_bridge.cpp`
+- existem `.so` proprietarias em `android/app/src/main/jniLibs/arm64-v8a/`
+- o build Android ja esta configurado para NDK/CMake/arm64-only
 
-Este checkout está hoje em um estado Flutter-first com Android praticamente no template padrão. O caminho ativo do app usa um repositório fake, não uma implementação Android/native real.
+O que ainda nao e real no caminho ativo:
 
-### O que existe de fato
+- BLE/GATT ainda nao foi ligado ao fluxo principal
+- `startMonitoring()` ainda usa warmup e leitura simulados por timer
+- `saveMatchedDevice`, `getInitialWrite` e `handleNotification` ainda nao estao mapeados no bridge ativo
+- o manifesto Android ainda nao contem as permissoes BLE necessarias
+- parte da UI ainda tem strings hardcoded em ingles
 
-- App Flutter inicializando por `lib/main.dart`
-- bootstrap em `lib/app/bootstrap/app.dart`
-- camada de domínio para sessão, leitura, warmup, falha e status
-- controller de UI com máquina de estados simples
-- tela única de MVP para registrar sensor e iniciar monitoramento
-- `SensorPlatform` em Dart com contract de `MethodChannel` e `EventChannel`
-- `FakeSensorRepository` simulando registro, conexão, warmup e leituras
+## Arquitetura atual
 
-### O que não existe neste checkout
+### Fluxo ativo do app
 
-- implementação Android do contract de `SensorPlatform`
-- registro de `MethodChannel` / `EventChannel` no Android
-- `SensorPlatformImpl`
-- `SensorSessionManager`
-- `SibionicsBleManager`
-- bridge JNI/C++
-- pasta `android/app/src/main/cpp`
-- `jniLibs` com bibliotecas proprietárias
-- `externalNativeBuild`, CMake, `abiFilters` ou configuração NDK específica
-- permissões BLE no manifest
-- documentação local de dependência proprietária, como `NOTICE_JUGGLUCO_NATIVE.md`
+O caminho vivo hoje e:
 
-### Consequência prática
+`Flutter UI -> SensorController -> AndroidSensorRepository -> SensorPlatform -> MainActivity / SensorPlatformImpl -> SensorSessionManager + SibionicsNativeBridgeAdapter -> GlucoreSibionicsBridge -> JNI/C++ -> libg.so / libs proprietarias`
 
-O código Flutter já contém um boundary de plataforma em `lib/features/sensor/data/platform/sensor_platform.dart`, mas esse boundary não está ligado ao app atual.
+Esse ponto e importante: a arquitetura deixou de ser apenas um prototipo Flutter. O Android agora faz parte do fluxo principal.
 
-Hoje o bootstrap faz:
+### Camadas Flutter
 
-- `GlucoreApp`
-- `SensorController`
-- `FakeSensorRepository`
-
-Isso significa que:
-
-- o app roda sem depender de Android native
-- o fluxo observado hoje é simulado
-- se alguém trocar para um repositório Android-backed sem implementar os channels no Android, o resultado esperado é `MissingPluginException` ou comportamento equivalente
-
-## Arquitetura atual observada no Flutter
-
-### Estrutura
-
-Arquivos principais:
+Estrutura principal:
 
 - `lib/app/bootstrap/app.dart`
 - `lib/features/sensor/domain/models.dart`
 - `lib/features/sensor/domain/events.dart`
 - `lib/features/sensor/domain/sensor_repository.dart`
 - `lib/features/sensor/data/platform/sensor_platform.dart`
+- `lib/features/sensor/data/repositories/android_sensor_repository.dart`
 - `lib/features/sensor/data/data_sources/fake_sensor_repository.dart`
 - `lib/features/sensor/presentation/controller/sensor_controller.dart`
 - `lib/features/sensor/presentation/pages/sensor_page.dart`
 
-### Camada de domínio
-
-O domínio já define os tipos centrais do MVP:
+O dominio ja define:
 
 - `SensorConnectionStatus`
-  - `idle`
-  - `scanning`
-  - `connecting`
-  - `connected`
-  - `warmingUp`
-  - `readingAvailable`
-  - `disconnected`
-  - `error`
 - `SensorSession`
 - `GlucoseReading`
 - `WarmupInfo`
@@ -106,36 +79,35 @@ O domínio já define os tipos centrais do MVP:
 - `SensorUiState`
 - `SensorEvent`
 
-Esse contrato de estados já é suficiente para um fluxo Android real emitir:
+Esses tipos continuam sendo o contrato funcional do MVP.
 
-- restauração de sessão
-- conexão
-- warmup
-- leitura atual
-- erro
+### Bootstrap Flutter
 
-### Camada de repositório
+`GlucoreApp` agora:
 
-`SensorRepository` já define uma interface razoável para o MVP:
+- inicializa `SensorPlatform`
+- cria `AndroidSensorRepository`
+- injeta esse repositorio no `SensorController`
+- ativa localizacao com `flutter_localizations`
 
-- `restoreSession()`
-- `registerSensor(String barcode)`
-- `submitTransmitter(String transmitterBarcode)`
-- `startMonitoring()`
-- `stopMonitoring()`
-- `observeSessionEvents()`
-- `clearSession()`
+Ou seja: o repositorio fake continua no repo, mas nao e mais o caminho default do app.
 
-Hoje a única implementação conectada ao app é `FakeSensorRepository`.
+### Repository e platform boundary
 
-### Boundary de plataforma
+`SensorRepository` continua sendo a interface do dominio.
 
-`SensorPlatform` já define os channels e o schema de dados esperado entre Flutter e Android:
+`AndroidSensorRepository` e propositalmente fino:
+
+- repassa chamadas para `SensorPlatform`
+- transforma `SensorPlatformEvent` em `SensorEvent`
+- mantem a Flutter layer isolada do detalhe Android/native
+
+`SensorPlatform` define os channels:
 
 - `MethodChannel('glucore/sensor/methods')`
 - `EventChannel('glucore/sensor/events')`
 
-Métodos previstos:
+Metodos previstos:
 
 - `restoreSession`
 - `registerSensor`
@@ -144,7 +116,7 @@ Métodos previstos:
 - `stopMonitoring`
 - `clearSession`
 
-O parsing de eventos também já está modelado para:
+Eventos esperados:
 
 - `status`
 - `session`
@@ -153,288 +125,325 @@ O parsing de eventos também já está modelado para:
 - `reading`
 - `failure`
 
-Hoje isso é apenas um boundary disponível. Não há handler Android correspondente neste snapshot.
+Esse schema de evento e o contrato que o Android precisa preservar.
 
-### Controller e UI
+## Android atual
 
-`SensorController` faz:
+### MainActivity
 
-- subscribe no stream de eventos do repositório
-- tentativa de restore em `init()`
-- transição de estado para registro, monitoramento, parada e clear
+`MainActivity` nao usa plugin Flutter separado. Ela mesma:
 
-`SensorPage` é uma UI única de MVP que exibe:
+- cria `SensorSessionManager`
+- cria `SibionicsNativeBridgeAdapter`
+- cria `SensorPlatformImpl`
+- chama `initializeNativeBridge()` no startup
+- registra `MethodChannel`
+- registra `EventChannel`
 
-- status atual
-- mensagem de erro
-- campo para barcode do sensor
-- ações de registrar, resetar, iniciar monitoramento, cancelar, desconectar e limpar sessão
-- warmup com progress bar
-- leitura atual de glicose
+Isso significa que o bootstrap JNI ja faz parte do fluxo de abertura do app.
 
-### Limitações já visíveis no Flutter atual
+### SensorPlatformImpl
 
-- não existe UI para fluxo de pareamento BLE real
-- não existe localização; os textos estão hardcoded em inglês
-- `submitTransmitter()` existe no contract, mas a UI atual não expõe esse fluxo
-- o restore atual depende do repositório ativo; como o bootstrap usa o fake, o comportamento é local e simulado
+`SensorPlatformImpl` e o ponto central do lado Android.
 
-## Estado real do Android neste checkout
+Responsabilidades atuais:
 
-O Android atual está praticamente no estado gerado pelo template do Flutter.
+- inicializar o bridge nativo
+- fazer `restoreSession()` via adapter nativo
+- fazer `registerSensor()` via adapter nativo
+- enviar eventos para o Flutter
+- manter warmup/leituras simulados por timer ate a entrada do BLE real
 
-### O que foi observado
+Pontos importantes:
 
-- `android/app/src/main/kotlin/com/berdegeus/glucore/MainActivity.kt` contém apenas `FlutterActivity`
-- `android/app/build.gradle.kts` não contém configuração JNI/CMake/NDK além do padrão
-- `android/app/src/main/AndroidManifest.xml` não contém permissões BLE nem configuração específica de libs nativas
+- `restoreSession()` esta protegido por um guard local para nao consultar o vendor stack antes de haver uma sessao local persistida
+- `registerSensor()` ja usa o caminho nativo como source of truth
+- `startMonitoring()` ainda nao usa BLE real
+- `clearSession()` limpa apenas o cache local Glucore, nao uma sessao nativa vendor-backed
 
-### O que isso significa
+### SensorSessionManager
 
-Não há hoje:
+`SensorSessionManager` nao e mais a autoridade de registro/restore nativo. O papel atual dele e:
 
-- plugin Android próprio
-- implementação de `MethodChannel`
-- implementação de `EventChannel`
-- boundary Kotlin para sensor
-- sessão nativa persistida
-- BLE/GATT
-- JNI bridge
-- loader de libs proprietárias
+- espelhar localmente a sessao retornada pelo bridge
+- persistir a sessao atual em `SharedPreferences`
+- armazenar um `SibionicsSessionRecord`
+- manter estado local de monitoramento
+- gerar snapshots para o Flutter
+- receber `submitTransmitter()`
 
-Em outras palavras: o Android atual não executa a estratégia Sibionics pretendida. Ele apenas hospeda o app Flutter.
+Persistencia atual:
 
-## Fluxo simulado atual
+- `SharedPreferences`
+- serializacao Java/Base64 de `SibionicsSessionRecord`
 
-O fluxo funcional que realmente existe hoje é o do `FakeSensorRepository`.
+Observacao pratica:
 
-### Registro
+- o manager e um cache/mirror local
+- a verdade de `registerSensor()` e `restoreSession()` esta sendo movida para a camada nativa
 
-- rejeita barcode vazio
-- cria uma `SensorSession`
-- emite `scanning`
-- emite `connecting`
-- marca como conectado
-- emite `connected`
+### Barcode e validacao
 
-### Monitoramento
+Estado atual de validacao:
 
-- exige sessão ativa
-- emite `connecting`
-- depois `connected`
-- simula warmup
-- depois emite leituras periódicas
+- barcode do sensor: apenas `trim()` + rejeicao de vazio
+- sem regra fixa de 16 caracteres
+- a camada nativa deve decidir se o barcode e valido ou nao
 
-### Restore
+Transmissor:
 
-- só restaura a sessão fake em memória se ela ainda existir no ciclo de vida atual da instância
-- não existe persistência Android real
+- ainda possui validacao local propria
+- minimo de 6 caracteres
+- alfanumerico
 
-### Limitação importante
+## Bridge JNI/C++ e stack nativo
 
-Esse fluxo é útil para UI e máquina de estados, mas não prova nada sobre:
+### Arquivos centrais
 
-- BLE
-- empacotamento de `.so`
-- NDK
-- JNI
-- parsing de payload Sibionics
-- persistência de sessão Android real
-
-## Validação executada neste checkout
-
-Validado em `2026-05-02`:
-
-### Flutter analyze
-
-Comando executado:
-
-```bash
-flutter analyze
-```
-
-Resultado:
-
-- sucesso
-- `No issues found!`
-
-### Flutter test
-
-Comando executado:
-
-```bash
-flutter test --no-pub
-```
-
-Resultado:
-
-- sucesso
-- o único teste atual é um smoke test que sobe `GlucoreApp` e verifica o texto `Glucore Sensor MVP`
-
-### O que não foi validado neste checkout
-
-- build Android com integração nativa Sibionics
-- bridge JNI/C++
-- empacotamento de `jniLibs`
-- carregamento de libs proprietárias
-- BLE/GATT
-
-O motivo é simples: essas peças não estão presentes neste snapshot.
-
-## Contexto histórico importante já validado fora deste snapshot
-
-As seções abaixo documentam contexto técnico que já foi levantado e validado em iterações anteriores do projeto, mas que **não está presente neste checkout**.
-
-Quem continuar o trabalho precisa entender isso para não assumir que o estado atual do repositório representa o máximo já alcançado.
-
-### Estado Android/native mais avançado que já existiu
-
-Em um estado de trabalho mais avançado, já havia evidência de uma arquitetura Android/native em andamento com os seguintes componentes:
-
-- `SensorPlatformImpl`
-- `SensorSessionManager`
-- `SibionicsNativeBridgeAdapter`
-- `GlucoreSibionicsBridge.kt`
-- `SibionicsBleManager.kt`
-- `SibionicsSessionRecord.kt`
-- `SibionicsBarcode.kt`
+- `android/app/src/main/kotlin/com/berdegeus/glucore/GlucoreSibionicsBridge.kt`
+- `android/app/src/main/kotlin/com/berdegeus/glucore/SibionicsNativeBridgeAdapter.kt`
+- `android/app/src/main/java/tk/glucodata/Natives.java`
 - `android/app/src/main/cpp/glucore_sibionics_bridge.cpp`
 - `android/app/src/main/cpp/CMakeLists.txt`
-- `android/app/src/main/jniLibs/arm64-v8a/` com bibliotecas proprietárias
-- configuração Gradle com `externalNativeBuild`, `abiFilters` e packaging de libs nativas
 
-Nesse estado, a direção era:
+### O que o bridge faz hoje
 
-- Flutter permanecendo como app/domain/presentation
-- Kotlin assumindo sessão, channels, BLE e chamada do bridge
-- JNI/C++ servindo como camada mínima para interagir com lógica proprietária
+O `GlucoreSibionicsBridge` expoe para Kotlin:
 
-### Descobertas técnicas relevantes desse estado avançado
+- `init(filesDir, nativeLibraryDir, countryCode)`
+- `getLastError()`
+- `registerSensor(barcode, subtype)`
+- `restoreActiveSensor()`
+- `saveMatchedDevice(...)`
+- `getInitialWrite(sensorId)`
+- `handleNotification(sensorId, payload, timestampMs)`
 
-As seguintes descobertas já foram feitas e devem ser preservadas como contexto:
+O lado Kotlin nao deveria consumir payload cru fora do adapter. O papel do `SibionicsNativeBridgeAdapter` e:
 
-1. O primeiro alvo de bridge estava errado.
-   O bridge chegou a ser apontado para símbolos inexistentes do tipo `Java_com_juggluco_JugglucoSibionics_*`.
+- inicializar o bridge uma vez
+- encapsular falhas
+- parsear payloads JSON ou strings simples retornadas pelo nativo
+- transformar o resultado em `CallResult.Success`, `CallResult.NoData` ou `CallResult.Error`
 
-2. O conjunto de bibliotecas empacotadas observado naquele estado parecia expor outra surface.
-   A surface real encontrada estava em `libg.so`, com símbolos do tipo `Java_tk_glucodata_Natives_*`.
+### Surface nativa atualmente alvo
 
-3. Houve necessidade de usar o `nativeLibraryDir` real do Android.
-   Qualquer lógica manual de reescrever ABI/path era inadequada. O caminho precisava seguir o diretório fornecido pelo próprio Android.
+O bridge atual nao aponta mais para um surface `JugglucoSibionics` inexistente.
 
-4. O carregamento por caminho absoluto exigia empacotamento compatível.
-   Em uma iteração anterior, o uso de `dlopen(<nativeLibraryDir>/libg.so)` exigiu packaging que extraísse as libs para filesystem quando a estratégia dependia de path absoluto.
+Ele foi retargeted para a surface exportada por `libg.so`, usando simbolos `Java_tk_glucodata_Natives_*`, com suporte via wrapper `tk.glucodata.Natives`.
 
-5. Nem toda biblioteca do conjunto empacotado era um `.so` convencional.
-   Já havia um caso em que:
-   - `libinit.so` não era uma shared library válida
-   - `libnative.so` era um executável ELF, não uma shared library normal
+Entre os simbolos mapeados/considerados estao:
 
-6. A restauração por ponteiro nativo se mostrou frágil.
-   Uma falha em runtime no device foi rastreada até a chamada nativa equivalente a `activeSensorPtrs()` durante `restoreActiveSensor()`.
+- `setfilesdir`
+- `setlocale`
+- `getLibraryName`
+- `addSIscangetName`
+- `str2sensorptr`
+- `sensorptr2str`
+- `activeSensorPtrs`
+- `activeSensors`
+- `getSensorName`
+- `getDeviceAddress`
+- `getSensorptrSiSubtype`
+- `setSensorptrSiSubtype`
+- `siGetDeviceName`
 
-7. Como mitigação, houve uma tentativa anterior de usar um caminho de restore baseado em string.
-   A ideia era preferir algo equivalente a `activeSensors()` e adiar o uso de paths baseados em ponteiro até ter mais confiança no comportamento do vendor code.
+### O que esta realmente bridge-backed hoje
 
-8. A validação rígida de barcode foi considerada incorreta.
-   Em um estado anterior, chegou a existir uma regra que exigia barcode Sibionics de 16 caracteres. Depois isso foi relaxado para aceitar input cru, com trim e rejeição apenas de vazio, deixando a decisão final para a camada nativa.
+`init(...)`
 
-### O que esse contexto histórico significa
+- usa o caminho nativo baseado em `ApplicationInfo.nativeLibraryDir`
+- passa `filesDir`, `nativeLibraryDir` e country code para o bridge
+- executa o bootstrap do stack via `tk.glucodata.Natives`
 
-Mesmo que o checkout atual não tenha nada disso, o projeto já acumulou algumas conclusões práticas:
+`registerSensor(...)`
 
-- não assumir que a primeira surface JNI encontrada é a correta
-- não assumir que todas as libs empacotadas são `dlopen()` targets válidos
-- não assumir que restore por ponteiro é seguro
-- não reintroduzir validação arbitrária de barcode no Flutter se a source of truth pretendida é a camada nativa
-- manter a UI Flutter estável enquanto a integração Android/native amadurece por baixo
+- ja passa pelo bridge
+- recebe o barcode cru do sensor ja normalizado por trim
+- delega a decisao final de validade para a camada nativa
 
-## Lacuna entre o checkout atual e a direção pretendida
+`restoreActiveSensor(...)`
 
-Hoje existe uma diferença grande entre o que o app atual contém e o que o MVP Sibionics precisa.
+- ja passa pelo bridge
+- porem o fluxo esta protegido por cache local para evitar crash observado ao consultar estado vendor cedo demais
 
-### O Flutter já ajuda
+### O que ainda esta explicitamente incompleto
 
-O Flutter já oferece:
+No estado atual do bridge:
 
-- estados e eventos do MVP
-- tela mínima de operação
-- boundary de plataforma desenhado
-- smoke test simples
+- `saveMatchedDevice()` ainda esta como nao suportado
+- `getInitialWrite()` ainda esta como nao suportado
+- `handleNotification()` ainda esta como nao suportado
 
-### O Android/native ainda precisa existir neste checkout
+Isso e importante porque esses pontos bloqueiam a entrada do monitoramento BLE real no caminho principal.
 
-Para chegar ao MVP real, ainda seria necessário reintroduzir ou reconstruir neste repositório:
+## Bibliotecas proprietarias
 
-- implementação Android dos channels
-- sessão Android persistida
-- registro de sensor real
-- restore de sessão real
-- warmup e leitura real
-- integração BLE/GATT
-- bridge JNI/C++
-- empacotamento de libs proprietárias
-- documentação explícita da dependência proprietária
+As libs atuais vivem em:
 
-## Recomendações objetivas para quem continuar o projeto
+- `android/app/src/main/jniLibs/arm64-v8a/`
 
-### 1. Decidir qual estado é a base canônica
+Arquivos presentes no repo:
 
-Antes de implementar qualquer coisa, o time precisa decidir uma destas opções:
+- `libg.so`
+- `libnative.so`
+- `libinit.so`
+- `libdata-handle-lib.so`
+- `libnative-struct2json.so`
+- `libnative-algorithm-jni-v115G.so`
+- `libnative-algorithm-jni-v116A.so`
+- `libnative-algorithm-v1_1_5G.so`
+- `libnative-algorithm-v1_1_6A.so`
+- `libnative-encrypy-decrypt-v110.so`
+- `libnative-sensitivity-v110.so`
+- `libCALCULATION.so`
+- `libcalibrat2.so`
+- `libcrl_dp.so`
+- `liblibre3extension.so`
 
-- este checkout mínimo é a base correta e a integração Android/native deve ser reconstruída do zero aqui
-- existe uma branch, stash, patchset ou worktree mais avançado que precisa ser recuperado e reintegrado
+Documentacao de proveniencia:
 
-Sem essa decisão, desenvolvedores diferentes podem trabalhar assumindo realidades incompatíveis.
+- `NOTICE_JUGGLUCO_NATIVE.md`
 
-### 2. Não partir do pressuposto de que o bridge já está aqui
+Esse arquivo explica:
 
-Se alguém vier trabalhar no bridge, a primeira verificação deve ser literal:
+- que o caminho Sibionics depende de libs proprietarias empacotadas no app
+- que a abordagem de integracao deriva do caminho Sibionics do Juggluco
+- que esse codigo deve permanecer isolado do dominio/Flutter
 
-- existe `android/app/src/main/cpp`?
-- existem `jniLibs` proprietárias?
-- existe `SensorPlatformImpl`?
-- existe `SibionicsNativeBridgeAdapter`?
+### Copia local do Juggluco no repositorio
 
-Neste checkout, a resposta atual é não.
+O repositorio agora tambem contem uma copia local do codigo do Juggluco em:
 
-### 3. Preservar o contrato Flutter existente
+- `Juggluco/`
 
-Quando a integração Android/native voltar, a recomendação é manter estável o contrato já implícito no Flutter:
+Essa copia existe como base tecnica e referencia direta para a integracao Android/native do Glucore. A expectativa e reutilizar entendimento, surface nativa, comportamento e funcoes relevantes do caminho Sibionics do Juggluco para acelerar a implementacao e reduzir adivinhacao no bridge, no loader e no futuro fluxo BLE/protocolo.
 
-- restore de sessão
-- registro de sensor
-- start/stop monitoring
-- stream de eventos com `status`, `session`, `warmup`, `reading`, `failure`
+Ao mesmo tempo, isso nao deve vazar como dependencia explicita da camada Flutter visual do app:
 
-Isso reduz retrabalho na UI e concentra a complexidade onde ela realmente pertence: Android/native.
+- a UI Flutter do Glucore nao deve expor o Juggluco como produto
+- o app Glucore nao depende de instalar o app Juggluco no telefone junto com ele
+- o uso do Juggluco aqui e como base de codigo, referencia de implementacao e origem do surface nativo empacotado dentro do proprio app Glucore
 
-### 4. Tratar a integração proprietária como código isolado
+### Politica atual de loader
 
-Quando a parte nativa voltar ao repositório, ela deve vir claramente isolada:
+O bridge usa `nativeLibraryDir` como base real de carregamento. A estrategia nao deve reescrever ABI/path manualmente.
 
-- documentação de proveniência
-- lista de bibliotecas esperadas
-- observações de ABI suportada
-- boundary Kotlin tipado
-- C++ mínimo
+Tambem ha tratamento deliberado para artefatos suspeitos:
 
-Evitar espalhar detalhes proprietários pelo código Flutter é um objetivo importante.
+- `libinit.so` nao e tratada como shared library normal
+- `libnative.so` nao e tratada como shared library normal
 
-## O que não assumir
+Esses detalhes importam porque o conjunto empacotado nao e composto apenas por `.so` convencionais.
 
-Para evitar erros de onboarding, não assuma nenhum dos itens abaixo sem verificar o checkout atual:
+## Build Android atual
 
-- que o app já usa Android-backed repository
-- que o app já registra channels no `MainActivity`
-- que o app já possui BLE
-- que o app já possui sessão persistida real
-- que o app já possui bridge JNI/C++
-- que o app já contém `libg.so` ou qualquer vendor lib
-- que o app já possui regras corretas de barcode para Sibionics
-- que qualquer comportamento histórico discutido anteriormente esteja materializado neste snapshot
+O Android app ja nao esta no gradle default minimo.
 
-## Mapa rápido do repositório atual
+Configuracao relevante em `android/app/build.gradle.kts`:
+
+- `externalNativeBuild` com CMake
+- `cppFlags += "-std=c++17"`
+- `ANDROID_STL = c++_shared`
+- `abiFilters += "arm64-v8a"`
+- `packaging.jniLibs.useLegacyPackaging = true`
+- exclusao explicita de ABIs nao empacotadas
+
+Leitura correta:
+
+- a integracao proprietaria atual e arm64-only
+- o bridge depende do layout real de `nativeLibraryDir`
+- o packaging foi ajustado para suportar `dlopen()` sobre paths absolutos
+
+## BLE/GATT
+
+### O que existe
+
+Ha um `SibionicsBleManager.kt` no repo com intencao clara de:
+
+- scan BLE
+- connection timeout
+- `BluetoothGattCallback`
+- descoberta de device
+- conexao GATT
+- coordenacao futura com o bridge nativo
+
+### O que ainda nao esta pronto
+
+Esse manager ainda nao esta no caminho ativo do app.
+
+Bloqueios objetivos:
+
+- `SensorPlatformImpl.startMonitoring()` ainda usa timer
+- `saveMatchedDevice()` ainda nao esta suportado no bridge
+- `getInitialWrite()` ainda nao esta suportado no bridge
+- `handleNotification()` ainda nao esta suportado no bridge
+- o `AndroidManifest.xml` ainda nao declara as permissoes BLE necessarias
+
+Conclusao pratica:
+
+- existe esqueleto BLE
+- nao existe monitoramento real de sensor no fluxo ativo
+
+## Flutter UI e localizacao
+
+### O que ja esta ligado
+
+Localizacao ja esta configurada:
+
+- `flutter_localizations` no `pubspec.yaml`
+- `l10n.yaml`
+- ARBs em `lib/l10n/app_en.arb` e `lib/l10n/app_pt.arb`
+- delegates gerados em `lib/l10n/`
+
+### O que ainda esta parcial
+
+Apesar disso, a tela ainda nao esta 100% localizada. Em `SensorPage` ainda existem textos hardcoded em ingles, especialmente em:
+
+- progresso/conexao
+- warmup
+- leitura atual
+- botoes de stop/disconnect/cancel
+
+Tambem vale notar:
+
+- o caminho `submitTransmitter()` existe no dominio e no Android
+- a UI atual nao expande esse fluxo de forma propria
+
+## O que e real vs o que ainda e simulado
+
+### Ja ligado ao caminho nativo
+
+- bootstrap do bridge no startup
+- `registerSensor()`
+- `restoreSession()`
+- persistencia local da sessao Android
+- channels Flutter <-> Android
+
+### Ainda simulado
+
+- `startMonitoring()`
+- warmup
+- emissao de leitura de glicose
+- lifecycle BLE/GATT do sensor
+
+Essa separacao precisa ficar clara para evitar falsa impressao de que o monitoramento ja e real.
+
+## Riscos e limitacoes atuais
+
+Pontos que qualquer desenvolvedor novo precisa saber antes de mexer:
+
+- o projeto depende de bibliotecas proprietarias Android arm64-only
+- o caminho native ainda e incompleto; nem todas as funcoes previstas estao mapeadas
+- o restore nativo exigiu guard local para evitar crash observado no vendor path
+- `clearSession()` nao limpa a sessao vendor-backed; limpa apenas o espelho local Glucore
+- o manifesto Android ainda nao esta pronto para BLE real
+- a UI Flutter ainda mistura strings localizadas e strings hardcoded
+- o fake repository continua no repo para referencia, mas o app nao sobe mais por ele
+- `SensorController.init()` ainda coloca estado `disconnected` apos restore, entao o comportamento de restore deve ser observado com cuidado quando o Android emitir estado conectado
+
+## Como ler o repositorio hoje
+
+Mapa resumido:
 
 ```text
 lib/
@@ -442,35 +451,69 @@ lib/
   app/bootstrap/app.dart
   features/sensor/
     domain/
-      models.dart
-      events.dart
-      sensor_repository.dart
     data/
       data_sources/fake_sensor_repository.dart
       platform/sensor_platform.dart
+      repositories/android_sensor_repository.dart
     presentation/
-      controller/sensor_controller.dart
-      pages/sensor_page.dart
+  l10n/
 
-android/
-  app/
-    build.gradle.kts
-    src/main/
-      AndroidManifest.xml
-      kotlin/com/berdegeus/glucore/MainActivity.kt
-
-test/
-  widget_test.dart
+android/app/src/main/
+  kotlin/com/berdegeus/glucore/
+    MainActivity.kt
+    SensorPlatformImpl.kt
+    SensorSessionManager.kt
+    SibionicsBarcode.kt
+    SibionicsBleManager.kt
+    SibionicsNativeBridgeAdapter.kt
+    SibionicsSessionRecord.kt
+    GlucoreSibionicsBridge.kt
+  java/tk/glucodata/Natives.java
+  cpp/
+    CMakeLists.txt
+    glucore_sibionics_bridge.cpp
+  jniLibs/arm64-v8a/
+    *.so
 ```
 
-## Resumo executivo para novos desenvolvedores
+## Proximo passo tecnico recomendado
 
-Se você está entrando agora no projeto, a leitura correta é:
+Antes de qualquer redesign, a leitura tecnica mais segura e:
 
-- o Flutter já tem uma base mínima funcional para o MVP
-- o app que roda hoje é fake/simulado
-- a integração Android/native Sibionics não está presente neste checkout
-- já existe contexto técnico importante sobre como essa integração provavelmente deve ser feita e quais armadilhas já apareceram
-- antes de continuar o trabalho de integração, confirme se há um estado Android/native mais avançado a ser recuperado
+1. manter a arquitetura atual
+2. terminar a validacao do caminho native em device real
+3. completar o mapeamento das funcoes nativas ainda faltantes
+4. so depois ligar `SibionicsBleManager` no caminho ativo
+5. substituir a simulacao por warmup/leitura reais
 
-Se esse estado mais avançado não existir mais, o próximo trabalho técnico real será reintroduzir a camada Android-backed de forma deliberada, começando por channels, sessão e boundary Kotlin, antes de BLE e antes de qualquer bridge nativa mais profunda.
+Em termos práticos, o proximo slice nao deveria ser mexer no Flutter. O gargalo tecnico esta no Android/native:
+
+- consolidar `registerSensor()` e `restoreSession()` no runtime real
+- terminar a surface faltante para BLE
+- adicionar permissoes/manuseio BLE no Android
+- integrar `saveMatchedDevice`, `getInitialWrite` e `handleNotification`
+
+## O que nao assumir
+
+Nao assuma nenhum destes pontos sem verificar:
+
+- que o monitoramento atual ja e real
+- que o BLE manager ja esta integrado
+- que o bridge cobre toda a surface necessaria
+- que limpar sessao no app limpa a sessao nativa vendor-backed
+- que todas as strings da UI ja estao localizadas
+- que o repo esta pronto para multiplas ABIs Android
+
+## Resumo executivo
+
+Hoje o Glucore esta em um meio-termo avancado:
+
+- Flutter ja fala com Android de verdade
+- Android ja sobe bridge JNI/proprietario de verdade
+- registro e restore ja estao no caminho nativo
+- persistencia local Android ja existe
+- o repositorio ja contem libs proprietarias e C++ bridge
+- BLE real ainda nao entrou no fluxo principal
+- warmup e glicose ainda sao simulados
+
+Esse e o contexto correto para qualquer desenvolvedor que va continuar o projeto.

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(grep -E \"\\\\.\\(java|cpp|h|kt\\)$\")",
+      "Bash(nm -D android/app/src/main/jniLibs/arm64-v8a/libg.so)",
+      "Bash(awk '{print $3}')",
+      "Bash(nm -D android/app/src/main/jniLibs/arm64-v8a/libdata-handle-lib.so)",
+      "Bash(flutter build *)",
+      "Bash(grep -v \"^$\")"
+    ]
+  }
+}

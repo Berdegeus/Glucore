@@ -19,41 +19,57 @@ class SensorController extends ChangeNotifier {
     try {
       final restored = await repository.restoreSession();
       if (restored != null) {
-        _state = _state.copyWith(status: SensorConnectionStatus.disconnected, session: restored);
+        _state = _state.copyWith(
+          status: SensorConnectionStatus.disconnected,
+          session: restored,
+        );
       } else {
         _state = SensorUiState.initial;
       }
       notifyListeners();
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: SensorFailure(e.toString()),
+      );
       notifyListeners();
     }
   }
 
   void _listenToEvents() {
     _eventSubscription?.cancel();
-    _eventSubscription = repository.observeSessionEvents().listen((event) {
-      _state = SensorUiState(
-        status: event.status,
-        session: event.session ?? _state.session,
-        warmupInfo: event.warmupInfo ?? _state.warmupInfo,
-        reading: event.reading ?? _state.reading,
-        failure: event.failure,
-      );
-      notifyListeners();
-    }, onError: (error) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(error.toString()));
-      notifyListeners();
-    });
+    _eventSubscription = repository.observeSessionEvents().listen(
+      (event) {
+        _state = SensorUiState(
+          status: event.status,
+          session: event.session ?? _state.session,
+          historySyncInfo: event.historySyncInfo,
+          warmupInfo: event.warmupInfo ?? _state.warmupInfo,
+          reading: event.reading ?? _state.reading,
+          failure: event.failure,
+        );
+        notifyListeners();
+      },
+      onError: (error) {
+        _state = _state.copyWith(
+          status: SensorConnectionStatus.error,
+          failure: SensorFailure(error.toString()),
+        );
+        notifyListeners();
+      },
+    );
   }
 
   Future<void> registerSensor(String barcode) async {
-    _state = _state.copyWith(status: SensorConnectionStatus.scanning, failure: null);
+    _state = _state.copyWith(failure: null);
     notifyListeners();
     try {
       await repository.registerSensor(barcode);
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: SensorFailure(e.toString()),
+      );
       notifyListeners();
     }
   }
@@ -62,22 +78,40 @@ class SensorController extends ChangeNotifier {
     try {
       await repository.submitTransmitter(transmitterBarcode);
       if (_state.session != null) {
-        _state = _state.copyWith(session: _state.session!.copyWith(transmitterId: transmitterBarcode));
+        _state = _state.copyWith(
+          session: _state.session!.copyWith(transmitterId: transmitterBarcode),
+        );
         notifyListeners();
       }
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: SensorFailure(e.toString()),
+      );
       notifyListeners();
     }
   }
 
   Future<void> startMonitoring() async {
-    _state = _state.copyWith(status: SensorConnectionStatus.scanning, failure: null);
+    if (_state.status == SensorConnectionStatus.scanning ||
+        _state.status == SensorConnectionStatus.connecting ||
+        _state.status == SensorConnectionStatus.connected ||
+        _state.status == SensorConnectionStatus.syncingHistory ||
+        _state.status == SensorConnectionStatus.readingAvailable) {
+      return;
+    }
+    _state = _state.copyWith(
+      status: SensorConnectionStatus.scanning,
+      failure: null,
+    );
     notifyListeners();
     try {
       await repository.startMonitoring();
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: SensorFailure(e.toString()),
+      );
       notifyListeners();
     }
   }
@@ -86,7 +120,10 @@ class SensorController extends ChangeNotifier {
     try {
       await repository.stopMonitoring();
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: SensorFailure(e.toString()),
+      );
       notifyListeners();
     }
   }
@@ -97,7 +134,10 @@ class SensorController extends ChangeNotifier {
       _state = SensorUiState.initial;
       notifyListeners();
     } catch (e) {
-      _state = _state.copyWith(status: SensorConnectionStatus.error, failure: SensorFailure(e.toString()));
+      _state = _state.copyWith(
+        status: SensorConnectionStatus.error,
+        failure: SensorFailure(e.toString()),
+      );
       notifyListeners();
     }
   }

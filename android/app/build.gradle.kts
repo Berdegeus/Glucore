@@ -10,6 +10,24 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    packaging {
+        jniLibs {
+            // Keep the packaged APK honest about the proprietary vendor set we
+            // actually ship. The Sibionics native dependency is arm64-only.
+            //
+            // Glucore's bridge currently loads proprietary vendor libraries via
+            // absolute paths under ApplicationInfo.nativeLibraryDir. Force
+            // legacy packaging so Android extracts those .so files onto the
+            // filesystem instead of only exposing them from inside the APK.
+            useLegacyPackaging = true
+            excludes += setOf(
+                "**/armeabi-v7a/*.so",
+                "**/x86/*.so",
+                "**/x86_64/*.so",
+            )
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -28,6 +46,19 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            // The proprietary Sibionics vendor libraries currently packaged in
+            // the repo are only available for arm64-v8a.
+            abiFilters += listOf("arm64-v8a")
+        }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags += "-std=c++17"
+                arguments += "-DANDROID_STL=c++_shared"
+            }
+        }
     }
 
     buildTypes {
@@ -35,6 +66,12 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
         }
     }
 }
