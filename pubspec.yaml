@@ -19,6 +19,7 @@ dependencies:
   equatable: ^2.0.5
   get_it: ^7.7.0
   intl: any
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:

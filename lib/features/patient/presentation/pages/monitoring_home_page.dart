@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../sensor/domain/models.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
+import '../widgets/glucose_chart.dart';
 import '../widgets/patient_widgets.dart';
 import 'carb_entry_page.dart';
 import 'insulin_entry_page.dart';
@@ -141,37 +142,24 @@ class MonitoringHomePage extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              Text(
-                l10n.monitoringRecentReadingsTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              if (state.readings.isEmpty)
-                EmptyStateView(
-                  title: l10n.historyEmptyStateTitle,
-                  message: l10n.historyEmptyStateMessage,
-                  icon: Icons.history_toggle_off,
-                )
-              else
-                ...state.readings.take(4).map(
-                      (reading) => Card(
-                        child: ListTile(
-                          title: Text(
-                            l10n.genericGlucoseValue(
-                              reading.value.toStringAsFixed(1),
-                            ),
-                          ),
-                          subtitle: Text(
-                            l10n.monitoringRecentReadingTime(
-                              TimeOfDay.fromDateTime(reading.timestamp)
-                                  .format(context),
-                            ),
-                          ),
-                          trailing: Text(reading.trend.label(l10n)),
-                        ),
-                      ),
+              if (state.readings.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  l10n.monitoringRecentReadingsTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+                    child: GlucoseChart(
+                      readings: state.readings,
+                      lowThreshold: state.alertSettings.lowThreshold,
+                      highThreshold: state.alertSettings.highThreshold,
                     ),
+                  ),
+                ),
+              ],
             ],
           );
         },
