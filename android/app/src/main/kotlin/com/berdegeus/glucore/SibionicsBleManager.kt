@@ -488,7 +488,7 @@ class SibionicsBleManager(
         historyReadingsReceived += 1
         lastSyncedTimestampMs = decoded.timestampMs
         pendingCurrentCandidate = decoded
-        emitHistorySyncProgress()
+        emitHistorySyncProgress(decoded)
         scheduleCurrentPromotionIfRecent(decoded)
     }
 
@@ -567,15 +567,18 @@ class SibionicsBleManager(
             "sync" to null,
             "reading" to mapOf(
                 "value" to reading.mgdl,
-                "timestampMs" to reading.timestampMs
+                "timestampMs" to reading.timestampMs,
+                "rate" to reading.rate,
+                "alarmCode" to reading.alarmCode
             ),
+            "historyReading" to null,
             "session" to null,
             "warmup" to null,
             "failure" to null
         ))
     }
 
-    private fun emitHistorySyncProgress() {
+    private fun emitHistorySyncProgress(reading: DecodedGlucoseReading? = null) {
         onEvent(mapOf(
             "status" to "syncingHistory",
             "connected" to true,
@@ -583,6 +586,14 @@ class SibionicsBleManager(
                 "receivedCount" to historyReadingsReceived,
                 "latestTimestampMs" to lastSyncedTimestampMs
             ),
+            "historyReading" to reading?.let {
+                mapOf(
+                    "value" to it.mgdl,
+                    "timestampMs" to it.timestampMs,
+                    "rate" to it.rate,
+                    "alarmCode" to it.alarmCode
+                )
+            },
             "reading" to null,
             "session" to null,
             "warmup" to null,

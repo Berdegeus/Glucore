@@ -5,6 +5,7 @@ class SensorEvent {
   final SensorSession? session;
   final bool connected;
   final HistorySyncInfo? historySyncInfo;
+  final GlucoseReading? historyReading;
   final WarmupInfo? warmupInfo;
   final GlucoseReading? reading;
   final SensorFailure? failure;
@@ -14,6 +15,7 @@ class SensorEvent {
     this.session,
     this.connected = false,
     this.historySyncInfo,
+    this.historyReading,
     this.warmupInfo,
     this.reading,
     this.failure,
@@ -32,9 +34,11 @@ class SensorEvent {
   factory SensorEvent.syncingHistory(
     HistorySyncInfo historySyncInfo, {
     SensorSession? session,
+    GlucoseReading? historyReading,
   }) => SensorEvent(
     status: SensorConnectionStatus.syncingHistory,
     historySyncInfo: historySyncInfo,
+    historyReading: historyReading,
     session: session,
     connected: true,
   );

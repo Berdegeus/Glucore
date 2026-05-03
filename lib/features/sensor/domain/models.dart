@@ -48,9 +48,15 @@ class SensorSession {
 class GlucoseReading {
   final double value;
   final DateTime timestamp;
+  final double rate;
+  final int? alarmCode;
 
-  GlucoseReading({required this.value, DateTime? timestamp})
-    : timestamp = timestamp ?? DateTime.now();
+  GlucoseReading({
+    required this.value,
+    DateTime? timestamp,
+    this.rate = 0,
+    this.alarmCode,
+  }) : timestamp = timestamp ?? DateTime.now();
 }
 
 class WarmupInfo {
@@ -75,6 +81,7 @@ class SensorUiState {
   final SensorConnectionStatus status;
   final SensorSession? session;
   final HistorySyncInfo? historySyncInfo;
+  final GlucoseReading? historyReading;
   final WarmupInfo? warmupInfo;
   final GlucoseReading? reading;
   final SensorFailure? failure;
@@ -83,6 +90,7 @@ class SensorUiState {
     this.status = SensorConnectionStatus.idle,
     this.session,
     this.historySyncInfo,
+    this.historyReading,
     this.warmupInfo,
     this.reading,
     this.failure,
@@ -92,17 +100,20 @@ class SensorUiState {
     SensorConnectionStatus? status,
     SensorSession? session,
     HistorySyncInfo? historySyncInfo,
+    GlucoseReading? historyReading,
     WarmupInfo? warmupInfo,
     GlucoseReading? reading,
     SensorFailure? failure,
+    bool clearFailure = false,
   }) {
     return SensorUiState(
       status: status ?? this.status,
       session: session ?? this.session,
       historySyncInfo: historySyncInfo ?? this.historySyncInfo,
+      historyReading: historyReading ?? this.historyReading,
       warmupInfo: warmupInfo ?? this.warmupInfo,
       reading: reading ?? this.reading,
-      failure: failure ?? this.failure,
+      failure: clearFailure ? null : failure ?? this.failure,
     );
   }
 

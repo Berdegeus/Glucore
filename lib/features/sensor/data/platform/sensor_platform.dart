@@ -81,6 +81,20 @@ class SensorPlatformEvent {
       );
     }
 
+    GlucoseReading? historyReading;
+    if (map['historyReading'] != null) {
+      final r = map['historyReading'] as Map<dynamic, dynamic>;
+      final timestampMs = (r['timestampMs'] as num?)?.toInt();
+      historyReading = GlucoseReading(
+        value: (r['value'] as num?)?.toDouble() ?? 0,
+        timestamp: timestampMs != null
+            ? DateTime.fromMillisecondsSinceEpoch(timestampMs)
+            : null,
+        rate: (r['rate'] as num?)?.toDouble() ?? 0,
+        alarmCode: (r['alarmCode'] as num?)?.toInt(),
+      );
+    }
+
     GlucoseReading? reading;
     if (map['reading'] != null) {
       final r = map['reading'] as Map<dynamic, dynamic>;
@@ -90,6 +104,8 @@ class SensorPlatformEvent {
         timestamp: timestampMs != null
             ? DateTime.fromMillisecondsSinceEpoch(timestampMs)
             : null,
+        rate: (r['rate'] as num?)?.toDouble() ?? 0,
+        alarmCode: (r['alarmCode'] as num?)?.toInt(),
       );
     }
 
@@ -101,6 +117,7 @@ class SensorPlatformEvent {
         session: session,
         connected: connected,
         historySyncInfo: historySyncInfo,
+        historyReading: historyReading,
         warmupInfo: warmup,
         reading: reading,
         failure: failure,
