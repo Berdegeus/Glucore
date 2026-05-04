@@ -1,6 +1,4 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 
 import '../../presentation/models/patient_models.dart';
 
@@ -29,109 +27,144 @@ abstract class PatientLocalDataSource {
   Future<void> saveAlertSettings(AlertSettingsModel settings);
 }
 
-class SharedPrefsPatientLocalDataSource implements PatientLocalDataSource {
-  const SharedPrefsPatientLocalDataSource(this.sharedPreferences);
+class RemotePatientDataSource implements PatientLocalDataSource {
+  const RemotePatientDataSource(this._dio);
 
-  final SharedPreferences sharedPreferences;
-
-  static const _readingsKey = 'patient_glucose_readings_v1';
-  static const _alertsKey = 'patient_alerts_v1';
-  static const _carbsKey = 'patient_carbs_v1';
-  static const _insulinKey = 'patient_insulin_v1';
-  static const _alertSettingsKey = 'patient_alert_settings_v1';
+  final Dio _dio;
 
   @override
   Future<PatientLocalSnapshot> load() async {
+    final results = await Future.wait([
+      _dio.get<List<dynamic>>('/readings'),
+      _dio.get<List<dynamic>>('/alerts'),
+      _dio.get<List<dynamic>>('/carbs'),
+      _dio.get<List<dynamic>>('/insulin'),
+      _dio.get<Map<String, dynamic>>('/settings/alerts'),
+    ]);
+
+    final readingRows = (results[0] as Response).data as List<dynamic>;
+    final alertRows = (results[1] as Response).data as List<dynamic>;
+    final carbRows = (results[2] as Response).data as List<dynamic>;
+    final insulinRows = (results[3] as Response).data as List<dynamic>;
+    final settingsRow = (results[4] as Response).data as Map<String, dynamic>;
+
     return PatientLocalSnapshot(
-      readings: _decodeList(
-        key: _readingsKey,
-        mapper: (json) => GlucoseReadingItem.fromJson(json),
+      readings: readingRows
+          .cast<Map<String, dynamic>>()
+          .map(_rowToReading)
+          .toList(),
+      alerts: alertRows
+          .cast<Map<String, dynamic>>()
+          .map(_rowToAlert)
+          .toList(),
+      carbs: carbRows
+          .cast<Map<String, dynamic>>()
+          .map(_rowToCarb)
+          .toList(),
+      insulin: insulinRows
+          .cast<Map<String, dynamic>>()
+          .map(_rowToInsulin)
+          .toList(),
+      alertSettings: AlertSettingsModel(
+        lowThreshold: (settingsRow['lowThreshold'] as num).toInt(),
+        highThreshold: (settingsRow['highThreshold'] as num).toInt(),
       ),
-      alerts: _decodeList(
-        key: _alertsKey,
-        mapper: (json) => AppAlertItem.fromJson(json),
-      ),
-      carbs: _decodeList(
-        key: _carbsKey,
-        mapper: (json) => CarbEntry.fromJson(json),
-      ),
-      insulin: _decodeList(
-        key: _insulinKey,
-        mapper: (json) => InsulinEntry.fromJson(json),
-      ),
-      alertSettings: _decodeObject(
-        key: _alertSettingsKey,
-        mapper: (json) => AlertSettingsModel.fromJson(json),
-      ) ?? const AlertSettingsModel(lowThreshold: 80, highThreshold: 180),
     );
   }
 
   @override
-  Future<void> saveReadings(List<GlucoseReadingItem> readings) {
-    return _saveList(_readingsKey, readings.map((item) => item.toJson()).toList());
-  }
-
-  @override
-  Future<void> saveAlerts(List<AppAlertItem> alerts) {
-    return _saveList(_alertsKey, alerts.map((item) => item.toJson()).toList());
-  }
-
-  @override
-  Future<void> saveCarbs(List<CarbEntry> carbs) {
-    return _saveList(_carbsKey, carbs.map((item) => item.toJson()).toList());
-  }
-
-  @override
-  Future<void> saveInsulin(List<InsulinEntry> insulin) {
-    return _saveList(_insulinKey, insulin.map((item) => item.toJson()).toList());
-  }
-
-  @override
-  Future<void> saveAlertSettings(AlertSettingsModel settings) {
-    return sharedPreferences.setString(
-      _alertSettingsKey,
-      jsonEncode(settings.toJson()),
+  Future<void> saveReadings(List<GlucoseReadingItem> readings) async {
+    await _dio.post<void>(
+      '/readings',
+      data: {'readings': readings.map(_readingToRow).toList()},
     );
   }
 
-  List<T> _decodeList<T>({
-    required String key,
-    required T Function(Map<String, dynamic> json) mapper,
-  }) {
-    final raw = sharedPreferences.getString(key);
-    if (raw == null || raw.isEmpty) {
-      return <T>[];
-    }
-
-    final decoded = jsonDecode(raw);
-    if (decoded is! List) {
-      return <T>[];
-    }
-
-    return decoded
-        .whereType<Map>()
-        .map((item) => mapper(Map<String, dynamic>.from(item)))
-        .toList(growable: false)
-        .cast<T>();
+  @override
+  Future<void> saveAlerts(List<AppAlertItem> alerts) async {
+    await _dio.post<void>(
+      '/alerts',
+      data: {'alerts': alerts.map(_alertToRow).toList()},
+    );
   }
 
-  T? _decodeObject<T>({
-    required String key,
-    required T Function(Map<String, dynamic> json) mapper,
-  }) {
-    final raw = sharedPreferences.getString(key);
-    if (raw == null || raw.isEmpty) {
-      return null;
-    }
-
-    final decoded = jsonDecode(raw);
-    if (decoded is! Map) {
-      return null;
-    }
-    return mapper(Map<String, dynamic>.from(decoded));
+  @override
+  Future<void> saveCarbs(List<CarbEntry> carbs) async {
+    await _dio.post<void>(
+      '/carbs',
+      data: {'carbs': carbs.map(_carbToRow).toList()},
+    );
   }
 
-  Future<void> _saveList(String key, List<Map<String, dynamic>> value) {
-    return sharedPreferences.setString(key, jsonEncode(value));
+  @override
+  Future<void> saveInsulin(List<InsulinEntry> insulin) async {
+    await _dio.post<void>(
+      '/insulin',
+      data: {'insulin': insulin.map(_insulinToRow).toList()},
+    );
   }
+
+  @override
+  Future<void> saveAlertSettings(AlertSettingsModel settings) async {
+    await _dio.put<void>(
+      '/settings/alerts',
+      data: {
+        'lowThreshold': settings.lowThreshold,
+        'highThreshold': settings.highThreshold,
+      },
+    );
+  }
+
+  // ── mappers ───────────────────────────────────────────────────────────────
+
+  static GlucoseReadingItem _rowToReading(Map<String, dynamic> r) =>
+      GlucoseReadingItem(
+        value: (r['value'] as num).toDouble(),
+        timestamp: DateTime.fromMillisecondsSinceEpoch((r['timestampMs'] as num).toInt()),
+        trend: GlucoseTrend.values.byName(r['trend'] as String),
+        rate: (r['rate'] as num).toDouble(),
+        alarmCode: r['alarmCode'] as int?,
+      );
+
+  static Map<String, dynamic> _readingToRow(GlucoseReadingItem r) => {
+        'value': r.value,
+        'timestampMs': r.timestamp.millisecondsSinceEpoch,
+        'trend': r.trend.name,
+        'rate': r.rate,
+        'alarmCode': r.alarmCode,
+      };
+
+  static AppAlertItem _rowToAlert(Map<String, dynamic> r) => AppAlertItem(
+        type: AppAlertType.values.byName(r['type'] as String),
+        timestamp: DateTime.fromMillisecondsSinceEpoch((r['timestampMs'] as num).toInt()),
+      );
+
+  static Map<String, dynamic> _alertToRow(AppAlertItem a) => {
+        'type': a.type.name,
+        'timestampMs': a.timestamp.millisecondsSinceEpoch,
+      };
+
+  static CarbEntry _rowToCarb(Map<String, dynamic> r) => CarbEntry(
+        grams: (r['grams'] as num).toInt(),
+        description: r['description'] as String,
+        time: DateTime.fromMillisecondsSinceEpoch((r['timeMs'] as num).toInt()),
+      );
+
+  static Map<String, dynamic> _carbToRow(CarbEntry c) => {
+        'grams': c.grams,
+        'description': c.description,
+        'timeMs': c.time.millisecondsSinceEpoch,
+      };
+
+  static InsulinEntry _rowToInsulin(Map<String, dynamic> r) => InsulinEntry(
+        units: (r['units'] as num).toDouble(),
+        type: InsulinType.values.byName(r['type'] as String),
+        time: DateTime.fromMillisecondsSinceEpoch((r['timeMs'] as num).toInt()),
+      );
+
+  static Map<String, dynamic> _insulinToRow(InsulinEntry i) => {
+        'units': i.units,
+        'type': i.type.name,
+        'timeMs': i.time.millisecondsSinceEpoch,
+      };
 }

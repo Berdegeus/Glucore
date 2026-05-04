@@ -1,0 +1,75 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  Int                  @id @default(autoincrement())
+  email               String               @unique
+  passwordHash        String
+  createdAt           DateTime             @default(now())
+  readings            GlucoseReading[]
+  alerts              Alert[]
+  carbs               CarbEntry[]
+  insulin             InsulinEntry[]
+  settings            AlertSettings?
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GlucoseReading {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  value       Float
+  timestampMs BigInt
+  trend       String
+  rate        Float  @default(0)
+  alarmCode   Int?
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, timestampMs])
+}
+
+model Alert {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  type        String
+  timestampMs BigInt
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CarbEntry {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  grams       Int
+  description String
+  timeMs      BigInt
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model InsulinEntry {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  units  Float
+  type   String
+  timeMs BigInt
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AlertSettings {
+  userId        Int  @id
+  lowThreshold  Int  @default(80)
+  highThreshold Int  @default(180)
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/notifications/notification_service.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../../data/repositories/patient_local_repository.dart';
@@ -122,6 +123,16 @@ class PatientCubit extends Cubit<PatientState> {
         nextState = nextState.copyWith(alerts: alerts);
         persistAlerts = true;
       }
+    }
+
+    final wasActive = previousStatus == SensorConnectionStatus.connected ||
+        previousStatus == SensorConnectionStatus.readingAvailable ||
+        previousStatus == SensorConnectionStatus.syncingHistory ||
+        previousStatus == SensorConnectionStatus.warmingUp;
+    final nowLost = sensorState.status == SensorConnectionStatus.disconnected ||
+        sensorState.status == SensorConnectionStatus.error;
+    if (wasActive && nowLost) {
+      NotificationService.instance.showSensorDisconnected();
     }
 
     emit(nextState);

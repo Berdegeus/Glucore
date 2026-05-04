@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, failure }
 
-enum AuthError { invalidCredentials }
+enum AuthError { invalidCredentials, emailAlreadyExists, networkError, serverError }
 
 class AuthState extends Equatable {
   const AuthState({

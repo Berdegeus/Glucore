@@ -12,6 +12,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<bool> register({required String email, required String password}) {
+    return localDataSource.register(email: email, password: password);
+  }
+
+  @override
   Future<void> logout() {
     return localDataSource.logout();
   }

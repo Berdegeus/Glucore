@@ -19,6 +19,12 @@ extension AuthErrorLocalization on AuthError {
     switch (this) {
       case AuthError.invalidCredentials:
         return l10n.loginInvalidCredentialsError;
+      case AuthError.emailAlreadyExists:
+        return l10n.registerEmailAlreadyExistsError;
+      case AuthError.networkError:
+        return l10n.authNetworkError;
+      case AuthError.serverError:
+        return l10n.authServerError;
     }
   }
 }

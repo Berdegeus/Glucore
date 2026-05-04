@@ -5,6 +5,7 @@ import 'package:glucore/l10n/localized_values.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../sensor/domain/models.dart';
+import '../models/patient_models.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../widgets/glucose_chart.dart';
@@ -67,22 +68,46 @@ class MonitoringHomePage extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              current.value.toStringAsFixed(1),
+                              current.value.toStringAsFixed(0),
                               style: Theme.of(context).textTheme.displaySmall
-                                  ?.copyWith(fontWeight: FontWeight.w700),
+                                  ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: _glucoseColor(
+                                  current.value,
+                                  state.alertSettings.lowThreshold,
+                                  state.alertSettings.highThreshold,
+                                ),
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Text(l10n.genericGlucoseUnit),
+                            const SizedBox(width: 4),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.genericGlucoseUnit,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                Text(
+                                  current.trend.label(l10n),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Icon(
+                              _trendIcon(current.trend),
+                              size: 48,
+                              color: _glucoseColor(
+                                current.value,
+                                state.alertSettings.lowThreshold,
+                                state.alertSettings.highThreshold,
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(current.trend.label(l10n)),
                         const SizedBox(height: 4),
                         Text(
                           l10n.monitoringLastReading(
@@ -90,6 +115,36 @@ class MonitoringHomePage extends StatelessWidget {
                                 .format(context),
                           ),
                         ),
+                        if (!state.hasRecentReading) ...[
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.orange.shade200),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.portable_wifi_off,
+                                    size: 14, color: Colors.orange.shade700),
+                                const SizedBox(width: 6),
+                                Text(
+                                  l10n.monitoringStaleReadingBadge(
+                                    TimeOfDay.fromDateTime(current.timestamp)
+                                        .format(context),
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 6),
                         StatusCard(
                           title: l10n.monitoringPredictionUnavailableTitle,
@@ -165,6 +220,23 @@ class MonitoringHomePage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  IconData _trendIcon(GlucoseTrend trend) {
+    switch (trend) {
+      case GlucoseTrend.rising:
+        return Icons.arrow_upward_rounded;
+      case GlucoseTrend.falling:
+        return Icons.arrow_downward_rounded;
+      case GlucoseTrend.stable:
+        return Icons.arrow_forward_rounded;
+    }
+  }
+
+  Color _glucoseColor(double value, int low, int high) {
+    if (value < low) return AppTheme.warningLow;
+    if (value > high) return AppTheme.warningHigh;
+    return AppTheme.brandPrimary;
   }
 
   Widget _buildSensorStatusCard(BuildContext context, PatientState state) {

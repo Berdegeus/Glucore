@@ -59,6 +59,14 @@ app.*.map.json
 *.jks
 *.keystore
 
+# Node.js / Backend
+node_modules/
+backend/node_modules/
+backend/dist/
+backend/.env
+*.env
+backend/prisma/*.db
+
 # Local tooling / assistant context
 .claude/
 CLAUDE.md

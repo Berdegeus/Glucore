@@ -64,7 +64,13 @@
   "forgotPasswordTitle": "Recuperar senha",
   "forgotPasswordRegisteredEmailLabel": "E-mail cadastrado",
   "forgotPasswordSubmitButton": "Enviar instruções",
-  "forgotPasswordSuccessMessage": "Instruções de recuperação enviadas por e-mail.",
+  "forgotPasswordSuccessMessage": "Se o e-mail estiver cadastrado, as instruções foram enviadas.",
+  "forgotPasswordNetworkError": "Sem conexão. Verifique sua rede e tente novamente.",
+  "forgotPasswordTokenLabel": "Código recebido por e-mail",
+  "forgotPasswordNewPasswordLabel": "Nova senha",
+  "forgotPasswordResetButton": "Redefinir senha",
+  "forgotPasswordResetSuccess": "Senha redefinida com sucesso. Faça login para continuar.",
+  "forgotPasswordInvalidToken": "Código inválido ou expirado.",
   "registerTitle": "Cadastro",
   "registerFullNameLabel": "Nome completo",
   "registerFullNameError": "Informe seu nome completo",
@@ -210,6 +216,17 @@
   "profileTargetRangeLabel": "Faixa alvo de glicose (mg/dL)",
   "profileUpdatedSuccessMessage": "Perfil atualizado com sucesso.",
   "profileSaveChangesButton": "Salvar alterações",
+  "profileAccountSectionTitle": "Conta",
+  "profileCurrentPasswordLabel": "Senha atual",
+  "profileNewEmailLabel": "Novo e-mail",
+  "profileNewPasswordLabel": "Nova senha",
+  "profileConfirmNewPasswordLabel": "Confirmar nova senha",
+  "profileEmailUpdatedSuccess": "E-mail atualizado com sucesso.",
+  "profilePasswordUpdatedSuccess": "Senha atualizada com sucesso.",
+  "profileCurrentPasswordIncorrect": "Senha atual incorreta.",
+  "profilePasswordMismatch": "As senhas não coincidem.",
+  "profileEmailSaveButton": "Atualizar e-mail",
+  "profilePasswordSaveButton": "Atualizar senha",
   "carbEntryTitle": "Registrar carboidrato",
   "carbEntryQuantityLabel": "Quantidade (g)",
   "carbEntryDescriptionLabel": "Descrição da refeição",
@@ -273,5 +290,14 @@
   "sensorFailureInvalidTransmitterBarcode": "Código de barras do transmissor inválido.",
   "sensorFailureNoActiveSensor": "Nenhum sensor ativo.",
   "sensorFailureNoSensorRegistered": "Nenhum sensor registrado.",
-  "sensorFailureUnknown": "Não foi possível concluir a operação com o sensor."
+  "sensorFailureUnknown": "Não foi possível concluir a operação com o sensor.",
+  "registerEmailAlreadyExistsError": "Este e-mail já está cadastrado.",
+  "authNetworkError": "Sem conexão. Verifique sua rede.",
+  "authServerError": "Erro no servidor. Tente novamente.",
+  "monitoringStaleReadingBadge": "Desconectado · leitura de {time}",
+  "@monitoringStaleReadingBadge": {
+    "placeholders": {
+      "time": {}
+    }
+  }
 }

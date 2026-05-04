@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
@@ -18,7 +19,29 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   bool _showSplash = true;
-  bool _showOnboarding = true;
+  bool _showOnboarding = false;
+  bool _onboardingLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOnboardingFlag();
+  }
+
+  Future<void> _loadOnboardingFlag() async {
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('onboarding_done') ?? false;
+    setState(() {
+      _showOnboarding = !done;
+      _onboardingLoaded = true;
+    });
+  }
+
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_done', true);
+    setState(() => _showOnboarding = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,13 +60,17 @@ class _AppState extends State<App> {
 
   Widget _resolveInitialFlow() {
     if (_showSplash) {
-      return SplashPage(onFinish: () => setState(() => _showSplash = false));
+      return SplashPage(
+        onFinish: () => setState(() => _showSplash = false),
+      );
+    }
+
+    if (!_onboardingLoaded) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_showOnboarding) {
-      return OnboardingPage(
-        onDone: () => setState(() => _showOnboarding = false),
-      );
+      return OnboardingPage(onDone: _completeOnboarding);
     }
 
     return const AuthGate();
