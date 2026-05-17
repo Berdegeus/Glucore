@@ -27,11 +27,15 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
+.packages
+.fvm/
 .pub-cache/
 .pub/
 /build/
 /coverage/
+/lib/l10n/generated/
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +47,26 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android/Gradle/NDK local files
+.gradle/
+/android/.gradle/
+/android/.cxx/
+/android/captures/
+/android/local.properties
+/android/key.properties
+/android/app/src/main/jniLibs/**/*.so
+*.jks
+*.keystore
+
+# Node.js / Backend
+node_modules/
+backend/node_modules/
+backend/dist/
+backend/.env
+*.env
+backend/prisma/*.db
+
+# Local tooling / assistant context
+.claude/
+CLAUDE.md
