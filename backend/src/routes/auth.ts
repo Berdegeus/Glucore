@@ -3,17 +3,135 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import { Prisma } from '@prisma/client';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
+const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const DEFAULT_TARGET_MIN = 80;
+const DEFAULT_TARGET_MAX = 180;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function signToken(userId: number): string {
+type RegisterBody = {
+  fullName?: string;
+  email?: string;
+  password?: string;
+  phone?: string;
+  birthDate?: string | null;
+  diabetesType?: string | null;
+  weightKg?: number | string | null;
+  targetRangeMin?: number | string;
+  targetRangeMax?: number | string;
+};
+
+type ProfileBody = {
+  currentPassword?: string;
+  newEmail?: string;
+  newPassword?: string;
+  fullName?: string;
+  phone?: string | null;
+  birthDate?: string | null;
+  diabetesType?: string | null;
+  weightKg?: number | string | null;
+  targetRangeMin?: number | string;
+  targetRangeMax?: number | string;
+};
+
+function signToken(userId: string): string {
   return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '30d' });
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function optionalText(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const text = String(value).trim();
+  return text.length === 0 ? null : text;
+}
+
+function parseOptionalDate(value: unknown): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || String(value).trim() === '') return null;
+  const text = String(value).trim();
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  if (dateOnly) {
+    const year = Number(dateOnly[1]);
+    const month = Number(dateOnly[2]);
+    const day = Number(dateOnly[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
+      return date;
+    }
+    return undefined;
+  }
+  const brDate = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text);
+  if (brDate) {
+    const day = Number(brDate[1]);
+    const month = Number(brDate[2]);
+    const year = Number(brDate[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
+      return date;
+    }
+    return undefined;
+  }
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function parseOptionalNumber(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || String(value).trim() === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function parseOptionalInt(value: unknown): number | undefined {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return undefined;
+  }
+  const number = Number(value);
+  return Number.isInteger(number) ? number : undefined;
+}
+
+function serializeProfile(user: {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  status: string;
+  createdAt: Date;
+  patient: {
+    birthDate: Date | null;
+    diabetesType: string | null;
+    weightKg: unknown;
+    targetRangeMin: number;
+    targetRangeMax: number;
+  } | null;
+}) {
+  const patient = user.patient;
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    phone: user.phone,
+    status: user.status,
+    createdAt: user.createdAt.toISOString(),
+    patient: {
+      birthDate: patient?.birthDate?.toISOString().slice(0, 10) ?? null,
+      diabetesType: patient?.diabetesType ?? null,
+      weightKg: patient?.weightKg == null ? null : Number(patient.weightKg),
+      targetRangeMin: patient?.targetRangeMin ?? DEFAULT_TARGET_MIN,
+      targetRangeMax: patient?.targetRangeMax ?? DEFAULT_TARGET_MAX,
+    },
+  };
 }
 
 async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
@@ -28,29 +146,82 @@ async function sendPasswordResetEmail(email: string, token: string): Promise<voi
   await transporter.sendMail({
     from: user,
     to: email,
-    subject: 'Glucore - Recuperação de senha',
-    text: `Use o código abaixo para redefinir sua senha:\n\n${token}\n\nEste código expira em 6 horas.`,
+    subject: 'Glucore - Recuperacao de senha',
+    text: `Use o codigo abaixo para redefinir sua senha:\n\n${token}\n\nEste codigo expira em 6 horas.`,
   });
 }
 
 router.post(
   '/register',
   asyncHandler(async (req: Request, res: Response) => {
-    const { email, password } = req.body as { email?: string; password?: string };
-    if (!email || !EMAIL_RE.test(email) || !password || password.length < 8) {
+    const body = req.body as RegisterBody;
+    const email = body.email == null ? undefined : normalizeEmail(body.email);
+    const fullName = body.fullName?.trim();
+    const targetRangeMin = parseOptionalInt(body.targetRangeMin) ?? DEFAULT_TARGET_MIN;
+    const targetRangeMax = parseOptionalInt(body.targetRangeMax) ?? DEFAULT_TARGET_MAX;
+    const birthDate = parseOptionalDate(body.birthDate);
+    const weightKg = parseOptionalNumber(body.weightKg);
+
+    if (
+      !email ||
+      !EMAIL_RE.test(email) ||
+      !body.password ||
+      body.password.length < 8 ||
+      !fullName ||
+      fullName.length < 3 ||
+      targetRangeMin >= targetRangeMax ||
+      (body.birthDate !== undefined && birthDate === undefined) ||
+      (body.weightKg !== undefined && weightKg === undefined) ||
+      (typeof weightKg === 'number' && weightKg <= 0)
+    ) {
       res.status(400).json({ error: 'Invalid input' });
       return;
     }
-    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       res.status(409).json({ error: 'Email already registered' });
       return;
     }
-    const passwordHash = await bcrypt.hash(password, 12);
+
+    const passwordHash = await bcrypt.hash(body.password, 12);
+    const diabetesType = optionalText(body.diabetesType);
+    const phone = optionalText(body.phone);
+
     const user = await prisma.user.create({
-      data: { email: email.toLowerCase(), passwordHash },
+      data: {
+        email,
+        fullName,
+        phone,
+        role: 'PATIENT',
+        authCredential: { create: { passwordHash } },
+        patient: {
+          create: {
+            birthDate,
+            diabetesType,
+            weightKg,
+            targetRangeMin,
+            targetRangeMax,
+            alertThresholdConfig: {
+              create: {
+                lowGlucoseMgDl: targetRangeMin,
+                highGlucoseMgDl: targetRangeMax,
+              },
+            },
+          },
+        },
+      },
     });
-    console.log(`[auth] register success email=${email.toLowerCase()}`);
+
+    await prisma.authSession.create({
+      data: {
+        userId: user.id,
+        expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
+        userAgent: req.get('user-agent'),
+      },
+    });
+
+    console.log(`[auth] register success email=${email}`);
     res.status(201).json({ token: signToken(user.id) });
   }),
 );
@@ -63,12 +234,31 @@ router.post(
       res.status(400).json({ error: 'Invalid input' });
       return;
     }
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      include: { authCredential: true },
+    });
+    if (!user?.authCredential || !(await bcrypt.compare(password, user.authCredential.passwordHash))) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
-    console.log(`[auth] login success email=${email.toLowerCase()}`);
+
+    await prisma.$transaction([
+      prisma.authCredential.update({
+        where: { userId: user.id },
+        data: { lastLoginAt: new Date() },
+      }),
+      prisma.authSession.create({
+        data: {
+          userId: user.id,
+          expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
+          userAgent: req.get('user-agent'),
+        },
+      }),
+    ]);
+
+    console.log(`[auth] login success email=${normalizedEmail}`);
     res.json({ token: signToken(user.id) });
   }),
 );
@@ -76,6 +266,22 @@ router.post(
 router.get('/status', verifyJwt, (req: AuthRequest, res: Response): void => {
   res.json({ loggedIn: true, userId: req.userId });
 });
+
+router.get(
+  '/profile',
+  verifyJwt,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId! },
+      include: { patient: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json(serializeProfile(user));
+  }),
+);
 
 router.post(
   '/forgot-password',
@@ -85,21 +291,24 @@ router.post(
       res.status(400).json({ error: 'Invalid email' });
       return;
     }
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    const normalizedEmail = normalizeEmail(email);
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     // Always return 200 to not reveal whether email is registered
     if (!user) {
       res.json({ message: 'If the email is registered, instructions were sent.' });
       return;
     }
-    await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+    await prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id, usedAt: null },
+    });
     const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000);
     await prisma.passwordResetToken.create({ data: { token, userId: user.id, expiresAt } });
     try {
-      await sendPasswordResetEmail(email.toLowerCase(), token);
-      console.log(`[auth] forgot-password email sent to ${email.toLowerCase()}`);
+      await sendPasswordResetEmail(normalizedEmail, token);
+      console.log(`[auth] forgot-password email sent to ${normalizedEmail}`);
     } catch {
-      console.log(`[auth] forgot-password SMTP not configured — token=${token} for ${email.toLowerCase()}`);
+      console.log(`[auth] forgot-password SMTP not configured - token=${token} for ${normalizedEmail}`);
     }
     res.json({ message: 'If the email is registered, instructions were sent.' });
   }),
@@ -114,13 +323,22 @@ router.post(
       return;
     }
     const record = await prisma.passwordResetToken.findUnique({ where: { token } });
-    if (!record || record.expiresAt < new Date()) {
+    if (!record || record.usedAt || record.expiresAt < new Date()) {
       res.status(400).json({ error: 'Invalid or expired token' });
       return;
     }
     const passwordHash = await bcrypt.hash(password, 12);
-    await prisma.user.update({ where: { id: record.userId }, data: { passwordHash } });
-    await prisma.passwordResetToken.delete({ where: { token } });
+    await prisma.$transaction([
+      prisma.authCredential.upsert({
+        where: { userId: record.userId },
+        update: { passwordHash },
+        create: { userId: record.userId, passwordHash },
+      }),
+      prisma.passwordResetToken.update({
+        where: { token },
+        data: { usedAt: new Date() },
+      }),
+    ]);
     console.log(`[auth] password reset success userId=${record.userId}`);
     res.json({ message: 'Password reset successful.' });
   }),
@@ -130,47 +348,174 @@ router.put(
   '/profile',
   verifyJwt,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { currentPassword, newEmail, newPassword } = req.body as {
-      currentPassword?: string;
-      newEmail?: string;
-      newPassword?: string;
-    };
-    if (!currentPassword) {
-      res.status(400).json({ error: 'Current password required' });
+    const body = req.body as ProfileBody;
+    const updatesEmail = body.newEmail !== undefined && body.newEmail.trim().length > 0;
+    const updatesPassword = body.newPassword !== undefined && body.newPassword.length > 0;
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId! },
+      include: { authCredential: true, patient: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
       return;
     }
-    const user = await prisma.user.findUnique({ where: { id: req.userId! } });
-    if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
-      res.status(401).json({ error: 'Invalid password' });
-      return;
+
+    if (updatesEmail || updatesPassword) {
+      if (!body.currentPassword) {
+        res.status(400).json({ error: 'Current password required' });
+        return;
+      }
+      if (
+        !user.authCredential ||
+        !(await bcrypt.compare(body.currentPassword, user.authCredential.passwordHash))
+      ) {
+        res.status(401).json({ error: 'Invalid password' });
+        return;
+      }
     }
-    if (newEmail) {
+
+    const userData: { email?: string; fullName?: string; phone?: string | null } = {};
+    const patientData: {
+      birthDate?: Date | null;
+      diabetesType?: string | null;
+      weightKg?: number | null;
+      targetRangeMin?: number;
+      targetRangeMax?: number;
+    } = {};
+
+    if (body.fullName !== undefined) {
+      const fullName = body.fullName.trim();
+      if (fullName.length < 3) {
+        res.status(400).json({ error: 'Invalid input' });
+        return;
+      }
+      userData.fullName = fullName;
+    }
+
+    const phone = optionalText(body.phone);
+    if (phone !== undefined) userData.phone = phone;
+
+    if (updatesEmail) {
+      const newEmail = normalizeEmail(body.newEmail!);
       if (!EMAIL_RE.test(newEmail)) {
         res.status(400).json({ error: 'Invalid email' });
         return;
       }
       const taken = await prisma.user.findFirst({
-        where: { email: newEmail.toLowerCase(), NOT: { id: req.userId! } },
+        where: { email: newEmail, NOT: { id: req.userId! } },
       });
       if (taken) {
         res.status(409).json({ error: 'Email already registered' });
         return;
       }
-      await prisma.user.update({
-        where: { id: req.userId! },
-        data: { email: newEmail.toLowerCase() },
-      });
-      console.log(`[auth] email updated userId=${req.userId}`);
+      userData.email = newEmail;
     }
-    if (newPassword) {
-      if (newPassword.length < 8) {
+
+    if (body.birthDate !== undefined) {
+      const birthDate = parseOptionalDate(body.birthDate);
+      if (birthDate === undefined) {
+        res.status(400).json({ error: 'Invalid input' });
+        return;
+      }
+      patientData.birthDate = birthDate;
+    }
+
+    const diabetesType = optionalText(body.diabetesType);
+    if (diabetesType !== undefined) patientData.diabetesType = diabetesType;
+
+    if (body.weightKg !== undefined) {
+      const weightKg = parseOptionalNumber(body.weightKg);
+      if (weightKg === undefined || (typeof weightKg === 'number' && weightKg <= 0)) {
+        res.status(400).json({ error: 'Invalid input' });
+        return;
+      }
+      patientData.weightKg = weightKg;
+    }
+
+    if (body.targetRangeMin !== undefined) {
+      const targetRangeMin = parseOptionalInt(body.targetRangeMin);
+      if (targetRangeMin === undefined) {
+        res.status(400).json({ error: 'Invalid input' });
+        return;
+      }
+      patientData.targetRangeMin = targetRangeMin;
+    }
+
+    if (body.targetRangeMax !== undefined) {
+      const targetRangeMax = parseOptionalInt(body.targetRangeMax);
+      if (targetRangeMax === undefined) {
+        res.status(400).json({ error: 'Invalid input' });
+        return;
+      }
+      patientData.targetRangeMax = targetRangeMax;
+    }
+
+    const nextTargetRangeMin =
+      patientData.targetRangeMin ?? user.patient?.targetRangeMin ?? DEFAULT_TARGET_MIN;
+    const nextTargetRangeMax =
+      patientData.targetRangeMax ?? user.patient?.targetRangeMax ?? DEFAULT_TARGET_MAX;
+    if (nextTargetRangeMin >= nextTargetRangeMax) {
+      res.status(400).json({ error: 'Invalid input' });
+      return;
+    }
+
+    const operations: Prisma.PrismaPromise<unknown>[] = [];
+    if (Object.keys(userData).length > 0) {
+      operations.push(prisma.user.update({ where: { id: req.userId! }, data: userData }));
+    }
+
+    if (Object.keys(patientData).length > 0) {
+      operations.push(
+        prisma.patient.upsert({
+          where: { userId: req.userId! },
+          update: patientData,
+          create: {
+            userId: req.userId!,
+            targetRangeMin: nextTargetRangeMin,
+            targetRangeMax: nextTargetRangeMax,
+            ...patientData,
+          },
+        }),
+      );
+    }
+
+    if (patientData.targetRangeMin !== undefined || patientData.targetRangeMax !== undefined) {
+      operations.push(
+        prisma.alertThresholdConfig.upsert({
+          where: { patientId: req.userId! },
+          update: {
+            lowGlucoseMgDl: nextTargetRangeMin,
+            highGlucoseMgDl: nextTargetRangeMax,
+          },
+          create: {
+            patientId: req.userId!,
+            lowGlucoseMgDl: nextTargetRangeMin,
+            highGlucoseMgDl: nextTargetRangeMax,
+          },
+        }),
+      );
+    }
+
+    if (updatesPassword) {
+      if (!body.newPassword || body.newPassword.length < 8) {
         res.status(400).json({ error: 'Password too short' });
         return;
       }
-      const passwordHash = await bcrypt.hash(newPassword, 12);
-      await prisma.user.update({ where: { id: req.userId! }, data: { passwordHash } });
-      console.log(`[auth] password updated userId=${req.userId}`);
+      const passwordHash = await bcrypt.hash(body.newPassword, 12);
+      operations.push(
+        prisma.authCredential.upsert({
+          where: { userId: req.userId! },
+          update: { passwordHash },
+          create: { userId: req.userId!, passwordHash },
+        }),
+      );
     }
+
+    if (operations.length > 0) {
+      await prisma.$transaction(operations);
+    }
+
     res.json({ message: 'Profile updated.' });
   }),
 );

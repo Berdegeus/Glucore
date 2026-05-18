@@ -2,10 +2,23 @@ import '../../../../core/usecase/usecase.dart';
 import '../repositories/auth_repository.dart';
 
 class RegisterParams {
-  const RegisterParams({required this.email, required this.password});
+  const RegisterParams({
+    required this.fullName,
+    required this.email,
+    required this.password,
+    this.birthDate,
+    this.weightKg,
+    this.targetRangeMin,
+    this.targetRangeMax,
+  });
 
+  final String fullName;
   final String email;
   final String password;
+  final DateTime? birthDate;
+  final double? weightKg;
+  final int? targetRangeMin;
+  final int? targetRangeMax;
 }
 
 class RegisterUseCase implements UseCase<bool, RegisterParams> {
@@ -15,6 +28,14 @@ class RegisterUseCase implements UseCase<bool, RegisterParams> {
 
   @override
   Future<bool> call(RegisterParams params) {
-    return repository.register(email: params.email, password: params.password);
+    return repository.register(
+      fullName: params.fullName,
+      email: params.email,
+      password: params.password,
+      birthDate: params.birthDate,
+      weightKg: params.weightKg,
+      targetRangeMin: params.targetRangeMin,
+      targetRangeMax: params.targetRangeMax,
+    );
   }
 }

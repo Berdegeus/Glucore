@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
+import { ensurePatient } from '../lib/patient';
 
 const router = Router();
 
@@ -10,17 +11,18 @@ router.use(verifyJwt);
 router.get(
   '/',
   asyncHandler(async (req: AuthRequest, res: Response) => {
+    const patientId = await ensurePatient(req.userId!);
     const rows = await prisma.glucoseReading.findMany({
-      where: { userId: req.userId! },
-      orderBy: { timestampMs: 'desc' },
+      where: { patientId },
+      orderBy: { recordedAt: 'desc' },
       take: 288,
     });
     res.json(
       rows.map(r => ({
-        value: r.value,
-        timestampMs: Number(r.timestampMs),
+        value: r.valueMgDl,
+        timestampMs: r.recordedAt.getTime(),
         trend: r.trend,
-        rate: r.rate,
+        rate: r.trendRate,
         alarmCode: r.alarmCode,
       })),
     );
@@ -43,23 +45,30 @@ router.post(
       res.status(400).json({ error: 'readings must be array' });
       return;
     }
+    const patientId = await ensurePatient(req.userId!);
     await prisma.$transaction(
-      readings.slice(0, 288).map(r =>
-        prisma.glucoseReading.upsert({
+      readings.slice(0, 288).map(r => {
+        const recordedAt = new Date(r.timestampMs);
+        return prisma.glucoseReading.upsert({
           where: {
-            userId_timestampMs: { userId: req.userId!, timestampMs: BigInt(r.timestampMs) },
+            patientId_recordedAt: { patientId, recordedAt },
           },
-          update: { value: r.value, trend: r.trend, rate: r.rate, alarmCode: r.alarmCode },
-          create: {
-            userId: req.userId!,
-            value: r.value,
-            timestampMs: BigInt(r.timestampMs),
+          update: {
+            valueMgDl: Math.round(r.value),
             trend: r.trend,
-            rate: r.rate ?? 0,
+            trendRate: r.rate,
             alarmCode: r.alarmCode,
           },
-        }),
-      ),
+          create: {
+            patientId,
+            valueMgDl: Math.round(r.value),
+            recordedAt,
+            trend: r.trend,
+            trendRate: r.rate ?? 0,
+            alarmCode: r.alarmCode,
+          },
+        });
+      }),
     );
     res.status(204).send();
   }),
@@ -68,7 +77,8 @@ router.post(
 router.delete(
   '/',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    await prisma.glucoseReading.deleteMany({ where: { userId: req.userId! } });
+    const patientId = await ensurePatient(req.userId!);
+    await prisma.glucoseReading.deleteMany({ where: { patientId } });
     res.status(204).send();
   }),
 );

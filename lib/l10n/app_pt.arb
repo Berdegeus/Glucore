@@ -27,7 +27,7 @@
   "genericEmailLabel": "E-mail",
   "genericPasswordLabel": "Senha",
   "genericInvalidEmailError": "Informe um e-mail válido",
-  "genericPasswordMinLengthError": "A senha deve ter ao menos 4 caracteres",
+  "genericPasswordMinLengthError": "A senha deve ter ao menos 8 caracteres",
   "genericNumericValueError": "Informe um valor numérico",
   "genericRequiredFieldError": "Campo obrigatório",
   "genericResetButton": "Resetar",
