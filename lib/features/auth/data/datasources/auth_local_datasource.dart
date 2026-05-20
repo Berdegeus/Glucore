@@ -1,10 +1,19 @@
 import 'package:dio/dio.dart';
+import 'package:glucore/core/utils/date_input.dart';
 
 import '../../../../core/api/auth_token_store.dart';
 
 abstract class AuthLocalDataSource {
   Future<bool> login({required String email, required String password});
-  Future<bool> register({required String email, required String password});
+  Future<bool> register({
+    required String fullName,
+    required String email,
+    required String password,
+    DateTime? birthDate,
+    double? weightKg,
+    int? targetRangeMin,
+    int? targetRangeMax,
+  });
   Future<void> logout();
   Future<bool> isLoggedIn();
 }
@@ -16,11 +25,27 @@ class RemoteAuthDataSource implements AuthLocalDataSource {
   final AuthTokenStore _tokenStore;
 
   @override
-  Future<bool> register({required String email, required String password}) async {
+  Future<bool> register({
+    required String fullName,
+    required String email,
+    required String password,
+    DateTime? birthDate,
+    double? weightKg,
+    int? targetRangeMin,
+    int? targetRangeMax,
+  }) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/auth/register',
-        data: {'email': email, 'password': password},
+        data: {
+          'fullName': fullName,
+          'email': email,
+          'password': password,
+          'birthDate': birthDate == null ? null : formatIsoDateOnly(birthDate),
+          'weightKg': weightKg,
+          'targetRangeMin': targetRangeMin,
+          'targetRangeMax': targetRangeMax,
+        },
       );
       await _tokenStore.write(response.data!['token'] as String);
       return true;

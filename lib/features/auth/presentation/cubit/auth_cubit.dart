@@ -65,10 +65,28 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> register({required String email, required String password}) async {
+  Future<void> register({
+    required String fullName,
+    required String email,
+    required String password,
+    DateTime? birthDate,
+    double? weightKg,
+    int? targetRangeMin,
+    int? targetRangeMax,
+  }) async {
     emit(state.copyWith(status: AuthStatus.loading, error: null));
     try {
-      final ok = await registerUseCase(RegisterParams(email: email, password: password));
+      final ok = await registerUseCase(
+        RegisterParams(
+          fullName: fullName,
+          email: email,
+          password: password,
+          birthDate: birthDate,
+          weightKg: weightKg,
+          targetRangeMin: targetRangeMin,
+          targetRangeMax: targetRangeMax,
+        ),
+      );
       if (ok) {
         log('register success [$email]', name: 'AuthCubit');
         emit(state.copyWith(status: AuthStatus.authenticated));

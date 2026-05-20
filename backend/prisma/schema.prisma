@@ -7,69 +7,303 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum UserRole {
+  PATIENT
+  HEALTH_PROFESSIONAL
+  ADMINISTRATOR
+}
+
+enum SensorSessionState {
+  IDLE
+  CONNECTING
+  CONNECTED
+  MONITORING
+  DISCONNECTED
+  ERROR
+  READING_UNAVAILABLE
+  SENSOR_EXPIRED
+}
+
+enum SensorBrand {
+  SIBIONICS_BLE
+  FREESTYLE_LIBRE
+  OTHER_COMPATIBLE
+}
+
+enum AlertType {
+  HYPO_RISK
+  HYPER_RISK
+  FAST_DROP
+  FAST_RISE
+  SENSOR_RECONNECTED
+  SYNC_FAILURE
+}
+
 model User {
-  id                  Int                  @id @default(autoincrement())
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName            String
   email               String               @unique
-  passwordHash        String
+  phone               String?
+  status              UserStatus           @default(ACTIVE)
+  role                UserRole             @default(PATIENT)
   createdAt           DateTime             @default(now())
-  readings            GlucoseReading[]
-  alerts              Alert[]
-  carbs               CarbEntry[]
-  insulin             InsulinEntry[]
-  settings            AlertSettings?
+  updatedAt           DateTime             @updatedAt
+  authCredential      AuthCredential?
+  patient             Patient?
+  healthProfessional  HealthProfessional?
+  administrator       Administrator?
   passwordResetTokens PasswordResetToken[]
+  authSessions        AuthSession[]
+}
+
+model Patient {
+  userId                 String                  @id @db.Uuid
+  birthDate              DateTime?               @db.Date
+  diabetesType           String?
+  weightKg               Decimal?                @db.Decimal(6, 2)
+  targetRangeMin         Int                     @default(80)
+  targetRangeMax         Int                     @default(180)
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sensorBindings         SensorBinding[]
+  readings               GlucoseReading[]
+  alertEvents            AlertEvent[]
+  carbs                  CarbEvent[]
+  insulin                InsulinEvent[]
+  alertThresholdConfig   AlertThresholdConfig?
+  clinicalReports        ClinicalReport[]
+  dashboardAccessGrants  DashboardAccessGrant[]
+}
+
+model HealthProfessional {
+  userId                String                 @id @db.Uuid
+  licenseNumber         String
+  specialty             String
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dashboardAccessGrants DashboardAccessGrant[]
+}
+
+model Administrator {
+  userId       String @id @db.Uuid
+  employeeCode String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuthCredential {
+  userId       String    @id @db.Uuid
+  passwordHash String
+  mfaSecret    String?
+  lastLoginAt  DateTime?
+  isMfaEnabled Boolean   @default(false)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PasswordResetToken {
-  id        Int      @id @default(autoincrement())
-  token     String   @unique
-  userId    Int
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token     String    @unique
+  userId    String    @db.Uuid
   expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuthSession {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid
+  issuedAt  DateTime @default(now())
+  expiresAt DateTime
+  userAgent String?
+  isRevoked Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRevoked])
+}
+
+model SensorDevice {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serialNumber    String          @unique
+  sensorBrand     SensorBrand
+  model           String?
+  firmwareVersion String?
+  hardwareVersion String?
+  isActive        Boolean         @default(true)
+  bindings        SensorBinding[]
+  sessions        SensorSession[]
+}
+
+model SensorBinding {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId      String       @db.Uuid
+  sensorDeviceId String       @db.Uuid
+  boundAt        DateTime     @default(now())
+  unboundAt      DateTime?
+  isCurrent      Boolean      @default(true)
+  patient        Patient      @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  sensorDevice   SensorDevice @relation(fields: [sensorDeviceId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, isCurrent])
+  @@index([sensorDeviceId])
+}
+
+model SensorSession {
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sensorDeviceId String              @db.Uuid
+  startedAt      DateTime            @default(now())
+  endedAt        DateTime?
+  accessCode     String?
+  state          SensorSessionState  @default(IDLE)
+  lastSeenAt     DateTime?
+  sensorDevice   SensorDevice        @relation(fields: [sensorDeviceId], references: [id], onDelete: Cascade)
+  readings       GlucoseReading[]
+  statusEvents   SensorStatusEvent[]
+
+  @@index([sensorDeviceId, startedAt])
+}
+
+model SensorStatusEvent {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sensorSessionId String        @db.Uuid
+  occurredAt      DateTime      @default(now())
+  statusCode      String
+  message         String
+  batteryPct      Int?
+  sensorSession   SensorSession @relation(fields: [sensorSessionId], references: [id], onDelete: Cascade)
+
+  @@index([sensorSessionId, occurredAt])
 }
 
 model GlucoseReading {
-  id          Int    @id @default(autoincrement())
-  userId      Int
-  value       Float
-  timestampMs BigInt
-  trend       String
-  rate        Float  @default(0)
-  alarmCode   Int?
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId       String              @db.Uuid
+  sensorSessionId String?             @db.Uuid
+  recordedAt      DateTime
+  valueMgDl       Int
+  trend           String              @default("stable")
+  trendRate       Float               @default(0)
+  source          String              @default("sensor")
+  isManual        Boolean             @default(false)
+  alarmCode       Int?
+  patient         Patient             @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  sensorSession   SensorSession?      @relation(fields: [sensorSessionId], references: [id])
+  predictions     GlucosePrediction[]
 
-  @@unique([userId, timestampMs])
+  @@unique([patientId, recordedAt])
+  @@index([sensorSessionId])
 }
 
-model Alert {
-  id          Int    @id @default(autoincrement())
-  userId      Int
-  type        String
-  timestampMs BigInt
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+model AlertThresholdConfig {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId           String              @unique @db.Uuid
+  lowGlucoseMgDl      Int                 @default(80)
+  highGlucoseMgDl     Int                 @default(180)
+  predictionWindowMin Int                 @default(30)
+  updatedAt           DateTime            @updatedAt
+  patient             Patient             @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  predictions         GlucosePrediction[]
 }
 
-model CarbEntry {
-  id          Int    @id @default(autoincrement())
-  userId      Int
-  grams       Int
+model GlucosePrediction {
+  id                     String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  glucoseReadingId       String               @db.Uuid
+  alertThresholdConfigId String               @db.Uuid
+  predictedAt            DateTime             @default(now())
+  horizonMinutes         Int
+  predictedMgDl          Int
+  confidence             Decimal              @db.Decimal(5, 4)
+  glucoseReading         GlucoseReading       @relation(fields: [glucoseReadingId], references: [id], onDelete: Cascade)
+  alertThresholdConfig   AlertThresholdConfig @relation(fields: [alertThresholdConfigId], references: [id], onDelete: Cascade)
+  alerts                 AlertEvent[]
+
+  @@index([glucoseReadingId])
+  @@index([alertThresholdConfigId])
+}
+
+model AlertEvent {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId           String             @db.Uuid
+  glucosePredictionId String?            @db.Uuid
+  triggeredAt         DateTime           @default(now())
+  resolvedAt          DateTime?
+  alertType           AlertType
+  message             String             @default("")
+  acknowledged        Boolean            @default(false)
+  patient             Patient            @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  glucosePrediction   GlucosePrediction? @relation(fields: [glucosePredictionId], references: [id])
+
+  @@index([patientId, triggeredAt])
+  @@index([glucosePredictionId])
+}
+
+model CarbEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId   String   @db.Uuid
+  eventAt     DateTime
+  carbsGrams  Decimal  @db.Decimal(10, 2)
   description String
-  timeMs      BigInt
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient     Patient  @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+
+  @@index([patientId, eventAt])
 }
 
-model InsulinEntry {
-  id     Int    @id @default(autoincrement())
-  userId Int
-  units  Float
-  type   String
-  timeMs BigInt
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+model InsulinEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId   String   @db.Uuid
+  eventAt     DateTime
+  insulinType String
+  doseUnits   Decimal  @db.Decimal(10, 2)
+  description String?
+  patient     Patient  @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+
+  @@index([patientId, eventAt])
 }
 
-model AlertSettings {
-  userId        Int  @id
-  lowThreshold  Int  @default(80)
-  highThreshold Int  @default(180)
-  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model ClinicalReport {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId             String                 @db.Uuid
+  generatedAt           DateTime               @default(now())
+  fromDate              DateTime
+  toDate                DateTime
+  periodLabel           String
+  patient               Patient                @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  metricsSnapshots      MetricsSnapshot[]
+  dashboardAccessGrants DashboardAccessGrant[]
+
+  @@index([patientId, generatedAt])
+}
+
+model MetricsSnapshot {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clinicalReportId String         @db.Uuid
+  periodStart      DateTime
+  periodEnd        DateTime
+  avgGlucose       Decimal        @db.Decimal(8, 2)
+  timeInRangePct   Decimal        @db.Decimal(5, 2)
+  hypoPercent      Decimal        @db.Decimal(5, 2)
+  hyperPercent     Decimal        @db.Decimal(5, 2)
+  gmi              Decimal        @db.Decimal(5, 2)
+  clinicalReport   ClinicalReport @relation(fields: [clinicalReportId], references: [id], onDelete: Cascade)
+
+  @@index([clinicalReportId])
+}
+
+model DashboardAccessGrant {
+  id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId            String             @db.Uuid
+  healthProfessionalId String             @db.Uuid
+  clinicalReportId     String?            @db.Uuid
+  grantedAt            DateTime           @default(now())
+  expiresAt            DateTime?
+  permissionLevel      String
+  patient              Patient            @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  healthProfessional   HealthProfessional @relation(fields: [healthProfessionalId], references: [userId], onDelete: Cascade)
+  clinicalReport       ClinicalReport?    @relation(fields: [clinicalReportId], references: [id])
+
+  @@index([patientId])
+  @@index([healthProfessionalId])
+  @@index([clinicalReportId])
 }

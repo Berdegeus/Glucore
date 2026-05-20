@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
+import { ensurePatient } from '../lib/patient';
 
 const router = Router();
 
@@ -10,13 +11,18 @@ router.use(verifyJwt);
 router.get(
   '/',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const rows = await prisma.carbEntry.findMany({
-      where: { userId: req.userId! },
-      orderBy: { timeMs: 'desc' },
+    const patientId = await ensurePatient(req.userId!);
+    const rows = await prisma.carbEvent.findMany({
+      where: { patientId },
+      orderBy: { eventAt: 'desc' },
       take: 100,
     });
     res.json(
-      rows.map(c => ({ grams: c.grams, description: c.description, timeMs: Number(c.timeMs) })),
+      rows.map(c => ({
+        grams: Number(c.carbsGrams),
+        description: c.description,
+        timeMs: c.eventAt.getTime(),
+      })),
     );
   }),
 );
@@ -31,13 +37,14 @@ router.post(
       res.status(400).json({ error: 'carbs must be array' });
       return;
     }
-    await prisma.carbEntry.deleteMany({ where: { userId: req.userId! } });
-    await prisma.carbEntry.createMany({
+    const patientId = await ensurePatient(req.userId!);
+    await prisma.carbEvent.deleteMany({ where: { patientId } });
+    await prisma.carbEvent.createMany({
       data: carbs.slice(0, 100).map(c => ({
-        userId: req.userId!,
-        grams: c.grams,
+        patientId,
+        carbsGrams: c.grams,
         description: c.description,
-        timeMs: BigInt(c.timeMs),
+        eventAt: new Date(c.timeMs),
       })),
     });
     res.status(204).send();

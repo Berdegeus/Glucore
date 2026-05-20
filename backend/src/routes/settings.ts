@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
+import { ensurePatient } from '../lib/patient';
 
 const router = Router();
 
@@ -10,8 +11,16 @@ router.use(verifyJwt);
 router.get(
   '/alerts',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const settings = await prisma.alertSettings.findUnique({ where: { userId: req.userId! } });
-    res.json(settings ?? { lowThreshold: 80, highThreshold: 180 });
+    const patientId = await ensurePatient(req.userId!);
+    const settings = await prisma.alertThresholdConfig.findUnique({ where: { patientId } });
+    res.json(
+      settings
+        ? {
+            lowThreshold: settings.lowGlucoseMgDl,
+            highThreshold: settings.highGlucoseMgDl,
+          }
+        : { lowThreshold: 80, highThreshold: 180 },
+    );
   }),
 );
 
@@ -22,10 +31,18 @@ router.put(
       lowThreshold: number;
       highThreshold: number;
     };
-    await prisma.alertSettings.upsert({
-      where: { userId: req.userId! },
-      update: { lowThreshold, highThreshold },
-      create: { userId: req.userId!, lowThreshold, highThreshold },
+    const patientId = await ensurePatient(req.userId!);
+    await prisma.alertThresholdConfig.upsert({
+      where: { patientId },
+      update: {
+        lowGlucoseMgDl: lowThreshold,
+        highGlucoseMgDl: highThreshold,
+      },
+      create: {
+        patientId,
+        lowGlucoseMgDl: lowThreshold,
+        highGlucoseMgDl: highThreshold,
+      },
     });
     res.status(204).send();
   }),

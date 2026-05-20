@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
                     decoration:
                         InputDecoration(labelText: l10n.genericPasswordLabel),
                     validator: (value) {
-                      if (value == null || value.trim().length < 4) {
+                      if (value == null || value.trim().length < 8) {
                         return l10n.genericPasswordMinLengthError;
                       }
                       return null;

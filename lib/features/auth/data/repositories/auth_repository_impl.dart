@@ -12,8 +12,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<bool> register({required String email, required String password}) {
-    return localDataSource.register(email: email, password: password);
+  Future<bool> register({
+    required String fullName,
+    required String email,
+    required String password,
+    DateTime? birthDate,
+    double? weightKg,
+    int? targetRangeMin,
+    int? targetRangeMax,
+  }) {
+    return localDataSource.register(
+      fullName: fullName,
+      email: email,
+      password: password,
+      birthDate: birthDate,
+      weightKg: weightKg,
+      targetRangeMin: targetRangeMin,
+      targetRangeMax: targetRangeMax,
+    );
   }
 
   @override
