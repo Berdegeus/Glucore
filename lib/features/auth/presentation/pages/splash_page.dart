@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:glucore/l10n/l10n.dart';
+
+import '../../../../core/theme/app_theme.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key, required this.onFinish});
@@ -18,7 +19,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 1300), widget.onFinish);
+    _timer = Timer(const Duration(milliseconds: 1600), widget.onFinish);
   }
 
   @override
@@ -29,30 +30,51 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return Scaffold(
+      backgroundColor: AppTheme.brandBlue,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 82,
-              height: 82,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(22),
               ),
               child: const Icon(
-                Icons.monitor_heart,
+                Icons.monitor_heart_rounded,
                 color: Colors.white,
-                size: 42,
+                size: 44,
               ),
             ),
             const SizedBox(height: 20),
-            Text(l10n.appName, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(l10n.splashSubtitle),
+            const Text(
+              'glucore',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Monitoramento contínuo de glicose',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'v1.0.0',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.45),
+                fontSize: 11,
+              ),
+            ),
           ],
         ),
       ),
