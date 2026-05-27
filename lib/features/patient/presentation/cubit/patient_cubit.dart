@@ -47,6 +47,40 @@ class PatientCubit extends Cubit<PatientState> {
     await repository.saveInsulin(updated);
   }
 
+  Future<void> editCarbEntry(CarbEntry entry) async {
+    final updated = state.carbs
+        .map((e) => e.time.millisecondsSinceEpoch == entry.time.millisecondsSinceEpoch ? entry : e)
+        .toList()
+      ..sort((a, b) => b.time.compareTo(a.time));
+    emit(state.copyWith(carbs: updated));
+    await repository.saveCarbs(updated);
+  }
+
+  Future<void> deleteCarbEntry(CarbEntry entry) async {
+    final updated = state.carbs
+        .where((e) => e.time.millisecondsSinceEpoch != entry.time.millisecondsSinceEpoch)
+        .toList();
+    emit(state.copyWith(carbs: updated));
+    await repository.saveCarbs(updated);
+  }
+
+  Future<void> editInsulinEntry(InsulinEntry entry) async {
+    final updated = state.insulin
+        .map((e) => e.time.millisecondsSinceEpoch == entry.time.millisecondsSinceEpoch ? entry : e)
+        .toList()
+      ..sort((a, b) => b.time.compareTo(a.time));
+    emit(state.copyWith(insulin: updated));
+    await repository.saveInsulin(updated);
+  }
+
+  Future<void> deleteInsulinEntry(InsulinEntry entry) async {
+    final updated = state.insulin
+        .where((e) => e.time.millisecondsSinceEpoch != entry.time.millisecondsSinceEpoch)
+        .toList();
+    emit(state.copyWith(insulin: updated));
+    await repository.saveInsulin(updated);
+  }
+
   Future<void> clearReadings() async {
     emit(state.copyWith(readings: const []));
     if (!state.sensorState.isMock) {

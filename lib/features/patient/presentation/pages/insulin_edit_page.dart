@@ -7,23 +7,31 @@ import 'package:intl/intl.dart';
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
 
-class InsulinEntryPage extends StatefulWidget {
-  const InsulinEntryPage({super.key});
+class InsulinEditPage extends StatefulWidget {
+  const InsulinEditPage({super.key, required this.entry});
+
+  final InsulinEntry entry;
 
   @override
-  State<InsulinEntryPage> createState() => _InsulinEntryPageState();
+  State<InsulinEditPage> createState() => _InsulinEditPageState();
 }
 
-class _InsulinEntryPageState extends State<InsulinEntryPage> {
+class _InsulinEditPageState extends State<InsulinEditPage> {
   final _formKey = GlobalKey<FormState>();
-  final _unitsController = TextEditingController();
-  InsulinType _selectedType = InsulinType.bolus;
+  late final TextEditingController _unitsController;
+  late InsulinType _selectedType;
   late DateTime _selectedTime;
 
   @override
   void initState() {
     super.initState();
-    _selectedTime = DateTime.now();
+    _unitsController = TextEditingController(
+      text: widget.entry.units.toStringAsFixed(
+        widget.entry.units % 1 == 0 ? 0 : 1,
+      ),
+    );
+    _selectedType = widget.entry.type;
+    _selectedTime = widget.entry.time;
   }
 
   @override
@@ -50,12 +58,61 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
     });
   }
 
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    await context.read<PatientCubit>().editInsulinEntry(
+      InsulinEntry(
+        units: double.parse(_unitsController.text),
+        type: _selectedType,
+        time: _selectedTime,
+      ),
+    );
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(context.l10n.insulinEditSavedSuccessMessage)),
+    );
+    navigator.pop();
+  }
+
+  Future<void> _delete() async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.entryDeleteConfirmTitle),
+        content: Text(l10n.entryDeleteConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.genericCancelButton),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.entryDeleteConfirmButton),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    await context.read<PatientCubit>().deleteInsulinEntry(widget.entry);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(context.l10n.insulinEditDeletedSuccessMessage)),
+    );
+    navigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.insulinEntryTitle)),
+      appBar: AppBar(title: Text(l10n.insulinEditTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -106,30 +163,16 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
                   child: Text(l10n.entryTimePicker),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 24),
               FilledButton(
-                onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  final navigator = Navigator.of(context);
-                  if (!_formKey.currentState!.validate()) {
-                    return;
-                  }
-                  await context.read<PatientCubit>().addInsulinEntry(
-                    InsulinEntry(
-                      units: double.parse(_unitsController.text),
-                      type: _selectedType,
-                      time: _selectedTime,
-                    ),
-                  );
-                  if (!mounted) {
-                    return;
-                  }
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(l10n.insulinEntrySavedSuccessMessage)),
-                  );
-                  navigator.pop();
-                },
+                onPressed: _save,
                 child: Text(l10n.insulinEntrySaveButton),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: _delete,
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                child: Text(l10n.carbEditDeleteButton),
               ),
             ],
           ),

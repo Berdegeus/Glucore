@@ -6,23 +6,27 @@ import 'package:intl/intl.dart';
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
 
-class CarbEntryPage extends StatefulWidget {
-  const CarbEntryPage({super.key});
+class CarbEditPage extends StatefulWidget {
+  const CarbEditPage({super.key, required this.entry});
+
+  final CarbEntry entry;
 
   @override
-  State<CarbEntryPage> createState() => _CarbEntryPageState();
+  State<CarbEditPage> createState() => _CarbEditPageState();
 }
 
-class _CarbEntryPageState extends State<CarbEntryPage> {
+class _CarbEditPageState extends State<CarbEditPage> {
   final _formKey = GlobalKey<FormState>();
-  final _gramsController = TextEditingController();
-  final _descController = TextEditingController();
+  late final TextEditingController _gramsController;
+  late final TextEditingController _descController;
   late DateTime _selectedTime;
 
   @override
   void initState() {
     super.initState();
-    _selectedTime = DateTime.now();
+    _gramsController = TextEditingController(text: widget.entry.grams.toString());
+    _descController = TextEditingController(text: widget.entry.description);
+    _selectedTime = widget.entry.time;
   }
 
   @override
@@ -50,12 +54,61 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
     });
   }
 
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    await context.read<PatientCubit>().editCarbEntry(
+      CarbEntry(
+        grams: int.parse(_gramsController.text),
+        description: _descController.text.trim(),
+        time: _selectedTime,
+      ),
+    );
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(context.l10n.carbEditSavedSuccessMessage)),
+    );
+    navigator.pop();
+  }
+
+  Future<void> _delete() async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.entryDeleteConfirmTitle),
+        content: Text(l10n.entryDeleteConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.genericCancelButton),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.entryDeleteConfirmButton),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    await context.read<PatientCubit>().deleteCarbEntry(widget.entry);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(context.l10n.carbEditDeletedSuccessMessage)),
+    );
+    navigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.carbEntryTitle)),
+      appBar: AppBar(title: Text(l10n.carbEditTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -94,30 +147,16 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
                     ? l10n.carbEntryDescriptionError
                     : null,
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 24),
               FilledButton(
-                onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  final navigator = Navigator.of(context);
-                  if (!_formKey.currentState!.validate()) {
-                    return;
-                  }
-                  await context.read<PatientCubit>().addCarbEntry(
-                    CarbEntry(
-                      grams: int.parse(_gramsController.text),
-                      description: _descController.text.trim(),
-                      time: _selectedTime,
-                    ),
-                  );
-                  if (!mounted) {
-                    return;
-                  }
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(l10n.carbEntrySavedSuccessMessage)),
-                  );
-                  navigator.pop();
-                },
+                onPressed: _save,
                 child: Text(l10n.carbEntrySaveButton),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: _delete,
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                child: Text(l10n.carbEditDeleteButton),
               ),
             ],
           ),
