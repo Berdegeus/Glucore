@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/repositories/mock_sensor_repository.dart';
 import '../../domain/events.dart';
 import '../../domain/models.dart';
 import '../../domain/sensor_repository.dart';
@@ -13,9 +11,7 @@ class SensorCubit extends Cubit<SensorUiState> {
 
   final SensorRepository repository;
   StreamSubscription<SensorEvent>? _eventSubscription;
-  MockSensorRepository? _mockRepo;
   bool _initialized = false;
-  bool get isMockActive => _mockRepo != null;
 
   Future<void> initialize() async {
     if (_initialized) {
@@ -166,85 +162,8 @@ class SensorCubit extends Cubit<SensorUiState> {
     }
   }
 
-  /// Debug-only: replaces real sensor with a mock that replays a full
-  /// connection sequence and emits periodic glucose readings.
-  Future<void> activateMock() async {
-    assert(kDebugMode, 'activateMock must only be called in debug mode');
-    if (!kDebugMode) return;
-
-    await _eventSubscription?.cancel();
-    _mockRepo?.dispose();
-
-    emit(SensorUiState.initial);
-
-    final mock = MockSensorRepository();
-    _mockRepo = mock;
-
-    _eventSubscription = mock.observeSessionEvents().listen(
-      (event) {
-        emit(
-          SensorUiState(
-            status: event.status,
-            session: event.session ?? state.session,
-            historySyncInfo: event.status == SensorConnectionStatus.syncingHistory
-                ? event.historySyncInfo
-                : null,
-            historyReading: event.status == SensorConnectionStatus.syncingHistory
-                ? event.historyReading
-                : null,
-            warmupInfo: event.warmupInfo ?? state.warmupInfo,
-            reading: event.reading ?? state.reading,
-            failure: event.failure,
-            isMock: true,
-          ),
-        );
-      },
-      onError: (error) {
-        emit(
-          state.copyWith(
-            status: SensorConnectionStatus.error,
-            failure: SensorFailure(error.toString()),
-          ),
-        );
-      },
-    );
-
-    await mock.startMonitoring();
-  }
-
-  /// Debug-only: emits a single fake reading regardless of mock state.
-  /// PatientCubit will add it to in-memory state but skip persistence (isMock: true).
-  void injectMockReading(double value, {double rate = 0}) {
-    assert(kDebugMode, 'injectMockReading must only be called in debug mode');
-    if (!kDebugMode) return;
-    emit(
-      state.copyWith(
-        status: SensorConnectionStatus.readingAvailable,
-        reading: GlucoseReading(value: value, rate: rate),
-        isMock: true,
-      ),
-    );
-  }
-
-  /// Debug-only: stops mock and resets to idle so PatientCubit discards mock data.
-  Future<void> deactivateMock() async {
-    assert(kDebugMode, 'deactivateMock must only be called in debug mode');
-    if (!kDebugMode || _mockRepo == null) return;
-
-    await _eventSubscription?.cancel();
-    _mockRepo!.dispose();
-    _mockRepo = null;
-    _eventSubscription = null;
-
-    emit(SensorUiState.initial);
-
-    // Re-attach real event stream so the cubit is usable again.
-    _listenToEvents();
-  }
-
   @override
   Future<void> close() async {
-    _mockRepo?.dispose();
     await _eventSubscription?.cancel();
     return super.close();
   }

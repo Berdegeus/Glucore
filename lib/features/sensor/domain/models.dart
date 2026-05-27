@@ -85,7 +85,6 @@ class SensorUiState {
   final WarmupInfo? warmupInfo;
   final GlucoseReading? reading;
   final SensorFailure? failure;
-  final bool isMock;
 
   const SensorUiState({
     this.status = SensorConnectionStatus.idle,
@@ -95,7 +94,6 @@ class SensorUiState {
     this.warmupInfo,
     this.reading,
     this.failure,
-    this.isMock = false,
   });
 
   SensorUiState copyWith({
@@ -107,7 +105,6 @@ class SensorUiState {
     GlucoseReading? reading,
     SensorFailure? failure,
     bool clearFailure = false,
-    bool? isMock,
   }) {
     return SensorUiState(
       status: status ?? this.status,
@@ -117,7 +114,6 @@ class SensorUiState {
       warmupInfo: warmupInfo ?? this.warmupInfo,
       reading: reading ?? this.reading,
       failure: clearFailure ? null : failure ?? this.failure,
-      isMock: isMock ?? this.isMock,
     );
   }
 
