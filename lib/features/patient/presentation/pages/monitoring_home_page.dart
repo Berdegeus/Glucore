@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/debug/debug_panel.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../sensor/domain/models.dart';
 import '../cubit/patient_cubit.dart';
@@ -11,8 +13,34 @@ import '../widgets/patient_widgets.dart';
 import 'notifications_page.dart';
 import 'sensor_link_page.dart';
 
-class MonitoringHomePage extends StatelessWidget {
+class MonitoringHomePage extends StatefulWidget {
   const MonitoringHomePage({super.key});
+
+  @override
+  State<MonitoringHomePage> createState() => _MonitoringHomePageState();
+}
+
+class _MonitoringHomePageState extends State<MonitoringHomePage> {
+  int _logoTaps = 0;
+  DateTime? _firstTapAt;
+  static const _tapTarget = 10;
+  static const _tapWindow = Duration(seconds: 5);
+
+  void _onLogoTap() {
+    if (!kDebugMode) return;
+    final now = DateTime.now();
+    if (_firstTapAt == null || now.difference(_firstTapAt!) > _tapWindow) {
+      _firstTapAt = now;
+      _logoTaps = 1;
+    } else {
+      _logoTaps++;
+    }
+    if (_logoTaps >= _tapTarget) {
+      _logoTaps = 0;
+      _firstTapAt = null;
+      DebugPanel.show(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,13 +48,17 @@ class MonitoringHomePage extends StatelessWidget {
       backgroundColor: AppTheme.surfaceElevated,
       appBar: AppBar(
         backgroundColor: AppTheme.surfaceCanvas,
-        title: const Text(
-          'glucore',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.brandBlue,
-            letterSpacing: -0.5,
+        title: GestureDetector(
+          onTap: _onLogoTap,
+          behavior: HitTestBehavior.opaque,
+          child: const Text(
+            'glucore',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.brandBlue,
+              letterSpacing: -0.5,
+            ),
           ),
         ),
         actions: [
