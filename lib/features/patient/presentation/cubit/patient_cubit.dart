@@ -47,15 +47,38 @@ class PatientCubit extends Cubit<PatientState> {
     await repository.saveInsulin(updated);
   }
 
+  Future<void> clearReadings() async {
+    emit(state.copyWith(readings: const []));
+    if (!state.sensorState.isMock) {
+      await repository.saveReadings(const []);
+    }
+  }
+
   Future<void> updateAlertSettings(AlertSettingsModel settings) async {
     emit(state.copyWith(alertSettings: settings));
     await repository.saveAlertSettings(settings);
   }
 
   Future<void> _handleSensorState(SensorUiState sensorState) async {
+    // When mock session ends, discard in-memory mock data and reload persisted state.
+    final wasMock = state.sensorState.isMock;
+    if (wasMock && !sensorState.isMock) {
+      final snapshot = await repository.load();
+      emit(
+        state.copyWith(
+          readings: List<GlucoseReadingItem>.of(snapshot.readings, growable: false),
+          alerts: List<AppAlertItem>.of(snapshot.alerts, growable: false),
+          sensorState: sensorState,
+        ),
+      );
+      return;
+    }
+
     var nextState = state.copyWith(sensorState: sensorState);
     var readings = state.readings;
     var alerts = state.alerts;
+    // Never persist mock readings/alerts to storage.
+    final isMock = sensorState.isMock;
     var persistReadings = false;
     var persistAlerts = false;
 
@@ -137,10 +160,10 @@ class PatientCubit extends Cubit<PatientState> {
 
     emit(nextState);
 
-    if (persistReadings) {
+    if (persistReadings && !isMock) {
       await repository.saveReadings(readings);
     }
-    if (persistAlerts) {
+    if (persistAlerts && !isMock) {
       await repository.saveAlerts(alerts);
     }
   }
