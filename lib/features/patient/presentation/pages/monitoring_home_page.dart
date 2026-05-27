@@ -209,6 +209,8 @@ class _ChartCard extends StatelessWidget {
               readings: state.readings,
               lowThreshold: state.alertSettings.lowThreshold,
               highThreshold: state.alertSettings.highThreshold,
+              carbs: state.carbs,
+              insulin: state.insulin,
             ),
           ),
         ],
