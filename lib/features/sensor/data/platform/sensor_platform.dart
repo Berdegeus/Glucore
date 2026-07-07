@@ -121,6 +121,15 @@ class SensorPlatformEvent {
 
     final connected = map['connected'] == true;
 
+    SensorNfcInfo? nfc;
+    if (map['nfc'] != null) {
+      final n = map['nfc'] as Map<dynamic, dynamic>;
+      nfc = SensorNfcInfo(
+        result: n['result']?.toString() ?? 'error',
+        sensorId: n['sensorId']?.toString(),
+      );
+    }
+
     return SensorPlatformEvent(
       event: SensorEvent(
         status: state,
@@ -131,6 +140,7 @@ class SensorPlatformEvent {
         warmupInfo: warmup,
         reading: reading,
         failure: failure,
+        nfc: nfc,
       ),
     );
   }
@@ -177,6 +187,28 @@ class SensorPlatform {
 
   Future<void> clearSession() async {
     await _methodChannel.invokeMethod('clearSession');
+  }
+
+  Future<AbbottLibraryStatus> getAbbottLibraryStatus() async {
+    final result =
+        await _methodChannel.invokeMethod('getAbbottLibraryStatus');
+    final map = (result as Map<dynamic, dynamic>?) ?? const {};
+    return AbbottLibraryStatus(
+      installed: map['installed'] == true,
+      libraryName: map['libraryName']?.toString() ?? '',
+    );
+  }
+
+  Future<void> installAbbottLibrary(String path) async {
+    await _methodChannel.invokeMethod('installAbbottLibrary', {'path': path});
+  }
+
+  Future<void> startNfcScan() async {
+    await _methodChannel.invokeMethod('startNfcScan');
+  }
+
+  Future<void> stopNfcScan() async {
+    await _methodChannel.invokeMethod('stopNfcScan');
   }
 
   Stream<SensorPlatformEvent> observeSensorEvents() {

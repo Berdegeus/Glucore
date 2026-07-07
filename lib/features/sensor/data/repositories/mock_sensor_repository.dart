@@ -62,6 +62,19 @@ class MockSensorRepository implements SensorRepository {
     await stopMonitoring();
   }
 
+  @override
+  Future<AbbottLibraryStatus> getAbbottLibraryStatus() async =>
+      const AbbottLibraryStatus(installed: true, libraryName: 'mock');
+
+  @override
+  Future<void> installAbbottLibrary(String path) async {}
+
+  @override
+  Future<void> startNfcScan() async {}
+
+  @override
+  Future<void> stopNfcScan() async {}
+
   void dispose() {
     _readingTimer?.cancel();
     _controller.close();

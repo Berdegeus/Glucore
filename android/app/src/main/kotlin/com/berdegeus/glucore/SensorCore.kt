@@ -3,7 +3,9 @@ package com.berdegeus.glucore
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import io.flutter.plugin.common.EventChannel
+import tk.glucodata.Natives
 import java.util.concurrent.CopyOnWriteArraySet
 
 /**
@@ -40,8 +42,9 @@ class SensorCore(context: Context) {
             SensorBrand.ACCUCHEK -> bleManagers.getOrPut(brand) {
                 AccuChekBleManager(appContext) { event -> dispatchEvent(event) }
             }
-            // Implemented in a later phase.
-            SensorBrand.LIBRE2 -> null
+            SensorBrand.LIBRE2 -> bleManagers.getOrPut(brand) {
+                Libre2BleManager(appContext) { event -> dispatchEvent(event) }
+            }
         }
 
     /** Last event dispatched, replayed when a new EventChannel listener attaches. */
@@ -51,10 +54,26 @@ class SensorCore(context: Context) {
 
     private val listeners = CopyOnWriteArraySet<(Map<String, Any?>) -> Unit>()
 
+    private val abbottInstaller by lazy { AbbottLibraryInstaller(appContext) }
+
+    private val libreNfcHandler by lazy {
+        LibreNfcHandler(
+            onEvent = ::dispatchEvent,
+            onSensorRegistered = { serial -> platform.registerNfcSensor(serial) }
+        )
+    }
+
     init {
         platform.eventDispatcher = ::dispatchEvent
         platform.setBleManagerProvider(::bleManagerFor)
         platform.initializeNativeBridge()
+        // Bind the Abbott algorithm library if it was installed previously;
+        // no-op (returns false) when the file is absent.
+        try {
+            Natives.abbottinit()
+        } catch (t: Throwable) {
+            Log.w("SensorCore", "abbottinit: ${t.message}")
+        }
     }
 
     /** Single funnel for all sensor events: record, forward to sink, notify listeners. */
@@ -100,6 +119,26 @@ class SensorCore(context: Context) {
     fun clearSession() {
         platform.clearSession()
         CgmForegroundService.stop(appContext)
+    }
+
+    // ── Libre 2 (NFC + Abbott library) ────────────────────────────────────────
+
+    /** Blocking NFC flow; call from the reader-mode callback thread. */
+    fun handleLibreTag(tag: android.nfc.Tag) {
+        libreNfcHandler.handleTag(tag)
+    }
+
+    fun abbottLibraryStatus(): Map<String, Any?> {
+        val status = abbottInstaller.status()
+        return mapOf(
+            "installed" to status.installed,
+            "libraryName" to status.libraryName
+        )
+    }
+
+    /** Throws on failure so MethodChannel callers get a proper error. */
+    fun installAbbottLibrary(apkPath: String) {
+        abbottInstaller.installFromApk(apkPath).getOrThrow()
     }
 
     /** True when the cached session says monitoring was active (used after process restart). */

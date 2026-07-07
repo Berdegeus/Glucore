@@ -99,6 +99,24 @@ class HistorySyncInfo {
   const HistorySyncInfo({required this.receivedCount, this.latestTimestamp});
 }
 
+/// Outcome of a Libre 2 NFC interaction, emitted by the Android layer.
+/// `result` values: activated, warmup, ready, streaming, ended,
+/// needsLibrary, unsupportedLibre3, unsupportedUsGen2, readError, error.
+class SensorNfcInfo {
+  final String result;
+  final String? sensorId;
+
+  const SensorNfcInfo({required this.result, this.sensorId});
+}
+
+/// Whether the Abbott algorithm library (needed for Libre 2) is installed.
+class AbbottLibraryStatus {
+  final bool installed;
+  final String libraryName;
+
+  const AbbottLibraryStatus({required this.installed, required this.libraryName});
+}
+
 class SensorUiState {
   final SensorConnectionStatus status;
   final SensorSession? session;
@@ -107,6 +125,7 @@ class SensorUiState {
   final WarmupInfo? warmupInfo;
   final GlucoseReading? reading;
   final SensorFailure? failure;
+  final SensorNfcInfo? nfcInfo;
   final bool isMock;
 
   const SensorUiState({
@@ -117,6 +136,7 @@ class SensorUiState {
     this.warmupInfo,
     this.reading,
     this.failure,
+    this.nfcInfo,
     this.isMock = false,
   });
 
@@ -129,6 +149,7 @@ class SensorUiState {
     GlucoseReading? reading,
     SensorFailure? failure,
     bool clearFailure = false,
+    SensorNfcInfo? nfcInfo,
     bool? isMock,
   }) {
     return SensorUiState(
@@ -139,6 +160,7 @@ class SensorUiState {
       warmupInfo: warmupInfo ?? this.warmupInfo,
       reading: reading ?? this.reading,
       failure: clearFailure ? null : failure ?? this.failure,
+      nfcInfo: nfcInfo ?? this.nfcInfo,
       isMock: isMock ?? this.isMock,
     );
   }

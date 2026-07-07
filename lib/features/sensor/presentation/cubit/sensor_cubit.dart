@@ -61,6 +61,7 @@ class SensorCubit extends Cubit<SensorUiState> {
       warmupInfo: event.warmupInfo ?? state.warmupInfo,
       reading: event.reading ?? state.reading,
       failure: event.failure,
+      nfcInfo: event.nfc ?? state.nfcInfo,
       isMock: isMock,
     );
   }
@@ -173,6 +174,61 @@ class SensorCubit extends Cubit<SensorUiState> {
           failure: SensorFailure(e.toString()),
         ),
       );
+    }
+  }
+
+  // ── Libre 2 (Abbott library + NFC) ─────────────────────────────────────────
+
+  Future<AbbottLibraryStatus?> getAbbottLibraryStatus() async {
+    try {
+      return await repository.getAbbottLibraryStatus();
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: SensorConnectionStatus.error,
+          failure: SensorFailure(e.toString()),
+        ),
+      );
+      return null;
+    }
+  }
+
+  /// Returns true on success; failures land in [SensorUiState.failure].
+  Future<bool> installAbbottLibrary(String path) async {
+    emit(state.copyWith(clearFailure: true));
+    try {
+      await repository.installAbbottLibrary(path);
+      return true;
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: SensorConnectionStatus.error,
+          failure: SensorFailure(e.toString()),
+        ),
+      );
+      return false;
+    }
+  }
+
+  Future<void> startNfcScan() async {
+    emit(state.copyWith(clearFailure: true));
+    try {
+      await repository.startNfcScan();
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: SensorConnectionStatus.error,
+          failure: SensorFailure(e.toString()),
+        ),
+      );
+    }
+  }
+
+  Future<void> stopNfcScan() async {
+    try {
+      await repository.stopNfcScan();
+    } catch (_) {
+      // Stopping a scan that never started is not an error worth surfacing.
     }
   }
 

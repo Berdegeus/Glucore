@@ -52,13 +52,17 @@ class SensorChoicePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _BrandCard(
-            name: 'Libre',
-            description: 'Abbott FreeStyle Libre — leitura NFC',
+            name: 'FreeStyle Libre 2',
+            description: 'Abbott — ativação por NFC + streaming Bluetooth',
             icon: Icons.nfc_rounded,
             color: const Color(0xFF007AFF),
             enabled: true,
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LibreNFCPage()),
+              buildPatientScopedRoute(
+                context,
+                const LibreNFCPage(),
+                withSensorCubit: true,
+              ),
             ),
           ),
           const SizedBox(height: 12),

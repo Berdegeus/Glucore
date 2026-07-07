@@ -89,6 +89,20 @@ class AndroidSensorRepository implements SensorRepository {
   Stream<SensorEvent> observeSessionEvents() => _eventController.stream;
 
   @override
+  Future<AbbottLibraryStatus> getAbbottLibraryStatus() =>
+      platform.getAbbottLibraryStatus();
+
+  @override
+  Future<void> installAbbottLibrary(String path) =>
+      platform.installAbbottLibrary(path);
+
+  @override
+  Future<void> startNfcScan() => platform.startNfcScan();
+
+  @override
+  Future<void> stopNfcScan() => platform.stopNfcScan();
+
+  @override
   Future<void> clearSession() async {
     try {
       await platform.clearSession();

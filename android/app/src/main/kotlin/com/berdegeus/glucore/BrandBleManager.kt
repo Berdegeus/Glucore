@@ -162,6 +162,13 @@ abstract class BrandBleManager(
     /** Invoked when the connection is torn down; clear brand-local state. */
     protected open fun onBrandDisconnected() {}
 
+    /**
+     * Invoked with the GATT status when an established connection drops,
+     * before the generic disconnect handling (e.g. Libre 2 uses status 19
+     * right after enabling notifications to reset its native BLE state).
+     */
+    protected open fun onBrandConnectionLost(status: Int) {}
+
     // ── Scan / connect lifecycle ──────────────────────────────────────────────
 
     fun startSensorScan(dataptr: Long): Result<Unit> {
@@ -394,6 +401,7 @@ abstract class BrandBleManager(
             }
             BluetoothProfile.STATE_DISCONNECTED -> {
                 Log.i(tag, "GATT disconnected (status=$status)")
+                onBrandConnectionLost(status)
                 cancelDisconnectTimer()
                 cancelConnectTimeout()
                 gatt.close()

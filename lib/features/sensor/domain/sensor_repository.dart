@@ -17,4 +17,11 @@ abstract class SensorRepository {
   Future<void> stopMonitoring();
   Stream<SensorEvent> observeSessionEvents();
   Future<void> clearSession();
+
+  // Libre 2 support: Abbott algorithm library + NFC pairing. NFC results
+  // arrive through [observeSessionEvents] as [SensorEvent.nfc].
+  Future<AbbottLibraryStatus> getAbbottLibraryStatus();
+  Future<void> installAbbottLibrary(String path);
+  Future<void> startNfcScan();
+  Future<void> stopNfcScan();
 }

@@ -124,6 +124,25 @@ class SensorPlatformImpl(
         }
     }
 
+    /**
+     * Registers a Libre 2 sensor discovered over NFC. `Natives.nfcdata` has
+     * already persisted it in libg's store; this records the local session
+     * (ending any previous one) and announces it to Flutter.
+     */
+    fun registerNfcSensor(serial: String) {
+        activeBleManager?.stopScan()
+        activeBleManager?.disconnect()
+        activeBleManager = null
+        val snapshot = sessionManager.syncSessionFromNative(
+            SensorSessionSnapshot(
+                sensorId = serial,
+                connected = false,
+                brand = SensorBrand.LIBRE2
+            )
+        )
+        emitEvent(status = "idle", session = snapshot, connected = false)
+    }
+
     fun submitTransmitter(transmitterBarcode: String) {
         sessionManager.submitTransmitter(transmitterBarcode)
             .onFailure { emitError("Transmitter submission failed: ${it.message}") }
