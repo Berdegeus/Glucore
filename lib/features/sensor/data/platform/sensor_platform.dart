@@ -136,8 +136,15 @@ class SensorPlatform {
     return SensorSessionSnapshot.fromMap(result as Map<dynamic, dynamic>);
   }
 
-  Future<void> registerSensor(String barcode) async {
-    await _methodChannel.invokeMethod('registerSensor', {'barcode': barcode});
+  /// Registers a sensor and returns the session snapshot synchronously.
+  /// Failures surface as [PlatformException] (code `NATIVE_ERROR`); the
+  /// EventChannel still emits the corresponding `idle`/`error` event.
+  Future<SensorSessionSnapshot?> registerSensor(String barcode) async {
+    final result = await _methodChannel.invokeMethod('registerSensor', {
+      'barcode': barcode,
+    });
+    if (result == null) return null;
+    return SensorSessionSnapshot.fromMap(result as Map<dynamic, dynamic>);
   }
 
   Future<void> submitTransmitter(String transmitterBarcode) async {

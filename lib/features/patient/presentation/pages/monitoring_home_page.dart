@@ -27,7 +27,7 @@ class MonitoringHomePage extends StatefulWidget {
 class _MonitoringHomePageState extends State<MonitoringHomePage> {
   int _logoTaps = 0;
   DateTime? _firstTapAt;
-  static const _tapTarget = 10;
+  static const _tapTarget = 3;
   static const _tapWindow = Duration(seconds: 5);
 
   void _onLogoTap() {

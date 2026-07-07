@@ -65,7 +65,7 @@ class DiaryPage extends StatelessWidget {
         icon: Icons.vaccines_outlined,
         color: AppTheme.brandBlue,
         title: _insulinLabel(ins.type),
-        detail: '${ins.units.toStringAsFixed(1)} UI',
+        detail: '${ins.units.toStringAsFixed(1)} UI · ${ins.dayOfWeek}',
         onTap: () => Navigator.of(context).push(
           buildPatientScopedRoute(context, InsulinEditPage(entry: ins)),
         ),

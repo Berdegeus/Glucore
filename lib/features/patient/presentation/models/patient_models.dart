@@ -112,21 +112,34 @@ class CarbEntry {
   }
 }
 
+const kDaysOfWeek = [
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado',
+  'Domingo',
+];
+
 class InsulinEntry {
   const InsulinEntry({
     required this.units,
     required this.type,
     required this.time,
+    required this.dayOfWeek,
   });
 
   final double units;
   final InsulinType type;
   final DateTime time;
+  final String dayOfWeek;
 
   Map<String, dynamic> toJson() => {
     'units': units,
     'type': type.name,
     'timeMs': time.millisecondsSinceEpoch,
+    'dayOfWeek': dayOfWeek,
   };
 
   factory InsulinEntry.fromJson(Map<String, dynamic> json) {
@@ -138,6 +151,7 @@ class InsulinEntry {
       time: DateTime.fromMillisecondsSinceEpoch(
         (json['timeMs'] as num?)?.toInt() ?? 0,
       ),
+      dayOfWeek: json['dayOfWeek']?.toString() ?? kDaysOfWeek[0],
     );
   }
 }

@@ -243,6 +243,7 @@
   "insulinEntryQuantityError": "Informe uma quantidade válida",
   "insulinEntrySavedSuccessMessage": "Aplicação de insulina registrada.",
   "insulinEntrySaveButton": "Salvar aplicação",
+  "insulinEntryDayOfWeekLabel": "Dia da semana",
   "carbEditTitle": "Editar carboidrato",
   "carbEditSavedSuccessMessage": "Carboidrato atualizado.",
   "carbEditDeletedSuccessMessage": "Registro excluído.",

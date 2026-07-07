@@ -21,6 +21,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
   late final TextEditingController _unitsController;
   late InsulinType _selectedType;
   late DateTime _selectedTime;
+  late String _selectedDayOfWeek;
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
     );
     _selectedType = widget.entry.type;
     _selectedTime = widget.entry.time;
+    _selectedDayOfWeek = widget.entry.dayOfWeek;
   }
 
   @override
@@ -67,6 +69,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
         units: double.parse(_unitsController.text),
         type: _selectedType,
         time: _selectedTime,
+        dayOfWeek: _selectedDayOfWeek,
       ),
     );
     if (!mounted) return;
@@ -162,6 +165,21 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
                   onPressed: _pickDateTime,
                   child: Text(l10n.entryTimePicker),
                 ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: kDaysOfWeek.contains(_selectedDayOfWeek)
+                    ? _selectedDayOfWeek
+                    : kDaysOfWeek[0],
+                decoration: InputDecoration(
+                  labelText: l10n.insulinEntryDayOfWeekLabel,
+                ),
+                items: kDaysOfWeek
+                    .map((day) => DropdownMenuItem(value: day, child: Text(day)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() => _selectedDayOfWeek = value ?? kDaysOfWeek[0]);
+                },
               ),
               const SizedBox(height: 24),
               FilledButton(

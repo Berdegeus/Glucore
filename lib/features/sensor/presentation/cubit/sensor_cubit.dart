@@ -48,25 +48,28 @@ class SensorCubit extends Cubit<SensorUiState> {
     }
   }
 
+  SensorUiState _mapEventToState(SensorEvent event, {required bool isMock}) {
+    return SensorUiState(
+      status: event.status,
+      session: event.session ?? state.session,
+      historySyncInfo: event.status == SensorConnectionStatus.syncingHistory
+          ? event.historySyncInfo
+          : null,
+      historyReading: event.status == SensorConnectionStatus.syncingHistory
+          ? event.historyReading
+          : null,
+      warmupInfo: event.warmupInfo ?? state.warmupInfo,
+      reading: event.reading ?? state.reading,
+      failure: event.failure,
+      isMock: isMock,
+    );
+  }
+
   void _listenToEvents() {
     _eventSubscription?.cancel();
     _eventSubscription = repository.observeSessionEvents().listen(
       (event) {
-        emit(
-          SensorUiState(
-            status: event.status,
-            session: event.session ?? state.session,
-            historySyncInfo: event.status == SensorConnectionStatus.syncingHistory
-                ? event.historySyncInfo
-                : null,
-            historyReading: event.status == SensorConnectionStatus.syncingHistory
-                ? event.historyReading
-                : null,
-            warmupInfo: event.warmupInfo ?? state.warmupInfo,
-            reading: event.reading ?? state.reading,
-            failure: event.failure,
-          ),
-        );
+        emit(_mapEventToState(event, isMock: false));
       },
       onError: (error) {
         emit(
@@ -82,7 +85,10 @@ class SensorCubit extends Cubit<SensorUiState> {
   Future<void> registerSensor(String barcode) async {
     emit(state.copyWith(clearFailure: true));
     try {
-      await repository.registerSensor(barcode);
+      final session = await repository.registerSensor(barcode);
+      if (session != null) {
+        emit(state.copyWith(session: session, clearFailure: true));
+      }
     } catch (e) {
       emit(
         state.copyWith(
@@ -182,22 +188,7 @@ class SensorCubit extends Cubit<SensorUiState> {
 
     _eventSubscription = mock.observeSessionEvents().listen(
       (event) {
-        emit(
-          SensorUiState(
-            status: event.status,
-            session: event.session ?? state.session,
-            historySyncInfo: event.status == SensorConnectionStatus.syncingHistory
-                ? event.historySyncInfo
-                : null,
-            historyReading: event.status == SensorConnectionStatus.syncingHistory
-                ? event.historyReading
-                : null,
-            warmupInfo: event.warmupInfo ?? state.warmupInfo,
-            reading: event.reading ?? state.reading,
-            failure: event.failure,
-            isMock: true,
-          ),
-        );
+        emit(_mapEventToState(event, isMock: true));
       },
       onError: (error) {
         emit(
