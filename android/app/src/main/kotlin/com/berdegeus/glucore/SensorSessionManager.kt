@@ -26,7 +26,8 @@ class SensorSessionManager(context: Context) {
             sensorId = snapshot.sensorId,
             transmitterId = snapshot.transmitterId,
             status = status,
-            connectedAtMs = connectedAtMs
+            connectedAtMs = connectedAtMs,
+            brand = snapshot.brand
         )
         currentSession = session
         persistSession(session)
@@ -82,6 +83,7 @@ class SensorSessionManager(context: Context) {
             put("status", session.status.name)
             put("connected_at_ms", session.connectedAtMs)
             put("updated_at", System.currentTimeMillis())
+            put("brand", session.brand.wireName)
         }
         db.insertWithOnConflict(TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -98,7 +100,10 @@ class SensorSessionManager(context: Context) {
                     SessionStatus.valueOf(it.getString(it.getColumnIndexOrThrow("status")))
                 }.getOrDefault(SessionStatus.REGISTERED),
                 connectedAtMs = it.getLong(it.getColumnIndexOrThrow("connected_at_ms"))
-                    .takeIf { v -> v != 0L }
+                    .takeIf { v -> v != 0L },
+                brand = SensorBrand.fromWireName(
+                    runCatching { it.getString(it.getColumnIndexOrThrow("brand")) }.getOrNull()
+                )
             )
         }
     }
@@ -108,7 +113,7 @@ class SensorSessionManager(context: Context) {
     companion object {
         private const val TABLE = "sensor_session"
         private const val DB_NAME = "glucore_session.db"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
     }
 
     private class SessionDbHelper(context: Context) :
@@ -122,7 +127,8 @@ class SensorSessionManager(context: Context) {
                     transmitter_id TEXT,
                     status TEXT NOT NULL,
                     connected_at_ms INTEGER,
-                    updated_at INTEGER NOT NULL
+                    updated_at INTEGER NOT NULL,
+                    brand TEXT NOT NULL DEFAULT 'sibionics'
                 )
             """.trimIndent())
         }
@@ -130,13 +136,10 @@ class SensorSessionManager(context: Context) {
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
             // Session data must survive upgrades: dropping this table forces the
             // user to re-register the sensor. Never DROP + recreate here — add an
-            // incremental migration step per schema version instead, e.g.:
-            //
-            // if (oldVersion < 2) {
-            //     db.execSQL("ALTER TABLE $TABLE ADD COLUMN new_column TEXT")
-            // }
-            //
-            // DB_VERSION is still 1, so there are no migration steps yet.
+            // incremental migration step per schema version instead.
+            if (oldVersion < 2) {
+                db.execSQL("ALTER TABLE $TABLE ADD COLUMN brand TEXT NOT NULL DEFAULT 'sibionics'")
+            }
         }
     }
 }

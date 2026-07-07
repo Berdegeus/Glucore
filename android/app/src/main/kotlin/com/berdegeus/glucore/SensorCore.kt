@@ -27,7 +27,19 @@ class SensorCore(context: Context) {
     private val sessionManager = SensorSessionManager(appContext)
     private val nativeBridgeAdapter = SibionicsNativeBridgeAdapter(appContext)
     private val platform = SensorPlatformImpl(sessionManager, nativeBridgeAdapter)
-    private val bleManager = SibionicsBleManager(appContext) { event -> dispatchEvent(event) }
+
+    // One BLE manager per brand, created on first use; all share the event
+    // funnel. SensorPlatformImpl enforces that only one is active at a time.
+    private val bleManagers = mutableMapOf<SensorBrand, BrandBleManager>()
+
+    private fun bleManagerFor(brand: SensorBrand): BrandBleManager? =
+        when (brand) {
+            SensorBrand.SIBIONICS -> bleManagers.getOrPut(brand) {
+                SibionicsBleManager(appContext) { event -> dispatchEvent(event) }
+            }
+            // Implemented in later phases.
+            SensorBrand.ACCUCHEK, SensorBrand.LIBRE2 -> null
+        }
 
     /** Last event dispatched, replayed when a new EventChannel listener attaches. */
     @Volatile
@@ -38,7 +50,7 @@ class SensorCore(context: Context) {
 
     init {
         platform.eventDispatcher = ::dispatchEvent
-        platform.setBleManager(bleManager)
+        platform.setBleManagerProvider(::bleManagerFor)
         platform.initializeNativeBridge()
     }
 
@@ -64,7 +76,10 @@ class SensorCore(context: Context) {
 
     fun restoreSession(): Map<String, Any?>? = platform.restoreSession()
 
-    fun registerSensor(barcode: String): Map<String, Any?>? = platform.registerSensor(barcode)
+    fun registerSensor(
+        barcode: String,
+        requestedBrand: SensorBrand = SensorBrand.SIBIONICS
+    ): Map<String, Any?>? = platform.registerSensor(barcode, requestedBrand)
 
     fun submitTransmitter(transmitterBarcode: String) = platform.submitTransmitter(transmitterBarcode)
 

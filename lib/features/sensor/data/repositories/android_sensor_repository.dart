@@ -42,9 +42,12 @@ class AndroidSensorRepository implements SensorRepository {
   }
 
   @override
-  Future<SensorSession?> registerSensor(String barcode) async {
+  Future<SensorSession?> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async {
     try {
-      final snapshot = await platform.registerSensor(barcode);
+      final snapshot = await platform.registerSensor(barcode, brand: brand);
       return snapshot?.toSession();
     } catch (e) {
       _eventController.addError(e);

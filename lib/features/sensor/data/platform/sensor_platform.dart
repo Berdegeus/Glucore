@@ -7,11 +7,13 @@ class SensorSessionSnapshot {
   final String sensorId;
   final String? transmitterId;
   final bool connected;
+  final SensorBrand brand;
 
   SensorSessionSnapshot({
     required this.sensorId,
     this.transmitterId,
     required this.connected,
+    this.brand = SensorBrand.sibionics,
   });
 
   factory SensorSessionSnapshot.fromMap(Map<dynamic, dynamic> map) {
@@ -19,6 +21,7 @@ class SensorSessionSnapshot {
       sensorId: map['sensorId']?.toString() ?? '',
       transmitterId: map['transmitterId']?.toString(),
       connected: map['connected'] == true,
+      brand: SensorBrand.fromWireName(map['brand']?.toString()),
     );
   }
 
@@ -26,10 +29,14 @@ class SensorSessionSnapshot {
     'sensorId': sensorId,
     'transmitterId': transmitterId,
     'connected': connected,
+    'brand': brand.wireName,
   };
 
-  SensorSession toSession() =>
-      SensorSession(sensorId: sensorId, transmitterId: transmitterId);
+  SensorSession toSession() => SensorSession(
+        sensorId: sensorId,
+        transmitterId: transmitterId,
+        brand: brand,
+      );
 }
 
 class SensorPlatformEvent {
@@ -57,6 +64,9 @@ class SensorPlatformEvent {
       session = SensorSession(
         sensorId: s['sensorId'].toString(),
         transmitterId: s['transmitterId']?.toString(),
+        brand: SensorBrand.fromWireName(
+          (s['brand'] ?? map['brand'])?.toString(),
+        ),
       );
     }
 
@@ -139,9 +149,13 @@ class SensorPlatform {
   /// Registers a sensor and returns the session snapshot synchronously.
   /// Failures surface as [PlatformException] (code `NATIVE_ERROR`); the
   /// EventChannel still emits the corresponding `idle`/`error` event.
-  Future<SensorSessionSnapshot?> registerSensor(String barcode) async {
+  Future<SensorSessionSnapshot?> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async {
     final result = await _methodChannel.invokeMethod('registerSensor', {
       'barcode': barcode,
+      'brand': brand.wireName,
     });
     if (result == null) return null;
     return SensorSessionSnapshot.fromMap(result as Map<dynamic, dynamic>);

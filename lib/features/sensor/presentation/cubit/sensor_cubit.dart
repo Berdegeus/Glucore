@@ -82,10 +82,13 @@ class SensorCubit extends Cubit<SensorUiState> {
     );
   }
 
-  Future<void> registerSensor(String barcode) async {
+  Future<void> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async {
     emit(state.copyWith(clearFailure: true));
     try {
-      final session = await repository.registerSensor(barcode);
+      final session = await repository.registerSensor(barcode, brand: brand);
       if (session != null) {
         emit(state.copyWith(session: session, clearFailure: true));
       }

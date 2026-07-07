@@ -1,4 +1,19 @@
-// Domain models for Sibionics MVP
+// Domain models for the sensor feature.
+
+/// CGM sensor brand. `wireName` matches the value used on the platform
+/// channel and in the Android session store.
+enum SensorBrand {
+  sibionics('sibionics'),
+  accuchek('accuchek'),
+  libre2('libre2');
+
+  final String wireName;
+
+  const SensorBrand(this.wireName);
+
+  static SensorBrand fromWireName(String? name) => SensorBrand.values
+      .firstWhere((b) => b.wireName == name, orElse: () => SensorBrand.sibionics);
+}
 
 enum SensorConnectionStatus {
   idle,
@@ -25,22 +40,26 @@ class SensorSession {
   final String sensorId;
   final String? transmitterId;
   final DateTime createdAt;
+  final SensorBrand brand;
 
   SensorSession({
     required this.sensorId,
     this.transmitterId,
     DateTime? createdAt,
+    this.brand = SensorBrand.sibionics,
   }) : createdAt = createdAt ?? DateTime.now();
 
   SensorSession copyWith({
     String? sensorId,
     String? transmitterId,
     DateTime? createdAt,
+    SensorBrand? brand,
   }) {
     return SensorSession(
       sensorId: sensorId ?? this.sensorId,
       transmitterId: transmitterId ?? this.transmitterId,
       createdAt: createdAt ?? this.createdAt,
+      brand: brand ?? this.brand,
     );
   }
 }
@@ -120,6 +139,9 @@ class SensorUiState {
       isMock: isMock ?? this.isMock,
     );
   }
+
+  /// Brand of the active session (defaults to Sibionics when unknown).
+  SensorBrand get brand => session?.brand ?? SensorBrand.sibionics;
 
   static const initial = SensorUiState();
 }

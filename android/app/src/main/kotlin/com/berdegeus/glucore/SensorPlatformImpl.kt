@@ -14,7 +14,12 @@ class SensorPlatformImpl(
 ) {
     private var eventSink: io.flutter.plugin.common.EventChannel.EventSink? = null
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var bleManager: SibionicsBleManager? = null
+
+    /** Resolves the BLE manager for a brand; null when the brand is unsupported. */
+    private var bleManagerProvider: ((SensorBrand) -> BrandBleManager?)? = null
+
+    /** Manager currently scanning/connected — the single-active-sensor invariant. */
+    private var activeBleManager: BrandBleManager? = null
 
     /**
      * When set (by SensorCore), every event emitted here is routed through it
@@ -23,8 +28,8 @@ class SensorPlatformImpl(
      */
     var eventDispatcher: ((Map<String, Any?>) -> Unit)? = null
 
-    fun setBleManager(manager: SibionicsBleManager) {
-        bleManager = manager
+    fun setBleManagerProvider(provider: (SensorBrand) -> BrandBleManager?) {
+        bleManagerProvider = provider
     }
 
     fun initializeNativeBridge() {
@@ -45,7 +50,13 @@ class SensorPlatformImpl(
 
         return when (val result = nativeBridgeAdapter.restoreActiveSensor()) {
             is SibionicsNativeBridgeAdapter.CallResult.Success -> {
-                val snapshot = sessionManager.syncSessionFromNative(result.value)
+                // The restore payload does not carry the brand; keep the one
+                // persisted with the session instead of the SIBIONICS default.
+                val persistedBrand = sessionManager.getCurrentSession()?.brand
+                val snapshot = sessionManager.syncSessionFromNative(
+                    if (persistedBrand != null) result.value.copy(brand = persistedBrand)
+                    else result.value
+                )
                 snapshot.toPlatformMap()
             }
             is SibionicsNativeBridgeAdapter.CallResult.NoData -> {
@@ -65,7 +76,10 @@ class SensorPlatformImpl(
      * so the MethodChannel caller gets an immediate result even if the
      * EventChannel is not subscribed yet.
      */
-    fun registerSensor(barcode: String): Map<String, Any?>? {
+    fun registerSensor(
+        barcode: String,
+        requestedBrand: SensorBrand = SensorBrand.SIBIONICS
+    ): Map<String, Any?>? {
         val validation = SibionicsBarcode.validateSensorBarcode(barcode)
         if (validation is SibionicsBarcode.Result.Error) {
             val message = "Registration failed: ${validation.message}"
@@ -75,8 +89,23 @@ class SensorPlatformImpl(
 
         val normalizedBarcode = (validation as SibionicsBarcode.Result.Valid).barcode
 
+        // Single active sensor: registering a new one ends the previous
+        // session (stop its BLE activity before the row is overwritten).
+        if (sessionManager.getCurrentSession() != null) {
+            activeBleManager?.stopScan()
+            activeBleManager?.disconnect()
+            activeBleManager = null
+        }
+
         when (val result = nativeBridgeAdapter.registerSensor(normalizedBarcode)) {
             is SibionicsNativeBridgeAdapter.CallResult.Success -> {
+                if (result.value.brand != requestedBrand) {
+                    android.util.Log.w(
+                        "SensorPlatformImpl",
+                        "Native detected brand ${result.value.brand.wireName} " +
+                            "but UI requested ${requestedBrand.wireName}; native wins"
+                    )
+                }
                 val snapshot = sessionManager.syncSessionFromNative(result.value)
                 // Sensor registered — connection happens when startMonitoring() is called
                 emitEvent(status = "idle", session = snapshot, connected = false)
@@ -102,7 +131,8 @@ class SensorPlatformImpl(
 
     /** Returns true when the BLE scan actually started (monitoring is live). */
     fun startMonitoring(): Boolean {
-        if (sessionManager.getCurrentSession() == null) {
+        val session = sessionManager.getCurrentSession()
+        if (session == null) {
             emitError("No sensor registered")
             return false
         }
@@ -117,7 +147,11 @@ class SensorPlatformImpl(
             return false
         }
 
-        val dataptr = try { Natives.getdataptr(sensors[0]) } catch (e: Exception) {
+        // The native store can hold sensors from earlier registrations; prefer
+        // the one matching the persisted session (single-sensor invariant).
+        val sensorName = sensors.firstOrNull { it == session.sensorId } ?: sensors[0]
+
+        val dataptr = try { Natives.getdataptr(sensorName) } catch (e: Exception) {
             emitError("getdataptr() failed: ${e.message}")
             return false
         }
@@ -127,11 +161,20 @@ class SensorPlatformImpl(
             return false
         }
 
-        val bm = bleManager
+        val brand = resolveBrand(dataptr, session.brand)
+        val bm = bleManagerProvider?.invoke(brand)
         if (bm == null) {
-            emitError("BleManager not initialized")
+            emitError("No BLE support for sensor brand ${brand.wireName}")
             return false
         }
+
+        // Single active sensor: silence any manager left over from a
+        // different brand before handing the radio to the new one.
+        activeBleManager?.takeIf { it !== bm }?.let {
+            it.stopScan()
+            it.disconnect()
+        }
+        activeBleManager = bm
 
         sessionManager.startMonitoring()
             .onFailure { emitError("startMonitoring: ${it.message}"); return false }
@@ -142,10 +185,27 @@ class SensorPlatformImpl(
     }
 
     fun stopMonitoring() {
-        bleManager?.stopScan()
-        bleManager?.disconnect()
+        activeBleManager?.stopScan()
+        activeBleManager?.disconnect()
         sessionManager.stopMonitoring()
         emitEvent(status = "disconnected", connected = false)
+    }
+
+    /**
+     * The native type code is authoritative (same convention as Juggluco's
+     * callback factory); the session's persisted brand is the fallback when
+     * the native call is unavailable.
+     */
+    private fun resolveBrand(dataptr: Long, persisted: SensorBrand): SensorBrand {
+        return try {
+            SensorBrand.fromLibreVersion(Natives.getLibreVersion(dataptr))
+        } catch (e: Throwable) {
+            android.util.Log.w(
+                "SensorPlatformImpl",
+                "getLibreVersion failed (${e.message}); using persisted brand ${persisted.wireName}"
+            )
+            persisted
+        }
     }
 
     fun clearSession() {
@@ -187,8 +247,13 @@ class SensorPlatformImpl(
         emitEventMap(mapOf(
             "status" to status,
             "session" to session?.let {
-                mapOf("sensorId" to it.sensorId, "transmitterId" to it.transmitterId)
+                mapOf(
+                    "sensorId" to it.sensorId,
+                    "transmitterId" to it.transmitterId,
+                    "brand" to it.brand.wireName
+                )
             },
+            "brand" to (session?.brand ?: sessionManager.getCurrentSession()?.brand)?.wireName,
             "connected" to connected,
             "warmup" to warmup?.let { mapOf("elapsedMs" to it.elapsedMs, "totalMs" to it.totalMs) },
             "reading" to reading?.let { mapOf("value" to it.value) },
@@ -201,5 +266,10 @@ class SensorPlatformImpl(
     }
 
     private fun SensorSessionSnapshot.toPlatformMap(): Map<String, Any?> =
-        mapOf("sensorId" to sensorId, "transmitterId" to transmitterId, "connected" to connected)
+        mapOf(
+            "sensorId" to sensorId,
+            "transmitterId" to transmitterId,
+            "connected" to connected,
+            "brand" to brand.wireName
+        )
 }

@@ -18,7 +18,8 @@ data class SibionicsSessionRecord(
     val transmitterId: String? = null,  // Transmitter barcode (optional until submitted)
     val status: SessionStatus = SessionStatus.REGISTERED,  // Current status
     val registeredAtMs: Long = System.currentTimeMillis(),
-    val connectedAtMs: Long? = null
+    val connectedAtMs: Long? = null,
+    val brand: SensorBrand = SensorBrand.SIBIONICS
 ) : Serializable {
 
     /**
@@ -28,7 +29,8 @@ data class SibionicsSessionRecord(
         return SensorSessionSnapshot(
             sensorId = sensorId,
             transmitterId = transmitterId,
-            connected = status == SessionStatus.CONNECTED || status == SessionStatus.MONITORING
+            connected = status == SessionStatus.CONNECTED || status == SessionStatus.MONITORING,
+            brand = brand
         )
     }
 
@@ -60,5 +62,6 @@ data class SibionicsSessionRecord(
 data class SensorSessionSnapshot(
     val sensorId: String,
     val transmitterId: String? = null,
-    val connected: Boolean = false
+    val connected: Boolean = false,
+    val brand: SensorBrand = SensorBrand.SIBIONICS
 )

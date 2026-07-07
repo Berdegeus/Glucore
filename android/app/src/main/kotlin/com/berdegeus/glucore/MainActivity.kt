@@ -32,7 +32,8 @@ class MainActivity : FlutterActivity() {
                         "restoreSession" -> result.success(core.restoreSession())
                         "registerSensor" -> {
                             val barcode = call.argument<String>("barcode") ?: ""
-                            result.success(core.registerSensor(barcode))
+                            val brand = SensorBrand.fromWireName(call.argument<String>("brand"))
+                            result.success(core.registerSensor(barcode, brand))
                         }
                         "submitTransmitter" -> {
                             val transmitterBarcode = call.argument<String>("transmitterBarcode") ?: ""

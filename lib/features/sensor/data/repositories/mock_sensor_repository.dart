@@ -24,7 +24,10 @@ class MockSensorRepository implements SensorRepository {
   Future<SensorSession?> restoreSession() async => null;
 
   @override
-  Future<SensorSession?> registerSensor(String barcode) async => null;
+  Future<SensorSession?> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async => null;
 
   @override
   Future<void> submitTransmitter(String transmitterBarcode) async {}

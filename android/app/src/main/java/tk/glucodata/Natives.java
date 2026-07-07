@@ -46,4 +46,10 @@ public final class Natives {
     // Data processing
     public static native long SIprocessData(long dataptr, byte[] bluetoothdata, long mmsec);
     public static native long[] getlastGlucose();
+
+    // Sensor-type discrimination (Juggluco convention: 0x10 = Sibionics,
+    // 0x20 = Accu-Chek SmartGuide, 0x30 = CareSens Air, 0x40 = Dexcom,
+    // 3 = Libre 3, anything else = Libre 1/2).
+    public static native int getLibreVersion(long dataptr);
+    public static native int getSensorptrLibreVersion(long sensorptr);
 }
