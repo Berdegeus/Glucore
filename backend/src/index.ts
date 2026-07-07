@@ -12,7 +12,13 @@ import settingsRouter from './routes/settings';
 const app = express();
 const PORT = process.env.PORT ?? 3001;
 
-app.use(cors());
+// Restrict CORS to the origins listed in CORS_ORIGIN (comma-separated).
+// When unset, stay permissive for local development.
+const corsOrigins = process.env.CORS_ORIGIN?.split(',')
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0);
+
+app.use(corsOrigins && corsOrigins.length > 0 ? cors({ origin: corsOrigins }) : cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
