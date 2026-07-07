@@ -128,8 +128,15 @@ class SensorSessionManager(context: Context) {
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            db.execSQL("DROP TABLE IF EXISTS $TABLE")
-            onCreate(db)
+            // Session data must survive upgrades: dropping this table forces the
+            // user to re-register the sensor. Never DROP + recreate here — add an
+            // incremental migration step per schema version instead, e.g.:
+            //
+            // if (oldVersion < 2) {
+            //     db.execSQL("ALTER TABLE $TABLE ADD COLUMN new_column TEXT")
+            // }
+            //
+            // DB_VERSION is still 1, so there are no migration steps yet.
         }
     }
 }

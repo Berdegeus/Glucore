@@ -16,6 +16,13 @@ class SensorPlatformImpl(
     private val mainHandler = Handler(Looper.getMainLooper())
     private var bleManager: SibionicsBleManager? = null
 
+    /**
+     * When set (by SensorCore), every event emitted here is routed through it
+     * instead of going straight to the sink, so the core can record the last
+     * event before forwarding it via [deliverEventToSink].
+     */
+    var eventDispatcher: ((Map<String, Any?>) -> Unit)? = null
+
     fun setBleManager(manager: SibionicsBleManager) {
         bleManager = manager
     }
@@ -51,11 +58,19 @@ class SensorPlatformImpl(
         }
     }
 
-    fun registerSensor(barcode: String) {
+    /**
+     * Registers a sensor synchronously. Returns the session snapshot map on
+     * success (also emitted as an `idle` event) and throws
+     * [IllegalStateException] on failure (also emitted as an `error` event),
+     * so the MethodChannel caller gets an immediate result even if the
+     * EventChannel is not subscribed yet.
+     */
+    fun registerSensor(barcode: String): Map<String, Any?>? {
         val validation = SibionicsBarcode.validateSensorBarcode(barcode)
         if (validation is SibionicsBarcode.Result.Error) {
-            emitError("Registration failed: ${validation.message}")
-            return
+            val message = "Registration failed: ${validation.message}"
+            emitError(message)
+            throw IllegalStateException(message)
         }
 
         val normalizedBarcode = (validation as SibionicsBarcode.Result.Valid).barcode
@@ -65,12 +80,17 @@ class SensorPlatformImpl(
                 val snapshot = sessionManager.syncSessionFromNative(result.value)
                 // Sensor registered — connection happens when startMonitoring() is called
                 emitEvent(status = "idle", session = snapshot, connected = false)
+                return snapshot.toPlatformMap()
             }
             is SibionicsNativeBridgeAdapter.CallResult.NoData -> {
-                emitError("Registration failed: native bridge returned no session")
+                val message = "Registration failed: native bridge returned no session"
+                emitError(message)
+                throw IllegalStateException(message)
             }
             is SibionicsNativeBridgeAdapter.CallResult.Error -> {
-                emitError("Registration failed: ${result.message}")
+                val message = "Registration failed: ${result.message}"
+                emitError(message)
+                throw IllegalStateException(message)
             }
         }
     }
@@ -80,43 +100,45 @@ class SensorPlatformImpl(
             .onFailure { emitError("Transmitter submission failed: ${it.message}") }
     }
 
-    fun startMonitoring() {
+    /** Returns true when the BLE scan actually started (monitoring is live). */
+    fun startMonitoring(): Boolean {
         if (sessionManager.getCurrentSession() == null) {
             emitError("No sensor registered")
-            return
+            return false
         }
 
         val sensors = try { Natives.activeSensors() } catch (e: Exception) {
             emitError("activeSensors() failed: ${e.message}")
-            return
+            return false
         }
 
         if (sensors.isNullOrEmpty()) {
             emitError("No active sensor in native bridge — register the sensor first")
-            return
+            return false
         }
 
         val dataptr = try { Natives.getdataptr(sensors[0]) } catch (e: Exception) {
             emitError("getdataptr() failed: ${e.message}")
-            return
+            return false
         }
 
         if (dataptr == 0L) {
             emitError("Native dataptr is 0 — sensor state not initialized")
-            return
+            return false
         }
 
         val bm = bleManager
         if (bm == null) {
             emitError("BleManager not initialized")
-            return
+            return false
         }
 
         sessionManager.startMonitoring()
-            .onFailure { emitError("startMonitoring: ${it.message}"); return }
+            .onFailure { emitError("startMonitoring: ${it.message}"); return false }
 
         bm.startSensorScan(dataptr)
-            .onFailure { emitError(it.message ?: "BLE scan failed") }
+            .onFailure { emitError(it.message ?: "BLE scan failed"); return false }
+        return true
     }
 
     fun stopMonitoring() {
@@ -137,6 +159,16 @@ class SensorPlatformImpl(
     }
 
     internal fun emitEventMap(event: Map<String, Any?>) {
+        val dispatcher = eventDispatcher
+        if (dispatcher != null) {
+            dispatcher(event)
+        } else {
+            deliverEventToSink(event)
+        }
+    }
+
+    /** Delivers an event to the Flutter sink on the main thread (no dispatcher). */
+    internal fun deliverEventToSink(event: Map<String, Any?>) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             eventSink?.success(event)
         } else {

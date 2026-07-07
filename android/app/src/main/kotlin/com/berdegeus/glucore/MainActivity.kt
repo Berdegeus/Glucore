@@ -9,49 +9,46 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
+/**
+ * Thin channel host. The sensor stack lives in [SensorCore] (owned by
+ * [GlucoreApp]); this activity only registers the two platform channels and
+ * delegates every call, so BLE monitoring survives activity teardown.
+ */
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "glucore/sensor/methods"
     private val EVENT_CHANNEL = "glucore/sensor/events"
-    private lateinit var sensorImpl: SensorPlatformImpl
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        val sessionManager = SensorSessionManager(this)
-        val nativeBridgeAdapter = SibionicsNativeBridgeAdapter(this)
-        sensorImpl = SensorPlatformImpl(sessionManager, nativeBridgeAdapter)
-        sensorImpl.initializeNativeBridge()
+        val core = (application as GlucoreApp).sensorCore
 
-        val bleManager = SibionicsBleManager(this) { event -> sensorImpl.emitEventMap(event) }
-        sensorImpl.setBleManager(bleManager)
-
-        requestBlePermissionsIfNeeded()
+        requestRuntimePermissionsIfNeeded()
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 try {
                     when (call.method) {
-                        "restoreSession" -> result.success(sensorImpl.restoreSession())
+                        "restoreSession" -> result.success(core.restoreSession())
                         "registerSensor" -> {
                             val barcode = call.argument<String>("barcode") ?: ""
-                            sensorImpl.registerSensor(barcode)
-                            result.success(null)
+                            result.success(core.registerSensor(barcode))
                         }
                         "submitTransmitter" -> {
                             val transmitterBarcode = call.argument<String>("transmitterBarcode") ?: ""
-                            sensorImpl.submitTransmitter(transmitterBarcode)
+                            core.submitTransmitter(transmitterBarcode)
                             result.success(null)
                         }
                         "startMonitoring" -> {
-                            sensorImpl.startMonitoring()
+                            core.startMonitoring()
                             result.success(null)
                         }
                         "stopMonitoring" -> {
-                            sensorImpl.stopMonitoring()
+                            core.stopMonitoring()
                             result.success(null)
                         }
                         "clearSession" -> {
-                            sensorImpl.clearSession()
+                            core.clearSession()
                             result.success(null)
                         }
                         else -> result.notImplemented()
@@ -64,23 +61,28 @@ class MainActivity : FlutterActivity() {
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                    sensorImpl.setEventSink(events)
+                    core.setEventSink(events)
                 }
                 override fun onCancel(arguments: Any?) {
-                    sensorImpl.setEventSink(null)
+                    core.setEventSink(null)
                 }
             })
     }
 
-    private fun requestBlePermissionsIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+    private fun requestRuntimePermissionsIfNeeded() {
         val needed = mutableListOf<String>()
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED)
-            needed.add(Manifest.permission.BLUETOOTH_SCAN)
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
-            needed.add(Manifest.permission.BLUETOOTH_CONNECT)
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-            needed.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED)
+                needed.add(Manifest.permission.BLUETOOTH_SCAN)
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
+                needed.add(Manifest.permission.BLUETOOTH_CONNECT)
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                needed.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                needed.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
         if (needed.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, needed.toTypedArray(), 1001)
         }
