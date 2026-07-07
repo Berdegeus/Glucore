@@ -137,6 +137,13 @@ abstract class BrandBleManager(
     /** Invoked on GATT connection, before service discovery starts. */
     protected open fun onBrandConnected(gatt: BluetoothGatt) {}
 
+    /**
+     * Return false to defer service discovery (e.g. while OS bonding is in
+     * progress); the subclass is then responsible for calling
+     * `gatt.discoverServices()` once it is ready.
+     */
+    protected open fun shouldDiscoverServicesOnConnect(gatt: BluetoothGatt): Boolean = true
+
     /** Invoked after successful service discovery; bind characteristics here. */
     protected abstract fun onBrandServicesDiscovered(gatt: BluetoothGatt)
 
@@ -376,6 +383,9 @@ abstract class BrandBleManager(
                 pendingDevice = gatt.device
                 gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
                 onBrandConnected(gatt)
+                if (!shouldDiscoverServicesOnConnect(gatt)) {
+                    return
+                }
                 if (!hasBlePermissions() || !gatt.discoverServices()) {
                     Log.e(tag, "discoverServices() failed")
                     emitError("Service discovery could not start")
@@ -586,6 +596,18 @@ abstract class BrandBleManager(
         pendingCurrentCandidate = decoded
         emitHistorySyncProgress(decoded)
         scheduleCurrentPromotionIfRecent(decoded)
+    }
+
+    /**
+     * Marks one history record as received without a decodable reading
+     * (e.g. the native layer stored a back-fill record internally) and
+     * emits `syncingHistory` progress while no current reading exists.
+     */
+    protected fun notifyHistoryStored() {
+        if (hasDeliveredCurrentReading) return
+        historySyncActive = true
+        historyReadingsReceived += 1
+        emitHistorySyncProgress()
     }
 
     protected fun completeHistorySyncAndEmit(reading: DecodedGlucoseReading) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../sensor/domain/models.dart';
 import '../widgets/patient_widgets.dart';
 import 'libre_nfc_page.dart';
 import 'sensor_link_page.dart';
@@ -30,6 +31,21 @@ class SensorChoicePage extends StatelessWidget {
               buildPatientScopedRoute(
                 context,
                 const SensorLinkPage(),
+                withSensorCubit: true,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _BrandCard(
+            name: 'Accu-Chek SmartGuide',
+            description: 'Roche — sensor de 15 dias, pareamento com PIN',
+            icon: Icons.sensors_rounded,
+            color: const Color(0xFF0B5ED7),
+            enabled: true,
+            onTap: () => Navigator.of(context).push(
+              buildPatientScopedRoute(
+                context,
+                const SensorLinkPage(brand: SensorBrand.accuchek),
                 withSensorCubit: true,
               ),
             ),

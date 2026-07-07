@@ -19,6 +19,9 @@ enum SensorConnectionStatus {
   idle,
   scanning,
   connecting,
+
+  /// OS bonding dialog is up (Accu-Chek SmartGuide pairing PIN).
+  pairing,
   connected,
   syncingHistory,
   warmingUp,

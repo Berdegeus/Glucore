@@ -125,6 +125,7 @@ class SensorCubit extends Cubit<SensorUiState> {
   Future<void> startMonitoring() async {
     if (state.status == SensorConnectionStatus.scanning ||
         state.status == SensorConnectionStatus.connecting ||
+        state.status == SensorConnectionStatus.pairing ||
         state.status == SensorConnectionStatus.connected ||
         state.status == SensorConnectionStatus.syncingHistory ||
         state.status == SensorConnectionStatus.readingAvailable) {

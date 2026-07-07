@@ -11,7 +11,10 @@ import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/patient_widgets.dart';
 
 class SensorLinkPage extends StatefulWidget {
-  const SensorLinkPage({super.key});
+  const SensorLinkPage({super.key, this.brand = SensorBrand.sibionics});
+
+  /// Brand being registered; drives copy, GS1 normalization and pairing UX.
+  final SensorBrand brand;
 
   @override
   State<SensorLinkPage> createState() => _SensorLinkPageState();
@@ -20,6 +23,8 @@ class SensorLinkPage extends StatefulWidget {
 class _SensorLinkPageState extends State<SensorLinkPage> {
   final _barcodeController = TextEditingController();
   int _tutorialStep = 0;
+
+  bool get _isAccuChek => widget.brand == SensorBrand.accuchek;
 
   @override
   void dispose() {
@@ -31,7 +36,9 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => const _ScannerSheet(),
+      // The SmartGuide data matrix must be submitted raw; GS1 normalization
+      // only applies to Sibionics barcodes.
+      builder: (_) => _ScannerSheet(normalizeGs1: !_isAccuChek),
     );
     if (result != null && result.isNotEmpty) {
       setState(() {
@@ -78,7 +85,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TutorialStepper(currentStep: _tutorialStep),
+        _TutorialStepper(currentStep: _tutorialStep, isAccuChek: _isAccuChek),
         const SizedBox(height: 20),
         if (_tutorialStep == 0) ...[
           FilledButton.icon(
@@ -97,9 +104,9 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
           const SizedBox(height: 8),
           TextField(
             controller: _barcodeController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Código do sensor',
-              hintText: '(01)069...',
+              hintText: _isAccuChek ? 'Código da tampa (46 caracteres)' : '(01)069...',
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -107,9 +114,10 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
           FilledButton(
             onPressed: _barcodeController.text.trim().isNotEmpty
                 ? () {
-                    context
-                        .read<SensorCubit>()
-                        .registerSensor(_barcodeController.text.trim());
+                    context.read<SensorCubit>().registerSensor(
+                          _barcodeController.text.trim(),
+                          brand: widget.brand,
+                        );
                     setState(() => _tutorialStep = 2);
                   }
                 : null,
@@ -118,7 +126,14 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
         ] else ...[
           const Center(child: CircularProgressIndicator()),
           const SizedBox(height: 12),
-          const Center(child: Text('Aguardando conexão Bluetooth…')),
+          Center(
+            child: Text(
+              _isAccuChek
+                  ? 'Aguardando conexão. Confirme o pareamento quando o Android pedir o PIN.'
+                  : 'Aguardando conexão Bluetooth…',
+              textAlign: TextAlign.center,
+            ),
+          ),
         ],
       ],
     );
@@ -211,6 +226,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
   bool _canDisconnect(SensorConnectionStatus status) =>
       status == SensorConnectionStatus.scanning ||
       status == SensorConnectionStatus.connecting ||
+      status == SensorConnectionStatus.pairing ||
       status == SensorConnectionStatus.connected ||
       status == SensorConnectionStatus.syncingHistory ||
       status == SensorConnectionStatus.readingAvailable ||
@@ -234,6 +250,12 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
         subtitle = l10n.sensorLinkReconnectingSubtitle;
         color = AppTheme.brandSecondary;
         icon = Icons.bluetooth_connected;
+        break;
+      case SensorConnectionStatus.pairing:
+        subtitle =
+            'Confirme o pareamento no diálogo do sistema e digite o PIN do sensor.';
+        color = AppTheme.brandSecondary;
+        icon = Icons.password;
         break;
       case SensorConnectionStatus.connected:
         subtitle = l10n.sensorPageConnectedMessage;
@@ -284,10 +306,11 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
 // ── Tutorial stepper ──────────────────────────────────────────────────────────
 
 class _TutorialStepper extends StatelessWidget {
-  const _TutorialStepper({required this.currentStep});
+  const _TutorialStepper({required this.currentStep, this.isAccuChek = false});
   final int currentStep;
+  final bool isAccuChek;
 
-  static const _steps = [
+  static const _sibionicsSteps = [
     (
       Icons.inventory_2_outlined,
       'Retire o sensor da caixa',
@@ -305,11 +328,30 @@ class _TutorialStepper extends StatelessWidget {
     ),
   ];
 
+  static const _accuChekSteps = [
+    (
+      Icons.inventory_2_outlined,
+      'Aplique o sensor e guarde a tampa',
+      'O código data matrix fica na tampa azul do aplicador.',
+    ),
+    (
+      Icons.qr_code_scanner,
+      'Escaneie o código da tampa',
+      'Aponte a câmera para o código data matrix na tampa azul.',
+    ),
+    (
+      Icons.password,
+      'Pareie quando o Android pedir o PIN',
+      'Digite o PIN do sensor no diálogo de pareamento do sistema.',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final steps = isAccuChek ? _accuChekSteps : _sibionicsSteps;
     return Column(
-      children: List.generate(_steps.length, (i) {
-        final (icon, title, subtitle) = _steps[i];
+      children: List.generate(steps.length, (i) {
+        final (icon, title, subtitle) = steps[i];
         final done = i < currentStep;
         final active = i == currentStep;
         return Padding(
@@ -404,7 +446,9 @@ class _StepCircle extends StatelessWidget {
 // ── Scanner bottom sheet ──────────────────────────────────────────────────────
 
 class _ScannerSheet extends StatefulWidget {
-  const _ScannerSheet();
+  const _ScannerSheet({this.normalizeGs1 = true});
+
+  final bool normalizeGs1;
 
   @override
   State<_ScannerSheet> createState() => _ScannerSheetState();
@@ -426,7 +470,8 @@ class _ScannerSheetState extends State<_ScannerSheet> {
     if (_scanned) return;
     final raw = capture.barcodes.firstOrNull?.rawValue;
     if (raw != null && raw.isNotEmpty) {
-      final normalized = normalizeGs1Barcode(raw) ?? raw;
+      final normalized =
+          widget.normalizeGs1 ? (normalizeGs1Barcode(raw) ?? raw) : raw;
       _scanned = true;
       Navigator.of(context).pop(normalized);
     }

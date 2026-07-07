@@ -37,8 +37,11 @@ class SensorCore(context: Context) {
             SensorBrand.SIBIONICS -> bleManagers.getOrPut(brand) {
                 SibionicsBleManager(appContext) { event -> dispatchEvent(event) }
             }
-            // Implemented in later phases.
-            SensorBrand.ACCUCHEK, SensorBrand.LIBRE2 -> null
+            SensorBrand.ACCUCHEK -> bleManagers.getOrPut(brand) {
+                AccuChekBleManager(appContext) { event -> dispatchEvent(event) }
+            }
+            // Implemented in a later phase.
+            SensorBrand.LIBRE2 -> null
         }
 
     /** Last event dispatched, replayed when a new EventChannel listener attaches. */

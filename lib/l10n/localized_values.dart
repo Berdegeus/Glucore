@@ -105,6 +105,8 @@ extension SensorConnectionStatusLocalization on SensorConnectionStatus {
         return l10n.sensorStatusScanning;
       case SensorConnectionStatus.connecting:
         return l10n.sensorStatusConnecting;
+      case SensorConnectionStatus.pairing:
+        return l10n.sensorStatusPairing;
       case SensorConnectionStatus.connected:
         return l10n.sensorStatusConnected;
       case SensorConnectionStatus.syncingHistory:

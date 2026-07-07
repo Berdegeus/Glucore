@@ -348,6 +348,12 @@ class _NoSensorCard extends StatelessWidget {
           'Estabelecendo conexão com o sensor',
           AppTheme.brandBlue,
         ),
+      SensorConnectionStatus.pairing => (
+          Icons.password,
+          'Pareamento necessário',
+          'Digite o PIN do sensor no diálogo do sistema',
+          AppTheme.brandBlue,
+        ),
       SensorConnectionStatus.syncingHistory => (
           Icons.sync_rounded,
           'Sincronizando histórico',

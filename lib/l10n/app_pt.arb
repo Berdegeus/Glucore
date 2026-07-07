@@ -300,6 +300,7 @@
   "sensorStatusIdle": "Inativo",
   "sensorStatusScanning": "Buscando",
   "sensorStatusConnecting": "Conectando",
+  "sensorStatusPairing": "Pareando",
   "sensorStatusConnected": "Conectado",
   "sensorStatusSyncingHistory": "Sincronizando histórico",
   "sensorStatusWarmingUp": "Aquecendo",

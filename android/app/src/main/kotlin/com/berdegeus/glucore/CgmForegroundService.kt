@@ -151,6 +151,7 @@ class CgmForegroundService : Service() {
         statusText = when (status) {
             "scanning" -> "Procurando sensor…"
             "connecting" -> "Conectando ao sensor…"
+            "pairing" -> "Confirme o pareamento (PIN) no aparelho"
             "connected" -> "Sensor conectado"
             "syncingHistory" -> "Sincronizando histórico…"
             "readingAvailable" -> "Sensor conectado"

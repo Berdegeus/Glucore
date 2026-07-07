@@ -52,4 +52,9 @@ public final class Natives {
     // 3 = Libre 3, anything else = Libre 1/2).
     public static native int getLibreVersion(long dataptr);
     public static native int getSensorptrLibreVersion(long sensorptr);
+
+    // Accu-Chek SmartGuide (SIG CGM profile; parsing lives in libg.so)
+    public static native byte[] accuAskValues(long dataptr);
+    public static native long accuProcessData(long dataptr, byte[] value, long mmsec);
+    public static native void accuSetStartTime(long dataptr, byte[] value);
 }
