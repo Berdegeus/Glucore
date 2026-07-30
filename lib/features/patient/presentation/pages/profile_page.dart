@@ -155,8 +155,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     label: 'Dias restantes',
                     value: _daysLeft(state),
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (_) => const SensorChoicePage()),
+                      buildPatientScopedRoute(
+                        context,
+                        const SensorChoicePage(),
+                        withSensorCubit: true,
+                      ),
                     ),
                   ),
                 ],

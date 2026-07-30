@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../sensor/presentation/cubit/sensor_cubit.dart';
-import '../cubit/patient_cubit.dart';
 
 class StatusCard extends StatelessWidget {
   const StatusCard({
@@ -80,31 +76,17 @@ class EmptyStateView extends StatelessWidget {
   }
 }
 
+/// Builds a route into the authenticated shell.
+///
+/// Since P17, `SensorCubit`/`PatientCubit` are provided above the root Navigator
+/// (`app.dart`'s `MaterialApp.builder`), so every pushed route already inherits
+/// them and no per-route re-scoping is needed. The [withPatientCubit] /
+/// [withSensorCubit] flags are kept for call-site compatibility but are no-ops.
 Route<T> buildPatientScopedRoute<T>(
   BuildContext context,
   Widget child, {
   bool withPatientCubit = true,
   bool withSensorCubit = false,
 }) {
-  return MaterialPageRoute(
-    builder: (_) {
-      Widget scopedChild = child;
-
-      if (withSensorCubit) {
-        scopedChild = BlocProvider.value(
-          value: context.read<SensorCubit>(),
-          child: scopedChild,
-        );
-      }
-
-      if (withPatientCubit) {
-        scopedChild = BlocProvider.value(
-          value: context.read<PatientCubit>(),
-          child: scopedChild,
-        );
-      }
-
-      return scopedChild;
-    },
-  );
+  return MaterialPageRoute(builder: (_) => child);
 }
