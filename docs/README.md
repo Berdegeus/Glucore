@@ -13,12 +13,14 @@ Glucore é um MVP Flutter (Android-first) para sensores CGM Sibionics, com backe
 | [architecture/state-management.md](architecture/state-management.md) | Cubits, DI, stream de eventos, modo mock | for mexer em estado Flutter ou UI reativa |
 | [architecture/backend.md](architecture/backend.md) | API Express, Prisma, o que é usado vs planejado | for mexer no backend ou na sincronização |
 | [guides/setup-and-build.md](guides/setup-and-build.md) | Comandos, variáveis, restrições de build | for compilar, rodar ou configurar ambiente |
+| [guides/versioning-and-branches.md](guides/versioning-and-branches.md) | Esquema `dev`/`main`, semver, fluxo por versão | for abrir PR, versionar ou decidir destino de uma mudança |
 | [guides/adding-features.md](guides/adding-features.md) | Receitas: nova página, novo campo persistido, nova rota | for adicionar funcionalidade |
 | [reference/platform-channels.md](reference/platform-channels.md) | Contrato exato MethodChannel/EventChannel | for mexer na fronteira Flutter↔Android |
 | [reference/native-stubs.md](reference/native-stubs.md) | Classes stub exigidas por `libg.so` | vir crash JNI `ClassNotFoundException` |
 | [reference/data-models.md](reference/data-models.md) | Modelos Flutter ↔ payload API ↔ Prisma | for adicionar/alterar campo de dados |
-| [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) | **Relatório**: problemas arquiteturais (P1–P16), proposta de HAL, revisão da conexão com sensores | for planejar refatoração ou corrigir débito técnico |
+| [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) | **Relatório**: problemas arquiteturais (P1–P35; P17/P18/P19 resolvidos na v1.1.0), proposta de HAL, revisão da conexão com sensores | for planejar refatoração ou corrigir débito técnico |
 | [ARCHITECTURE_FIX_PLAN.md](ARCHITECTURE_FIX_PLAN.md) | **Plano de correção**: 6 fases ordenadas, passos, critérios de aceite | for executar as correções do relatório |
+| [../CHANGELOG.md](../CHANGELOG.md) | Histórico de versões (features, fixes por release) | for saber o que mudou entre versões |
 
 `sprint1_tracking.md` é o tracking de requisitos do Sprint 1 (preexistente, mantido).
 
