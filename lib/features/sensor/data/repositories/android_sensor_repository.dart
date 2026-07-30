@@ -42,9 +42,13 @@ class AndroidSensorRepository implements SensorRepository {
   }
 
   @override
-  Future<void> registerSensor(String barcode) async {
+  Future<SensorSession?> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async {
     try {
-      await platform.registerSensor(barcode);
+      final snapshot = await platform.registerSensor(barcode, brand: brand);
+      return snapshot?.toSession();
     } catch (e) {
       _eventController.addError(e);
       rethrow;
@@ -83,6 +87,20 @@ class AndroidSensorRepository implements SensorRepository {
 
   @override
   Stream<SensorEvent> observeSessionEvents() => _eventController.stream;
+
+  @override
+  Future<AbbottLibraryStatus> getAbbottLibraryStatus() =>
+      platform.getAbbottLibraryStatus();
+
+  @override
+  Future<void> installAbbottLibrary(String path) =>
+      platform.installAbbottLibrary(path);
+
+  @override
+  Future<void> startNfcScan() => platform.startNfcScan();
+
+  @override
+  Future<void> stopNfcScan() => platform.stopNfcScan();
 
   @override
   Future<void> clearSession() async {

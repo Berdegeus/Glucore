@@ -38,7 +38,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<bool> isLoggedIn() {
+  Future<AuthSessionStatus> isLoggedIn() {
     return localDataSource.isLoggedIn();
   }
 }

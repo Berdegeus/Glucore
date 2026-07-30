@@ -1,15 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/debug/debug_panel.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../sensor/domain/models.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
+import '../models/patient_models.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/glucose_chart.dart';
 import '../widgets/patient_widgets.dart';
+import 'carb_edit_page.dart';
+import 'insulin_edit_page.dart';
 import 'notifications_page.dart';
 import 'sensor_link_page.dart';
 
@@ -23,7 +27,7 @@ class MonitoringHomePage extends StatefulWidget {
 class _MonitoringHomePageState extends State<MonitoringHomePage> {
   int _logoTaps = 0;
   DateTime? _firstTapAt;
-  static const _tapTarget = 10;
+  static const _tapTarget = 3;
   static const _tapWindow = Duration(seconds: 5);
 
   void _onLogoTap() {
@@ -40,6 +44,109 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
       _firstTapAt = null;
       DebugPanel.show(context);
     }
+  }
+
+  void _showCarbPopup(CarbEntry entry) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => BlocProvider.value(
+        value: context.read<PatientCubit>(),
+        child: _EntryPopupSheet(
+          icon: Icons.restaurant_rounded,
+          iconColor: AppTheme.zoneTargetBg,
+          title: '${entry.grams} g carb',
+          subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
+          onEdit: () {
+            Navigator.pop(sheetCtx);
+            Navigator.of(context).push(
+              buildPatientScopedRoute(context, CarbEditPage(entry: entry)),
+            );
+          },
+          onDelete: () async {
+            final cubit = context.read<PatientCubit>();
+            final sheetNav = Navigator.of(sheetCtx);
+            final confirmed = await showDialog<bool>(
+              context: sheetCtx,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Excluir registro?'),
+                content: const Text('Esta ação não pode ser desfeita.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancelar'),
+                  ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Excluir'),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed != true) return;
+            sheetNav.pop();
+            await cubit.deleteCarbEntry(entry);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showInsulinPopup(InsulinEntry entry) {
+    final typeLabel = switch (entry.type) {
+      InsulinType.bolus => 'Bolus',
+      InsulinType.basal => 'Basal',
+      InsulinType.correction => 'Correção',
+    };
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => BlocProvider.value(
+        value: context.read<PatientCubit>(),
+        child: _EntryPopupSheet(
+          icon: Icons.vaccines_outlined,
+          iconColor: AppTheme.brandBlue,
+          title: '${entry.units.toStringAsFixed(1)} UI · $typeLabel',
+          subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
+          onEdit: () {
+            Navigator.pop(sheetCtx);
+            Navigator.of(context).push(
+              buildPatientScopedRoute(context, InsulinEditPage(entry: entry)),
+            );
+          },
+          onDelete: () async {
+            final cubit = context.read<PatientCubit>();
+            final sheetNav = Navigator.of(sheetCtx);
+            final confirmed = await showDialog<bool>(
+              context: sheetCtx,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Excluir registro?'),
+                content: const Text('Esta ação não pode ser desfeita.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancelar'),
+                  ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Excluir'),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed != true) return;
+            sheetNav.pop();
+            await cubit.deleteInsulinEntry(entry);
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -89,7 +196,11 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
               _buildHero(context, state),
               const SizedBox(height: 16),
               if (state.readings.isNotEmpty) ...[
-                _ChartCard(state: state),
+                _ChartCard(
+                  state: state,
+                  onCarbTap: _showCarbPopup,
+                  onInsulinTap: _showInsulinPopup,
+                ),
                 const SizedBox(height: 12),
                 _StatsRow(state: state),
               ],
@@ -127,6 +238,97 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
   }
 }
 
+class _EntryPopupSheet extends StatelessWidget {
+  const _EntryPopupSheet({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.ink,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 13, color: AppTheme.inkMuted),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Editar'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onDelete,
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text('Excluir'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NoSensorCard extends StatelessWidget {
   const _NoSensorCard({required this.sensorStatus});
   final SensorConnectionStatus sensorStatus;
@@ -144,6 +346,12 @@ class _NoSensorCard extends StatelessWidget {
           Icons.bluetooth_connected,
           'Conectando…',
           'Estabelecendo conexão com o sensor',
+          AppTheme.brandBlue,
+        ),
+      SensorConnectionStatus.pairing => (
+          Icons.password,
+          'Pareamento necessário',
+          'Digite o PIN do sensor no diálogo do sistema',
           AppTheme.brandBlue,
         ),
       SensorConnectionStatus.syncingHistory => (
@@ -211,8 +419,15 @@ class _NoSensorCard extends StatelessWidget {
 }
 
 class _ChartCard extends StatelessWidget {
-  const _ChartCard({required this.state});
+  const _ChartCard({
+    required this.state,
+    this.onCarbTap,
+    this.onInsulinTap,
+  });
+
   final PatientState state;
+  final void Function(CarbEntry)? onCarbTap;
+  final void Function(InsulinEntry)? onInsulinTap;
 
   @override
   Widget build(BuildContext context) {
@@ -241,6 +456,10 @@ class _ChartCard extends StatelessWidget {
               readings: state.readings,
               lowThreshold: state.alertSettings.lowThreshold,
               highThreshold: state.alertSettings.highThreshold,
+              carbs: state.carbs,
+              insulin: state.insulin,
+              onCarbTap: onCarbTap,
+              onInsulinTap: onInsulinTap,
             ),
           ),
         ],

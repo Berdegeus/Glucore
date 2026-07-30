@@ -42,6 +42,7 @@ using GetSensorNameFn = jstring (*)(JNIEnv*, jclass, jlong);
 using GetDeviceAddressFn = jstring (*)(JNIEnv*, jclass, jlong, jboolean);
 using GetSensorPtrSiSubtypeFn = jint (*)(JNIEnv*, jclass, jlong);
 using SetSensorPtrSiSubtypeFn = void (*)(JNIEnv*, jclass, jlong, jint);
+using GetSensorPtrLibreVersionFn = jint (*)(JNIEnv*, jclass, jlong);
 using SiGetDeviceNameFn = jstring (*)(JNIEnv*, jclass, jlong);
 using SaveMatchedDeviceFn = jboolean (*)(JNIEnv*, jclass, jstring, jstring, jstring);
 using GetInitialWriteFn = jstring (*)(JNIEnv*, jclass, jstring);
@@ -66,6 +67,8 @@ constexpr const char* kGetSensorPtrSiSubtypeSymbol =
     "Java_tk_glucodata_Natives_getSensorptrSiSubtype";
 constexpr const char* kSetSensorPtrSiSubtypeSymbol =
     "Java_tk_glucodata_Natives_setSensorptrSiSubtype";
+constexpr const char* kGetSensorPtrLibreVersionSymbol =
+    "Java_tk_glucodata_Natives_getSensorptrLibreVersion";
 constexpr const char* kSiGetDeviceNameSymbol = "Java_tk_glucodata_Natives_siGetDeviceName";
 
 struct VendorLibrarySpec {
@@ -363,7 +366,8 @@ std::string BuildSessionJson(
     const std::string& device_address = "",
     int subtype = -1,
     jint native_scan_index = -1,
-    jlong sensor_ptr = 0
+    jlong sensor_ptr = 0,
+    int libre_version = -1
 ) {
     std::ostringstream payload;
     payload << "{"
@@ -389,6 +393,9 @@ std::string BuildSessionJson(
     }
     if (sensor_ptr != 0) {
         payload << ",\"nativeSensorPtr\":" << static_cast<std::int64_t>(sensor_ptr);
+    }
+    if (libre_version >= 0) {
+        payload << ",\"libreVersion\":" << libre_version;
     }
 
     payload << "}";
@@ -707,12 +714,28 @@ Java_com_berdegeus_glucore_GlucoreSibionicsBridge_registerSensor(
         return MakeJsonError(env, g_state.last_error);
     }
 
-    SetSensorPtrSiSubtypeFn set_sensorptr_si_subtype_fn =
-        RequireInitializedSymbolLocked<SetSensorPtrSiSubtypeFn>(kSetSensorPtrSiSubtypeSymbol);
-    if (set_sensorptr_si_subtype_fn != nullptr) {
-        set_sensorptr_si_subtype_fn(env, vendor_class, sensor_ptr, subtype);
-        if (CaptureJavaExceptionLocked(env, "Natives.setSensorptrSiSubtype")) {
-            return MakeJsonError(env, g_state.last_error);
+    // The Juggluco sensor store recognizes multiple brands from the same scan
+    // string (Sibionics 0x10, Accu-Chek 0x20, ...). The SI subtype only exists
+    // on Sibionics sensors, so applying it to another brand would corrupt its
+    // record — query the type first and gate the call.
+    int libre_version = -1;
+    GetSensorPtrLibreVersionFn get_sensorptr_libre_version_fn =
+        RequireInitializedSymbolLocked<GetSensorPtrLibreVersionFn>(kGetSensorPtrLibreVersionSymbol);
+    if (get_sensorptr_libre_version_fn != nullptr) {
+        const jint version = get_sensorptr_libre_version_fn(env, vendor_class, sensor_ptr);
+        if (!CaptureJavaExceptionLocked(env, "Natives.getSensorptrLibreVersion")) {
+            libre_version = static_cast<int>(version);
+        }
+    }
+
+    if (libre_version < 0 || libre_version == 0x10) {
+        SetSensorPtrSiSubtypeFn set_sensorptr_si_subtype_fn =
+            RequireInitializedSymbolLocked<SetSensorPtrSiSubtypeFn>(kSetSensorPtrSiSubtypeSymbol);
+        if (set_sensorptr_si_subtype_fn != nullptr) {
+            set_sensorptr_si_subtype_fn(env, vendor_class, sensor_ptr, subtype);
+            if (CaptureJavaExceptionLocked(env, "Natives.setSensorptrSiSubtype")) {
+                return MakeJsonError(env, g_state.last_error);
+            }
         }
     }
 
@@ -738,7 +761,8 @@ Java_com_berdegeus_glucore_GlucoreSibionicsBridge_registerSensor(
         "",
         subtype,
         native_index,
-        sensor_ptr
+        sensor_ptr,
+        libre_version
     );
     return MakeJsonSuccess(env, payload);
 }

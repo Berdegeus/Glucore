@@ -6,6 +6,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../models/patient_models.dart';
+import '../widgets/patient_widgets.dart';
+import 'carb_edit_page.dart';
+import 'insulin_edit_page.dart';
 
 class DiaryPage extends StatelessWidget {
   const DiaryPage({super.key});
@@ -16,7 +19,7 @@ class DiaryPage extends StatelessWidget {
       appBar: AppBar(title: const Text('Diário')),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
-          final entries = _buildEntries(state);
+          final entries = _buildEntries(context, state);
 
           if (entries.isEmpty) {
             return const _EmptyDiary();
@@ -41,7 +44,7 @@ class DiaryPage extends StatelessWidget {
     );
   }
 
-  List<Object> _buildEntries(PatientState state) {
+  List<Object> _buildEntries(BuildContext context, PatientState state) {
     final items = <_DiaryItem>[];
 
     for (final c in state.carbs) {
@@ -51,6 +54,9 @@ class DiaryPage extends StatelessWidget {
         color: AppTheme.zoneTargetBg,
         title: c.description.isEmpty ? 'Refeição' : c.description,
         detail: '${c.grams} g carb',
+        onTap: () => Navigator.of(context).push(
+          buildPatientScopedRoute(context, CarbEditPage(entry: c)),
+        ),
       ));
     }
     for (final ins in state.insulin) {
@@ -59,7 +65,10 @@ class DiaryPage extends StatelessWidget {
         icon: Icons.vaccines_outlined,
         color: AppTheme.brandBlue,
         title: _insulinLabel(ins.type),
-        detail: '${ins.units.toStringAsFixed(1)} UI',
+        detail: '${ins.units.toStringAsFixed(1)} UI · ${ins.dayOfWeek}',
+        onTap: () => Navigator.of(context).push(
+          buildPatientScopedRoute(context, InsulinEditPage(entry: ins)),
+        ),
       ));
     }
 
@@ -108,6 +117,7 @@ class _DiaryItem {
     required this.color,
     required this.title,
     required this.detail,
+    this.onTap,
   });
 
   final DateTime time;
@@ -115,6 +125,7 @@ class _DiaryItem {
   final Color color;
   final String title;
   final String detail;
+  final VoidCallback? onTap;
 }
 
 class _DayHeaderWidget extends StatelessWidget {
@@ -143,50 +154,62 @@ class _DiaryItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceCanvas,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: item.color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: item.onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceCanvas,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: item.color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(item.icon, color: item.color, size: 20),
             ),
-            child: Icon(item.icon, color: item.color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.detail,
+                    style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.ink,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item.detail,
+                  DateFormat.Hm().format(item.time),
                   style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
                 ),
+                if (item.onTap != null) ...[
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, size: 16, color: AppTheme.inkMuted),
+                ],
               ],
             ),
-          ),
-          Text(
-            DateFormat.Hm().format(item.time),
-            style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

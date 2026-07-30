@@ -3,18 +3,35 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import rateLimit from 'express-rate-limit';
 import { Prisma } from '@prisma/client';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
+import { JWT_SECRET } from '../lib/env';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_TARGET_MIN = 80;
 const DEFAULT_TARGET_MAX = 180;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Strict limiter for credential-sensitive endpoints (login, password reset flows).
+const strictAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Looser limiter for account creation.
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 type RegisterBody = {
   fullName?: string;
@@ -153,6 +170,7 @@ async function sendPasswordResetEmail(email: string, token: string): Promise<voi
 
 router.post(
   '/register',
+  registerLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const body = req.body as RegisterBody;
     const email = body.email == null ? undefined : normalizeEmail(body.email);
@@ -228,6 +246,7 @@ router.post(
 
 router.post(
   '/login',
+  strictAuthLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const { email, password } = req.body as { email?: string; password?: string };
     if (!email || !password) {
@@ -285,6 +304,7 @@ router.get(
 
 router.post(
   '/forgot-password',
+  strictAuthLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const { email } = req.body as { email?: string };
     if (!email || !EMAIL_RE.test(email)) {
@@ -316,6 +336,7 @@ router.post(
 
 router.post(
   '/reset-password',
+  strictAuthLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const { token, password } = req.body as { token?: string; password?: string };
     if (!token || !password || password.length < 8) {

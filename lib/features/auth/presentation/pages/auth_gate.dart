@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../injection_container.dart';
-import '../../../patient/presentation/cubit/patient_cubit.dart';
 import '../../../patient/presentation/shell/patient_shell_page.dart';
-import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import 'login_page.dart';
 
+/// Switches between the login screen and the authenticated shell.
+///
+/// The `SensorCubit`/`PatientCubit` providers are NOT created here — they are
+/// injected above the root Navigator in `app.dart`'s `MaterialApp.builder` so
+/// every pushed route inherits them (see P17). This widget only decides which
+/// top-level page to show.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -25,18 +28,7 @@ class AuthGate extends StatelessWidget {
         }
 
         if (state.status == AuthStatus.authenticated) {
-          return MultiBlocProvider(
-            providers: [
-              BlocProvider<SensorCubit>(
-                create: (_) => sl<SensorCubit>()..initialize(),
-              ),
-              BlocProvider<PatientCubit>(
-                create: (context) =>
-                    sl<PatientCubit>()..initialize(context.read<SensorCubit>()),
-              ),
-            ],
-            child: const PatientShellPage(),
-          );
+          return const PatientShellPage();
         }
 
         return const LoginPage();

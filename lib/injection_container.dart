@@ -13,7 +13,9 @@ import 'features/auth/domain/usecases/logout_usecase.dart';
 import 'features/auth/domain/usecases/register_usecase.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/patient/data/datasources/patient_local_datasource.dart';
-import 'features/patient/data/repositories/patient_local_repository.dart';
+import 'features/patient/data/datasources/patient_remote_datasource.dart';
+import 'features/patient/data/repositories/patient_repository.dart';
+import 'features/patient/data/sync/patient_sync_service.dart';
 import 'features/patient/presentation/cubit/patient_cubit.dart';
 import 'features/sensor/data/platform/sensor_platform.dart';
 import 'features/sensor/data/repositories/android_sensor_repository.dart';
@@ -48,10 +50,29 @@ Future<void> initDependencies() async {
     () => AndroidSensorRepository(platform: sl()),
   );
 
-  sl.registerLazySingleton<PatientLocalDataSource>(
+  sl.registerLazySingleton<LocalPatientDataSource>(
+    () => LocalPatientDataSource(),
+    dispose: (dataSource) => dataSource.close(),
+  );
+  sl.registerLazySingleton<RemotePatientDataSource>(
     () => RemotePatientDataSource(dio),
   );
-  sl.registerLazySingleton(() => PatientLocalRepository(sl()));
+  sl.registerLazySingleton<PatientSyncService>(
+    () => PatientSyncService(
+      local: sl<LocalPatientDataSource>(),
+      remote: sl<RemotePatientDataSource>(),
+      tokenStore: sl<AuthTokenStore>(),
+    ),
+    dispose: (service) => service.dispose(),
+  );
+  sl.registerLazySingleton(
+    () => PatientRepository(
+      local: sl<LocalPatientDataSource>(),
+      remote: sl<RemotePatientDataSource>(),
+      syncService: sl<PatientSyncService>(),
+      tokenStore: sl<AuthTokenStore>(),
+    ),
+  );
 
   sl.registerFactory(
     () => AuthCubit(

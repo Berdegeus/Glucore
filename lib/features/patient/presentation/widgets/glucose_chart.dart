@@ -10,21 +10,30 @@ class GlucoseChart extends StatelessWidget {
     required this.readings,
     required this.lowThreshold,
     required this.highThreshold,
+    this.carbs = const [],
+    this.insulin = const [],
+    this.onCarbTap,
+    this.onInsulinTap,
   });
 
   final List<GlucoseReadingItem> readings;
   final int lowThreshold;
   final int highThreshold;
+  final List<CarbEntry> carbs;
+  final List<InsulinEntry> insulin;
+  final void Function(CarbEntry)? onCarbTap;
+  final void Function(InsulinEntry)? onInsulinTap;
 
   static const double _minY = 40;
   static const double _maxY = 400;
+  static const double _carbMarkerY = 55;
+  static const double _insulinMarkerY = 47;
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final window = now.subtract(const Duration(hours: 12));
 
-    // oldest → newest, within 12h window
     final points = readings
         .where((r) => r.timestamp.isAfter(window))
         .toList()
@@ -46,9 +55,9 @@ class GlucoseChart extends StatelessWidget {
     }
 
     final oldest = points.first.timestamp;
-    final last = points.last;
 
     Color lineColor;
+    final last = points.last;
     if (last.value < lowThreshold) {
       lineColor = Colors.red;
     } else if (last.value > highThreshold) {
@@ -63,6 +72,26 @@ class GlucoseChart extends StatelessWidget {
     }).toList();
 
     final totalMinutes = points.last.timestamp.difference(oldest).inMinutes.toDouble();
+
+    // Filter carb/insulin entries to the chart's time window
+    final carbsInWindow = carbs
+        .where((c) => !c.time.isBefore(oldest) && !c.time.isAfter(points.last.timestamp))
+        .toList();
+    final insulinInWindow = insulin
+        .where((i) => !i.time.isBefore(oldest) && !i.time.isAfter(points.last.timestamp))
+        .toList();
+
+    final carbSpots = carbsInWindow.map((c) {
+      final x = c.time.difference(oldest).inMinutes.toDouble();
+      return FlSpot(x, _carbMarkerY);
+    }).toList();
+
+    final insulinSpots = insulinInWindow.map((i) {
+      final x = i.time.difference(oldest).inMinutes.toDouble();
+      return FlSpot(x, _insulinMarkerY);
+    }).toList();
+
+    final hasExtras = carbSpots.isNotEmpty || insulinSpots.isNotEmpty;
 
     return SizedBox(
       height: 180,
@@ -80,7 +109,7 @@ class GlucoseChart extends StatelessWidget {
               drawVerticalLine: false,
               horizontalInterval: 90,
               getDrawingHorizontalLine: (value) => FlLine(
-                color: Colors.grey.withValues(alpha:0.15),
+                color: Colors.grey.withValues(alpha: 0.15),
                 strokeWidth: 1,
               ),
             ),
@@ -89,13 +118,13 @@ class GlucoseChart extends StatelessWidget {
               horizontalLines: [
                 HorizontalLine(
                   y: lowThreshold.toDouble(),
-                  color: Colors.red.withValues(alpha:0.6),
+                  color: Colors.red.withValues(alpha: 0.6),
                   strokeWidth: 1,
                   dashArray: [6, 4],
                 ),
                 HorizontalLine(
                   y: highThreshold.toDouble(),
-                  color: Colors.orange.withValues(alpha:0.6),
+                  color: Colors.orange.withValues(alpha: 0.6),
                   strokeWidth: 1,
                   dashArray: [6, 4],
                 ),
@@ -137,6 +166,7 @@ class GlucoseChart extends StatelessWidget {
               topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             lineBarsData: [
+              // Series 0: glucose
               LineChartBarData(
                 spots: spots,
                 isCurved: true,
@@ -154,13 +184,71 @@ class GlucoseChart extends StatelessWidget {
                 ),
                 belowBarData: BarAreaData(
                   show: true,
-                  color: lineColor.withValues(alpha:0.08),
+                  color: lineColor.withValues(alpha: 0.08),
                 ),
               ),
+              // Series 1: carb markers
+              if (carbSpots.isNotEmpty)
+                LineChartBarData(
+                  spots: carbSpots,
+                  isCurved: false,
+                  barWidth: 0,
+                  color: Colors.transparent,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      radius: 6,
+                      color: const Color(0xFF05B169),
+                      strokeWidth: 1.5,
+                      strokeColor: Colors.white,
+                    ),
+                  ),
+                ),
+              // Series 2: insulin markers
+              if (insulinSpots.isNotEmpty)
+                LineChartBarData(
+                  spots: insulinSpots,
+                  isCurved: false,
+                  barWidth: 0,
+                  color: Colors.transparent,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      radius: 5,
+                      color: const Color(0xFF0052FF),
+                      strokeWidth: 1.5,
+                      strokeColor: Colors.white,
+                    ),
+                  ),
+                ),
             ],
             lineTouchData: LineTouchData(
+              touchCallback: hasExtras
+                  ? (event, response) {
+                      if (event is! FlTapUpEvent) return;
+                      final touchedSpots = response?.lineBarSpots;
+                      if (touchedSpots == null) return;
+                      for (final spot in touchedSpots) {
+                        // barIndex shifts depending on whether glucose-only list has extras
+                        final carbIndex = 1;
+                        final insulinIndex = carbSpots.isNotEmpty ? 2 : 1;
+                        if (spot.barIndex == carbIndex && carbSpots.isNotEmpty &&
+                            spot.spotIndex < carbsInWindow.length) {
+                          onCarbTap?.call(carbsInWindow[spot.spotIndex]);
+                          return;
+                        }
+                        if (spot.barIndex == insulinIndex && insulinSpots.isNotEmpty &&
+                            spot.spotIndex < insulinInWindow.length) {
+                          onInsulinTap?.call(insulinInWindow[spot.spotIndex]);
+                          return;
+                        }
+                      }
+                    }
+                  : null,
               touchTooltipData: LineTouchTooltipData(
-                getTooltipItems: (spots) => spots.map((s) {
+                getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
+                  // Only show tooltip for glucose series (index 0)
+                  if (s.barIndex != 0) return null;
                   final t = oldest.add(Duration(minutes: s.x.toInt()));
                   return LineTooltipItem(
                     '${s.y.toStringAsFixed(0)} mg/dL\n${DateFormat.Hm().format(t)}',

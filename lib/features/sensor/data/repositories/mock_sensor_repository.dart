@@ -8,6 +8,11 @@ import '../../domain/sensor_repository.dart';
 /// Debug-only fake sensor. Replays a realistic connection sequence then emits
 /// periodic glucose updates every 5 minutes. Never touches any platform channel.
 class MockSensorRepository implements SensorRepository {
+  MockSensorRepository({this.brand = SensorBrand.sibionics});
+
+  /// Simulated brand; Accu-Chek replays an OS-pairing step before connecting.
+  final SensorBrand brand;
+
   static const _sensorId = 'MOCK-DEBUG-001';
   static const _historyCount = 24; // ~2 h of back-fill at 5-min intervals
   static const _readingIntervalMs = 5 * 60 * 1000; // 5 min
@@ -24,7 +29,10 @@ class MockSensorRepository implements SensorRepository {
   Future<SensorSession?> restoreSession() async => null;
 
   @override
-  Future<void> registerSensor(String barcode) async {}
+  Future<SensorSession?> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async => null;
 
   @override
   Future<void> submitTransmitter(String transmitterBarcode) async {}
@@ -54,6 +62,19 @@ class MockSensorRepository implements SensorRepository {
     await stopMonitoring();
   }
 
+  @override
+  Future<AbbottLibraryStatus> getAbbottLibraryStatus() async =>
+      const AbbottLibraryStatus(installed: true, libraryName: 'mock');
+
+  @override
+  Future<void> installAbbottLibrary(String path) async {}
+
+  @override
+  Future<void> startNfcScan() async {}
+
+  @override
+  Future<void> stopNfcScan() async {}
+
   void dispose() {
     _readingTimer?.cancel();
     _controller.close();
@@ -63,6 +84,7 @@ class MockSensorRepository implements SensorRepository {
     final session = SensorSession(
       sensorId: _sensorId,
       createdAt: DateTime.now().subtract(const Duration(days: 3)),
+      brand: brand,
     );
 
     await _delay(400);
@@ -70,6 +92,11 @@ class MockSensorRepository implements SensorRepository {
 
     await _delay(800);
     _emit(SensorEvent.connecting());
+
+    if (brand == SensorBrand.accuchek) {
+      await _delay(600);
+      _emit(const SensorEvent(status: SensorConnectionStatus.pairing));
+    }
 
     await _delay(1200);
     _emit(SensorEvent.connected(session));
