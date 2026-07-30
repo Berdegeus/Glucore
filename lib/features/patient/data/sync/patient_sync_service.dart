@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import '../../../../core/api/auth_token_store.dart';
 import '../datasources/patient_datasource.dart';
 import '../datasources/patient_local_datasource.dart';
 
@@ -19,6 +20,7 @@ class PatientSyncService {
   PatientSyncService({
     required LocalPatientDataSource local,
     required PatientDataSource remote,
+    AuthTokenStore? tokenStore,
     Stream<List<ConnectivityResult>>? connectivityChanges,
     Duration debounce = const Duration(seconds: 2),
     List<Duration> retryDelays = const [
@@ -27,6 +29,7 @@ class PatientSyncService {
     ],
   })  : _local = local,
         _remote = remote,
+        _tokenStore = tokenStore,
         _debounce = debounce,
         _retryDelays = retryDelays {
     final changes = connectivityChanges ?? Connectivity().onConnectivityChanged;
@@ -41,6 +44,7 @@ class PatientSyncService {
 
   final LocalPatientDataSource _local;
   final PatientDataSource _remote;
+  final AuthTokenStore? _tokenStore;
   final Duration _debounce;
   final List<Duration> _retryDelays;
 
@@ -88,6 +92,16 @@ class PatientSyncService {
   }
 
   Future<void> _pushPending() async {
+    // Never push another account's data (P19). With no valid session
+    // (logged out → token gone) or a local owner that differs from the current
+    // user, the local rows stay pending until the right user is back.
+    if (_tokenStore != null) {
+      final current = await _tokenStore.readUserId();
+      final owner = await _local.getOwner();
+      if (current == null || owner != current) {
+        return;
+      }
+    }
     final pending = await _local.pendingCollections();
     if (pending.isEmpty) {
       return;

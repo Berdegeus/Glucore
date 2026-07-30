@@ -16,6 +16,15 @@ class PatientCubit extends Cubit<PatientState> {
   StreamSubscription<SensorUiState>? _sensorSubscription;
 
   Future<void> initialize(SensorCubit sensorCubit) async {
+    // P19: bind the local database to the logged-in user. If a DIFFERENT
+    // account is now signed in on this device, the local patient data was
+    // wiped — also drop the sensor session so a previous patient's physical
+    // sensor never streams into the new account.
+    final switchedAccount = await repository.ensureOwner();
+    if (switchedAccount) {
+      await sensorCubit.clearSession();
+    }
+
     // Snapshot local — nunca depende de rede.
     final snapshot = await repository.load();
     emit(

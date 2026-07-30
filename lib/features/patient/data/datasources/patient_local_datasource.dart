@@ -20,7 +20,7 @@ class LocalPatientDataSource implements PatientDataSource {
         _databasePath = databasePath;
 
   static const _dbName = 'glucore_patient.db';
-  static const _dbVersion = 1;
+  static const _dbVersion = 2;
 
   final DatabaseFactory? _factory;
   final String? _databasePath;
@@ -80,9 +80,56 @@ class LocalPatientDataSource implements PatientDataSource {
               synced INTEGER NOT NULL DEFAULT 0
             )
           ''');
+          await _createMetaTable(db);
+        },
+        onUpgrade: (db, oldVersion, newVersion) async {
+          // Additive only — never DROP patient data on upgrade.
+          if (oldVersion < 2) {
+            await _createMetaTable(db);
+          }
         },
       ),
     );
+  }
+
+  /// Single-row table binding the local database to its owning user (P19).
+  static Future<void> _createMetaTable(Database db) => db.execute('''
+        CREATE TABLE meta(
+          id INTEGER PRIMARY KEY CHECK(id = 1),
+          owner_user_id TEXT
+        )
+      ''');
+
+  // ── Ownership (P19) ─────────────────────────────────────────────────────
+
+  /// The user id this local database currently belongs to, or null if unset.
+  Future<String?> getOwner() async {
+    final db = await _db;
+    final rows = await db.query('meta', where: 'id = 1', limit: 1);
+    if (rows.isEmpty) return null;
+    return rows.first['owner_user_id'] as String?;
+  }
+
+  Future<void> setOwner(String userId) async {
+    final db = await _db;
+    await db.insert(
+      'meta',
+      {'id': 1, 'owner_user_id': userId},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Clears every patient collection (keeps the `meta` row). Used when a
+  /// different account logs in on the same device.
+  Future<void> wipeAllData() async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('readings');
+      await txn.delete('alerts');
+      await txn.delete('carbs');
+      await txn.delete('insulin');
+      await txn.delete('settings');
+    });
   }
 
   Future<void> close() async {

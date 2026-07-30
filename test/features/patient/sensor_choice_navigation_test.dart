@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/l10n/l10n.dart';
 
+import 'package:glucore/core/api/auth_token_store.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
@@ -104,7 +106,12 @@ class _FakePatientCubit extends PatientCubit {
       connectivityChanges: const Stream.empty(),
     );
     return _FakePatientCubit._(
-      PatientRepository(local: local, remote: remote, syncService: sync),
+      PatientRepository(
+        local: local,
+        remote: remote,
+        syncService: sync,
+        tokenStore: const AuthTokenStore(FlutterSecureStorage()),
+      ),
     );
   }
 

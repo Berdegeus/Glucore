@@ -1,3 +1,4 @@
+import '../../../../core/api/auth_token_store.dart';
 import '../../presentation/models/patient_models.dart';
 import '../datasources/patient_datasource.dart';
 import '../datasources/patient_local_datasource.dart';
@@ -13,19 +14,43 @@ class PatientRepository {
     required LocalPatientDataSource local,
     required PatientDataSource remote,
     required PatientSyncService syncService,
+    required AuthTokenStore tokenStore,
   })  : _local = local,
         _remote = remote,
-        _syncService = syncService;
+        _syncService = syncService,
+        _tokenStore = tokenStore;
 
   final LocalPatientDataSource _local;
   final PatientDataSource _remote;
   final PatientSyncService _syncService;
+  final AuthTokenStore _tokenStore;
 
   static const maxReadings = 288;
   static const maxAlerts = 100;
   static const maxEntries = 100;
 
   Future<PatientSnapshot> load() => _local.load();
+
+  /// Binds the local database to the currently authenticated user (P19).
+  ///
+  /// Returns true when a DIFFERENT account is now logged in: the local patient
+  /// data was wiped and the caller must also clear the sensor session so a
+  /// previous patient's readings never land in the new account.
+  Future<bool> ensureOwner() async {
+    final current = await _tokenStore.readUserId();
+    if (current == null) return false;
+    final owner = await _local.getOwner();
+    if (owner == null) {
+      await _local.setOwner(current);
+      return false;
+    }
+    if (owner != current) {
+      await _local.wipeAllData();
+      await _local.setOwner(current);
+      return true;
+    }
+    return false;
+  }
 
   Future<void> saveReadings(List<GlucoseReadingItem> readings) async {
     await _local.saveReadings(readings.take(maxReadings).toList());

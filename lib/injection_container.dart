@@ -61,6 +61,7 @@ Future<void> initDependencies() async {
     () => PatientSyncService(
       local: sl<LocalPatientDataSource>(),
       remote: sl<RemotePatientDataSource>(),
+      tokenStore: sl<AuthTokenStore>(),
     ),
     dispose: (service) => service.dispose(),
   );
@@ -69,6 +70,7 @@ Future<void> initDependencies() async {
       local: sl<LocalPatientDataSource>(),
       remote: sl<RemotePatientDataSource>(),
       syncService: sl<PatientSyncService>(),
+      tokenStore: sl<AuthTokenStore>(),
     ),
   );
 
