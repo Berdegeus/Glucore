@@ -1,13 +1,13 @@
 import '../../../../core/usecase/usecase.dart';
 import '../repositories/auth_repository.dart';
 
-class GetAuthStatusUseCase implements UseCase<bool, NoParams> {
+class GetAuthStatusUseCase implements UseCase<AuthSessionStatus, NoParams> {
   const GetAuthStatusUseCase(this.repository);
 
   final AuthRepository repository;
 
   @override
-  Future<bool> call(NoParams params) {
+  Future<AuthSessionStatus> call(NoParams params) {
     return repository.isLoggedIn();
   }
 }
