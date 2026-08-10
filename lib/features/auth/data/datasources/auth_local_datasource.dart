@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:glucore/core/utils/date_input.dart';
 
 import '../../../../core/api/auth_token_store.dart';
+import '../../domain/repositories/auth_repository.dart' show AuthSessionStatus;
 
 abstract class AuthLocalDataSource {
   Future<bool> login({required String email, required String password});
@@ -15,7 +16,7 @@ abstract class AuthLocalDataSource {
     int? targetRangeMax,
   });
   Future<void> logout();
-  Future<bool> isLoggedIn();
+  Future<AuthSessionStatus> isLoggedIn();
 }
 
 class RemoteAuthDataSource implements AuthLocalDataSource {
@@ -76,15 +77,22 @@ class RemoteAuthDataSource implements AuthLocalDataSource {
   }
 
   @override
-  Future<bool> isLoggedIn() async {
+  Future<AuthSessionStatus> isLoggedIn() async {
     final token = await _tokenStore.read();
-    if (token == null) return false;
+    if (token == null) return AuthSessionStatus.invalid;
     try {
       await _dio.get<void>('/auth/status');
-      return true;
-    } on DioException {
-      await _tokenStore.delete();
-      return false;
+      return AuthSessionStatus.authenticated;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      // Only an explicit rejection (401/403) means the token is bad — discard
+      // it. Network errors, timeouts and 5xx leave the session intact so an
+      // offline launch does not log the user out (P18).
+      if (status == 401 || status == 403) {
+        await _tokenStore.delete();
+        return AuthSessionStatus.invalid;
+      }
+      return AuthSessionStatus.unreachable;
     }
   }
 }

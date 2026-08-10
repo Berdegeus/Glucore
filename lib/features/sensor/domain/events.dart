@@ -9,6 +9,7 @@ class SensorEvent {
   final WarmupInfo? warmupInfo;
   final GlucoseReading? reading;
   final SensorFailure? failure;
+  final SensorNfcInfo? nfc;
 
   const SensorEvent({
     this.status = SensorConnectionStatus.idle,
@@ -19,6 +20,7 @@ class SensorEvent {
     this.warmupInfo,
     this.reading,
     this.failure,
+    this.nfc,
   });
 
   factory SensorEvent.idle() => const SensorEvent();

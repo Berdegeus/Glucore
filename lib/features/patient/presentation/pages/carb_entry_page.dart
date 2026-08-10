@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
+import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
@@ -16,12 +17,37 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
   final _formKey = GlobalKey<FormState>();
   final _gramsController = TextEditingController();
   final _descController = TextEditingController();
+  late DateTime _selectedTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTime = DateTime.now();
+  }
 
   @override
   void dispose() {
     _gramsController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedTime,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now(),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_selectedTime),
+    );
+    if (time == null || !mounted) return;
+    setState(() {
+      _selectedTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    });
   }
 
   @override
@@ -36,8 +62,17 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
           key: _formKey,
           child: ListView(
             children: [
-              Text(l10n.genericTimeLabel(TimeOfDay.now().format(context))),
-              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.genericTimeLabel(
+                  DateFormat('dd/MM HH:mm').format(_selectedTime),
+                )),
+                trailing: TextButton(
+                  onPressed: _pickDateTime,
+                  child: Text(l10n.entryTimePicker),
+                ),
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _gramsController,
                 keyboardType: TextInputType.number,
@@ -71,7 +106,7 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
                     CarbEntry(
                       grams: int.parse(_gramsController.text),
                       description: _descController.text.trim(),
-                      time: DateTime.now(),
+                      time: _selectedTime,
                     ),
                   );
                   if (!mounted) {

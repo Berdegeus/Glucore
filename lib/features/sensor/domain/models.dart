@@ -1,9 +1,27 @@
-// Domain models for Sibionics MVP
+// Domain models for the sensor feature.
+
+/// CGM sensor brand. `wireName` matches the value used on the platform
+/// channel and in the Android session store.
+enum SensorBrand {
+  sibionics('sibionics'),
+  accuchek('accuchek'),
+  libre2('libre2');
+
+  final String wireName;
+
+  const SensorBrand(this.wireName);
+
+  static SensorBrand fromWireName(String? name) => SensorBrand.values
+      .firstWhere((b) => b.wireName == name, orElse: () => SensorBrand.sibionics);
+}
 
 enum SensorConnectionStatus {
   idle,
   scanning,
   connecting,
+
+  /// OS bonding dialog is up (Accu-Chek SmartGuide pairing PIN).
+  pairing,
   connected,
   syncingHistory,
   warmingUp,
@@ -25,22 +43,26 @@ class SensorSession {
   final String sensorId;
   final String? transmitterId;
   final DateTime createdAt;
+  final SensorBrand brand;
 
   SensorSession({
     required this.sensorId,
     this.transmitterId,
     DateTime? createdAt,
+    this.brand = SensorBrand.sibionics,
   }) : createdAt = createdAt ?? DateTime.now();
 
   SensorSession copyWith({
     String? sensorId,
     String? transmitterId,
     DateTime? createdAt,
+    SensorBrand? brand,
   }) {
     return SensorSession(
       sensorId: sensorId ?? this.sensorId,
       transmitterId: transmitterId ?? this.transmitterId,
       createdAt: createdAt ?? this.createdAt,
+      brand: brand ?? this.brand,
     );
   }
 }
@@ -77,6 +99,24 @@ class HistorySyncInfo {
   const HistorySyncInfo({required this.receivedCount, this.latestTimestamp});
 }
 
+/// Outcome of a Libre 2 NFC interaction, emitted by the Android layer.
+/// `result` values: activated, warmup, ready, streaming, ended,
+/// needsLibrary, unsupportedLibre3, unsupportedUsGen2, readError, error.
+class SensorNfcInfo {
+  final String result;
+  final String? sensorId;
+
+  const SensorNfcInfo({required this.result, this.sensorId});
+}
+
+/// Whether the Abbott algorithm library (needed for Libre 2) is installed.
+class AbbottLibraryStatus {
+  final bool installed;
+  final String libraryName;
+
+  const AbbottLibraryStatus({required this.installed, required this.libraryName});
+}
+
 class SensorUiState {
   final SensorConnectionStatus status;
   final SensorSession? session;
@@ -85,6 +125,7 @@ class SensorUiState {
   final WarmupInfo? warmupInfo;
   final GlucoseReading? reading;
   final SensorFailure? failure;
+  final SensorNfcInfo? nfcInfo;
 
   const SensorUiState({
     this.status = SensorConnectionStatus.idle,
@@ -94,6 +135,7 @@ class SensorUiState {
     this.warmupInfo,
     this.reading,
     this.failure,
+    this.nfcInfo,
   });
 
   SensorUiState copyWith({
@@ -105,6 +147,7 @@ class SensorUiState {
     GlucoseReading? reading,
     SensorFailure? failure,
     bool clearFailure = false,
+    SensorNfcInfo? nfcInfo,
   }) {
     return SensorUiState(
       status: status ?? this.status,
@@ -114,8 +157,12 @@ class SensorUiState {
       warmupInfo: warmupInfo ?? this.warmupInfo,
       reading: reading ?? this.reading,
       failure: clearFailure ? null : failure ?? this.failure,
+      nfcInfo: nfcInfo ?? this.nfcInfo,
     );
   }
+
+  /// Brand of the active session (defaults to Sibionics when unknown).
+  SensorBrand get brand => session?.brand ?? SensorBrand.sibionics;
 
   static const initial = SensorUiState();
 }

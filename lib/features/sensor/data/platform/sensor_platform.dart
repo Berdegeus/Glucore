@@ -7,11 +7,13 @@ class SensorSessionSnapshot {
   final String sensorId;
   final String? transmitterId;
   final bool connected;
+  final SensorBrand brand;
 
   SensorSessionSnapshot({
     required this.sensorId,
     this.transmitterId,
     required this.connected,
+    this.brand = SensorBrand.sibionics,
   });
 
   factory SensorSessionSnapshot.fromMap(Map<dynamic, dynamic> map) {
@@ -19,6 +21,7 @@ class SensorSessionSnapshot {
       sensorId: map['sensorId']?.toString() ?? '',
       transmitterId: map['transmitterId']?.toString(),
       connected: map['connected'] == true,
+      brand: SensorBrand.fromWireName(map['brand']?.toString()),
     );
   }
 
@@ -26,10 +29,14 @@ class SensorSessionSnapshot {
     'sensorId': sensorId,
     'transmitterId': transmitterId,
     'connected': connected,
+    'brand': brand.wireName,
   };
 
-  SensorSession toSession() =>
-      SensorSession(sensorId: sensorId, transmitterId: transmitterId);
+  SensorSession toSession() => SensorSession(
+        sensorId: sensorId,
+        transmitterId: transmitterId,
+        brand: brand,
+      );
 }
 
 class SensorPlatformEvent {
@@ -57,6 +64,9 @@ class SensorPlatformEvent {
       session = SensorSession(
         sensorId: s['sensorId'].toString(),
         transmitterId: s['transmitterId']?.toString(),
+        brand: SensorBrand.fromWireName(
+          (s['brand'] ?? map['brand'])?.toString(),
+        ),
       );
     }
 
@@ -111,6 +121,15 @@ class SensorPlatformEvent {
 
     final connected = map['connected'] == true;
 
+    SensorNfcInfo? nfc;
+    if (map['nfc'] != null) {
+      final n = map['nfc'] as Map<dynamic, dynamic>;
+      nfc = SensorNfcInfo(
+        result: n['result']?.toString() ?? 'error',
+        sensorId: n['sensorId']?.toString(),
+      );
+    }
+
     return SensorPlatformEvent(
       event: SensorEvent(
         status: state,
@@ -121,6 +140,7 @@ class SensorPlatformEvent {
         warmupInfo: warmup,
         reading: reading,
         failure: failure,
+        nfc: nfc,
       ),
     );
   }
@@ -136,8 +156,19 @@ class SensorPlatform {
     return SensorSessionSnapshot.fromMap(result as Map<dynamic, dynamic>);
   }
 
-  Future<void> registerSensor(String barcode) async {
-    await _methodChannel.invokeMethod('registerSensor', {'barcode': barcode});
+  /// Registers a sensor and returns the session snapshot synchronously.
+  /// Failures surface as [PlatformException] (code `NATIVE_ERROR`); the
+  /// EventChannel still emits the corresponding `idle`/`error` event.
+  Future<SensorSessionSnapshot?> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async {
+    final result = await _methodChannel.invokeMethod('registerSensor', {
+      'barcode': barcode,
+      'brand': brand.wireName,
+    });
+    if (result == null) return null;
+    return SensorSessionSnapshot.fromMap(result as Map<dynamic, dynamic>);
   }
 
   Future<void> submitTransmitter(String transmitterBarcode) async {
@@ -156,6 +187,28 @@ class SensorPlatform {
 
   Future<void> clearSession() async {
     await _methodChannel.invokeMethod('clearSession');
+  }
+
+  Future<AbbottLibraryStatus> getAbbottLibraryStatus() async {
+    final result =
+        await _methodChannel.invokeMethod('getAbbottLibraryStatus');
+    final map = (result as Map<dynamic, dynamic>?) ?? const {};
+    return AbbottLibraryStatus(
+      installed: map['installed'] == true,
+      libraryName: map['libraryName']?.toString() ?? '',
+    );
+  }
+
+  Future<void> installAbbottLibrary(String path) async {
+    await _methodChannel.invokeMethod('installAbbottLibrary', {'path': path});
+  }
+
+  Future<void> startNfcScan() async {
+    await _methodChannel.invokeMethod('startNfcScan');
+  }
+
+  Future<void> stopNfcScan() async {
+    await _methodChannel.invokeMethod('stopNfcScan');
   }
 
   Stream<SensorPlatformEvent> observeSensorEvents() {

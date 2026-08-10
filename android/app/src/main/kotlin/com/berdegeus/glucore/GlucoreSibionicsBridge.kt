@@ -77,35 +77,4 @@ object GlucoreSibionicsBridge {
      * @return JSON string with processed data or error
      */
     external fun handleNotification(sensorId: String, payload: ByteArray, timestampMs: Long): String
-
-    /**
-     * Result wrapper for bridge operations.
-     */
-    sealed class Result<out T> {
-        data class Success<T>(val value: T) : Result<T>()
-        data class Error(val message: String) : Result<Nothing>()
-    }
-
-    /**
-     * Parse JSON result from native bridge.
-     * This is a simplified parser - in production, use a proper JSON library.
-     */
-    fun parseJsonResult(json: String): Result<Map<String, Any>> {
-        return try {
-            if (json.contains("\"error\"")) {
-                val errorStart = json.indexOf("\"error\"") + 9
-                val errorEnd = json.indexOf("\"", errorStart)
-                val error = json.substring(errorStart, errorEnd)
-                Result.Error(error)
-            } else {
-                // Simple parsing for success case - extract key-value pairs
-                val result = mutableMapOf<String, Any>()
-                // This is a placeholder - real implementation would use proper JSON parsing
-                result["raw"] = json
-                Result.Success(result)
-            }
-        } catch (e: Exception) {
-            Result.Error("Failed to parse result: ${e.message}")
-        }
-    }
 }

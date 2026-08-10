@@ -256,6 +256,7 @@ model InsulinEvent {
   eventAt     DateTime
   insulinType String
   doseUnits   Decimal  @db.Decimal(10, 2)
+  dayOfWeek   String   @default("")
   description String?
   patient     Patient  @relation(fields: [patientId], references: [userId], onDelete: Cascade)
 

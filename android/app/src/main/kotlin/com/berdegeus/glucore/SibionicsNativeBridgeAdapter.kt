@@ -151,12 +151,16 @@ class SibionicsNativeBridgeAdapter(private val context: Context) {
         val connected = extractBoolean(sessionObject, CONNECTED_KEYS)
             ?: extractBoolean(root, CONNECTED_KEYS)
             ?: false
+        val libreVersion = extractInt(sessionObject, LIBRE_VERSION_KEYS)
+            ?: extractInt(root, LIBRE_VERSION_KEYS)
 
         return CallResult.Success(
             value = SensorSessionSnapshot(
                 sensorId = sensorId,
                 transmitterId = transmitterId,
-                connected = connected
+                connected = connected,
+                brand = libreVersion?.let { SensorBrand.fromLibreVersion(it) }
+                    ?: SensorBrand.SIBIONICS
             ),
             rawPayload = rawPayload
         )
@@ -202,6 +206,19 @@ class SibionicsNativeBridgeAdapter(private val context: Context) {
             }
             if (value != null && value != JSONObject.NULL) {
                 return value.toString()
+            }
+        }
+        return null
+    }
+
+    private fun extractInt(json: JSONObject, keys: Array<String>): Int? {
+        for (key in keys) {
+            if (!json.has(key) || json.isNull(key)) {
+                continue
+            }
+            when (val value = json.opt(key)) {
+                is Number -> return value.toInt()
+                is String -> value.toIntOrNull()?.let { return it }
             }
         }
         return null
@@ -283,6 +300,7 @@ class SibionicsNativeBridgeAdapter(private val context: Context) {
             "device_id"
         )
         private val CONNECTED_KEYS = arrayOf("connected", "isConnected", "is_connected")
+        private val LIBRE_VERSION_KEYS = arrayOf("libreVersion", "libre_version")
         private val ACTIVE_KEYS = arrayOf("active", "hasActiveSensor", "has_active_sensor")
         private val STATUS_KEYS = arrayOf("status", "state", "result")
         private const val ERROR_KEY = "error"

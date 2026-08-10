@@ -5,9 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/auth/presentation/cubit/auth_state.dart';
 import 'features/auth/presentation/pages/auth_gate.dart';
 import 'features/auth/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/splash_page.dart';
+import 'features/patient/presentation/cubit/patient_cubit.dart';
+import 'features/sensor/presentation/cubit/sensor_cubit.dart';
 import 'injection_container.dart';
 
 class App extends StatefulWidget {
@@ -53,6 +56,33 @@ class _AppState extends State<App> {
         theme: AppTheme.light(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        // Patient/Sensor cubits live ABOVE the root Navigator so every pushed
+        // route inherits them (fixes P17: routes pushed on the root Navigator
+        // used to sit above providers created inside AuthGate). Gated on the
+        // authenticated state so they follow the login/logout lifecycle.
+        builder: (context, child) {
+          return BlocBuilder<AuthCubit, AuthState>(
+            buildWhen: (previous, current) =>
+                previous.status != current.status,
+            builder: (context, state) {
+              if (state.status != AuthStatus.authenticated) {
+                return child!;
+              }
+              return MultiBlocProvider(
+                providers: [
+                  BlocProvider<SensorCubit>(
+                    create: (_) => sl<SensorCubit>()..initialize(),
+                  ),
+                  BlocProvider<PatientCubit>(
+                    create: (context) => sl<PatientCubit>()
+                      ..initialize(context.read<SensorCubit>()),
+                  ),
+                ],
+                child: child!,
+              );
+            },
+          );
+        },
         home: _resolveInitialFlow(),
       ),
     );

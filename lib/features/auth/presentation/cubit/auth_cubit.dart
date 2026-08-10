@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:developer';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/usecase/usecase.dart';
+import '../../domain/repositories/auth_repository.dart' show AuthSessionStatus;
 import '../../domain/usecases/get_auth_status_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
@@ -16,29 +19,60 @@ class AuthCubit extends Cubit<AuthState> {
     required this.logoutUseCase,
     required this.getAuthStatusUseCase,
     required this.registerUseCase,
-  }) : super(const AuthState());
+    Stream<List<ConnectivityResult>>? connectivityChanges,
+  }) : super(const AuthState()) {
+    // Revalidate a deferred (offline) session when the network returns (P18).
+    final changes =
+        connectivityChanges ?? Connectivity().onConnectivityChanged;
+    _connectivitySubscription = changes.listen((results) {
+      final online = results.any((r) => r != ConnectivityResult.none);
+      if (online && state.offlineValidation) {
+        log('connectivity back → revalidating offline session',
+            name: 'AuthCubit');
+        checkAuthStatus();
+      }
+    });
+  }
 
   final LoginUseCase loginUseCase;
   final LogoutUseCase logoutUseCase;
   final GetAuthStatusUseCase getAuthStatusUseCase;
   final RegisterUseCase registerUseCase;
 
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
   Future<void> checkAuthStatus() async {
-    emit(state.copyWith(status: AuthStatus.loading, error: null));
+    emit(state.copyWith(
+        status: AuthStatus.loading, error: null, offlineValidation: false));
     try {
-      final loggedIn = await getAuthStatusUseCase(const NoParams());
-      log('checkAuthStatus → ${loggedIn ? "authenticated" : "unauthenticated"}',
-          name: 'AuthCubit');
-      emit(state.copyWith(
-        status: loggedIn ? AuthStatus.authenticated : AuthStatus.unauthenticated,
-      ));
-    } on DioException catch (e) {
-      log('checkAuthStatus dio error: ${e.type} ${e.message}', name: 'AuthCubit');
-      emit(state.copyWith(status: AuthStatus.unauthenticated));
+      final result = await getAuthStatusUseCase(const NoParams());
+      log('checkAuthStatus → $result', name: 'AuthCubit');
+      switch (result) {
+        case AuthSessionStatus.authenticated:
+          emit(state.copyWith(
+              status: AuthStatus.authenticated, offlineValidation: false));
+        case AuthSessionStatus.invalid:
+          emit(state.copyWith(
+              status: AuthStatus.unauthenticated, offlineValidation: false));
+        case AuthSessionStatus.unreachable:
+          // Backend unreachable but a token exists: keep the session
+          // optimistically (data + BLE are local); revalidate on reconnect.
+          emit(state.copyWith(
+              status: AuthStatus.authenticated, offlineValidation: true));
+      }
     } catch (e) {
+      // isLoggedIn already classifies Dio errors into the enum above; reaching
+      // here means something unexpected — treat as logged out.
       log('checkAuthStatus unexpected: $e', name: 'AuthCubit');
-      emit(state.copyWith(status: AuthStatus.unauthenticated));
+      emit(state.copyWith(
+          status: AuthStatus.unauthenticated, offlineValidation: false));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySubscription?.cancel();
+    return super.close();
   }
 
   Future<void> login({required String email, required String password}) async {
@@ -108,7 +142,8 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
-    emit(state.copyWith(status: AuthStatus.loading, error: null));
+    emit(state.copyWith(
+        status: AuthStatus.loading, error: null, offlineValidation: false));
     try {
       await logoutUseCase(const NoParams());
       log('logout success', name: 'AuthCubit');

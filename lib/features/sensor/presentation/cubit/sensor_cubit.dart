@@ -44,25 +44,28 @@ class SensorCubit extends Cubit<SensorUiState> {
     }
   }
 
+  SensorUiState _mapEventToState(SensorEvent event) {
+    return SensorUiState(
+      status: event.status,
+      session: event.session ?? state.session,
+      historySyncInfo: event.status == SensorConnectionStatus.syncingHistory
+          ? event.historySyncInfo
+          : null,
+      historyReading: event.status == SensorConnectionStatus.syncingHistory
+          ? event.historyReading
+          : null,
+      warmupInfo: event.warmupInfo ?? state.warmupInfo,
+      reading: event.reading ?? state.reading,
+      failure: event.failure,
+      nfcInfo: event.nfc ?? state.nfcInfo,
+    );
+  }
+
   void _listenToEvents() {
     _eventSubscription?.cancel();
     _eventSubscription = repository.observeSessionEvents().listen(
       (event) {
-        emit(
-          SensorUiState(
-            status: event.status,
-            session: event.session ?? state.session,
-            historySyncInfo: event.status == SensorConnectionStatus.syncingHistory
-                ? event.historySyncInfo
-                : null,
-            historyReading: event.status == SensorConnectionStatus.syncingHistory
-                ? event.historyReading
-                : null,
-            warmupInfo: event.warmupInfo ?? state.warmupInfo,
-            reading: event.reading ?? state.reading,
-            failure: event.failure,
-          ),
-        );
+        emit(_mapEventToState(event));
       },
       onError: (error) {
         emit(
@@ -75,10 +78,16 @@ class SensorCubit extends Cubit<SensorUiState> {
     );
   }
 
-  Future<void> registerSensor(String barcode) async {
+  Future<void> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async {
     emit(state.copyWith(clearFailure: true));
     try {
-      await repository.registerSensor(barcode);
+      final session = await repository.registerSensor(barcode, brand: brand);
+      if (session != null) {
+        emit(state.copyWith(session: session, clearFailure: true));
+      }
     } catch (e) {
       emit(
         state.copyWith(
@@ -112,6 +121,7 @@ class SensorCubit extends Cubit<SensorUiState> {
   Future<void> startMonitoring() async {
     if (state.status == SensorConnectionStatus.scanning ||
         state.status == SensorConnectionStatus.connecting ||
+        state.status == SensorConnectionStatus.pairing ||
         state.status == SensorConnectionStatus.connected ||
         state.status == SensorConnectionStatus.syncingHistory ||
         state.status == SensorConnectionStatus.readingAvailable) {
@@ -159,6 +169,61 @@ class SensorCubit extends Cubit<SensorUiState> {
           failure: SensorFailure(e.toString()),
         ),
       );
+    }
+  }
+
+  // ── Libre 2 (Abbott library + NFC) ─────────────────────────────────────────
+
+  Future<AbbottLibraryStatus?> getAbbottLibraryStatus() async {
+    try {
+      return await repository.getAbbottLibraryStatus();
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: SensorConnectionStatus.error,
+          failure: SensorFailure(e.toString()),
+        ),
+      );
+      return null;
+    }
+  }
+
+  /// Returns true on success; failures land in [SensorUiState.failure].
+  Future<bool> installAbbottLibrary(String path) async {
+    emit(state.copyWith(clearFailure: true));
+    try {
+      await repository.installAbbottLibrary(path);
+      return true;
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: SensorConnectionStatus.error,
+          failure: SensorFailure(e.toString()),
+        ),
+      );
+      return false;
+    }
+  }
+
+  Future<void> startNfcScan() async {
+    emit(state.copyWith(clearFailure: true));
+    try {
+      await repository.startNfcScan();
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: SensorConnectionStatus.error,
+          failure: SensorFailure(e.toString()),
+        ),
+      );
+    }
+  }
+
+  Future<void> stopNfcScan() async {
+    try {
+      await repository.stopNfcScan();
+    } catch (_) {
+      // Stopping a scan that never started is not an error worth surfacing.
     }
   }
 

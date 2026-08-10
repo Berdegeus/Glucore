@@ -54,7 +54,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 label: 'Gerenciar sensor',
                 value: 'Selecionar',
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SensorChoicePage()),
+                  buildPatientScopedRoute(
+                    context,
+                    const SensorChoicePage(),
+                    withSensorCubit: true,
+                  ),
                 ),
               ),
             ],

@@ -5,17 +5,27 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/notifications/notification_service.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
-import '../../data/repositories/patient_local_repository.dart';
+import '../../data/repositories/patient_repository.dart';
 import '../../presentation/models/patient_models.dart';
 import 'patient_state.dart';
 
 class PatientCubit extends Cubit<PatientState> {
   PatientCubit({required this.repository}) : super(const PatientState());
 
-  final PatientLocalRepository repository;
+  final PatientRepository repository;
   StreamSubscription<SensorUiState>? _sensorSubscription;
 
   Future<void> initialize(SensorCubit sensorCubit) async {
+    // P19: bind the local database to the logged-in user. If a DIFFERENT
+    // account is now signed in on this device, the local patient data was
+    // wiped — also drop the sensor session so a previous patient's physical
+    // sensor never streams into the new account.
+    final switchedAccount = await repository.ensureOwner();
+    if (switchedAccount) {
+      await sensorCubit.clearSession();
+    }
+
+    // Snapshot local — nunca depende de rede.
     final snapshot = await repository.load();
     emit(
       state.copyWith(
@@ -31,6 +41,27 @@ class PatientCubit extends Cubit<PatientState> {
     await _sensorSubscription?.cancel();
     _sensorSubscription = sensorCubit.stream.listen(_handleSensorState);
     await _handleSensorState(sensorCubit.state);
+
+    // Reconciliação com o backend em background (silenciosa se offline).
+    unawaited(_refreshFromRemote());
+  }
+
+  Future<void> _refreshFromRemote() async {
+    final refreshed = await repository.refreshFromRemote();
+    // refreshFromRemote já persistiu o snapshot do servidor localmente
+    // (pendências locais preservadas) e devolveu o snapshot local resultante.
+    if (refreshed == null || isClosed) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        readings: List<GlucoseReadingItem>.of(refreshed.readings, growable: false),
+        alerts: List<AppAlertItem>.of(refreshed.alerts, growable: false),
+        carbs: List<CarbEntry>.of(refreshed.carbs, growable: false),
+        insulin: List<InsulinEntry>.of(refreshed.insulin, growable: false),
+        alertSettings: refreshed.alertSettings,
+      ),
+    );
   }
 
   Future<void> addCarbEntry(CarbEntry entry) async {
@@ -45,6 +76,45 @@ class PatientCubit extends Cubit<PatientState> {
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(insulin: updated));
     await repository.saveInsulin(updated);
+  }
+
+  Future<void> editCarbEntry(CarbEntry entry) async {
+    final updated = state.carbs
+        .map((e) => e.time.millisecondsSinceEpoch == entry.time.millisecondsSinceEpoch ? entry : e)
+        .toList()
+      ..sort((a, b) => b.time.compareTo(a.time));
+    emit(state.copyWith(carbs: updated));
+    await repository.saveCarbs(updated);
+  }
+
+  Future<void> deleteCarbEntry(CarbEntry entry) async {
+    final updated = state.carbs
+        .where((e) => e.time.millisecondsSinceEpoch != entry.time.millisecondsSinceEpoch)
+        .toList();
+    emit(state.copyWith(carbs: updated));
+    await repository.saveCarbs(updated);
+  }
+
+  Future<void> editInsulinEntry(InsulinEntry entry) async {
+    final updated = state.insulin
+        .map((e) => e.time.millisecondsSinceEpoch == entry.time.millisecondsSinceEpoch ? entry : e)
+        .toList()
+      ..sort((a, b) => b.time.compareTo(a.time));
+    emit(state.copyWith(insulin: updated));
+    await repository.saveInsulin(updated);
+  }
+
+  Future<void> deleteInsulinEntry(InsulinEntry entry) async {
+    final updated = state.insulin
+        .where((e) => e.time.millisecondsSinceEpoch != entry.time.millisecondsSinceEpoch)
+        .toList();
+    emit(state.copyWith(insulin: updated));
+    await repository.saveInsulin(updated);
+  }
+
+  Future<void> clearReadings() async {
+    emit(state.copyWith(readings: const []));
+    await repository.saveReadings(const []);
   }
 
   Future<void> updateAlertSettings(AlertSettingsModel settings) async {
@@ -67,7 +137,8 @@ class PatientCubit extends Cubit<PatientState> {
       if (!_sameReadingList(readings, updatedReadings)) {
         readings = updatedReadings;
         nextState = nextState.copyWith(readings: readings);
-        persistReadings = true;
+        // History backlog is persisted in a single batch when the current
+        // reading arrives (readingAvailable), not once per history reading.
       }
     }
 
@@ -167,7 +238,7 @@ class PatientCubit extends Cubit<PatientState> {
     );
     updated.add(entry);
     updated.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return updated.take(PatientLocalRepository.maxReadings).toList();
+    return updated.take(PatientRepository.maxReadings).toList();
   }
 
   List<AppAlertItem> _withThresholdAlerts({
@@ -207,7 +278,7 @@ class PatientCubit extends Cubit<PatientState> {
       return current;
     }
 
-    return [alert, ...current].take(PatientLocalRepository.maxAlerts).toList();
+    return [alert, ...current].take(PatientRepository.maxAlerts).toList();
   }
 
   GlucoseTrend _trendFromRate(double rate) {

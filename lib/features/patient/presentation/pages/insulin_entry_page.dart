@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
+import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
@@ -17,11 +18,38 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
   final _formKey = GlobalKey<FormState>();
   final _unitsController = TextEditingController();
   InsulinType _selectedType = InsulinType.bolus;
+  late DateTime _selectedTime;
+  late String _selectedDayOfWeek;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTime = DateTime.now();
+    _selectedDayOfWeek = kDaysOfWeek[_selectedTime.weekday - 1];
+  }
 
   @override
   void dispose() {
     _unitsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedTime,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now(),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_selectedTime),
+    );
+    if (time == null || !mounted) return;
+    setState(() {
+      _selectedTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    });
   }
 
   @override
@@ -70,7 +98,29 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
                 },
               ),
               const SizedBox(height: 12),
-              Text(l10n.genericTimeLabel(TimeOfDay.now().format(context))),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.genericTimeLabel(
+                  DateFormat('dd/MM HH:mm').format(_selectedTime),
+                )),
+                trailing: TextButton(
+                  onPressed: _pickDateTime,
+                  child: Text(l10n.entryTimePicker),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedDayOfWeek,
+                decoration: InputDecoration(
+                  labelText: l10n.insulinEntryDayOfWeekLabel,
+                ),
+                items: kDaysOfWeek
+                    .map((day) => DropdownMenuItem(value: day, child: Text(day)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() => _selectedDayOfWeek = value ?? kDaysOfWeek[0]);
+                },
+              ),
               const SizedBox(height: 18),
               FilledButton(
                 onPressed: () async {
@@ -83,7 +133,8 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
                     InsulinEntry(
                       units: double.parse(_unitsController.text),
                       type: _selectedType,
-                      time: DateTime.now(),
+                      time: _selectedTime,
+                      dayOfWeek: _selectedDayOfWeek,
                     ),
                   );
                   if (!mounted) {
