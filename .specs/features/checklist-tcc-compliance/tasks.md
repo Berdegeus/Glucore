@@ -97,15 +97,16 @@ T31 → T32
 - Skill: `glucore-patient-features` (l10n)
 
 **Done when**:
-- [ ] `PasswordPolicy.validate(String)` retorna `null` para senha válida e o erro específico para cada regra violada
-- [ ] Chaves de mensagem adicionadas aos **dois** `.arb` e `flutter gen-l10n` roda limpo
-- [ ] Todos os 8 casos da tabela do design cobertos por teste
-- [ ] Gate passa: `flutter test --no-pub`
-- [ ] Test count: 8+ testes passam
+- [x] `PasswordPolicy.validate(String)` retorna `null` para senha válida e o erro específico para cada regra violada
+- [x] Chaves de mensagem adicionadas aos **dois** `.arb` e `flutter gen-l10n` roda limpo
+- [x] Todos os 8 casos da tabela do design cobertos por teste
+- [x] Gate passa: `flutter test --no-pub`
+- [x] Test count: 9 testes novos passam (38 no total)
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(auth): add shared password strength policy`
+**Status**: ✅ Complete
 
 ---
 

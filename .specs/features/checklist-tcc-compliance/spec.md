@@ -272,7 +272,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 
 | Requirement ID | Story | Checklist | Phase | Status |
 | -------------- | ----- | --------- | ----- | ------ |
-| TCC-01 | P1: Formulários de senha seguros | 2.3 | Tasks | Pending |
+| TCC-01 | P1: Formulários de senha seguros | 2.3 | Tasks | Implementing |
 | TCC-02 | P1: Formulários de senha seguros | 2.5 | Tasks | Pending |
 | TCC-03 | P1: Formulários de senha seguros | 2.6 | Tasks | Pending |
 | TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Pending |
