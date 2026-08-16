@@ -793,14 +793,20 @@ tarefa; não é l10n nova nesta tarefa.
 - Skill: `glucore-patient-features`
 
 **Done when**:
-- [ ] As quatro abas exibem nome do usuário e o menu com "Sair da conta"
-- [ ] Ícones pré-existentes (notificações, bluetooth, configurações) continuam presentes e funcionais
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 4+ testes passam
+- [x] As quatro abas exibem nome do usuário e o menu com "Sair da conta"
+- [x] Ícones pré-existentes (notificações, bluetooth, configurações) continuam presentes e funcionais
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (119 testes, analyze limpo)
+- [x] Test count: 6 testes novos passam
+
+**Nota**: cada aba mantém seu próprio `title` (o logo "glucore" no Monitor, "Diário",
+"Relatórios", "Perfil"), passado para `UserAppBar`; o nome do usuário aparece nas `actions`
+(T22), não substitui o título. `ProfilePage` mantém seu próprio `_loadName()` inalterado —
+fora do escopo desta tarefa, que troca só a `AppBar`.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(patient): show logged user and logout on all shell tabs`
+**Status**: ✅ Complete
 
 ---
 

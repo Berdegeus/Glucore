@@ -7,6 +7,7 @@ import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../models/patient_models.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/user_app_bar.dart';
 import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
 
@@ -16,7 +17,7 @@ class DiaryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Diário')),
+      appBar: UserAppBar(title: const Text('Diário')),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           final entries = _buildEntries(context, state);

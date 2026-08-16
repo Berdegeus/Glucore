@@ -7,6 +7,7 @@ import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../models/patient_models.dart';
 import '../widgets/glucore_widgets.dart';
+import '../widgets/user_app_bar.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -23,7 +24,7 @@ class _ReportsPageState extends State<ReportsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Relatórios')),
+      appBar: UserAppBar(title: const Text('Relatórios')),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           final cutoff = DateTime.now().subtract(Duration(days: _rangeDays));

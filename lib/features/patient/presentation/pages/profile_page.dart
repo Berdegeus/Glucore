@@ -10,6 +10,7 @@ import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/user_app_bar.dart';
 import 'alert_settings_page.dart';
 import 'history_page.dart';
 import 'profile_edit_page.dart';
@@ -58,8 +59,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.surfaceElevated,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surfaceCanvas,
+      appBar: UserAppBar(
         title: const Text('Perfil'),
         actions: [
           IconButton(

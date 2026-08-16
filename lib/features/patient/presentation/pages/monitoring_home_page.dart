@@ -10,6 +10,7 @@ import '../models/patient_models.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/glucose_chart.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/user_app_bar.dart';
 import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
 import 'notifications_page.dart';
@@ -130,8 +131,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.surfaceElevated,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surfaceCanvas,
+      appBar: UserAppBar(
         title: const Text(
           'glucore',
           style: TextStyle(
