@@ -240,15 +240,16 @@ tarefas T15+; aqui só nasce a fonte única.
 - Skill: NONE
 
 **Done when**:
-- [ ] A 800 dp de largura o filho tem 560 dp e está centralizado
-- [ ] A 400 dp de largura o filho ocupa a largura total
-- [ ] A exatamente 600 dp o layout permanece coluna única (limite inclusivo)
-- [ ] Gate passa: `flutter test --no-pub`
-- [ ] Test count: 3+ testes passam
+- [x] A 800 dp de largura o filho tem 560 dp e está centralizado
+- [x] A 400 dp de largura o filho ocupa a largura total
+- [x] A exatamente 600 dp o layout permanece coluna única (limite inclusivo)
+- [x] Gate passa: `flutter test --no-pub` (58 testes)
+- [x] Test count: 3 testes novos passam
 
 **Tests**: widget
 **Gate**: quick
 **Commit**: `feat(ui): add responsive form layout wrapper`
+**Status**: ✅ Complete
 
 ---
 

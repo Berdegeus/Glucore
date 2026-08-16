@@ -286,7 +286,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-12 | P2: Autorização por papel | 5.1 | Tasks | Pending |
 | TCC-13 | P3: Trilha de auditoria | 4.11 | Tasks | Pending |
 | TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | Pending |
-| TCC-15 | P3: Identidade visual e responsividade | 1.3 | Tasks | Pending |
+| TCC-15 | P3: Identidade visual e responsividade | 1.3 | Tasks | Implementing |
 | TCC-16 | P3: Identidade visual e responsividade | 4.6 (obs) | Tasks | Pending |
 | TCC-17 | P2: Erros de banco específicos | 2.4 (rede de segurança) | Tasks | Pending |
 | TCC-18 | Documentação | 3.1 | Tasks | Pending |
