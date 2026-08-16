@@ -431,14 +431,19 @@ aplica o SQL quando houver banco.
 - Skill: `glucore-backend`
 
 **Done when**:
-- [ ] `sanitizeMetadata` remove `password`, `newPassword`, `currentPassword`, `passwordHash`, `token` em qualquer nível
-- [ ] Falha de gravação não propaga exceção e registra `console.error`
-- [ ] Gate passa: `cd backend && npm test && npx tsc --noEmit`
-- [ ] Test count: 6+ testes passam
+- [x] `sanitizeMetadata` remove `password`, `newPassword`, `currentPassword`, `passwordHash`, `token` em qualquer nível — objetos aninhados e itens de array incluídos
+- [x] Falha de gravação não propaga exceção e registra `console.error` (rejeição e throw sincrônico)
+- [x] Gate passa: `cd backend && npm test && npx tsc --noEmit` (41 testes, tsc limpo)
+- [x] Test count: 9 testes novos passam
+
+**Nota de implementação**: a remoção casa pelo *nome* da chave (`/password|token/i`) em vez de
+uma lista exata, para cobrir variantes como `resetToken` ou `passwordConfirmation`. O client
+do Prisma é um parâmetro opcional (`AuditClient`), o que permite testar sem banco.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(backend): add best-effort audit trail writer`
+**Status**: ✅ Complete
 
 ---
 
