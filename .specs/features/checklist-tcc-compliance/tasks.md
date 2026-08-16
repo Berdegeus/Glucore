@@ -267,15 +267,20 @@ tarefas T15+; aqui só nasce a fonte única.
 - Skill: NONE
 
 **Done when**:
-- [ ] Inicia oculto; tocar no ícone revela e tocar de novo oculta
-- [ ] Duas instâncias na mesma tela alternam de forma independente
-- [ ] `validator` recebido é chamado no submit do `Form`
-- [ ] Gate passa: `flutter test --no-pub`
-- [ ] Test count: 5+ testes passam
+- [x] Inicia oculto; tocar no ícone revela e tocar de novo oculta
+- [x] Duas instâncias na mesma tela alternam de forma independente
+- [x] `validator` recebido é chamado no submit do `Form`
+- [x] Gate passa: `flutter test --no-pub` (63 testes)
+- [x] Test count: 5 testes novos passam
+
+**Nota**: o `helperText` é exibido sempre que informado (superconjunto do AC7, que pede
+a regra visível com o campo em foco ou preenchido). Sem tooltip no ícone, para não
+introduzir chave de l10n fora do escopo desta tarefa.
 
 **Tests**: widget
 **Gate**: quick
 **Commit**: `feat(auth): add PasswordField with visibility toggle`
+**Status**: ✅ Complete
 
 ---
 
