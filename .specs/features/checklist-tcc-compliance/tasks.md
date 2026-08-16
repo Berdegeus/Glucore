@@ -661,14 +661,24 @@ que fez a requisição ainda recebe a `DioException` e mostra sua própria mensa
 - Skill: `glucore-flutter-state`
 
 **Done when**:
-- [ ] Sinal de expiração leva à `LoginPage` com o aviso, sem empilhar telas
-- [ ] `reset()` é chamado ao autenticar, permitindo novo sinal na sessão seguinte
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 3+ testes passam
+- [x] Sinal de expiração leva à `LoginPage` com o aviso, sem empilhar telas
+- [x] `reset()` é chamado ao autenticar, permitindo novo sinal na sessão seguinte
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (96 testes, analyze limpo)
+- [x] Test count: 3 testes novos passam
+
+**P17 preservado**: o `MultiBlocProvider` de `SensorCubit`/`PatientCubit` dentro de
+`MaterialApp.builder` não foi movido nem reordenado. As mudanças em `app.dart` são um
+`navigatorKey` (para o `popUntil` até a rota raiz), o `AuthCubit` mantido em campo do estado
+(`BlocProvider.value` em vez de `create`, para o listener poder deslogar sem `BuildContext`
+abaixo do provider) e a assinatura de `SessionExpiryNotifier` em `initState`.
+
+**Onde o `reset()` acontece**: numa assinatura de `AuthCubit.stream` em `initState`, não na
+árvore de widgets — evita efeito colateral dentro de `build`.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(auth): redirect to login when the session becomes invalid`
+**Status**: ✅ Complete
 
 ---
 

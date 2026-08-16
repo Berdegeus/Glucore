@@ -330,5 +330,6 @@
   "sensorFailureUnknown": "Não foi possível concluir a operação com o sensor.",
   "registerEmailAlreadyExistsError": "Este e-mail já está cadastrado.",
   "authNetworkError": "Sem conexão. Verifique sua rede.",
+  "authSessionExpiredWarning": "Sua sessão expirou. Entre novamente.",
   "authServerError": "Erro no servidor. Tente novamente."
 }
