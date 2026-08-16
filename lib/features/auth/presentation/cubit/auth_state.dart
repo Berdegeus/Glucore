@@ -2,7 +2,17 @@ import 'package:equatable/equatable.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, failure }
 
-enum AuthError { invalidCredentials, emailAlreadyExists, networkError, serverError }
+/// Failure the user has to be told about. The last two come from the `code`
+/// field the backend now returns (`WEAK_PASSWORD`, `DATABASE_UNAVAILABLE`), so
+/// "senha fraca" and "banco fora do ar" stop reading as a generic server error.
+enum AuthError {
+  invalidCredentials,
+  emailAlreadyExists,
+  weakPassword,
+  serviceUnavailable,
+  networkError,
+  serverError,
+}
 
 class AuthState extends Equatable {
   const AuthState({

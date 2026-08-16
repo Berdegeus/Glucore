@@ -325,6 +325,7 @@
   "registerEmailAlreadyExistsError": "Este e-mail já está cadastrado.",
   "authNetworkError": "Sem conexão. Verifique sua rede.",
   "authSessionExpiredWarning": "Sua sessão expirou. Entre novamente.",
+  "authServiceUnavailableError": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
   "authServerError": "Erro no servidor. Tente novamente.",
   "monitoringStaleReadingBadge": "Desconectado · leitura de {time}",
   "@monitoringStaleReadingBadge": {

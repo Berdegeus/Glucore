@@ -695,15 +695,23 @@ abaixo do provider) e a assinatura de `SessionExpiryNotifier` em `initState`.
 - Skill: `glucore-flutter-state`
 
 **Done when**:
-- [ ] 503 `DATABASE_UNAVAILABLE` exibe "Serviço temporariamente indisponível. Tente novamente em alguns minutos."
-- [ ] 400 `WEAK_PASSWORD` exibe a mensagem da regra de força
-- [ ] Chaves adicionadas aos dois `.arb`
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 4+ testes passam
+- [x] 503 `DATABASE_UNAVAILABLE` exibe "Serviço temporariamente indisponível. Tente novamente em alguns minutos."
+- [x] 400 `WEAK_PASSWORD` exibe a mensagem da regra de força
+- [x] Chaves adicionadas aos dois `.arb` (`authServiceUnavailableError`)
+- [x] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub` (102 testes, analyze limpo)
+- [x] Test count: 6 testes novos passam
+
+**Chave reusada em `weakPassword`**: a mensagem é a própria `passwordPolicyHint`, já exibida
+como texto auxiliar em todo campo que define senha. Criar uma segunda chave com o mesmo texto
+abriria caminho para as duas divergirem.
+
+**Decisão pelo `code`, não pelo status**: `_mapErrorCode` lê `code` do corpo; o status sozinho
+não distingue 400 de senha fraca de qualquer outro 400 (AD-002).
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(auth): map weak password and database outage errors`
+**Status**: ✅ Complete
 
 ---
 

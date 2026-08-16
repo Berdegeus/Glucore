@@ -21,6 +21,12 @@ extension AuthErrorLocalization on AuthError {
         return l10n.loginInvalidCredentialsError;
       case AuthError.emailAlreadyExists:
         return l10n.registerEmailAlreadyExistsError;
+      case AuthError.weakPassword:
+        // Same sentence the define-password fields show as helper text, so the
+        // rule is stated identically wherever it is refused.
+        return l10n.passwordPolicyHint;
+      case AuthError.serviceUnavailable:
+        return l10n.authServiceUnavailableError;
       case AuthError.networkError:
         return l10n.authNetworkError;
       case AuthError.serverError:
