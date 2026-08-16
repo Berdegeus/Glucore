@@ -150,15 +150,20 @@ T31 → T32
 - Skill: NONE
 
 **Done when**:
-- [ ] Digitação progressiva produz `(11) 98765-4321`; não numéricos são descartados
-- [ ] 10 dígitos formatam como `(11) 3456-7890`; mais de 11 dígitos são truncados
-- [ ] `phoneDigitsOnly` devolve só dígitos; string vazia devolve vazio
-- [ ] Gate passa: `flutter test --no-pub`
-- [ ] Test count: 8+ testes passam
+- [x] Digitação progressiva produz `(11) 98765-4321`; não numéricos são descartados
+- [x] 10 dígitos formatam como `(11) 3456-7890`; mais de 11 dígitos são truncados
+- [x] `phoneDigitsOnly` devolve só dígitos; string vazia devolve vazio
+- [x] Gate passa: `flutter test --no-pub` (47 testes)
+- [x] Test count: 9 testes novos passam
+
+**Spec-precision gap**: o spec fixa as duas formas completas da máscara, mas não define
+onde fica o separador entre 7 e 9 dígitos, faixa em que celular e fixo ainda são
+indistinguíveis. O teste assere apenas os estados determinados pelo spec.
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): add brazilian phone input formatter`
+**Status**: ✅ Complete
 
 ---
 

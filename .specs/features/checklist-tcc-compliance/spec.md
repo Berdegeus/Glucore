@@ -279,7 +279,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-05 | P1: Obrigatório vs. opcional | 2.2 | Tasks | Pending |
 | TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | Pending |
 | TCC-07 | P2: Orientação de preenchimento | 2.1 | Tasks | Pending |
-| TCC-08 | P2: Telefone com máscara | 2.7 | Tasks | Pending |
+| TCC-08 | P2: Telefone com máscara | 2.7 | Tasks | Implementing |
 | TCC-09 | P2: Erros de banco específicos | 4.5 | Tasks | Pending |
 | TCC-10 | P2: Tela dedicada de troca de senha | 4.10 | Tasks | Pending |
 | TCC-11 | P2: Tela dedicada de troca de senha | 4.8 | Tasks | Pending |
