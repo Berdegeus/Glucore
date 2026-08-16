@@ -5,7 +5,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "node --no-warnings --test \"tests/**/*.test.ts\""
+    "test": "node --no-warnings --import ./tests/tsResolve.mjs --test \"tests/**/*.test.ts\""
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -364,16 +364,28 @@ corpo ganhou `code` em `EMAIL_TAKEN` e `INVALID_CURRENT_PASSWORD`.
 - Skill: `glucore-backend`
 
 **Done when**:
-- [ ] `verifyJwt` responde 401 com `code: 'TOKEN_INVALID'` para header ausente e para token inválido
-- [ ] `requireRole('PATIENT')` deixa passar papel permitido e responde 403 `FORBIDDEN_ROLE` para papel não permitido
-- [ ] Usuário inexistente responde 401 `TOKEN_INVALID`
-- [ ] `router.use(requireRole('PATIENT'))` aplicado em readings, carbs, insulin, alerts e settings
-- [ ] Gate passa: `cd backend && npm test && npx tsc --noEmit`
-- [ ] Test count: 6+ testes passam
+- [x] `verifyJwt` responde 401 com `code: 'TOKEN_INVALID'` para header ausente e para token inválido
+- [x] `requireRole('PATIENT')` deixa passar papel permitido e responde 403 `FORBIDDEN_ROLE` para papel não permitido
+- [x] Usuário inexistente responde 401 `TOKEN_INVALID`
+- [x] `router.use(requireRole('PATIENT'))` aplicado em readings, carbs, insulin, alerts e settings, sempre **depois** de `verifyJwt`
+- [x] Gate passa: `cd backend && npm test && npx tsc --noEmit` (32 testes, tsc limpo)
+- [x] Test count: 9 testes novos passam
+
+**Nota de assinatura**: `requireRole(roles, options?)` — `roles` aceita `'PATIENT'` ou uma
+lista, e `options.resolveRole` é o ponto de injeção opcional (default: leitura no banco)
+que permite o teste unitário sem mock global, conforme AD-4.
+
+**Harness**: `tests/tsResolve.mjs` (registrado via `--import` no script `test`) acrescenta
+`.ts` a imports relativos sem extensão. Sem isso os testes não conseguem carregar módulos
+de `src/` que importam outros módulos de `src/`: o `tsc` do projeto usa `module: commonjs`,
+onde escrever a extensão `.ts` no fonte é erro TS5097, mas o loader ESM do Node exige a
+extensão. O import de tipos do Express em `auth.ts` passou a ser `import type` pelo mesmo
+motivo (o loader ESM não encontra exports de runtime com esses nomes no pacote CJS).
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(backend): add role authorization and typed 401 code`
+**Status**: ✅ Complete
 
 ---
 

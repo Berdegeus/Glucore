@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { verifyJwt, AuthRequest } from '../middleware/auth';
+import { verifyJwt, requireRole, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { ensurePatient } from '../lib/patient';
@@ -7,6 +7,7 @@ import { ensurePatient } from '../lib/patient';
 const router = Router();
 
 router.use(verifyJwt);
+router.use(requireRole('PATIENT'));
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
