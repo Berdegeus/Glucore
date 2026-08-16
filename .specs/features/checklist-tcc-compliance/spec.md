@@ -275,7 +275,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-01 | P1: Formulários de senha seguros | 2.3 | Tasks | Implementing |
 | TCC-02 | P1: Formulários de senha seguros | 2.5 | Tasks | Implementing |
 | TCC-03 | P1: Formulários de senha seguros | 2.6 | Tasks | Implementing |
-| TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Pending |
+| TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Implementing |
 | TCC-05 | P1: Obrigatório vs. opcional | 2.2 | Tasks | Implementing |
 | TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | Implementing |
 | TCC-07 | P2: Orientação de preenchimento | 2.1 | Tasks | Implementing |

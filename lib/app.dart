@@ -13,6 +13,7 @@ import 'features/auth/presentation/pages/auth_gate.dart';
 import 'features/auth/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/splash_page.dart';
 import 'features/patient/presentation/cubit/patient_cubit.dart';
+import 'features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'features/patient/presentation/widgets/glucore_messenger.dart';
 import 'features/sensor/presentation/cubit/sensor_cubit.dart';
 import 'injection_container.dart';
@@ -117,6 +118,13 @@ class _AppState extends State<App> {
                   BlocProvider<PatientCubit>(
                     create: (context) => sl<PatientCubit>()
                       ..initialize(context.read<SensorCubit>()),
+                  ),
+                  // P19: recreated here alongside the other cubits so it
+                  // follows the same login/logout lifecycle and is never
+                  // reused across different users' sessions.
+                  BlocProvider<UserIdentityCubit>(
+                    create: (context) => sl<UserIdentityCubit>()
+                      ..load(context.l10n.profileDefaultName),
                   ),
                 ],
                 child: child!,

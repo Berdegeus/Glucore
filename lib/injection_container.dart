@@ -18,6 +18,7 @@ import 'features/patient/data/datasources/patient_remote_datasource.dart';
 import 'features/patient/data/repositories/patient_repository.dart';
 import 'features/patient/data/sync/patient_sync_service.dart';
 import 'features/patient/presentation/cubit/patient_cubit.dart';
+import 'features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'features/sensor/data/platform/sensor_platform.dart';
 import 'features/sensor/data/repositories/android_sensor_repository.dart';
 import 'features/sensor/domain/sensor_repository.dart';
@@ -90,4 +91,5 @@ Future<void> initDependencies() async {
   );
   sl.registerFactory(() => SensorCubit(repository: sl()));
   sl.registerFactory(() => PatientCubit(repository: sl()));
+  sl.registerFactory(() => UserIdentityCubit(accountService: sl()));
 }

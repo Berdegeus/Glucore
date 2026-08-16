@@ -729,15 +729,22 @@ não distingue 400 de senha fraca de qualquer outro 400 (AD-002).
 - Skill: `glucore-flutter-state`
 
 **Done when**:
-- [ ] Carrega uma única vez; segunda chamada de `load()` não refaz a requisição
-- [ ] Falha de rede resulta em `fullName == 'Paciente Glucore'`
-- [ ] Registrado no `injection_container.dart` e provido em `app.dart` junto aos demais cubits
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 5+ testes passam
+- [x] Carrega uma única vez; segunda chamada de `load()` não refaz a requisição
+- [x] Falha de rede resulta em `fullName == 'Paciente Glucore'`
+- [x] Registrado no `injection_container.dart` e provido em `app.dart` junto aos demais cubits
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (107 testes, analyze limpo)
+- [x] Test count: 5 testes novos passam
+
+**Nota de assinatura**: o fallback é passado como argumento de `load(String fallbackName)`,
+não do construtor — quem chama (`app.dart`) já tem `context.l10n` disponível, e o cubit
+continua sem depender de `BuildContext`. `email`/`createdAt` citados no "What" ficaram fora:
+`AccountProfile` ainda não expõe `createdAt` (isso é trabalho de T26, fora do arquivo desta
+tarefa); expor apenas o que é testável agora evita um campo morto.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(patient): add user identity cubit`
+**Status**: ✅ Complete
 
 ---
 
