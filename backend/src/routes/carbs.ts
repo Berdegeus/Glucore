@@ -3,6 +3,7 @@ import { verifyJwt, requireRole, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { ensurePatient } from '../lib/patient';
+import { auditRequestContext, recordAudit } from '../lib/audit';
 
 const router = Router();
 
@@ -78,6 +79,13 @@ router.post(
         eventAt: new Date(timeMs!),
       },
     });
+    await recordAudit({
+      userId: req.userId,
+      entity: 'CarbEvent',
+      action: 'CREATE',
+      entityId: created.id,
+      ...auditRequestContext(req),
+    });
     res.status(201).json({ id: created.id });
   }),
 );
@@ -117,6 +125,13 @@ router.put(
       res.status(404).json({ error: 'not found' });
       return;
     }
+    await recordAudit({
+      userId: req.userId,
+      entity: 'CarbEvent',
+      action: 'UPDATE',
+      entityId: id,
+      ...auditRequestContext(req),
+    });
     res.status(204).send();
   }),
 );
@@ -139,6 +154,13 @@ router.delete(
       res.status(404).json({ error: 'not found' });
       return;
     }
+    await recordAudit({
+      userId: req.userId,
+      entity: 'CarbEvent',
+      action: 'DELETE',
+      entityId: id,
+      ...auditRequestContext(req),
+    });
     res.status(204).send();
   }),
 );
@@ -165,6 +187,14 @@ router.post(
         description: c.description,
         eventAt: new Date(c.timeMs),
       })),
+    });
+    await recordAudit({
+      userId: req.userId,
+      entity: 'CarbEvent',
+      action: 'REPLACE',
+      entityId: patientId,
+      metadata: { count: carbs.length },
+      ...auditRequestContext(req),
     });
     res.status(204).send();
   }),

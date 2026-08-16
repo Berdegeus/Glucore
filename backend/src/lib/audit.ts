@@ -22,6 +22,23 @@ export interface AuditEntry {
   userAgent?: string | null;
 }
 
+/** Minimal surface of an Express request; keeps this module framework-free. */
+export interface AuditRequestSource {
+  ip?: string;
+  get(name: string): string | undefined;
+}
+
+/**
+ * Request context every audit entry carries. Never includes credentials, so it
+ * is safe to spread into any `recordAudit` call.
+ */
+export function auditRequestContext(req: AuditRequestSource): {
+  ipAddress: string | null;
+  userAgent: string | null;
+} {
+  return { ipAddress: req.ip ?? null, userAgent: req.get('user-agent') ?? null };
+}
+
 /** Minimal surface `recordAudit` needs, so tests can pass a double. */
 export interface AuditClient {
   auditLog: {

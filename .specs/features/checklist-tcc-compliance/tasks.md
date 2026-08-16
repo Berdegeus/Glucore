@@ -489,13 +489,23 @@ desconhecido transformaria a trilha em lista de enumeração de contas.
 - Skill: `glucore-backend`
 
 **Done when**:
-- [ ] Cada rota de escrita das quatro coleções grava um registro com `entity` correspondente ao modelo Prisma
-- [ ] `DELETE /readings` também grava
-- [ ] Gate passa: `cd backend && npm test && npx tsc --noEmit`
+- [x] Cada rota de escrita das quatro coleções grava um registro com `entity` correspondente ao modelo Prisma: `CarbEvent` e `InsulinEvent` (`CREATE`/`UPDATE`/`DELETE`/`REPLACE`), `AlertEvent` (`REPLACE`), `AlertThresholdConfig` (`UPDATE`)
+- [x] `DELETE /readings` também grava (`GlucoseReading`/`DELETE`)
+- [x] Gate passa: `cd backend && npm test && npx tsc --noEmit` (41 testes, tsc limpo)
+
+**Um registro por requisição**: as rotas replace-all gravam uma linha com ação `REPLACE` e
+`metadata: { count }`, não uma linha por item (design, "Impacto em comportamentos existentes").
+`POST /readings` não grava: é a sincronização de sensor em lote, fora da lista do AC2, e
+auditar cada lote inundaria a trilha.
+
+**Consolidação**: `auditRequestContext(req)` saiu de `auth.ts` (onde nasceu em T13) para
+`src/lib/audit.ts`, para que os 11 call sites usem a mesma fonte em vez de repetir o helper
+em seis arquivos.
 
 **Tests**: none (rota — build gate; sanitização testada em T12)
 **Gate**: build
 **Commit**: `feat(backend): record audit trail for patient data writes`
+**Status**: ✅ Complete
 
 ---
 
