@@ -211,14 +211,18 @@ esperado, não como a assinatura.
 - Skill: NONE
 
 **Done when**:
-- [ ] As quatro variantes exibem ícone e cor distintos, todos vindos de `AppTheme`
-- [ ] Teste de widget verifica ícone e cor de fundo por variante
-- [ ] Gate passa: `flutter test --no-pub`
-- [ ] Test count: 5+ testes passam
+- [x] As quatro variantes exibem ícone e cor distintos, todos vindos de `AppTheme`
+- [x] Teste de widget verifica ícone e cor de fundo por variante
+- [x] Gate passa: `flutter test --no-pub` (55 testes)
+- [x] Test count: 5 testes novos passam
+
+**Escopo**: a migração dos ~20 `SnackBar` já existentes nas telas (AC2 do spec) é das
+tarefas T15+; aqui só nasce a fonte única.
 
 **Tests**: widget
 **Gate**: quick
 **Commit**: `feat(ui): add unified GlucoreMessenger for user messages`
+**Status**: ✅ Complete
 
 ---
 
