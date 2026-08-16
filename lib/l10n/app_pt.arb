@@ -78,6 +78,7 @@
   "forgotPasswordSuccessMessage": "Se o e-mail estiver cadastrado, as instruções foram enviadas.",
   "forgotPasswordNetworkError": "Sem conexão. Verifique sua rede e tente novamente.",
   "forgotPasswordTokenLabel": "Código recebido por e-mail",
+  "forgotPasswordTokenHint": "O código chega por e-mail e expira em 6 horas",
   "forgotPasswordNewPasswordLabel": "Nova senha",
   "forgotPasswordResetButton": "Redefinir senha",
   "forgotPasswordResetSuccess": "Senha redefinida com sucesso. Faça login para continuar.",

@@ -595,15 +595,22 @@ já existente; o spec cita a frase sem ele.
 - Skill: NONE
 
 **Done when**:
-- [ ] Nenhum `Colors.red`/`Colors.green` permanece no arquivo
-- [ ] Senha fraca e confirmação divergente bloqueiam o submit
-- [ ] Campo de token exibe a dica de origem e validade de 6 h
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 5+ testes passam
+- [x] Nenhum `Colors.red`/`Colors.green` permanece no arquivo (erro → `GlucoreMessenger.error`; ícone de sucesso → `AppTheme.zoneTargetBg`)
+- [x] Senha fraca e confirmação divergente bloqueiam o submit
+- [x] Campo de token exibe a dica de origem e validade de 6 h
+- [x] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub` (86 testes, analyze limpo)
+- [x] Test count: 6 testes novos passam
+
+**Nota**: o `l10n` passou a ser resolvido antes do `await` nos dois handlers. Ler `context.l10n`
+no `catch` — o que o código antigo fazia dentro de um `setState` — aciona
+`use_build_context_synchronously` quando a mensagem sai por `GlucoreMessenger`.
+
+**Traceability**: TCC-01, TCC-03, TCC-06 e TCC-07 já estavam em `Implementing`.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(auth): apply password policy and unified messages to reset flow`
+**Status**: ✅ Complete
 
 ---
 
