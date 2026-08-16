@@ -523,15 +523,22 @@ em seis arquivos.
 - Skill: `glucore-flutter-state`
 
 **Done when**:
-- [ ] Senha vazia exibe "Campo obrigatório" e a regra de força **não** é aplicada no login
-- [ ] Ícone de visibilidade funciona no campo de senha
-- [ ] Erro de login chega via `GlucoreMessenger.error`
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 4+ testes passam
+- [x] Senha vazia exibe "Campo obrigatório" e a regra de força **não** é aplicada no login
+- [x] Ícone de visibilidade funciona no campo de senha
+- [x] Erro de login chega via `GlucoreMessenger.error`
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (68 testes, analyze limpo)
+- [x] Test count: 5 testes novos passam
+
+**Mudança de validação**: o campo de senha do login validava `length < 8`, o que barrava conta
+legada com senha fraca. Agora valida apenas "não vazio" (spec P1 AC8).
+
+**Traceability**: TCC-02, TCC-06 e TCC-15 já estavam em `Implementing` (fases 1 e 2); nada a
+mudar em `spec.md` nesta tarefa.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `refactor(auth): use shared password field and messenger on login`
+**Status**: ✅ Complete
 
 ---
 
