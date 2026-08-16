@@ -170,6 +170,7 @@ class _FakeAuthRepository implements AuthRepository {
     required String fullName,
     required String email,
     required String password,
+    String? phone,
     DateTime? birthDate,
     double? weightKg,
     int? targetRangeMin,

@@ -556,17 +556,29 @@ mudar em `spec.md` nesta tarefa.
 - Skill: `glucore-patient-features`
 
 **Done when**:
-- [ ] Senha fraca bloqueia o submit exibindo a regra violada, sem chamar a API
-- [ ] Confirmação divergente exibe "As senhas não coincidem"
-- [ ] Nascimento, peso e telefone vazios permitem o submit; rótulos mostram `*`/"(opcional)"
-- [ ] Faixa alvo mostra a dica de formato e `180-80` é recusado
-- [ ] Telefone digitado formata como `(11) 98765-4321` e é enviado só com dígitos
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 8+ testes passam
+- [x] Senha fraca bloqueia o submit exibindo a regra violada, sem chamar a API
+- [x] Confirmação divergente exibe "As senhas não coincidem"
+- [x] Nascimento, peso e telefone vazios permitem o submit; rótulos mostram `*`/"(opcional)"
+- [x] Faixa alvo mostra a dica de formato e `180-80` é recusado
+- [x] Telefone digitado formata como `(11) 98765-4321` e é enviado só com dígitos
+- [x] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub` (80 testes, analyze limpo)
+- [x] Test count: 12 testes novos passam
+
+**Plumbing do telefone**: "enviado só com dígitos" exige `phone` na cadeia de cadastro, então
+`String? phone` foi acrescentado a `AuthCubit.register`, `RegisterParams`, `AuthRepository`,
+`AuthRepositoryImpl`, `AuthLocalDataSource` e `RemoteAuthDataSource` (que passa `phone` no corpo
+do `POST /auth/register`, já aceito pelo backend desde T9). Os dublês de `AuthRepository` em
+`auth_cubit_offline_test.dart` e `login_page_test.dart` ganharam o parâmetro por exigência do
+compilador; nenhuma assertion foi alterada.
+
+**Mensagem de confirmação**: reusa a chave existente `profilePasswordMismatch`
+("As senhas não coincidem."), a única mensagem de divergência do app. O ponto final é do texto
+já existente; o spec cita a frase sem ele.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(auth): strengthen register form validation and hints`
+**Status**: ✅ Complete
 
 ---
 
