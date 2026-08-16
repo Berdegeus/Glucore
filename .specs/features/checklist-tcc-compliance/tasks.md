@@ -761,15 +761,22 @@ tarefa); expor apenas o que é testável agora evita um campo morto.
 - Skill: NONE
 
 **Done when**:
-- [ ] Exibe o nome do usuário; exibe "Paciente Glucore" enquanto não carregado
-- [ ] Menu abre com "Sair da conta"; confirmar chama `AuthCubit.logout()`; cancelar não chama
-- [ ] Aceita `actions` extras para as telas que já têm ícones próprios
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 6+ testes passam
+- [x] Exibe o nome do usuário; exibe "Paciente Glucore" enquanto não carregado
+- [x] Menu abre com "Sair da conta"; confirmar chama `AuthCubit.logout()`; cancelar não chama
+- [x] Aceita `actions` extras para as telas que já têm ícones próprios
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (113 testes, analyze limpo)
+- [x] Test count: 6 testes novos passam
+
+**Nota de design**: o `title` do chamador (logo "glucore", "Diário", "Perfil"…) é preservado —
+o nome do usuário aparece como um elemento próprio nas `actions` (texto + seta), não substitui
+o título da tela. O texto de confirmação ("Deseja sair da sua conta?", "Cancelar") repete o
+literal já hardcoded em `settings_page.dart._confirmLogout`, o padrão reusado por instrução da
+tarefa; não é l10n nova nesta tarefa.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(patient): add app bar with logged user and logout`
+**Status**: ✅ Complete
 
 ---
 
