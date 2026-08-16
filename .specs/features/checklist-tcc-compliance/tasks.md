@@ -461,13 +461,18 @@ do Prisma é um parâmetro opcional (`AuditClient`), o que permite testar sem ba
 - Skill: `glucore-backend`
 
 **Done when**:
-- [ ] Os cinco caminhos de sucesso gravam `entity`/`action` distintos com `userId`, `ipAddress` e `userAgent`
-- [ ] Nenhuma chamada passa senha, hash ou token de recuperação em `metadata`
-- [ ] Gate passa: `cd backend && npm test && npx tsc --noEmit`
+- [x] Os cinco caminhos de sucesso gravam `entity`/`action` distintos com `userId`, `ipAddress` e `userAgent`: `User/REGISTER`, `User/LOGIN`, `User/FORGOT_PASSWORD`, `User/RESET_PASSWORD`, `User/UPDATE_PROFILE`
+- [x] Nenhuma chamada passa senha, hash ou token de recuperação em `metadata` — só `{ email }` no cadastro e `{ changed: [...nomes de campo] }` na atualização de perfil
+- [x] Gate passa: `cd backend && npm test && npx tsc --noEmit` (41 testes, tsc limpo)
+
+**Decisão em `/forgot-password`**: o registro é gravado apenas quando a conta existe. A
+resposta continua idêntica nos dois casos (200 genérico); uma linha para endereço
+desconhecido transformaria a trilha em lista de enumeração de contas.
 
 **Tests**: none (rota — build gate; sanitização testada em T12)
 **Gate**: build
 **Commit**: `feat(backend): record audit trail for auth events`
+**Status**: ✅ Complete
 
 ---
 

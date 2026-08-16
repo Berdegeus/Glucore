@@ -10,6 +10,7 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { JWT_SECRET } from '../lib/env';
 import { assertStrongPassword } from '../lib/passwordPolicy';
+import { recordAudit } from '../lib/audit';
 
 const router = Router();
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -154,6 +155,11 @@ function serializeProfile(user: {
   };
 }
 
+/** Request context every audit entry carries. Never includes credentials. */
+function auditContext(req: Request): { ipAddress: string | null; userAgent: string | null } {
+  return { ipAddress: req.ip ?? null, userAgent: req.get('user-agent') ?? null };
+}
+
 async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT ?? '587');
@@ -245,6 +251,14 @@ router.post(
     });
 
     console.log(`[auth] register success email=${email}`);
+    await recordAudit({
+      userId: user.id,
+      entity: 'User',
+      action: 'REGISTER',
+      entityId: user.id,
+      metadata: { email },
+      ...auditContext(req),
+    });
     res.status(201).json({ token: signToken(user.id) });
   }),
 );
@@ -283,6 +297,13 @@ router.post(
     ]);
 
     console.log(`[auth] login success email=${normalizedEmail}`);
+    await recordAudit({
+      userId: user.id,
+      entity: 'User',
+      action: 'LOGIN',
+      entityId: user.id,
+      ...auditContext(req),
+    });
     res.json({ token: signToken(user.id) });
   }),
 );
@@ -335,6 +356,16 @@ router.post(
     } catch {
       console.log(`[auth] forgot-password SMTP not configured - token=${token} for ${normalizedEmail}`);
     }
+    // Recorded only for an existing account: the response is identical either
+    // way, and a row for an unknown address would turn the trail into an
+    // account-enumeration list. The reset token is never part of metadata.
+    await recordAudit({
+      userId: user.id,
+      entity: 'User',
+      action: 'FORGOT_PASSWORD',
+      entityId: user.id,
+      ...auditContext(req),
+    });
     res.json({ message: 'If the email is registered, instructions were sent.' });
   }),
 );
@@ -367,6 +398,13 @@ router.post(
       }),
     ]);
     console.log(`[auth] password reset success userId=${record.userId}`);
+    await recordAudit({
+      userId: record.userId,
+      entity: 'User',
+      action: 'RESET_PASSWORD',
+      entityId: record.userId,
+      ...auditContext(req),
+    });
     res.json({ message: 'Password reset successful.' });
   }),
 );
@@ -542,6 +580,21 @@ router.put(
     if (operations.length > 0) {
       await prisma.$transaction(operations);
     }
+
+    // Only the names of the changed areas, never the values.
+    const changed = [
+      ...Object.keys(userData),
+      ...Object.keys(patientData),
+      ...(updatesPassword ? ['password'] : []),
+    ];
+    await recordAudit({
+      userId: req.userId,
+      entity: 'User',
+      action: 'UPDATE_PROFILE',
+      entityId: req.userId,
+      metadata: { changed },
+      ...auditContext(req),
+    });
 
     res.json({ message: 'Profile updated.' });
   }),
