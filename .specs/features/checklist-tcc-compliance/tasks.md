@@ -403,13 +403,18 @@ motivo (o loader ESM não encontra exports de runtime com esses nomes no pacote 
 - Skill: `glucore-backend`
 
 **Done when**:
-- [ ] Modelo criado conforme o design, com `userId` nulável e `onDelete: SetNull`
-- [ ] `migrations/<timestamp>_add_audit_log/migration.sql` cria tabela e os dois índices
-- [ ] Gate passa: `cd backend && npx prisma validate && npx tsc --noEmit`
+- [x] Modelo criado conforme o design, com `userId` nulável e `onDelete: SetNull`; relação `auditLogs` adicionada em `User`
+- [x] `migrations/20260816120000_add_audit_log/migration.sql` cria tabela, os dois índices e a FK `ON DELETE SET NULL`
+- [x] Gate passa: `cd backend && npx prisma validate && npx tsc --noEmit && npm test` (schema válido, tsc limpo, 32 testes)
+
+**Aplicação**: migração escrita à mão (AD-007) — o banco não está acessível nesta iteração.
+`npx prisma generate` foi rodado para o client refletir o modelo; `npx prisma migrate deploy`
+aplica o SQL quando houver banco.
 
 **Tests**: none (schema — build gate, conforme matriz)
 **Gate**: build
 **Commit**: `feat(backend): add AuditLog model and migration`
+**Status**: ✅ Complete
 
 ---
 

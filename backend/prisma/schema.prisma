@@ -60,6 +60,7 @@ model User {
   administrator       Administrator?
   passwordResetTokens PasswordResetToken[]
   authSessions        AuthSession[]
+  auditLogs           AuditLog[]
 }
 
 model Patient {
@@ -307,4 +308,24 @@ model DashboardAccessGrant {
   @@index([patientId])
   @@index([healthProfessionalId])
   @@index([clinicalReportId])
+}
+
+/// Trilha de auditoria (item 4.11 do checklist). `userId` é nulável com
+/// onDelete: SetNull para que a trilha sobreviva à exclusão da conta.
+/// `metadata` nunca recebe senha, hash de senha ou token de recuperação.
+model AuditLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String?  @db.Uuid
+  entity    String
+  action    String
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([entity, createdAt])
 }
