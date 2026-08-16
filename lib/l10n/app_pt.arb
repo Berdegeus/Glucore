@@ -34,6 +34,7 @@
   "passwordPolicyDigitError": "A senha deve conter ao menos um número",
   "passwordPolicySpecialError": "A senha deve conter ao menos um caractere especial",
   "passwordPolicyHint": "Mínimo de 8 caracteres, com maiúscula, minúscula, número e caractere especial",
+  "fieldOptionalSuffix": "(opcional)",
   "genericNumericValueError": "Informe um valor numérico",
   "genericRequiredFieldError": "Campo obrigatório",
   "genericResetButton": "Resetar",

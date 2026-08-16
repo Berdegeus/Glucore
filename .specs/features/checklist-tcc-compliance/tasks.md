@@ -181,14 +181,19 @@ indistinguíveis. O teste assere apenas os estados determinados pelo spec.
 - Skill: `glucore-patient-features` (l10n)
 
 **Done when**:
-- [ ] `fieldLabel('Peso (kg)', required: false)` devolve `Peso (kg) (opcional)`; `required: true` devolve `Peso (kg) *`
-- [ ] Sufixo "(opcional)" adicionado aos dois `.arb`
-- [ ] Gate passa: `flutter test --no-pub`
-- [ ] Test count: 3+ testes passam
+- [x] `fieldLabel(l10n, 'Peso (kg)', required: false)` devolve `Peso (kg) (opcional)`; `required: true` devolve `Peso (kg) *`
+- [x] Sufixo "(opcional)" adicionado aos dois `.arb`
+- [x] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub` (50 testes)
+- [x] Test count: 3 testes novos passam
+
+**Nota de assinatura**: adotada a do design, `fieldLabel(l10n, base, required:)`, porque o
+sufixo opcional vem de l10n; o exemplo abreviado do "Done when" foi lido como o resultado
+esperado, não como a assinatura.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(core): add required/optional field label helper`
+**Status**: ✅ Complete
 
 ---
 
