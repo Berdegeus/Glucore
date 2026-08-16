@@ -298,16 +298,23 @@ introduzir chave de l10n fora do escopo desta tarefa.
 - Skill: `glucore-backend`
 
 **Done when**:
-- [ ] Cada código da tabela de contratos de erro do design produz o status e o `code` corretos
-- [ ] Erro não classificado produz 500 `INTERNAL` sem stack quando `NODE_ENV=production`
-- [ ] Log inclui código Prisma e rota de origem
-- [ ] Registrado em `index.ts` antes do handler genérico
-- [ ] Gate passa: `cd backend && npm test && npx tsc --noEmit`
-- [ ] Test count: 8+ testes passam
+- [x] Cada código da tabela de contratos de erro do design produz o status e o `code` corretos
+- [x] Erro não classificado produz 500 `INTERNAL` sem stack quando `NODE_ENV=production`
+- [x] Log inclui código Prisma e rota de origem
+- [x] Registrado em `index.ts` antes do handler genérico
+- [x] Gate passa: `cd backend && npm test && npx tsc --noEmit` (23 testes, tsc limpo)
+- [x] Test count: 12 testes novos passam
+
+**Escopo da tabela de contratos**: o middleware cobre as linhas que ele produz —
+`DUPLICATE_RECORD`, `RELATED_RECORD_MISSING`, `RECORD_NOT_FOUND`, `DATABASE_UNAVAILABLE`,
+`INTERNAL` e `WEAK_PASSWORD` (via erros que carregam `status` + `code`, como
+`WeakPasswordError`). `TOKEN_INVALID`, `EMAIL_TAKEN`, `INVALID_CURRENT_PASSWORD` e
+`FORBIDDEN_ROLE` são respostas de rota/middleware e nascem em T9 e T10.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(backend): map prisma errors to specific http responses`
+**Status**: ✅ Complete
 
 ---
 

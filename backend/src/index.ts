@@ -8,6 +8,7 @@ import carbsRouter from './routes/carbs';
 import insulinRouter from './routes/insulin';
 import alertsRouter from './routes/alerts';
 import settingsRouter from './routes/settings';
+import { prismaErrorHandler } from './middleware/prismaError';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -28,6 +29,10 @@ app.use('/carbs', carbsRouter);
 app.use('/insulin', insulinRouter);
 app.use('/alerts', alertsRouter);
 app.use('/settings', settingsRouter);
+
+// Classifies known failures into `{ error, code }`; the handler below is the
+// last-resort net for anything it delegates (response already started).
+app.use(prismaErrorHandler);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(`[${new Date().toISOString()}] Unhandled error: ${err.message}`);

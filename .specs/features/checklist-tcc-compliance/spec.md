@@ -280,7 +280,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | Implementing |
 | TCC-07 | P2: Orientação de preenchimento | 2.1 | Tasks | Pending |
 | TCC-08 | P2: Telefone com máscara | 2.7 | Tasks | Implementing |
-| TCC-09 | P2: Erros de banco específicos | 4.5 | Tasks | Pending |
+| TCC-09 | P2: Erros de banco específicos | 4.5 | Tasks | Implementing |
 | TCC-10 | P2: Tela dedicada de troca de senha | 4.10 | Tasks | Pending |
 | TCC-11 | P2: Tela dedicada de troca de senha | 4.8 | Tasks | Pending |
 | TCC-12 | P2: Autorização por papel | 5.1 | Tasks | Pending |
@@ -288,7 +288,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | Pending |
 | TCC-15 | P3: Identidade visual e responsividade | 1.3 | Tasks | Implementing |
 | TCC-16 | P3: Identidade visual e responsividade | 4.6 (obs) | Tasks | Pending |
-| TCC-17 | P2: Erros de banco específicos | 2.4 (rede de segurança) | Tasks | Pending |
+| TCC-17 | P2: Erros de banco específicos | 2.4 (rede de segurança) | Tasks | Implementing |
 | TCC-18 | Documentação | 3.1 | Tasks | Pending |
 
 **ID format:** `TCC-[NUMBER]`
