@@ -9,6 +9,7 @@ import { verifyJwt, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { JWT_SECRET } from '../lib/env';
+import { assertStrongPassword } from '../lib/passwordPolicy';
 
 const router = Router();
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -124,6 +125,7 @@ function serializeProfile(user: {
   fullName: string;
   phone: string | null;
   status: string;
+  role: string;
   createdAt: Date;
   patient: {
     birthDate: Date | null;
@@ -140,6 +142,7 @@ function serializeProfile(user: {
     fullName: user.fullName,
     phone: user.phone,
     status: user.status,
+    role: user.role,
     createdAt: user.createdAt.toISOString(),
     patient: {
       birthDate: patient?.birthDate?.toISOString().slice(0, 10) ?? null,
@@ -184,7 +187,6 @@ router.post(
       !email ||
       !EMAIL_RE.test(email) ||
       !body.password ||
-      body.password.length < 8 ||
       !fullName ||
       fullName.length < 3 ||
       targetRangeMin >= targetRangeMax ||
@@ -196,9 +198,12 @@ router.post(
       return;
     }
 
+    // Throws WeakPasswordError; prismaErrorHandler answers 400 WEAK_PASSWORD.
+    assertStrongPassword(body.password);
+
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      res.status(409).json({ error: 'Email already registered' });
+      res.status(409).json({ error: 'Email already registered', code: 'EMAIL_TAKEN' });
       return;
     }
 
@@ -339,10 +344,11 @@ router.post(
   strictAuthLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const { token, password } = req.body as { token?: string; password?: string };
-    if (!token || !password || password.length < 8) {
+    if (!token || !password) {
       res.status(400).json({ error: 'Invalid input' });
       return;
     }
+    assertStrongPassword(password);
     const record = await prisma.passwordResetToken.findUnique({ where: { token } });
     if (!record || record.usedAt || record.expiresAt < new Date()) {
       res.status(400).json({ error: 'Invalid or expired token' });
@@ -391,7 +397,9 @@ router.put(
         !user.authCredential ||
         !(await bcrypt.compare(body.currentPassword, user.authCredential.passwordHash))
       ) {
-        res.status(401).json({ error: 'Invalid password' });
+        // Distinct from TOKEN_INVALID: the session stays valid, only the
+        // supplied current password is wrong, so the app must not log out.
+        res.status(401).json({ error: 'Invalid password', code: 'INVALID_CURRENT_PASSWORD' });
         return;
       }
     }
@@ -427,7 +435,7 @@ router.put(
         where: { email: newEmail, NOT: { id: req.userId! } },
       });
       if (taken) {
-        res.status(409).json({ error: 'Email already registered' });
+        res.status(409).json({ error: 'Email already registered', code: 'EMAIL_TAKEN' });
         return;
       }
       userData.email = newEmail;
@@ -519,11 +527,9 @@ router.put(
     }
 
     if (updatesPassword) {
-      if (!body.newPassword || body.newPassword.length < 8) {
-        res.status(400).json({ error: 'Password too short' });
-        return;
-      }
-      const passwordHash = await bcrypt.hash(body.newPassword, 12);
+      const newPassword = body.newPassword as string;
+      assertStrongPassword(newPassword);
+      const passwordHash = await bcrypt.hash(newPassword, 12);
       operations.push(
         prisma.authCredential.upsert({
           where: { userId: req.userId! },

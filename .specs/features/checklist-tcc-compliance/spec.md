@@ -282,7 +282,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-08 | P2: Telefone com máscara | 2.7 | Tasks | Implementing |
 | TCC-09 | P2: Erros de banco específicos | 4.5 | Tasks | Implementing |
 | TCC-10 | P2: Tela dedicada de troca de senha | 4.10 | Tasks | Pending |
-| TCC-11 | P2: Tela dedicada de troca de senha | 4.8 | Tasks | Pending |
+| TCC-11 | P2: Tela dedicada de troca de senha | 4.8 | Tasks | Implementing |
 | TCC-12 | P2: Autorização por papel | 5.1 | Tasks | Pending |
 | TCC-13 | P3: Trilha de auditoria | 4.11 | Tasks | Pending |
 | TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | Pending |

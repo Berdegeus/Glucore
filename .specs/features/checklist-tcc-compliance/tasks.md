@@ -332,16 +332,21 @@ introduzir chave de l10n fora do escopo desta tarefa.
 - Skill: `glucore-backend`
 
 **Done when**:
-- [ ] As três rotas que definem senha rejeitam senha fraca com 400 `WEAK_PASSWORD`
-- [ ] `POST /register` aceita corpo sem `birthDate`, `weightKg` e `phone`, persistindo `null`
-- [ ] Senha atual incorreta em `PUT /profile` responde 401 `INVALID_CURRENT_PASSWORD`
-- [ ] `serializeProfile` passa a expor `role` e `createdAt`
-- [ ] Gate passa: `cd backend && npm test && npx tsc --noEmit`
-- [ ] Test count: testes de T2 continuam passando (nenhuma exclusão)
+- [x] As três rotas que definem senha rejeitam senha fraca com 400 `WEAK_PASSWORD` (`assertStrongPassword` em `/register`, `/reset-password` e `PUT /profile`; o status/corpo sai do `prismaErrorHandler` de T8)
+- [x] `POST /register` aceita corpo sem `birthDate`, `weightKg` e `phone`, persistindo `null` — já era o comportamento: os três passam por `parseOptional*`/`optionalText`, que devolvem `undefined`, e o Prisma omite o campo no `create`
+- [x] Senha atual incorreta em `PUT /profile` responde 401 `INVALID_CURRENT_PASSWORD`
+- [x] `serializeProfile` passa a expor `role` e `createdAt`
+- [x] Gate passa: `cd backend && npm test && npx tsc --noEmit` (23 testes, tsc limpo)
+- [x] Test count: 23 testes continuam passando (nenhuma exclusão)
+
+**Não regrediu**: `/login` continua exigindo apenas senha não vazia (contas legadas entram);
+`/forgot-password` continua respondendo sempre 200. Nenhum status existente mudou — só o
+corpo ganhou `code` em `EMAIL_TAKEN` e `INVALID_CURRENT_PASSWORD`.
 
 **Tests**: none (rota — build gate; a decisão nova vive em `passwordPolicy`, testada em T2)
 **Gate**: build
 **Commit**: `feat(backend): enforce strong passwords and typed auth error codes`
+**Status**: ✅ Complete
 
 ---
 
