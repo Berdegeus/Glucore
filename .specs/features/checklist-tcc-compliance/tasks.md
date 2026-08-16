@@ -628,16 +628,23 @@ no `catch` — o que o código antigo fazia dentro de um `setState` — aciona
 - Skill: `glucore-flutter-state`
 
 **Done when**:
-- [ ] `signal()` notifica uma única vez até `reset()`, mesmo chamado N vezes
-- [ ] 401 `TOKEN_INVALID` apaga o token e sinaliza; 401 `INVALID_CURRENT_PASSWORD` não faz nenhum dos dois
-- [ ] Erro de conexão sem resposta HTTP não sinaliza (preserva P18)
-- [ ] Notifier registrado no `injection_container.dart`
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 6+ testes passam
+- [x] `signal()` notifica uma única vez até `reset()`, mesmo chamado N vezes
+- [x] 401 `TOKEN_INVALID` apaga o token e sinaliza; 401 `INVALID_CURRENT_PASSWORD` não faz nenhum dos dois
+- [x] Erro de conexão sem resposta HTTP não sinaliza (preserva P18)
+- [x] Notifier registrado no `injection_container.dart`
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (93 testes, analyze limpo)
+- [x] Test count: 7 testes novos passam
+
+**Assinatura**: `ApiClient.create(tokenStore, sessionExpiry)`. O notifier é construído antes do
+Dio no `injection_container`, mantendo a ordem de DI sem ciclo (AD-003).
+
+**O erro continua propagando**: o interceptor chama `handler.next(error)` sempre, então a tela
+que fez a requisição ainda recebe a `DioException` e mostra sua própria mensagem.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(core): detect invalid session from api responses`
+**Status**: ✅ Complete
 
 ---
 

@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 
 import 'core/api/api_client.dart';
 import 'core/api/auth_token_store.dart';
+import 'core/session/session_expiry_notifier.dart';
 import 'features/auth/data/datasources/account_service.dart';
 import 'features/auth/data/datasources/auth_local_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -31,9 +32,14 @@ Future<void> initDependencies() async {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
   final tokenStore = AuthTokenStore(secureStorage);
-  final dio = ApiClient.create(tokenStore);
+  final sessionExpiry = SessionExpiryNotifier();
+  final dio = ApiClient.create(tokenStore, sessionExpiry);
 
   sl.registerLazySingleton<AuthTokenStore>(() => tokenStore);
+  sl.registerLazySingleton<SessionExpiryNotifier>(
+    () => sessionExpiry,
+    dispose: (notifier) => notifier.dispose(),
+  );
   sl.registerLazySingleton<AccountService>(() => AccountService(dio));
 
   sl.registerLazySingleton<AuthLocalDataSource>(
