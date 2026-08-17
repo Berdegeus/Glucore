@@ -243,6 +243,8 @@
   "profilePasswordMismatch": "As senhas não coincidem.",
   "profileEmailSaveButton": "Atualizar e-mail",
   "profilePasswordSaveButton": "Atualizar senha",
+  "profileChangePasswordLink": "Alterar senha",
+  "changePasswordTitle": "Alterar senha",
   "monitoringStaleReadingBadge": "Desconectado · leitura de {time}",
   "@monitoringStaleReadingBadge": {
     "placeholders": {

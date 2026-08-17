@@ -6,6 +6,7 @@ import 'package:glucore/l10n/l10n.dart';
 
 import '../../../../features/auth/data/datasources/account_service.dart';
 import '../widgets/user_app_bar.dart';
+import 'change_password_page.dart';
 
 class ProfileEditPage extends StatefulWidget {
   const ProfileEditPage({super.key});
@@ -28,12 +29,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   final _newEmailController = TextEditingController();
   bool _emailLoading = false;
 
-  final _passKey = GlobalKey<FormState>();
-  final _currentPassController = TextEditingController();
-  final _newPassController = TextEditingController();
-  final _confirmPassController = TextEditingController();
-  bool _passLoading = false;
-
   @override
   void initState() {
     super.initState();
@@ -50,9 +45,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     _targetController.dispose();
     _emailCurrentPassController.dispose();
     _newEmailController.dispose();
-    _currentPassController.dispose();
-    _newPassController.dispose();
-    _confirmPassController.dispose();
     super.dispose();
   }
 
@@ -163,28 +155,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       _showSnack(l10n.authServerError, error: true);
     } finally {
       if (mounted) setState(() => _emailLoading = false);
-    }
-  }
-
-  Future<void> _changePassword() async {
-    if (!_passKey.currentState!.validate()) return;
-    final l10n = context.l10n;
-    setState(() => _passLoading = true);
-    try {
-      await GetIt.instance<AccountService>().changePassword(
-        currentPassword: _currentPassController.text,
-        newPassword: _newPassController.text,
-      );
-      _currentPassController.clear();
-      _newPassController.clear();
-      _confirmPassController.clear();
-      _showSnack(l10n.profilePasswordUpdatedSuccess);
-    } on DioException catch (e) {
-      _showSnack(_mapDioError(e, l10n)!, error: true);
-    } catch (_) {
-      _showSnack(l10n.authServerError, error: true);
-    } finally {
-      if (mounted) setState(() => _passLoading = false);
     }
   }
 
@@ -309,53 +279,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Form(
-                  key: _passKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        controller: _currentPassController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                            labelText: l10n.profileCurrentPasswordLabel),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? l10n.genericRequiredFieldError
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _newPassController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                            labelText: l10n.profileNewPasswordLabel),
-                        validator: (v) => (v == null || v.length < 8)
-                            ? l10n.genericPasswordMinLengthError
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _confirmPassController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                            labelText: l10n.profileConfirmNewPasswordLabel),
-                        validator: (v) => v != _newPassController.text
-                            ? l10n.profilePasswordMismatch
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: _passLoading ? null : _changePassword,
-                        child: _passLoading
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(l10n.profilePasswordSaveButton),
-                      ),
-                    ],
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ChangePasswordPage(),
+                    ),
                   ),
+                  child: Text(l10n.profileChangePasswordLink),
                 ),
                 const SizedBox(height: 24),
               ],

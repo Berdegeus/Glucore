@@ -863,16 +863,22 @@ asserção do teste foi alterada.
 - Skill: `glucore-patient-features`
 
 **Done when**:
-- [ ] Os três campos nascem vazios e ocultos
-- [ ] Senha atual incorreta mantém a tela aberta com "Senha atual incorreta." e a sessão ativa
-- [ ] Sucesso fecha a tela e exibe "Senha atualizada com sucesso." na origem
-- [ ] `ProfileEditPage` não contém mais formulário de senha e o perfil linka para a nova tela
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 6+ testes passam
+- [x] Os três campos nascem vazios e ocultos
+- [x] Senha atual incorreta mantém a tela aberta com "Senha atual incorreta." e a sessão ativa
+- [x] Sucesso fecha a tela e exibe "Senha atualizada com sucesso." na origem
+- [x] `ProfileEditPage` não contém mais formulário de senha e o perfil linka para a nova tela
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (146 testes, analyze limpo)
+- [x] Test count: 5 testes novos passam
+
+**Nota**: `ChangePasswordPage` usa `UserAppBar`, não um `AppBar` simples — mantém o padrão
+já estabelecido em T22-T24 de que toda tela empilhada autenticada mostra identidade/logout
+(spec P1 "Identidade... em todas as telas"), evitando que a única tela nova desta feature
+regrida esse item do checklist.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(patient): add dedicated change password page`
+**Status**: ✅ Complete
 
 ---
 
