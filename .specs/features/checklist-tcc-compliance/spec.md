@@ -285,7 +285,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-11 | P2: Tela dedicada de troca de senha | 4.8 | Tasks | Verified |
 | TCC-12 | P2: Autorização por papel | 5.1 | Tasks | Verified |
 | TCC-13 | P3: Trilha de auditoria | 4.11 | Tasks | Verified |
-| TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | ❌ Needs Fix (P3 AC1 texto novo — Fix 4; AC2 global — Fix 5) |
+| TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | Verified (texto novo em l10n — Fix 4, T36; cores globais — Fix 5, T37) |
 | TCC-15 | P3: Identidade visual e responsividade | 1.3 | Tasks | Verified |
 | TCC-16 | P3: Identidade visual e responsividade | 4.6 (obs) | Tasks | Descoped |
 | TCC-17 | P2: Erros de banco específicos | 2.4 (rede de segurança) | Tasks | Verified |

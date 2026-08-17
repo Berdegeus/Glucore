@@ -88,11 +88,11 @@ class UserAppBar extends StatelessWidget implements PreferredSizeWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.settingsLogoutTile),
-        content: const Text('Deseja sair da sua conta?'),
+        content: Text(l10n.settingsLogoutConfirmMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
+            child: Text(l10n.genericCancelButton),
           ),
           TextButton(
             onPressed: () {

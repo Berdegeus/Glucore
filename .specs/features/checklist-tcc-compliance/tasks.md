@@ -1394,13 +1394,21 @@ comportamento (mesmo booleano).
 **Requirement**: TCC-14
 
 **Done when**:
-- [ ] Nenhum literal em português permanece em `user_app_bar.dart`
-- [ ] Chave nova adicionada aos dois `.arb`
-- [ ] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub`
+- [x] Nenhum literal em português permanece em `user_app_bar.dart`
+- [x] Chave nova adicionada aos dois `.arb`
+- [x] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub` (176 testes, analyze limpo)
+
+**Achado**: nenhuma chave nova foi necessária. `settingsLogoutConfirmMessage`
+("Deseja sair da sua conta?") já existe nos dois `.arb` — T28 a criou ao migrar
+`settings_page.dart` para l10n, com o texto idêntico ao literal hardcoded desta tarefa.
+Reusada em vez de duplicada, encerrando a nota de duplicação evitável do `validation.md`
+("`user_app_bar.dart:95` usa `const Text('Cancelar')` embora `genericCancelButton` já
+exista"). `genericCancelButton` também já existente, como o plano previu.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `fix(patient): move UserAppBar strings to l10n`
+**Status**: ✅ Complete
 
 ---
 
