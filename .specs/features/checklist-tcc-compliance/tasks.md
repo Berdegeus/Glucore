@@ -1440,3 +1440,15 @@ linha do gráfico dentro da faixa alvo) virou `AppTheme.zoneTargetBg` — lido c
 **Status**: ✅ Complete
 
 ---
+
+## Re-verificação independente — rodada 2 (2026-08-17, `0174cc0`)
+
+Veredito: **PASS ✅**. Verificador independente (≠ autor, ≠ verificador da rodada 1) reconferiu os
+5 gaps e os 2 mutantes da rodada 1 com evidência própria e **reinjetou** as duas mutações
+(`minLength` 8→6 em Dart, `PASSWORD_MIN_LENGTH` 8→6 em TS) num scratch isolado: **ambas morrem**.
+Uma terceira mutação, reintroduzindo o `TextFormField(obscureText: true)` no formulário de troca de
+e-mail, também morre — o teste de T34 é discriminante. Gate: `flutter analyze` limpo · Flutter
+176/176 · backend 43/43 · `tsc --noEmit` limpo. P17/P18/P19 verdes (14 testes). Nenhum gap novo
+bloqueante; duas observações de escopo (3 × `Colors.orange` remanescente; ACs de higiene sem guarda
+estrutural de regressão) estão na seção 6 de `validation.md` como candidatas a iteração futura, não
+a uma rodada 3. Fix round 1 (T33–T37) fechado.
