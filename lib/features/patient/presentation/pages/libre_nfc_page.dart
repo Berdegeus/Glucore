@@ -111,7 +111,7 @@ class _LibreNFCPageState extends State<LibreNFCPage> {
               if (state.failure != null)
                 Text(
                   state.failure!.message,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: AppTheme.zoneLowBg),
                 ),
               if (state.session != null &&
                   state.session!.brand == SensorBrand.libre2) ...[
@@ -150,7 +150,7 @@ class _LibraryCard extends StatelessWidget {
               children: [
                 Icon(
                   installed ? Icons.check_circle : Icons.folder_zip_outlined,
-                  color: installed ? Colors.green : AppTheme.brandSecondary,
+                  color: installed ? AppTheme.zoneTargetBg : AppTheme.brandSecondary,
                 ),
                 const SizedBox(width: 8),
                 Text(

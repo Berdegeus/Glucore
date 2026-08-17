@@ -84,7 +84,7 @@ extension AppAlertTypeLocalization on AppAlertType {
       case AppAlertType.sensorReconnected:
         return AppTheme.brandPrimary;
       case AppAlertType.syncFailure:
-        return Colors.red;
+        return AppTheme.zoneLowBg;
     }
   }
 }

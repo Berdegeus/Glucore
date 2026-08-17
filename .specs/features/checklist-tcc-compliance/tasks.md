@@ -1421,12 +1421,22 @@ exista"). `genericCancelButton` também já existente, como o plano previu.
 **Requirement**: TCC-14
 
 **Done when**:
-- [ ] Zero ocorrências de `Colors.red`/`Colors.green` em `lib/`
-- [ ] Cor escolhida preserva o significado semântico original (erro/sucesso/alerta)
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
+- [x] Zero ocorrências de `Colors.red`/`Colors.green` em `lib/` (`grep -rn "Colors\.red\|Colors\.green" lib` vazio)
+- [x] Cor escolhida preserva o significado semântico original (erro/sucesso/alerta)
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (176 testes, analyze limpo)
+
+**Mapeamento por significado**: todo `Colors.red` (erro, botão/confirmação destrutiva, falha de
+sensor, linha de limiar baixo no gráfico, falha de sincronização) virou `AppTheme.zoneLowBg`;
+todo `Colors.green` (etapa concluída no assistente de pareamento, biblioteca Abbott instalada,
+linha do gráfico dentro da faixa alvo) virou `AppTheme.zoneTargetBg` — lido caso a caso em
+`carb_edit_page.dart` (2), `insulin_edit_page.dart` (2), `libre_nfc_page.dart` (2),
+`sensor_link_page.dart` (4), `glucose_chart.dart` (3) e `lib/l10n/localized_values.dart` (1).
+`Colors.orange` em `sensor_link_page.dart`/`glucose_chart.dart` não fazia parte do escopo
+(fora dos 14 apontados pelo Verifier) e não foi tocado.
 
 **Tests**: widget
 **Gate**: build
 **Commit**: `refactor(patient): replace remaining hardcoded colors with AppTheme`
+**Status**: ✅ Complete
 
 ---

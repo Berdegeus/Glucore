@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
 import '../widgets/glucore_messenger.dart';
@@ -85,7 +86,7 @@ class _CarbEditPageState extends State<CarbEditPage> {
             child: Text(l10n.genericCancelButton),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.zoneLowBg),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l10n.entryDeleteConfirmButton),
           ),
@@ -153,7 +154,7 @@ class _CarbEditPageState extends State<CarbEditPage> {
               const SizedBox(height: 8),
               OutlinedButton(
                 onPressed: _delete,
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                style: OutlinedButton.styleFrom(foregroundColor: AppTheme.zoneLowBg),
                 child: Text(l10n.carbEditDeleteButton),
               ),
             ],

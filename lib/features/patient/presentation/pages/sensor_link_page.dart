@@ -65,7 +65,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
               if (state.failure != null) ...[
                 Text(
                   l10n.genericErrorLabel(state.failure!.message),
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: AppTheme.zoneLowBg),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -277,7 +277,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
         break;
       case SensorConnectionStatus.error:
         subtitle = state.failure?.message ?? l10n.sensorFailureUnknown;
-        color = Colors.red;
+        color = AppTheme.zoneLowBg;
         icon = Icons.error_outline;
         break;
       case SensorConnectionStatus.idle:
@@ -373,7 +373,7 @@ class _TutorialStepper extends StatelessWidget {
                             color: active
                                 ? AppTheme.brandPrimary
                                 : done
-                                    ? Colors.green
+                                    ? AppTheme.zoneTargetBg
                                     : Colors.grey),
                         const SizedBox(width: 6),
                         Flexible(
@@ -423,7 +423,7 @@ class _StepCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: done
-            ? Colors.green
+            ? AppTheme.zoneTargetBg
             : active
                 ? AppTheme.brandPrimary
                 : Colors.grey.shade300,
