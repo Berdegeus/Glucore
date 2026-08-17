@@ -272,30 +272,34 @@ Toda ambiguidade está resolvida ou registrada aqui.
 
 | Requirement ID | Story | Checklist | Phase | Status |
 | -------------- | ----- | --------- | ----- | ------ |
-| TCC-01 | P1: Formulários de senha seguros | 2.3 | Tasks | Implementing |
-| TCC-02 | P1: Formulários de senha seguros | 2.5 | Tasks | Implementing |
-| TCC-03 | P1: Formulários de senha seguros | 2.6 | Tasks | Implementing |
-| TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Implementing |
-| TCC-05 | P1: Obrigatório vs. opcional | 2.2 | Tasks | Implementing |
-| TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | Implementing |
-| TCC-07 | P2: Orientação de preenchimento | 2.1 | Tasks | Implementing |
-| TCC-08 | P2: Telefone com máscara | 2.7 | Tasks | Implementing |
-| TCC-09 | P2: Erros de banco específicos | 4.5 | Tasks | Implementing |
-| TCC-10 | P2: Tela dedicada de troca de senha | 4.10 | Tasks | Implementing |
-| TCC-11 | P2: Tela dedicada de troca de senha | 4.8 | Tasks | Implementing |
-| TCC-12 | P2: Autorização por papel | 5.1 | Tasks | Implementing |
-| TCC-13 | P3: Trilha de auditoria | 4.11 | Tasks | Implementing |
-| TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | Implementing |
-| TCC-15 | P3: Identidade visual e responsividade | 1.3 | Tasks | Implementing |
+| TCC-01 | P1: Formulários de senha seguros | 2.3 | Tasks | Verified |
+| TCC-02 | P1: Formulários de senha seguros | 2.5 | Tasks | Verified |
+| TCC-03 | P1: Formulários de senha seguros | 2.6 | Tasks | Verified |
+| TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Verified |
+| TCC-05 | P1: Obrigatório vs. opcional | 2.2 | Tasks | Verified |
+| TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | Verified* |
+| TCC-07 | P2: Orientação de preenchimento | 2.1 | Tasks | Verified |
+| TCC-08 | P2: Telefone com máscara | 2.7 | Tasks | Verified |
+| TCC-09 | P2: Erros de banco específicos | 4.5 | Tasks | Verified |
+| TCC-10 | P2: Tela dedicada de troca de senha | 4.10 | Tasks | Verified |
+| TCC-11 | P2: Tela dedicada de troca de senha | 4.8 | Tasks | Verified |
+| TCC-12 | P2: Autorização por papel | 5.1 | Tasks | Verified |
+| TCC-13 | P3: Trilha de auditoria | 4.11 | Tasks | Verified |
+| TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | Verified† |
+| TCC-15 | P3: Identidade visual e responsividade | 1.3 | Tasks | Verified |
 | TCC-16 | P3: Identidade visual e responsividade | 4.6 (obs) | Tasks | Descoped |
-| TCC-17 | P2: Erros de banco específicos | 2.4 (rede de segurança) | Tasks | Implementing |
-| TCC-18 | Documentação | 3.1 | Tasks | Pending |
+| TCC-17 | P2: Erros de banco específicos | 2.4 (rede de segurança) | Tasks | Verified |
+| TCC-18 | Documentação | 3.1 | Tasks | Verified |
 
 **ID format:** `TCC-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified · Descoped (requisito cujo alvo deixou de existir no código, ver T30 em `tasks.md`)
 
-**Coverage:** 18 total, 17 mapped to tasks (T1–T29 done), 1 descoped (TCC-16 — target file removed by an earlier revert), 2 pending (TCC-18, docs — T31/T32)
+**Coverage:** 18 total, 16 fully verified, 1 verified com ressalva registrada (TCC-06), 1 descoped (TCC-16 — target file removed by an earlier revert). Todas as 32 tarefas (T1–T32) concluídas.
+
+\* **TCC-06 (item 1.4):** `GlucoreMessenger` existe como fonte única (`lib/features/patient/presentation/widgets/glucore_messenger.dart:29-41`) e está em uso em login, cadastro, redefinição de senha por token e troca de senha/perfil. AC2 do spec ("nenhuma tela SHALL montar `SnackBar` diretamente") não está 100% cumprido: `insulin_entry_page.dart`, `carb_entry_page.dart`, `insulin_edit_page.dart`, `carb_edit_page.dart`, `alert_settings_page.dart`, `add_observation_sheet.dart` e `libre_nfc_page.dart` ainda chamam `ScaffoldMessenger`/`SnackBar` diretamente — essas telas nunca fizeram parte do escopo de T15–T29 (que tocaram apenas telas de autenticação e perfil). Ver checklist item 1.4 para o detalhe.
+
+† **TCC-14 (item 1.1):** os três arquivos apontados pela auditoria original (`monitoring_home_page.dart`, `profile_page.dart`, `settings_page.dart`) estão livres de `Colors.red`/`Colors.green` e de texto hardcoded (T27, T28). O AC2 do spec, mais amplo ("sem nenhuma ocorrência de `Colors.red` ou `Colors.green` em `lib/`"), não é atingido globalmente: `carb_edit_page.dart:96,193`, `insulin_edit_page.dart:89,159`, `sensor_link_page.dart:68,280,376,426`, `glucose_chart.dart:62,66,121`, `libre_nfc_page.dart:115,154` e `lib/l10n/localized_values.dart:87` ainda usam essas cores — fora do escopo desta iteração, que mirava só os três arquivos citados pela banca.
 
 ---
 

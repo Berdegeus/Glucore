@@ -1065,14 +1065,20 @@ usado com `<=` para coluna única, igual ao helper de T6.
 - Skill: `glucore-backend`
 
 **Done when**:
-- [ ] Tabela de códigos de erro documentada
-- [ ] Seção explicando que login = e-mail e por que "esqueci meu login" não se aplica
-- [ ] Instrução de aplicação da migração `add_audit_log`
-- [ ] Gate passa: `flutter analyze` (nenhuma mudança de código)
+- [x] Tabela de códigos de erro documentada
+- [x] Seção explicando que login = e-mail e por que "esqueci meu login" não se aplica
+- [x] Instrução de aplicação da migração `add_audit_log`
+- [x] Gate passa: `flutter analyze` (nenhuma mudança de código) — "No issues found!"; nenhum arquivo em `lib/` ou `backend/src/` tocado nesta tarefa, só `docs/architecture/backend.md`
+
+**Nota**: aproveitada a seção "Contrato de payloads" já existente em `docs/architecture/backend.md` como
+âncora; quatro seções novas adicionadas logo abaixo dela (contrato de erros, `requireRole`,
+`AuditLog`, login-é-e-mail) em vez de um arquivo novo, mantendo a convenção de um único doc de
+arquitetura de backend já usada no repositório.
 
 **Tests**: none (documentação — build gate)
 **Gate**: build
 **Commit**: `docs: document error codes, audit trail and email-as-login`
+**Status**: ✅ Complete
 
 ---
 

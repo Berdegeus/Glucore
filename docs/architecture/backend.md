@@ -29,6 +29,51 @@ Todas as rotas de dados usam `verifyJwt` (Bearer, `payload.sub` = userId) + `ens
 
 Contrato de payloads exato: ver [reference/data-models.md](../reference/data-models.md).
 
+## Contrato de erros (`{ error, code }`)
+
+Toda resposta de erro do backend traz `{ "error": "<mensagem>", "code": "<CODE>" }`. O app decide sempre pelo `code`, nunca pelo status sozinho — é o que separa "token inválido" (deve deslogar) de "senha atual incorreta" (não deve), ambos `401`.
+
+`prismaErrorHandler` (`backend/src/middleware/prismaError.ts`), registrado em `index.ts` antes do handler genérico, traduz exceções do Prisma e erros com contrato próprio (`status`/`code` no objeto, como `WeakPasswordError`) nesta tabela:
+
+| Situação | Status | `code` | Onde nasce |
+|---|---|---|---|
+| Token ausente/inválido/expirado | 401 | `TOKEN_INVALID` | `verifyJwt` (`backend/src/middleware/auth.ts:13,22`) |
+| Papel não autorizado | 403 | `FORBIDDEN_ROLE` | `requireRole` (`backend/src/middleware/auth.ts:69`) |
+| Senha atual incorreta (`PUT /auth/profile`) | 401 | `INVALID_CURRENT_PASSWORD` | `backend/src/routes/auth.ts:435` |
+| Senha fraca | 400 | `WEAK_PASSWORD` | `assertStrongPassword` (`backend/src/lib/passwordPolicy.ts:50`) → `prismaErrorHandler` |
+| E-mail já cadastrado | 409 | `EMAIL_TAKEN` | `backend/src/routes/auth.ts:207,471` |
+| Constraint única violada (Prisma `P2002`) | 409 | `DUPLICATE_RECORD` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:54-60`) |
+| FK inexistente (`P2003`) | 409 | `RELATED_RECORD_MISSING` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:61-67`) |
+| Registro não encontrado (`P2025`) | 404 | `RECORD_NOT_FOUND` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:68-74`) |
+| Banco indisponível (`P1001`/`P1002`/erro de inicialização) | 503 | `DATABASE_UNAVAILABLE` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:75-85`) |
+| Não classificado | 500 | `INTERNAL` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:31-35`), sem stack quando `NODE_ENV=production` |
+
+O app lê `code` em `AuthCubit._mapErrorCode` (`lib/features/auth/presentation/cubit/auth_cubit.dart:173-183`) e no interceptor de sessão `ApiClient`/`SessionExpiryNotifier` (`lib/core/session/session_expiry_notifier.dart`, `lib/core/api/api_client.dart`): só `TOKEN_INVALID` apaga o token e sinaliza logout; `INVALID_CURRENT_PASSWORD` mantém a sessão e mostra o erro na tela atual.
+
+## Autorização por papel (`requireRole`)
+
+`requireRole(...roles)` (`backend/src/middleware/auth.ts:49-76`) resolve `user.role` no banco a cada requisição (não confia em claim do JWT — rebaixar um usuário vale imediatamente) e responde 403 `FORBIDDEN_ROLE` quando o papel não está na lista permitida. Aplicado, sempre depois de `verifyJwt`, em `router.use(requireRole('PATIENT'))` nas cinco rotas de dados do paciente: `backend/src/routes/readings.ts:11`, `carbs.ts:11`, `insulin.ts:11`, `alerts.ts:12`, `settings.ts:11`.
+
+## Trilha de auditoria (`AuditLog`)
+
+`recordAudit` (`backend/src/lib/audit.ts:70-92`) grava em `AuditLog` (`backend/prisma/schema.prisma`, modelo `AuditLog`) o `userId`, a entidade, a ação, `entityId`, `metadata` sanitizado, `ipAddress` e `userAgent`. É best-effort: nunca lança para o chamador — uma falha de auditoria não pode derrubar a gravação de um registro de insulina — e nunca persiste senha, hash ou token: `sanitizeMetadata` (`backend/src/lib/audit.ts:56-68`) remove qualquer chave cujo nome combine com `/password|token/i`, em qualquer nível de aninhamento.
+
+Chamado no caminho de sucesso de cadastro, login, esqueci-senha, redefinição de senha e atualização de perfil (`backend/src/routes/auth.ts`), e nas escritas de `/carbs`, `/insulin`, `/alerts` e `/settings/alerts` (um registro por requisição, ação `REPLACE`/`CREATE`/`UPDATE`/`DELETE` conforme a rota).
+
+**Aplicar a migração:** a tabela é criada pela migração `backend/prisma/migrations/20260816120000_add_audit_log/`, escrita à mão porque o ambiente de desenvolvimento desta iteração não tinha banco acessível para `prisma migrate dev`. Para aplicar:
+
+```bash
+cd backend
+npx prisma migrate deploy   # aplica as migrações pendentes, incluindo add_audit_log
+npx prisma generate         # já rodado neste repo; rode de novo se o client ficar desatualizado
+```
+
+Se a migração ainda não estiver aplicada em algum ambiente, as rotas de negócio continuam funcionando normalmente: `recordAudit` engole a exceção e registra `console.error`, sem afetar a resposta ao usuário.
+
+## Login é o e-mail (item 3.1 do checklist)
+
+O identificador de login do Glucore é o e-mail (`POST /auth/login` recebe `email` + `password`; não existe "nome de usuário" separado no modelo `User`). Por isso não existe — e não é necessário — um fluxo de "esqueci meu login": quem esqueceu o e-mail com que se cadastrou não tem, no domínio atual, nenhum outro identificador de conta para recuperá-lo. Um fluxo de "encontre sua conta" por um dado alternativo (nome, telefone) foi descartado por criar um vetor de enumeração de contas sem benefício real ao usuário. A recuperação de **senha** já existe e é completa: `POST /auth/forgot-password` + `POST /auth/reset-password`, ambas descritas na tabela de rotas acima.
+
 ## Schema Prisma: usado vs planejado
 
 **Usados hoje:** `User`, `AuthCredential`, `Patient`, `PasswordResetToken`, `GlucoseReading`, `AlertEvent`, `CarbEvent`, `InsulinEvent`, `AlertThresholdConfig`.
