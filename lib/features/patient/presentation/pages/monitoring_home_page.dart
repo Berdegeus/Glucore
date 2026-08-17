@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:glucore/l10n/l10n.dart';
+import 'package:glucore/l10n/localized_values.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -25,6 +27,7 @@ class MonitoringHomePage extends StatefulWidget {
 
 class _MonitoringHomePageState extends State<MonitoringHomePage> {
   void _showCarbPopup(CarbEntry entry) {
+    final l10n = context.l10n;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -35,7 +38,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
         child: _EntryPopupSheet(
           icon: Icons.restaurant_rounded,
           iconColor: AppTheme.zoneTargetBg,
-          title: '${entry.grams} g carb',
+          title: l10n.monitoringCarbPopupTitle(entry.grams),
           subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
           onEdit: () {
             Navigator.pop(sheetCtx);
@@ -49,17 +52,18 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
             final confirmed = await showDialog<bool>(
               context: sheetCtx,
               builder: (ctx) => AlertDialog(
-                title: const Text('Excluir registro?'),
-                content: const Text('Esta ação não pode ser desfeita.'),
+                title: Text(l10n.entryDeleteConfirmTitle),
+                content: Text(l10n.entryDeleteConfirmMessage),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Cancelar'),
+                    child: Text(l10n.genericCancelButton),
                   ),
                   FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                    style:
+                        FilledButton.styleFrom(backgroundColor: AppTheme.zoneLowBg),
                     onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('Excluir'),
+                    child: Text(l10n.entryDeleteConfirmButton),
                   ),
                 ],
               ),
@@ -74,11 +78,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
   }
 
   void _showInsulinPopup(InsulinEntry entry) {
-    final typeLabel = switch (entry.type) {
-      InsulinType.bolus => 'Bolus',
-      InsulinType.basal => 'Basal',
-      InsulinType.correction => 'Correção',
-    };
+    final l10n = context.l10n;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -89,7 +89,10 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
         child: _EntryPopupSheet(
           icon: Icons.vaccines_outlined,
           iconColor: AppTheme.brandBlue,
-          title: '${entry.units.toStringAsFixed(1)} UI · $typeLabel',
+          title: l10n.monitoringInsulinPopupTitle(
+            entry.units.toStringAsFixed(1),
+            entry.type.label(l10n),
+          ),
           subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
           onEdit: () {
             Navigator.pop(sheetCtx);
@@ -103,17 +106,18 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
             final confirmed = await showDialog<bool>(
               context: sheetCtx,
               builder: (ctx) => AlertDialog(
-                title: const Text('Excluir registro?'),
-                content: const Text('Esta ação não pode ser desfeita.'),
+                title: Text(l10n.entryDeleteConfirmTitle),
+                content: Text(l10n.entryDeleteConfirmMessage),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Cancelar'),
+                    child: Text(l10n.genericCancelButton),
                   ),
                   FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                    style:
+                        FilledButton.styleFrom(backgroundColor: AppTheme.zoneLowBg),
                     onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('Excluir'),
+                    child: Text(l10n.entryDeleteConfirmButton),
                   ),
                 ],
               ),
@@ -129,6 +133,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       backgroundColor: AppTheme.surfaceElevated,
       appBar: UserAppBar(
@@ -150,7 +155,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
           ),
           IconButton(
             icon: const Icon(Icons.bluetooth_searching),
-            tooltip: 'Parear sensor',
+            tooltip: l10n.monitoringPairSensorTooltip,
             onPressed: () => Navigator.of(context).push(
               buildPatientScopedRoute(
                 context,
@@ -230,6 +235,7 @@ class _EntryPopupSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
@@ -274,16 +280,17 @@ class _EntryPopupSheet extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('Editar'),
+                  label: Text(l10n.entryEditButton),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onDelete,
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                  style:
+                      OutlinedButton.styleFrom(foregroundColor: AppTheme.zoneLowBg),
                   icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('Excluir'),
+                  label: Text(l10n.entryDeleteConfirmButton),
                 ),
               ),
             ],
@@ -293,7 +300,7 @@ class _EntryPopupSheet extends StatelessWidget {
             width: double.infinity,
             child: TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Fechar'),
+              child: Text(l10n.entryCloseButton),
             ),
           ),
         ],
@@ -308,47 +315,48 @@ class _NoSensorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final (icon, title, subtitle, color) = switch (sensorStatus) {
       SensorConnectionStatus.scanning => (
           Icons.search_rounded,
-          'Procurando sensor…',
-          'Aguardando sinal Bluetooth',
+          l10n.monitoringNoSensorScanningTitle,
+          l10n.monitoringNoSensorScanningSubtitle,
           AppTheme.brandBlue,
         ),
       SensorConnectionStatus.connecting => (
           Icons.bluetooth_connected,
-          'Conectando…',
-          'Estabelecendo conexão com o sensor',
+          l10n.monitoringNoSensorConnectingTitle,
+          l10n.monitoringNoSensorConnectingSubtitle,
           AppTheme.brandBlue,
         ),
       SensorConnectionStatus.pairing => (
           Icons.password,
-          'Pareamento necessário',
-          'Digite o PIN do sensor no diálogo do sistema',
+          l10n.monitoringNoSensorPairingTitle,
+          l10n.monitoringNoSensorPairingSubtitle,
           AppTheme.brandBlue,
         ),
       SensorConnectionStatus.syncingHistory => (
           Icons.sync_rounded,
-          'Sincronizando histórico',
-          'Aguardando leituras do sensor',
+          l10n.monitoringNoSensorSyncingTitle,
+          l10n.monitoringNoSensorSyncingSubtitle,
           AppTheme.brandBlue,
         ),
       SensorConnectionStatus.warmingUp => (
           Icons.hourglass_bottom_rounded,
-          'Aquecendo sensor',
-          'O sensor está se calibrando',
+          l10n.monitoringNoSensorWarmingTitle,
+          l10n.monitoringNoSensorWarmingSubtitle,
           AppTheme.brandAmber,
         ),
       SensorConnectionStatus.error => (
           Icons.error_outline_rounded,
-          'Erro de conexão',
-          'Verifique o sensor e tente novamente',
+          l10n.monitoringNoSensorErrorTitle,
+          l10n.monitoringNoSensorErrorSubtitle,
           AppTheme.zoneLowBg,
         ),
       _ => (
           Icons.sensors_off_rounded,
-          'Sem sensor conectado',
-          'Toque no ícone Bluetooth para parear',
+          l10n.monitoringNoSensorDefaultTitle,
+          l10n.monitoringNoSensorDefaultSubtitle,
           AppTheme.inkMuted,
         ),
     };
@@ -412,11 +420,11 @@ class _ChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Text(
-              'Últimas 12 horas',
-              style: TextStyle(
+              context.l10n.monitoringChartSectionTitle,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.inkMuted,
@@ -460,25 +468,26 @@ class _StatsRow extends StatelessWidget {
     final tirPct = (inTarget / readings.length * 100).round();
 
     final gmi = readings.length >= 14 ? 0.0296 * avg + 2.419 : null;
+    final l10n = context.l10n;
 
     return Row(
       children: [
         GlucoreStatChip(
-          label: 'Tempo no alvo',
+          label: l10n.monitoringTimeInTargetLabel,
           value: '$tirPct',
           unit: '%',
           color: tirPct >= 70 ? AppTheme.zoneTargetBg : AppTheme.zoneHighBg,
         ),
         const SizedBox(width: 8),
         GlucoreStatChip(
-          label: 'Média',
+          label: l10n.monitoringAverageLabel,
           value: avg.toStringAsFixed(0),
-          unit: 'mg/dL',
+          unit: l10n.genericGlucoseUnit,
         ),
         if (gmi != null) ...[
           const SizedBox(width: 8),
           GlucoreStatChip(
-            label: 'GMI est.',
+            label: l10n.monitoringGmiEstimateLabel,
             value: gmi.toStringAsFixed(1),
           ),
         ],
@@ -511,7 +520,12 @@ class _SensorStrip extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '${daysLeft}d restantes · ${session.sensorId.length > 8 ? session.sensorId.substring(0, 8) : session.sensorId}',
+              context.l10n.monitoringSensorDaysLeftLabel(
+                daysLeft,
+                session.sensorId.length > 8
+                    ? session.sensorId.substring(0, 8)
+                    : session.sensorId,
+              ),
               style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
             ),
           ),

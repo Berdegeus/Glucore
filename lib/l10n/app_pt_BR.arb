@@ -336,5 +336,44 @@
     "placeholders": {
       "time": {}
     }
-  }
+  },
+  "monitoringPairSensorTooltip": "Parear sensor",
+  "monitoringCarbPopupTitle": "{grams} g carb",
+  "@monitoringCarbPopupTitle": {
+    "placeholders": {
+      "grams": {}
+    }
+  },
+  "monitoringInsulinPopupTitle": "{units} UI · {type}",
+  "@monitoringInsulinPopupTitle": {
+    "placeholders": {
+      "units": {},
+      "type": {}
+    }
+  },
+  "monitoringChartSectionTitle": "Últimas 12 horas",
+  "monitoringTimeInTargetLabel": "Tempo no alvo",
+  "monitoringAverageLabel": "Média",
+  "monitoringGmiEstimateLabel": "GMI est.",
+  "monitoringSensorDaysLeftLabel": "{days}d restantes · {sensorId}",
+  "@monitoringSensorDaysLeftLabel": {
+    "placeholders": {
+      "days": {},
+      "sensorId": {}
+    }
+  },
+  "monitoringNoSensorScanningTitle": "Procurando sensor…",
+  "monitoringNoSensorScanningSubtitle": "Aguardando sinal Bluetooth",
+  "monitoringNoSensorConnectingTitle": "Conectando…",
+  "monitoringNoSensorConnectingSubtitle": "Estabelecendo conexão com o sensor",
+  "monitoringNoSensorPairingTitle": "Pareamento necessário",
+  "monitoringNoSensorPairingSubtitle": "Digite o PIN do sensor no diálogo do sistema",
+  "monitoringNoSensorSyncingTitle": "Sincronizando histórico",
+  "monitoringNoSensorSyncingSubtitle": "Aguardando leituras do sensor",
+  "monitoringNoSensorWarmingTitle": "Aquecendo sensor",
+  "monitoringNoSensorWarmingSubtitle": "O sensor está se calibrando",
+  "monitoringNoSensorErrorTitle": "Erro de conexão",
+  "monitoringNoSensorErrorSubtitle": "Verifique o sensor e tente novamente",
+  "monitoringNoSensorDefaultTitle": "Sem sensor conectado",
+  "monitoringNoSensorDefaultSubtitle": "Toque no ícone Bluetooth para parear"
 }

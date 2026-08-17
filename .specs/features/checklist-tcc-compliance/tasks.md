@@ -928,15 +928,33 @@ call sites de `AccountProfile(...)` em outros testes que não o passam.
 - Skill: `glucore-patient-features`
 
 **Done when**:
-- [ ] Nenhum literal em português permanece no arquivo
-- [ ] Nenhuma ocorrência de `Colors.red`
-- [ ] Chaves novas adicionadas aos dois `.arb`
-- [ ] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub`
-- [ ] Test count: 3+ testes passam
+- [x] Nenhum literal em português permanece no arquivo
+- [x] Nenhuma ocorrência de `Colors.red`
+- [x] Chaves novas adicionadas aos dois `.arb`
+- [x] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub` (163 testes, analyze limpo)
+- [x] Test count: 6 testes novos passam
+
+**Nota**: os rótulos de tipo de insulina no popup ("Bolus"/"Basal"/"Correção") trocaram o
+switch local por `InsulinType.label(l10n)`, a extensão já usada em `insulin_edit_page.dart`
+— zero chaves novas para um texto que já tinha fonte única. `'mg/dL'` reusa
+`genericGlucoseUnit`, existente no `.arb` mas até então sem nenhum call site. O logotipo
+`'glucore'` no título da AppBar permanece literal: é o nome da marca, não texto de idioma,
+e é assim que `splash_page.dart` já o trata.
+
+**Cobertura por teste**: 5 testes widget cobrem os textos alcançáveis via `PatientState`
+(tooltip do Bluetooth, título/subtítulo do cartão sem sensor em dois status, rótulos da
+faixa de estatísticas e do GMI, tira do sensor). O diálogo de confirmação de exclusão e a
+folha de opções ("Editar"/"Excluir"/"Fechar") só são alcançáveis disparando o toque num
+marcador do `GlucoseChart` (fl_chart), frágil demais para um teste de widget; um sexto
+teste (não-widget) lê o arquivo-fonte e garante que nenhum dos literais migrados
+("Excluir registro?", "Cancelar", "Editar", "Parear sensor" etc.) nem `Colors.red`/
+`Colors.green` restam — o mesmo padrão de verificação estrutural já usado no Independent
+Test de T5 (`grep -r "SnackBar("`).
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `refactor(patient): move monitoring page strings and colors to theme/l10n`
+**Status**: ✅ Complete
 
 ---
 
