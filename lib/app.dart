@@ -110,6 +110,11 @@ class _AppState extends State<App> {
               if (state.status != AuthStatus.authenticated) {
                 return child!;
               }
+              // Read here, in a normal build, not inside a provider `create:`
+              // callback: `create:` runs at most once (lazily, on first
+              // read) and provider forbids listening to an InheritedWidget
+              // (Localizations, via context.l10n) from that one-shot scope.
+              final fallbackName = context.l10n.profileDefaultName;
               return MultiBlocProvider(
                 providers: [
                   BlocProvider<SensorCubit>(
@@ -123,8 +128,7 @@ class _AppState extends State<App> {
                   // follows the same login/logout lifecycle and is never
                   // reused across different users' sessions.
                   BlocProvider<UserIdentityCubit>(
-                    create: (context) => sl<UserIdentityCubit>()
-                      ..load(context.l10n.profileDefaultName),
+                    create: (_) => sl<UserIdentityCubit>()..load(fallbackName),
                   ),
                 ],
                 child: child!,
