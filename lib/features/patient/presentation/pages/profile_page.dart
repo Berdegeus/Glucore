@@ -57,10 +57,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       backgroundColor: AppTheme.surfaceElevated,
       appBar: UserAppBar(
-        title: const Text('Perfil'),
+        title: Text(l10n.profileTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -128,7 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             MaterialPageRoute(
                                 builder: (_) => const ProfileEditPage()),
                           ),
-                          child: const Text('Editar perfil'),
+                          child: Text(l10n.profileEditProfileLink),
                         ),
                       ],
                     ),
@@ -139,21 +140,23 @@ class _ProfilePageState extends State<ProfilePage> {
 
               // Sensor info
               GlucoreSectionCard(
-                title: 'Sensor',
+                title: l10n.genericSensorSectionTitle,
                 rows: [
                   GlucoreSectionRow(
-                    label: 'ID do sensor',
+                    label: l10n.profileSensorIdRowLabel,
                     value: state.sensorState.session?.sensorId ?? '—',
                   ),
                   GlucoreSectionRow(
-                    label: 'Última leitura',
+                    label: l10n.profileLastReadingRowLabel,
                     value: state.currentReading != null
-                        ? '${state.currentReading!.value.toStringAsFixed(0)} mg/dL'
+                        ? l10n.genericGlucoseValue(
+                            state.currentReading!.value.toStringAsFixed(0),
+                          )
                         : '—',
                   ),
                   GlucoreSectionRow(
-                    label: 'Dias restantes',
-                    value: _daysLeft(state),
+                    label: l10n.profileDaysLeftRowLabel,
+                    value: _daysLeft(l10n, state),
                     onTap: () => Navigator.of(context).push(
                       buildPatientScopedRoute(
                         context,
@@ -168,11 +171,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
               // Glucose targets
               GlucoreSectionCard(
-                title: 'Metas de glicose',
+                title: l10n.profileGlucoseTargetsSectionTitle,
                 rows: [
                   GlucoreSectionRow(
-                    label: 'Alerta baixo',
-                    value: '${state.alertSettings.lowThreshold} mg/dL',
+                    label: l10n.profileLowAlertRowLabel,
+                    value: l10n.genericGlucoseValue(
+                      state.alertSettings.lowThreshold,
+                    ),
                     onTap: () => Navigator.of(context).push(
                       buildPatientScopedRoute(
                         context,
@@ -181,8 +186,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   GlucoreSectionRow(
-                    label: 'Alerta alto',
-                    value: '${state.alertSettings.highThreshold} mg/dL',
+                    label: l10n.profileHighAlertRowLabel,
+                    value: l10n.genericGlucoseValue(
+                      state.alertSettings.highThreshold,
+                    ),
                     onTap: () => Navigator.of(context).push(
                       buildPatientScopedRoute(
                         context,
@@ -196,11 +203,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
               // History shortcut
               GlucoreSectionCard(
-                title: 'Dados',
+                title: l10n.genericDataSectionTitle,
                 rows: [
                   GlucoreSectionRow(
-                    label: 'Histórico de leituras',
-                    value: '${state.readings.length} leituras',
+                    label: l10n.profileReadingsHistoryRowLabel,
+                    value: l10n.profileReadingsCountValue(
+                      state.readings.length,
+                    ),
                     onTap: () => Navigator.of(context).push(
                       buildPatientScopedRoute(context, const HistoryPage()),
                     ),
@@ -221,23 +230,23 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Icon(Icons.people_outline, color: AppTheme.inkMuted),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Cuidado compartilhado',
-                            style: TextStyle(
+                            l10n.profileSharedCareTitle,
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: AppTheme.ink,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             // TODO: shared care requires doctor web dashboard
-                            'Em breve — conecte seu médico',
-                            style: TextStyle(
+                            l10n.profileSharedCareSubtitle,
+                            style: const TextStyle(
                               fontSize: 12,
                               color: AppTheme.inkMuted,
                             ),
@@ -255,11 +264,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  String _daysLeft(PatientState state) {
+  String _daysLeft(AppLocalizations l10n, PatientState state) {
     final session = state.sensorState.session;
     if (session == null) return '—';
     final used = DateTime.now().difference(session.createdAt).inDays;
     final left = (14 - used).clamp(0, 14);
-    return '$left dias';
+    return l10n.profileDaysLeftValue(left);
   }
 }

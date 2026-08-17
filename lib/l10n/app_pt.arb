@@ -63,6 +63,8 @@
       "value": {}
     }
   },
+  "genericSensorSectionTitle": "Sensor",
+  "genericDataSectionTitle": "Dados",
   "loginTitle": "Entrar",
   "loginWelcomeTitle": "Bem-vindo ao Glucore",
   "loginSubtitle": "Acompanhe seus dados de CGM com clareza e confiança.",
@@ -184,6 +186,18 @@
   "settingsSensorLinkTile": "Vinculação de sensor CGM",
   "settingsAlertSettingsTile": "Configuração de alertas",
   "settingsLogoutTile": "Sair da conta",
+  "settingsGlucoseSectionTitle": "Glicose",
+  "settingsGlucoseAlertsRowLabel": "Alertas de glicose",
+  "settingsConfigureRowValue": "Configurar",
+  "settingsManageSensorRowLabel": "Gerenciar sensor",
+  "settingsSelectRowValue": "Selecionar",
+  "settingsExportDataRowLabel": "Exportar dados",
+  "settingsComingSoonRowValue": "Em breve",
+  "settingsLogoutConfirmMessage": "Deseja sair da sua conta?",
+  "settingsNotificationsSectionTitle": "NOTIFICAÇÕES",
+  "settingsLowGlucoseAlertToggleLabel": "Alerta de glicose baixa",
+  "settingsHighGlucoseAlertToggleLabel": "Alerta de glicose alta",
+  "settingsSignalLossToggleLabel": "Perda de sinal",
   "sensorLinkTitle": "Vincular sensor CGM",
   "sensorLinkRebindAttemptMessage": "Tentando revincular sensor...",
   "sensorLinkRebindButton": "Revincular sensor",
@@ -246,6 +260,28 @@
   "profileEmailSaveButton": "Atualizar e-mail",
   "profilePasswordSaveButton": "Atualizar senha",
   "profileChangePasswordLink": "Alterar senha",
+  "profileEditProfileLink": "Editar perfil",
+  "profileSensorIdRowLabel": "ID do sensor",
+  "profileLastReadingRowLabel": "Última leitura",
+  "profileDaysLeftRowLabel": "Dias restantes",
+  "profileDaysLeftValue": "{days} dias",
+  "@profileDaysLeftValue": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "profileGlucoseTargetsSectionTitle": "Metas de glicose",
+  "profileLowAlertRowLabel": "Alerta baixo",
+  "profileHighAlertRowLabel": "Alerta alto",
+  "profileReadingsHistoryRowLabel": "Histórico de leituras",
+  "profileReadingsCountValue": "{count} leituras",
+  "@profileReadingsCountValue": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "profileSharedCareTitle": "Cuidado compartilhado",
+  "profileSharedCareSubtitle": "Em breve — conecte seu médico",
   "changePasswordTitle": "Alterar senha",
   "monitoringStaleReadingBadge": "Desconectado · leitura de {time}",
   "@monitoringStaleReadingBadge": {

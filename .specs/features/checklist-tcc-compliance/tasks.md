@@ -971,14 +971,24 @@ Test de T5 (`grep -r "SnackBar("`).
 - Skill: `glucore-patient-features`
 
 **Done when**:
-- [ ] Nenhum literal em português permanece nos dois arquivos
-- [ ] Chaves novas adicionadas aos dois `.arb`
-- [ ] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub`
-- [ ] Test count: 3+ testes passam
+- [x] Nenhum literal em português permanece nos dois arquivos
+- [x] Chaves novas adicionadas aos dois `.arb`
+- [x] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub` (167 testes, analyze limpo)
+- [x] Test count: 4 testes novos passam
+
+**Nota**: "Sensor" e "Dados" eram títulos de `GlucoreSectionCard` idênticos nos dois arquivos;
+em vez de duas chaves por arquivo com o mesmo valor, nasceram como `genericSensorSectionTitle`
+e `genericDataSectionTitle`, reusadas em ambos — evita a duplicata que a própria tarefa pede
+para não criar. `genericCancelButton` (já existente) cobre o "Cancelar" do diálogo de logout
+de `settings_page.dart`; `genericGlucoseValue` (já existente, sem call site até aqui) cobre
+os três valores "`{n}` mg/dL" de `profile_page.dart`. O traço "—" de valor ausente e o "…" de
+carregamento permanecem literais: são pontuação, não texto de idioma, mesmo tratamento dado
+a "%" em T27.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `refactor(patient): move settings and profile strings to l10n`
+**Status**: ✅ Complete
 
 ---
 
