@@ -1299,3 +1299,109 @@ Nenhuma dependência aponta para uma tarefa posterior. Os pré-requisitos semân
 | T32 | Documentação | none | none | ✅ OK |
 
 `Tests: none` aparece apenas onde a matriz diz `none` para a camada. As rotas Express são a exceção justificada na matriz: nenhuma decisão nova vive nelas — política de senha, tradução de erro, papel e sanitização de auditoria estão em libs/middlewares cobertos por testes unitários.
+
+---
+
+## Phase 6: Fix round 1 (pós-Verifier, ver validation.md de 2026-08-17)
+
+Verdict do Verifier: FAIL — 5 gaps reais + 2 mutantes sobreviventes. Ver `.specs/features/checklist-tcc-compliance/validation.md` para o relatório completo. Usuário decidiu (Fix 5): migrar as 14 ocorrências residuais de `Colors.red`/`Colors.green` para `AppTheme`, cumprindo o AC2 de P3 como está escrito.
+
+```
+T33 → T34 → T35 → T36 → T37
+```
+
+### T33: Assertar o limite de 8 caracteres da senha (mutantes 4 e 5)
+
+**What**: Adicionar aos dois lados os casos de borda `Senha1!` (7 chars, inválida) e `Senha12!` (8 chars, válida), fechando o gap que deixava `minLength`/`PASSWORD_MIN_LENGTH` derivar sem quebrar testes.
+**Where**: `test/core/validation/password_policy_test.dart`, `backend/tests/lib/passwordPolicy.test.ts`, `.specs/features/checklist-tcc-compliance/design.md` (tabela de casos)
+**Depends on**: T32
+**Reuses**: tabela de casos existente em `design.md`
+**Requirement**: TCC-01
+
+**Done when**:
+- [ ] `Senha1!` (7 chars) é rejeitada por `tooShort` nos dois lados
+- [ ] `Senha12!` (8 chars) é aceita nos dois lados
+- [ ] Reinjetar mutante `minLength 8→6` (Dart) e `PASSWORD_MIN_LENGTH 8→6` (TS): ambos morrem agora
+- [ ] Gate passa: `flutter test --no-pub` e `cd backend && npm test`
+
+**Tests**: unit
+**Gate**: full
+**Commit**: `test(auth): assert the 8-character password boundary`
+
+---
+
+### T34: `PasswordField` no campo de senha da troca de e-mail (P1 AC5)
+
+**What**: Trocar o `TextFormField(obscureText: true)` cru do bloco de troca de e-mail por `PasswordField`.
+**Where**: `lib/features/patient/presentation/pages/profile_edit_page.dart`
+**Depends on**: T33
+**Reuses**: `PasswordField` (T7)
+**Requirement**: TCC-02
+
+**Done when**:
+- [ ] Campo de senha atual do bloco de e-mail usa `PasswordField` com o mesmo `validator` de obrigatoriedade
+- [ ] Ícone de visibilidade alterna esse campo de forma independente dos demais da tela
+- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
+
+**Tests**: widget
+**Gate**: full
+**Commit**: `fix(patient): use PasswordField in the email-change form`
+
+---
+
+### T35: Migrar as 7 telas restantes para `GlucoreMessenger` (P2 AC2)
+
+**What**: Substituir `ScaffoldMessenger.showSnackBar(SnackBar(...))` direto por `GlucoreMessenger.success/error` em `alert_settings_page.dart`, `add_observation_sheet.dart`, `carb_entry_page.dart`, `carb_edit_page.dart`, `insulin_edit_page.dart`, `insulin_entry_page.dart`, `libre_nfc_page.dart`.
+**Where**: as 7 páginas acima
+**Depends on**: T34
+**Reuses**: `GlucoreMessenger` (T5)
+**Requirement**: TCC-06
+
+**Done when**:
+- [ ] `grep -rn "SnackBar(" lib` só encontra a definição dentro de `glucore_messenger.dart`
+- [ ] Mensagens de sucesso/erro preservam o texto original, só trocando o mecanismo
+- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
+
+**Tests**: widget
+**Gate**: full
+**Commit**: `refactor(patient): migrate remaining screens to GlucoreMessenger`
+
+---
+
+### T36: l10n para o texto novo de `UserAppBar` (P3 AC1)
+
+**What**: Trocar os literais hardcoded de `UserAppBar` por chaves l10n, reaproveitando `genericCancelButton` para "Cancelar" e criando uma chave para "Deseja sair da sua conta?".
+**Where**: `lib/features/patient/presentation/widgets/user_app_bar.dart`
+**Depends on**: T35
+**Reuses**: `genericCancelButton` já existente
+**Requirement**: TCC-14
+
+**Done when**:
+- [ ] Nenhum literal em português permanece em `user_app_bar.dart`
+- [ ] Chave nova adicionada aos dois `.arb`
+- [ ] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub`
+
+**Tests**: widget
+**Gate**: full
+**Commit**: `fix(patient): move UserAppBar strings to l10n`
+
+---
+
+### T37: Migrar `Colors.red`/`Colors.green` residuais para `AppTheme` (P3 AC2)
+
+**What**: Substituir as 14 ocorrências em `carb_edit_page.dart`, `insulin_edit_page.dart`, `libre_nfc_page.dart`, `sensor_link_page.dart`, `glucose_chart.dart` e `lib/l10n/localized_values.dart` por cores de `AppTheme` (`zoneLowBg`/`zoneTargetBg`/`zoneHighBg` conforme o significado semântico de cada uso — leia o contexto antes de escolher).
+**Where**: os 6 arquivos acima
+**Depends on**: T36
+**Reuses**: paleta de `AppTheme`
+**Requirement**: TCC-14
+
+**Done when**:
+- [ ] Zero ocorrências de `Colors.red`/`Colors.green` em `lib/`
+- [ ] Cor escolhida preserva o significado semântico original (erro/sucesso/alerta)
+- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
+
+**Tests**: widget
+**Gate**: build
+**Commit**: `refactor(patient): replace remaining hardcoded colors with AppTheme`
+
+---
