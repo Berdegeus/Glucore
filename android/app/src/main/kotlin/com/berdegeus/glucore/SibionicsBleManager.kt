@@ -30,6 +30,13 @@ class SibionicsBleManager(
     private var writeChar: BluetoothGattCharacteristic? = null
     private var currentBluetoothNum: String? = null
 
+    // Set once the sensor has walked this connection through auth, activation
+    // and time-sync up to ask-new-data. Past that point the vendor state
+    // machine only returns packed readings, so an unrecognised SIprocessData
+    // result can be decoded as glucose. Connection-scoped: cleared on
+    // disconnect so a half-finished handshake never carries trust over.
+    private var handshakeSettled = false
+
     override fun prepareScan(): Result<Unit> {
         val bluetoothNum = try { Natives.getSiBluetoothNum(dataptr) } catch (e: Exception) {
             Log.e(tag, "getSiBluetoothNum failed: ${e.message}")
@@ -70,6 +77,7 @@ class SibionicsBleManager(
 
     override fun onBrandDisconnected() {
         writeChar = null
+        handshakeSettled = false
     }
 
     override fun disconnect() {
@@ -197,6 +205,7 @@ class SibionicsBleManager(
             }
             7L -> {
                 Log.i(tag, "code 7: ask new data")
+                handshakeSettled = true
                 try { Natives.siAsknewdata(dataptr)?.let { enqueueWrite(writeChar, it) } } catch (e: Exception) {
                     Log.e(tag, "siAsknewdata: ${e.message}")
                 }
@@ -215,12 +224,14 @@ class SibionicsBleManager(
             }
             else -> {
                 // Only attempt to interpret an unknown code as a packed reading
-                // once the history sync has produced a timestamp; otherwise an
+                // once this connection finished the handshake; otherwise an
                 // unexpected vendor return value could masquerade as glucose.
-                if (lastSyncedTimestampMs != null) {
+                // The plausibility range in decodePackedGlucose is the second
+                // gate, so a stray in-range value still has to survive that.
+                if (handshakeSettled) {
                     handleDirectGlucoseResult(code, timestampMs)
                 } else {
-                    Log.w(tag, "Ignoring unknown SIprocessData code $code (no history sync in progress)")
+                    Log.w(tag, "Ignoring unknown SIprocessData code $code (handshake not settled)")
                 }
             }
         }
