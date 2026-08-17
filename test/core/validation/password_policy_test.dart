@@ -62,6 +62,19 @@ void main() {
         PasswordPolicyError.tooShort,
       );
     });
+
+    test('Senha1! is rejected for being 7 characters — below the minimum',
+        () {
+      expect(
+        PasswordPolicy.validate('Senha1!'),
+        PasswordPolicyError.tooShort,
+      );
+    });
+
+    test('Senha12! is valid at exactly 8 characters — the minimum boundary',
+        () {
+      expect(PasswordPolicy.validate('Senha12!'), isNull);
+    });
   });
 
   group('passwordPolicyMessage', () {

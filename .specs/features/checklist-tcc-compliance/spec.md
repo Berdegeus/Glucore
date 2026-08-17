@@ -272,12 +272,12 @@ Toda ambiguidade está resolvida ou registrada aqui.
 
 | Requirement ID | Story | Checklist | Phase | Status |
 | -------------- | ----- | --------- | ----- | ------ |
-| TCC-01 | P1: Formulários de senha seguros | 2.3 | Tasks | Verified |
-| TCC-02 | P1: Formulários de senha seguros | 2.5 | Tasks | Verified |
+| TCC-01 | P1: Formulários de senha seguros | 2.3 | Tasks | Verified (limite de 8 asserido nos dois lados — Fix 1, T33) |
+| TCC-02 | P1: Formulários de senha seguros | 2.5 | Tasks | ❌ Needs Fix (P1 AC5 — Fix 3) |
 | TCC-03 | P1: Formulários de senha seguros | 2.6 | Tasks | Verified |
-| TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Verified |
+| TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Verified (ressalva: `libre_nfc_page.dart` — Fix 5) |
 | TCC-05 | P1: Obrigatório vs. opcional | 2.2 | Tasks | Verified |
-| TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | Verified* |
+| TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | ❌ Needs Fix (P2 AC2 — Fix 2) |
 | TCC-07 | P2: Orientação de preenchimento | 2.1 | Tasks | Verified |
 | TCC-08 | P2: Telefone com máscara | 2.7 | Tasks | Verified |
 | TCC-09 | P2: Erros de banco específicos | 4.5 | Tasks | Verified |
@@ -285,7 +285,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-11 | P2: Tela dedicada de troca de senha | 4.8 | Tasks | Verified |
 | TCC-12 | P2: Autorização por papel | 5.1 | Tasks | Verified |
 | TCC-13 | P3: Trilha de auditoria | 4.11 | Tasks | Verified |
-| TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | Verified† |
+| TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | ❌ Needs Fix (P3 AC1 texto novo — Fix 4; AC2 global — Fix 5) |
 | TCC-15 | P3: Identidade visual e responsividade | 1.3 | Tasks | Verified |
 | TCC-16 | P3: Identidade visual e responsividade | 4.6 (obs) | Tasks | Descoped |
 | TCC-17 | P2: Erros de banco específicos | 2.4 (rede de segurança) | Tasks | Verified |
@@ -295,7 +295,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified · Descoped (requisito cujo alvo deixou de existir no código, ver T30 em `tasks.md`)
 
-**Coverage:** 18 total, 16 fully verified, 1 verified com ressalva registrada (TCC-06), 1 descoped (TCC-16 — target file removed by an earlier revert). Todas as 32 tarefas (T1–T32) concluídas.
+**Coverage (após verificação independente, 2026-08-17 — ver `validation.md`):** 18 total · 12 verified · 2 verified com ressalva (TCC-01, TCC-04) · **3 needs fix (TCC-02, TCC-06, TCC-14)** · 1 descoped (TCC-16 — target file removed by an earlier revert). Todas as 32 tarefas concluídas (T30 descoped), mas 3 ACs não cumpridos e 2 mutantes sobreviventes. Verdict: **FAIL** — 5 fix tasks em `validation.md`.
 
 \* **TCC-06 (item 1.4):** `GlucoreMessenger` existe como fonte única (`lib/features/patient/presentation/widgets/glucore_messenger.dart:29-41`) e está em uso em login, cadastro, redefinição de senha por token e troca de senha/perfil. AC2 do spec ("nenhuma tela SHALL montar `SnackBar` diretamente") não está 100% cumprido: `insulin_entry_page.dart`, `carb_entry_page.dart`, `insulin_edit_page.dart`, `carb_edit_page.dart`, `alert_settings_page.dart`, `add_observation_sheet.dart` e `libre_nfc_page.dart` ainda chamam `ScaffoldMessenger`/`SnackBar` diretamente — essas telas nunca fizeram parte do escopo de T15–T29 (que tocaram apenas telas de autenticação e perfil). Ver checklist item 1.4 para o detalhe.
 

@@ -100,6 +100,8 @@ widgets/user_app_bar.dart
 | `Senha1234` | não | sem caractere especial |
 | `Senha 123!` | sim | espaço conta como não alfanumérico e não invalida |
 | `` (vazia) | não | menos de 8 caracteres |
+| `Senha1!` | não | 7 caracteres — abaixo do limite mínimo |
+| `Senha12!` | sim | 8 caracteres — exatamente no limite mínimo |
 
 ## Modelo de dados
 

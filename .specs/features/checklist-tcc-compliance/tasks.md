@@ -1319,14 +1319,22 @@ T33 → T34 → T35 → T36 → T37
 **Requirement**: TCC-01
 
 **Done when**:
-- [ ] `Senha1!` (7 chars) é rejeitada por `tooShort` nos dois lados
-- [ ] `Senha12!` (8 chars) é aceita nos dois lados
-- [ ] Reinjetar mutante `minLength 8→6` (Dart) e `PASSWORD_MIN_LENGTH 8→6` (TS): ambos morrem agora
-- [ ] Gate passa: `flutter test --no-pub` e `cd backend && npm test`
+- [x] `Senha1!` (7 chars) é rejeitada por `tooShort` nos dois lados
+- [x] `Senha12!` (8 chars) é aceita nos dois lados
+- [x] Reinjetar mutante `minLength 8→6` (Dart) e `PASSWORD_MIN_LENGTH 8→6` (TS): ambos morrem agora
+- [x] Gate passa: `flutter test --no-pub` (175 testes) e `cd backend && npm test` (43 testes)
+
+**Verificação do sensor**: mutantes reinjetados num `git worktree` temporário fora do repositório
+(`../glucore-sensor-wt-t33`, `git worktree add --detach … HEAD`), nunca no working tree real —
+os dois arquivos de teste atualizados desta tarefa foram copiados para o worktree antes da
+mutação. `minLength 8→6` (Dart): `Senha1!` passa a `null` em vez de `tooShort` — **morre**.
+`PASSWORD_MIN_LENGTH 8→6` (TS): idêntico — **morre**. Worktree removido
+(`git worktree remove --force`); `git status --porcelain` do repositório real idêntico antes/depois.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `test(auth): assert the 8-character password boundary`
+**Status**: ✅ Complete
 
 ---
 

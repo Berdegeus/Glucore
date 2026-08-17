@@ -50,6 +50,14 @@ describe('validatePassword — design case table', () => {
   it('the empty string is rejected for being shorter than 8 characters', () => {
     assert.equal(validatePassword(''), 'tooShort');
   });
+
+  it('Senha1! is rejected for being 7 characters — below the minimum', () => {
+    assert.equal(validatePassword('Senha1!'), 'tooShort');
+  });
+
+  it('Senha12! is valid at exactly 8 characters — the minimum boundary', () => {
+    assert.equal(validatePassword('Senha12!'), null);
+  });
 });
 
 describe('isStrongPassword', () => {
