@@ -273,7 +273,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | Requirement ID | Story | Checklist | Phase | Status |
 | -------------- | ----- | --------- | ----- | ------ |
 | TCC-01 | P1: Formulários de senha seguros | 2.3 | Tasks | Verified (limite de 8 asserido nos dois lados — Fix 1, T33) |
-| TCC-02 | P1: Formulários de senha seguros | 2.5 | Tasks | ❌ Needs Fix (P1 AC5 — Fix 3) |
+| TCC-02 | P1: Formulários de senha seguros | 2.5 | Tasks | Verified (campo de troca de e-mail migrado — Fix 3, T34) |
 | TCC-03 | P1: Formulários de senha seguros | 2.6 | Tasks | Verified |
 | TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Verified (ressalva: `libre_nfc_page.dart` — Fix 5) |
 | TCC-05 | P1: Obrigatório vs. opcional | 2.2 | Tasks | Verified |

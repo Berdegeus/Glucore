@@ -245,6 +245,28 @@ void main() {
 
     expect(find.byType(ChangePasswordPage), findsOneWidget);
   });
+
+  testWidgets(
+      'the email-change current password field starts obscured and its icon '
+      'reveals only that field', (tester) async {
+    await pumpPage(tester);
+
+    Finder editableText() => find.descendant(
+          of: find.widgetWithText(TextFormField, 'Senha atual'),
+          matching: find.byType(EditableText),
+        );
+
+    expect(
+      tester.widget<EditableText>(editableText()).obscureText,
+      isTrue,
+      reason: 'starts hidden like every PasswordField',
+    );
+
+    await tester.tap(find.byIcon(Icons.visibility_outlined));
+    await tester.pump();
+
+    expect(tester.widget<EditableText>(editableText()).obscureText, isFalse);
+  });
 }
 
 class _UpdateCall {

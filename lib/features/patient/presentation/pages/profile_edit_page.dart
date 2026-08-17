@@ -7,6 +7,7 @@ import 'package:glucore/core/utils/phone_input.dart';
 import 'package:glucore/l10n/l10n.dart';
 
 import '../../../../features/auth/data/datasources/account_service.dart';
+import '../../../auth/presentation/widgets/password_field.dart';
 import '../widgets/glucore_form_layout.dart';
 import '../widgets/glucore_messenger.dart';
 import '../widgets/glucore_widgets.dart';
@@ -337,11 +338,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               : null,
                         ),
                         const SizedBox(height: 12),
-                        TextFormField(
+                        PasswordField(
                           controller: _emailCurrentPassController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                              labelText: l10n.profileCurrentPasswordLabel),
+                          label: l10n.profileCurrentPasswordLabel,
                           validator: (v) => (v == null || v.isEmpty)
                               ? l10n.genericRequiredFieldError
                               : null,

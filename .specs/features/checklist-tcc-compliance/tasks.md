@@ -1347,13 +1347,15 @@ mutação. `minLength 8→6` (Dart): `Senha1!` passa a `null` em vez de `tooShor
 **Requirement**: TCC-02
 
 **Done when**:
-- [ ] Campo de senha atual do bloco de e-mail usa `PasswordField` com o mesmo `validator` de obrigatoriedade
-- [ ] Ícone de visibilidade alterna esse campo de forma independente dos demais da tela
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
+- [x] Campo de senha atual do bloco de e-mail usa `PasswordField` com o mesmo `validator` de obrigatoriedade
+- [x] Ícone de visibilidade alterna esse campo de forma independente dos demais da tela
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (176 testes, analyze limpo)
+- [x] Test count: 1 teste novo passa
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `fix(patient): use PasswordField in the email-change form`
+**Status**: ✅ Complete
 
 ---
 
