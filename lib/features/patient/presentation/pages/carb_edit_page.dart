@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
+import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
 
 class CarbEditPage extends StatefulWidget {
@@ -57,7 +58,7 @@ class _CarbEditPageState extends State<CarbEditPage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().editCarbEntry(
       CarbEntry(
@@ -67,9 +68,7 @@ class _CarbEditPageState extends State<CarbEditPage> {
       ),
     );
     if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text(context.l10n.carbEditSavedSuccessMessage)),
-    );
+    GlucoreMessenger.success(context, l10n.carbEditSavedSuccessMessage);
     navigator.pop();
   }
 
@@ -94,13 +93,11 @@ class _CarbEditPageState extends State<CarbEditPage> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final deletedMessage = context.l10n.carbEditDeletedSuccessMessage;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().deleteCarbEntry(widget.entry);
     if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text(context.l10n.carbEditDeletedSuccessMessage)),
-    );
+    GlucoreMessenger.success(context, deletedMessage);
     navigator.pop();
   }
 

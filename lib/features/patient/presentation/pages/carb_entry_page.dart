@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
+import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
 
 class CarbEntryPage extends StatefulWidget {
@@ -98,7 +99,6 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
               const SizedBox(height: 18),
               FilledButton(
                 onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
                   final navigator = Navigator.of(context);
                   if (!_formKey.currentState!.validate()) {
                     return;
@@ -110,11 +110,12 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
                       time: _selectedTime,
                     ),
                   );
-                  if (!mounted) {
+                  if (!context.mounted) {
                     return;
                   }
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(l10n.carbEntrySavedSuccessMessage)),
+                  GlucoreMessenger.success(
+                    context,
+                    l10n.carbEntrySavedSuccessMessage,
                   );
                   navigator.pop();
                 },

@@ -1368,13 +1368,20 @@ mutação. `minLength 8→6` (Dart): `Senha1!` passa a `null` em vez de `tooShor
 **Requirement**: TCC-06
 
 **Done when**:
-- [ ] `grep -rn "SnackBar(" lib` só encontra a definição dentro de `glucore_messenger.dart`
-- [ ] Mensagens de sucesso/erro preservam o texto original, só trocando o mecanismo
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
+- [x] `grep -rn "SnackBar(" lib` só encontra a definição dentro de `glucore_messenger.dart`
+- [x] Mensagens de sucesso/erro preservam o texto original, só trocando o mecanismo
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (176 testes, analyze limpo)
+
+**Nota de lint**: em `alert_settings_page.dart`, `carb_entry_page.dart` e `insulin_entry_page.dart`
+o `onPressed` roda dentro do `build(BuildContext context)`, então `mounted` (do `State`) não é
+reconhecido pelo analyzer como ligado ao `context` local usado depois do `await` — trocado por
+`context.mounted` nesses três pontos para manter `flutter analyze` limpo, sem mudar o
+comportamento (mesmo booleano).
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `refactor(patient): migrate remaining screens to GlucoreMessenger`
+**Status**: ✅ Complete
 
 ---
 

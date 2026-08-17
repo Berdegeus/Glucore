@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
+import '../widgets/glucore_messenger.dart';
 
 /// FreeStyle Libre 2 pairing flow:
 /// 1. install Abbott's algorithm library (extracted from a LibreLink APK);
@@ -53,9 +54,7 @@ class _LibreNFCPageState extends State<LibreNFCPage> {
     if (ok) {
       await _refreshLibraryStatus();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Biblioteca instalada com sucesso')),
-        );
+        GlucoreMessenger.success(context, 'Biblioteca instalada com sucesso');
       }
     }
   }

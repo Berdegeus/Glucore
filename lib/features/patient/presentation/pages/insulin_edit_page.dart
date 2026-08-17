@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
+import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
 
 class InsulinEditPage extends StatefulWidget {
@@ -63,7 +64,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().editInsulinEntry(
       InsulinEntry(
@@ -74,9 +75,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
       ),
     );
     if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text(context.l10n.insulinEditSavedSuccessMessage)),
-    );
+    GlucoreMessenger.success(context, l10n.insulinEditSavedSuccessMessage);
     navigator.pop();
   }
 
@@ -101,13 +100,11 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final deletedMessage = context.l10n.insulinEditDeletedSuccessMessage;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().deleteInsulinEntry(widget.entry);
     if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text(context.l10n.insulinEditDeletedSuccessMessage)),
-    );
+    GlucoreMessenger.success(context, deletedMessage);
     navigator.pop();
   }
 

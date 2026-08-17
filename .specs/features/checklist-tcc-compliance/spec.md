@@ -277,7 +277,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-03 | P1: Formulários de senha seguros | 2.6 | Tasks | Verified |
 | TCC-04 | P1: Identidade do usuário e saída | 1.2 | Tasks | Verified (ressalva: `libre_nfc_page.dart` — Fix 5) |
 | TCC-05 | P1: Obrigatório vs. opcional | 2.2 | Tasks | Verified |
-| TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | ❌ Needs Fix (P2 AC2 — Fix 2) |
+| TCC-06 | P2: Mensagens padronizadas | 1.4 | Tasks | Verified (7 telas restantes migradas — Fix 2, T35) |
 | TCC-07 | P2: Orientação de preenchimento | 2.1 | Tasks | Verified |
 | TCC-08 | P2: Telefone com máscara | 2.7 | Tasks | Verified |
 | TCC-09 | P2: Erros de banco específicos | 4.5 | Tasks | Verified |

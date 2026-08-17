@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 
 import '../cubit/patient_cubit.dart';
+import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
 
 class AlertSettingsPage extends StatefulWidget {
@@ -75,17 +76,15 @@ class _AlertSettingsPageState extends State<AlertSettingsPage> {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
                   if (!_formKey.currentState!.validate()) {
                     return;
                   }
                   final low = int.parse(_lowController.text);
                   final high = int.parse(_highController.text);
                   if (low >= high) {
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.alertSettingsLowMustBeLowerError),
-                      ),
+                    GlucoreMessenger.error(
+                      context,
+                      l10n.alertSettingsLowMustBeLowerError,
                     );
                     return;
                   }
@@ -97,13 +96,12 @@ class _AlertSettingsPageState extends State<AlertSettingsPage> {
                     ),
                   );
 
-                  if (!mounted) {
+                  if (!context.mounted) {
                     return;
                   }
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(l10n.alertSettingsUpdatedSuccessMessage),
-                    ),
+                  GlucoreMessenger.success(
+                    context,
+                    l10n.alertSettingsUpdatedSuccessMessage,
                   );
                 },
                 child: Text(l10n.alertSettingsSaveButton),

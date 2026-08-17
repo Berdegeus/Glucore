@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../widgets/glucore_messenger.dart';
 import '../widgets/patient_widgets.dart';
 import 'carb_entry_page.dart';
 import 'insulin_entry_page.dart';
@@ -78,12 +79,8 @@ class AddObservationSheet extends StatelessWidget {
                   label: 'Exercício',
                   onTap: () {
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        // TODO: implement ExerciseEntryPage
-                        content: Text('Exercício — em breve'),
-                      ),
-                    );
+                    // TODO: implement ExerciseEntryPage
+                    GlucoreMessenger.info(context, 'Exercício — em breve');
                   },
                 ),
                 _OptionTile(
@@ -92,12 +89,8 @@ class AddObservationSheet extends StatelessWidget {
                   label: 'Nota livre',
                   onTap: () {
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        // TODO: implement NoteEntryPage
-                        content: Text('Nota livre — em breve'),
-                      ),
-                    );
+                    // TODO: implement NoteEntryPage
+                    GlucoreMessenger.info(context, 'Nota livre — em breve');
                   },
                 ),
               ],
