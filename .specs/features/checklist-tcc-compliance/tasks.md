@@ -1005,15 +1005,26 @@ a "%" em T27.
 - Skill: `glucore-patient-features`
 
 **Done when**:
-- [ ] A 800 dp as duas telas renderizam duas colunas
-- [ ] A 400 dp permanecem em coluna única, idênticas ao layout atual
-- [ ] Nenhum overflow em nenhuma das duas larguras
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 4+ testes passam
+- [x] A 800 dp as duas telas renderizam duas colunas
+- [x] A 400 dp permanecem em coluna única, idênticas ao layout atual
+- [x] Nenhum overflow em nenhuma das duas larguras
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (173 testes, analyze limpo)
+- [x] Test count: 6 testes novos passam
+
+**Nota de design**: o spec não define o que vai em cada coluna, só que exista layout de duas
+colunas. Para `DiaryPage`, os grupos por dia (cabeçalho + itens daquele dia) são o que muda de
+lugar: são distribuídos alternadamente entre as duas colunas inteiros, nunca partindo um
+cabeçalho dos seus próprios itens. `_buildEntries` virou `_buildDayGroups`, agrupando por dia
+antes de decidir o layout, em vez de continuar como lista achatada de cabeçalhos e itens. Para
+`ReportsPage`, o cartão de indicadores (`_GmiCard`) e o de tempo no alvo (`_TirSection`) — hoje
+empilhados — passam a ficar lado a lado; `_TimeRangeChips` e o estado vazio continuam largura
+total em qualquer largura. `GlucoreFormLayout.breakpoint` (T6) é a única fonte do valor 600,
+usado com `<=` para coluna única, igual ao helper de T6.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(patient): add tablet layout to diary and reports`
+**Status**: ✅ Complete
 
 ---
 

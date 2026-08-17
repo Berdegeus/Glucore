@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../models/patient_models.dart';
+import '../widgets/glucore_form_layout.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
 
@@ -34,23 +35,44 @@ class _ReportsPageState extends State<ReportsPage> {
 
           final stats = _computeStats(readings, state.alertSettings);
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-            children: [
-              _TimeRangeChips(
-                selected: _rangeDays,
-                options: _ranges,
-                onSelect: (d) => setState(() => _rangeDays = d),
-              ),
-              const SizedBox(height: 20),
-              if (readings.isEmpty)
-                const _EmptyReports()
-              else ...[
-                _GmiCard(gmi: stats.gmi, avg: stats.avg, count: readings.length),
-                const SizedBox(height: 20),
-                _TirSection(stats: stats),
-              ],
-            ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth > GlucoreFormLayout.breakpoint;
+
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                children: [
+                  _TimeRangeChips(
+                    selected: _rangeDays,
+                    options: _ranges,
+                    onSelect: (d) => setState(() => _rangeDays = d),
+                  ),
+                  const SizedBox(height: 20),
+                  if (readings.isEmpty)
+                    const _EmptyReports()
+                  else if (!wide) ...[
+                    _GmiCard(
+                        gmi: stats.gmi, avg: stats.avg, count: readings.length),
+                    const SizedBox(height: 20),
+                    _TirSection(stats: stats),
+                  ] else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _GmiCard(
+                            gmi: stats.gmi,
+                            avg: stats.avg,
+                            count: readings.length,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(child: _TirSection(stats: stats)),
+                      ],
+                    ),
+                ],
+              );
+            },
           );
         },
       ),
