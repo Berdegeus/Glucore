@@ -823,14 +823,30 @@ fora do escopo desta tarefa, que troca só a `AppBar`.
 - Skill: `glucore-patient-features`
 
 **Done when**:
-- [ ] Toda página autenticada empilhada exibe nome do usuário e ação de sair
-- [ ] Botão de voltar continua funcionando em todas elas
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 4+ testes passam
+- [x] Toda página autenticada empilhada exibe nome do usuário e ação de sair
+- [x] Botão de voltar continua funcionando em todas elas
+- [x] Gate passa: `flutter analyze && flutter test --no-pub` (141 testes, analyze limpo)
+- [x] Test count: 22 testes novos passam
+
+**Escopo confirmado por inspeção**: das páginas empilhadas do app, as com `AppBar` própria em
+`Scaffold` próprio são exatamente `history_page.dart`, `notifications_page.dart` (a que
+`alerts_page.dart` reexporta — não há uma segunda classe de alertas), `settings_page.dart`,
+`alert_settings_page.dart`, `sensor_choice_page.dart`, `sensor_link_page.dart`,
+`profile_edit_page.dart`, `carb_edit_page.dart`, `insulin_edit_page.dart`, `carb_entry_page.dart`
+e `insulin_entry_page.dart` — as 11 trocadas aqui. `libre_nfc_page.dart` também tem `AppBar`
+própria mas ficou fora por instrução explícita do batch (fluxo Libre ainda é placeholder).
+
+**Regressão corrigida**: `sensor_choice_navigation_test.dart` (guarda de P17) empurra
+`SensorChoicePage`/`SensorLinkPage` num `MultiBlocProvider` que não incluía `UserIdentityCubit`;
+como as duas passaram a renderizar `UserAppBar`, que o observa incondicionalmente, o teste
+quebrava com `ProviderNotFoundException`. Adicionado `BlocProvider<UserIdentityCubit>` ao fixture
+existente (mesmo padrão do T16 ao atualizar dublês por exigência do compilador) — nenhuma
+asserção do teste foi alterada.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(patient): show logged user and logout on stacked pages`
+**Status**: ✅ Complete
 
 ---
 

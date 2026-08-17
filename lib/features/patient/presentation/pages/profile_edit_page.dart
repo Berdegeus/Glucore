@@ -5,6 +5,7 @@ import 'package:glucore/core/utils/date_input.dart';
 import 'package:glucore/l10n/l10n.dart';
 
 import '../../../../features/auth/data/datasources/account_service.dart';
+import '../widgets/user_app_bar.dart';
 
 class ProfileEditPage extends StatefulWidget {
   const ProfileEditPage({super.key});
@@ -192,7 +193,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.profileTitle)),
+      appBar: UserAppBar(title: Text(l10n.profileTitle)),
       body: _profileLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

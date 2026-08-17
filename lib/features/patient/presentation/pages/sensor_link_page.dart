@@ -9,6 +9,7 @@ import '../../../../core/utils/gs1_barcode.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/user_app_bar.dart';
 
 class SensorLinkPage extends StatefulWidget {
   const SensorLinkPage({super.key, this.brand = SensorBrand.sibionics});
@@ -53,7 +54,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.sensorLinkTitle)),
+      appBar: UserAppBar(title: Text(l10n.sensorLinkTitle)),
       body: BlocBuilder<SensorCubit, SensorUiState>(
         builder: (context, state) {
           return ListView(

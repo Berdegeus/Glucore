@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/user_app_bar.dart';
 import 'alert_settings_page.dart';
 import 'sensor_choice_page.dart';
 
@@ -27,10 +28,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceElevated,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surfaceCanvas,
-        title: Text(l10n.settingsTitle),
-      ),
+      appBar: UserAppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
         children: [

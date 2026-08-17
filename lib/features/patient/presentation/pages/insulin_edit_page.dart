@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
+import '../widgets/user_app_bar.dart';
 
 class InsulinEditPage extends StatefulWidget {
   const InsulinEditPage({super.key, required this.entry});
@@ -115,7 +116,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.insulinEditTitle)),
+      appBar: UserAppBar(title: Text(l10n.insulinEditTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(

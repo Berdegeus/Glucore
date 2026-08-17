@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
+import '../widgets/user_app_bar.dart';
 
 class CarbEntryPage extends StatefulWidget {
   const CarbEntryPage({super.key});
@@ -55,7 +56,7 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.carbEntryTitle)),
+      appBar: UserAppBar(title: Text(l10n.carbEntryTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 
 import '../cubit/patient_cubit.dart';
+import '../widgets/user_app_bar.dart';
 
 class AlertSettingsPage extends StatefulWidget {
   const AlertSettingsPage({super.key});
@@ -41,7 +42,7 @@ class _AlertSettingsPageState extends State<AlertSettingsPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.alertSettingsTitle)),
+      appBar: UserAppBar(title: Text(l10n.alertSettingsTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(

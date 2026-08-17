@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../models/patient_models.dart';
+import '../widgets/user_app_bar.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
@@ -16,7 +17,7 @@ class NotificationsPage extends StatelessWidget {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notificações')),
+      appBar: UserAppBar(title: const Text('Notificações')),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           if (state.alerts.isEmpty) {
