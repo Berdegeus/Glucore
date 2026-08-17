@@ -11,6 +11,7 @@ class AccountProfile {
     required this.targetRangeMin,
     required this.targetRangeMax,
     this.phone,
+    this.createdAt,
   });
 
   final String email;
@@ -22,9 +23,15 @@ class AccountProfile {
   final int targetRangeMin;
   final int targetRangeMax;
 
+  /// When the account was created. Optional so existing call sites that
+  /// build an `AccountProfile` without it (tests, doubles) keep compiling;
+  /// `serializeProfile` in the backend always sends it.
+  final DateTime? createdAt;
+
   factory AccountProfile.fromJson(Map<String, dynamic> json) {
     final patient = json['patient'] as Map<String, dynamic>? ?? const {};
     final birthDateValue = patient['birthDate']?.toString();
+    final createdAtValue = json['createdAt']?.toString();
     return AccountProfile(
       email: json['email']?.toString() ?? '',
       fullName: json['fullName']?.toString() ?? '',
@@ -36,6 +43,9 @@ class AccountProfile {
       weightKg: (patient['weightKg'] as num?)?.toDouble(),
       targetRangeMin: (patient['targetRangeMin'] as num?)?.toInt() ?? 80,
       targetRangeMax: (patient['targetRangeMax'] as num?)?.toInt() ?? 180,
+      createdAt: createdAtValue == null || createdAtValue.isEmpty
+          ? null
+          : DateTime.tryParse(createdAtValue),
     );
   }
 }

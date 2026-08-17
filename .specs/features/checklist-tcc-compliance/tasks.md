@@ -895,16 +895,23 @@ regrida esse item do checklist.
 - Skill: `glucore-patient-features`
 
 **Done when**:
-- [ ] Nascimento, peso e telefone aceitam vazio e salvam `null`; rótulos indicam a opcionalidade
-- [ ] E-mail atual e data de criação da conta aparecem somente leitura, visualmente distintos dos editáveis
-- [ ] Telefone carregado do backend aparece formatado
-- [ ] `_showSnack` substituído por `GlucoreMessenger`
-- [ ] Gate passa: `flutter analyze && flutter test --no-pub`
-- [ ] Test count: 7+ testes passam
+- [x] Nascimento, peso e telefone aceitam vazio e salvam `null`; rótulos indicam a opcionalidade
+- [x] E-mail atual e data de criação da conta aparecem somente leitura, visualmente distintos dos editáveis
+- [x] Telefone carregado do backend aparece formatado
+- [x] `_showSnack` substituído por `GlucoreMessenger`
+- [x] Gate passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub` (157 testes, analyze limpo)
+- [x] Test count: 11 testes novos passam
+
+**Extensão de `AccountProfile`**: `email` já existia; `createdAt` (opcional, `DateTime?`) foi
+acrescentado em `lib/features/auth/data/datasources/account_service.dart` — fora do arquivo
+listado em "Where", mas é o modelo de dados que a própria tarefa consome (T21 já havia
+adiado isso explicitamente para T26). Campo opcional com default `null` para não quebrar os
+call sites de `AccountProfile(...)` em outros testes que não o passam.
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(patient): align profile form with model optionality`
+**Status**: ✅ Complete
 
 ---
 

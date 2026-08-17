@@ -233,6 +233,8 @@
   "profileUpdatedSuccessMessage": "Perfil atualizado com sucesso.",
   "profileSaveChangesButton": "Salvar alterações",
   "profileAccountSectionTitle": "Conta",
+  "profileCurrentEmailLabel": "E-mail atual",
+  "profileAccountCreatedAtLabel": "Conta criada em",
   "profileCurrentPasswordLabel": "Senha atual",
   "profileNewEmailLabel": "Novo e-mail",
   "profileNewPasswordLabel": "Nova senha",

@@ -2,9 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:glucore/core/utils/date_input.dart';
+import 'package:glucore/core/utils/field_label.dart';
+import 'package:glucore/core/utils/phone_input.dart';
 import 'package:glucore/l10n/l10n.dart';
 
 import '../../../../features/auth/data/datasources/account_service.dart';
+import '../widgets/glucore_form_layout.dart';
+import '../widgets/glucore_messenger.dart';
+import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import 'change_password_page.dart';
 
@@ -20,9 +25,15 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   final _nameController = TextEditingController();
   final _birthController = TextEditingController();
   final _weightController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _targetController = TextEditingController();
   bool _profileLoading = true;
   bool _healthLoading = false;
+
+  // Read-only account facts (spec P2 "Tela dedicada de troca de senha" AC4):
+  // shown in a distinct, non-editable block, never in a text field.
+  String _email = '';
+  DateTime? _createdAt;
 
   final _emailKey = GlobalKey<FormState>();
   final _emailCurrentPassController = TextEditingController();
@@ -42,6 +53,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     _nameController.dispose();
     _birthController.dispose();
     _weightController.dispose();
+    _phoneController.dispose();
     _targetController.dispose();
     _emailCurrentPassController.dispose();
     _newEmailController.dispose();
@@ -64,8 +76,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         : formatBrazilianDate(profile.birthDate!);
     _weightController.text =
         profile.weightKg == null ? '' : profile.weightKg!.toStringAsFixed(1);
+    _phoneController.text = (profile.phone == null || profile.phone!.isEmpty)
+        ? ''
+        : formatBrazilianPhone(profile.phone!);
     _targetController.text =
         '${profile.targetRangeMin}-${profile.targetRangeMax}';
+    _email = profile.email;
+    _createdAt = profile.createdAt;
   }
 
   Future<void> _loadProfile() async {
@@ -77,27 +94,17 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       _fillProfile(profile);
     } on DioException catch (e) {
       if (!mounted) return;
-      _showSnack(_mapDioError(e, l10n)!, error: true);
+      GlucoreMessenger.error(context, _mapDioError(e, l10n)!);
       _nameController.text = l10n.profileDefaultName;
       _targetController.text = '80-180';
     } catch (_) {
       if (!mounted) return;
-      _showSnack(l10n.authServerError, error: true);
+      GlucoreMessenger.error(context, l10n.authServerError);
       _nameController.text = l10n.profileDefaultName;
       _targetController.text = '80-180';
     } finally {
       if (mounted) setState(() => _profileLoading = false);
     }
-  }
-
-  void _showSnack(String message, {bool error = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: error ? Colors.red : null,
-      ),
-    );
   }
 
   String? _mapDioError(DioException e, AppLocalizations l10n) {
@@ -114,6 +121,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     if (!_healthKey.currentState!.validate()) return;
     final l10n = context.l10n;
     final targetRange = _parseTargetRange(_targetController.text.trim())!;
+    final phoneDigits = phoneDigitsOnly(_phoneController.text);
     setState(() => _healthLoading = true);
     try {
       await GetIt.instance<AccountService>().updateProfile(
@@ -123,15 +131,18 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
             double.tryParse(_weightController.text.trim().replaceAll(',', '.')),
         targetRangeMin: targetRange.min,
         targetRangeMax: targetRange.max,
+        phone: phoneDigits.isEmpty ? null : phoneDigits,
       );
       final profile = await GetIt.instance<AccountService>().fetchProfile();
       if (!mounted) return;
       _fillProfile(profile);
-      _showSnack(l10n.profileUpdatedSuccessMessage);
+      GlucoreMessenger.success(context, l10n.profileUpdatedSuccessMessage);
     } on DioException catch (e) {
-      _showSnack(_mapDioError(e, l10n)!, error: true);
+      if (!mounted) return;
+      GlucoreMessenger.error(context, _mapDioError(e, l10n)!);
     } catch (_) {
-      _showSnack(l10n.authServerError, error: true);
+      if (!mounted) return;
+      GlucoreMessenger.error(context, l10n.authServerError);
     } finally {
       if (mounted) setState(() => _healthLoading = false);
     }
@@ -148,14 +159,41 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       );
       _emailCurrentPassController.clear();
       _newEmailController.clear();
-      _showSnack(l10n.profileEmailUpdatedSuccess);
+      if (!mounted) return;
+      GlucoreMessenger.success(context, l10n.profileEmailUpdatedSuccess);
     } on DioException catch (e) {
-      _showSnack(_mapDioError(e, l10n)!, error: true);
+      if (!mounted) return;
+      GlucoreMessenger.error(context, _mapDioError(e, l10n)!);
     } catch (_) {
-      _showSnack(l10n.authServerError, error: true);
+      if (!mounted) return;
+      GlucoreMessenger.error(context, l10n.authServerError);
     } finally {
       if (mounted) setState(() => _emailLoading = false);
     }
+  }
+
+  /// Optional: empty is accepted, a filled value needs 10 or 11 digits.
+  String? _validatePhone(String? value) {
+    final digits = phoneDigitsOnly(value ?? '');
+    if (digits.isEmpty) return null;
+    return digits.length < 10 ? context.l10n.genericPhoneIncompleteError : null;
+  }
+
+  /// Optional: empty is accepted, a filled value must be a real date.
+  String? _validateBirthDate(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    return parseBrazilianDate(value) == null
+        ? context.l10n.genericInvalidDateError
+        : null;
+  }
+
+  /// Optional: empty is accepted, a filled value must be numeric and positive.
+  String? _validateWeight(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final weight = double.tryParse(value.trim().replaceAll(',', '.'));
+    return weight == null || weight <= 0
+        ? context.l10n.genericNumericValueError
+        : null;
   }
 
   @override
@@ -166,129 +204,175 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       appBar: UserAppBar(title: Text(l10n.profileTitle)),
       body: _profileLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Form(
-                  key: _healthKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        controller: _nameController,
-                        decoration:
-                            InputDecoration(labelText: l10n.profileNameLabel),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? l10n.genericRequiredFieldError
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _birthController,
-                        keyboardType: TextInputType.datetime,
-                        inputFormatters: const [BrazilianDateInputFormatter()],
-                        decoration: InputDecoration(
-                          labelText: l10n.profileBirthDateLabel,
-                          hintText: 'dd/mm/aaaa',
-                        ),
-                        validator: (v) =>
-                            (v == null || parseBrazilianDate(v) == null)
-                                ? l10n.genericRequiredFieldError
-                                : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _weightController,
-                        decoration: InputDecoration(
-                            labelText: l10n.profileWeightLabel),
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          final w = double.tryParse(
-                              (v ?? '').trim().replaceAll(',', '.'));
-                          return w == null || w <= 0
+          : GlucoreFormLayout(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Form(
+                    key: _healthKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            labelText: fieldLabel(
+                              l10n,
+                              l10n.profileNameLabel,
+                              required: true,
+                            ),
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty)
                               ? l10n.genericRequiredFieldError
-                              : null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _targetController,
-                        decoration: InputDecoration(
-                            labelText: l10n.profileTargetRangeLabel),
-                        validator: (v) =>
-                            v == null || _parseTargetRange(v.trim()) == null
-                                ? l10n.genericRequiredFieldError
-                                : null,
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        onPressed: _healthLoading ? null : _saveHealth,
-                        child: _healthLoading
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(l10n.profileSaveChangesButton),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                const Divider(),
-                const SizedBox(height: 8),
-                Text(l10n.profileAccountSectionTitle,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 16),
-                Form(
-                  key: _emailKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        controller: _newEmailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                            labelText: l10n.profileNewEmailLabel),
-                        validator: (v) => (v == null || !v.contains('@'))
-                            ? l10n.genericInvalidEmailError
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _emailCurrentPassController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                            labelText: l10n.profileCurrentPasswordLabel),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? l10n.genericRequiredFieldError
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: _emailLoading ? null : _changeEmail,
-                        child: _emailLoading
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(l10n.profileEmailSaveButton),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                OutlinedButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ChangePasswordPage(),
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _birthController,
+                          keyboardType: TextInputType.datetime,
+                          inputFormatters: const [BrazilianDateInputFormatter()],
+                          decoration: InputDecoration(
+                            labelText: fieldLabel(
+                              l10n,
+                              l10n.profileBirthDateLabel,
+                              required: false,
+                            ),
+                            hintText: 'dd/mm/aaaa',
+                          ),
+                          validator: _validateBirthDate,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _weightController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: fieldLabel(
+                              l10n,
+                              l10n.profileWeightLabel,
+                              required: false,
+                            ),
+                            hintText: l10n.profileWeightHint,
+                          ),
+                          validator: _validateWeight,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: const [BrazilianPhoneInputFormatter()],
+                          decoration: InputDecoration(
+                            labelText: fieldLabel(
+                              l10n,
+                              l10n.genericPhoneLabel,
+                              required: false,
+                            ),
+                            hintText: l10n.genericPhoneHint,
+                          ),
+                          validator: _validatePhone,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _targetController,
+                          decoration: InputDecoration(
+                            labelText: fieldLabel(
+                              l10n,
+                              l10n.profileTargetRangeLabel,
+                              required: true,
+                            ),
+                            helperText: l10n.profileTargetRangeHelper,
+                          ),
+                          validator: (v) =>
+                              v == null || _parseTargetRange(v.trim()) == null
+                                  ? l10n.profileTargetRangeFormatError
+                                  : null,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: _healthLoading ? null : _saveHealth,
+                          child: _healthLoading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Text(l10n.profileSaveChangesButton),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Text(l10n.profileChangePasswordLink),
-                ),
-                const SizedBox(height: 24),
-              ],
+                  const SizedBox(height: 28),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Text(l10n.profileAccountSectionTitle,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 16),
+                  GlucoreSectionCard(
+                    rows: [
+                      GlucoreSectionRow(
+                        label: l10n.profileCurrentEmailLabel,
+                        value: _email,
+                      ),
+                      GlucoreSectionRow(
+                        label: l10n.profileAccountCreatedAtLabel,
+                        value: _createdAt == null
+                            ? '—'
+                            : formatBrazilianDate(_createdAt!),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Form(
+                    key: _emailKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _newEmailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                              labelText: l10n.profileNewEmailLabel),
+                          validator: (v) => (v == null || !v.contains('@'))
+                              ? l10n.genericInvalidEmailError
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _emailCurrentPassController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                              labelText: l10n.profileCurrentPasswordLabel),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? l10n.genericRequiredFieldError
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: _emailLoading ? null : _changeEmail,
+                          child: _emailLoading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Text(l10n.profileEmailSaveButton),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ChangePasswordPage(),
+                      ),
+                    ),
+                    child: Text(l10n.profileChangePasswordLink),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
     );
   }
