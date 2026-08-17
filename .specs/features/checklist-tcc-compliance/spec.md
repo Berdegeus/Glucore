@@ -287,15 +287,15 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | TCC-13 | P3: Trilha de auditoria | 4.11 | Tasks | Implementing |
 | TCC-14 | P3: Identidade visual e responsividade | 1.1 | Tasks | Implementing |
 | TCC-15 | P3: Identidade visual e responsividade | 1.3 | Tasks | Implementing |
-| TCC-16 | P3: Identidade visual e responsividade | 4.6 (obs) | Tasks | Pending |
+| TCC-16 | P3: Identidade visual e responsividade | 4.6 (obs) | Tasks | Descoped |
 | TCC-17 | P2: Erros de banco específicos | 2.4 (rede de segurança) | Tasks | Implementing |
 | TCC-18 | Documentação | 3.1 | Tasks | Pending |
 
 **ID format:** `TCC-[NUMBER]`
 
-**Status values:** Pending → In Design → In Tasks → Implementing → Verified
+**Status values:** Pending → In Design → In Tasks → Implementing → Verified · Descoped (requisito cujo alvo deixou de existir no código, ver T30 em `tasks.md`)
 
-**Coverage:** 18 total, 0 mapped to tasks, 18 unmapped ⚠️
+**Coverage:** 18 total, 17 mapped to tasks (T1–T29 done), 1 descoped (TCC-16 — target file removed by an earlier revert), 2 pending (TCC-18, docs — T31/T32)
 
 ---
 

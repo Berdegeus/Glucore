@@ -1048,6 +1048,7 @@ usado com `<=` para coluna única, igual ao helper de T6.
 **Tests**: widget
 **Gate**: full
 **Commit**: `fix(debug): confirm before clearing local data`
+**Status**: ⚪ Descoped — `lib/core/debug/debug_panel.dart` não existe no código. O painel de debug e `MockSensorRepository` foram introduzidos no commit `cf36982` e revertidos no `f91adea`, antes desta branch existir; não há `DebugPanel`, `lib/core/debug/` nem ação "Limpar dados" em lugar nenhum da árvore (`git log --all --diff-filter=D`, grep por `DebugPanel`/`MockSensorRepository`/"Limpar dados" — todos vazios). O item 4.6 do checklist original já estava **OK**, com essa observação como nota adicional (não bloqueante); como o recurso observado não existe mais, a observação fica sem objeto. Recriar um recurso já revertido só para satisfazer uma nota "vale confirmar se for demonstrado" seria escopo muito além do que a tarefa pede. `CLAUDE.md`/`docs/ARCHITECTURE_REVIEW.md`/`docs/ARCHITECTURE_FIX_PLAN.md` continuam descrevendo o painel como existente — doc desatualizada, sinalizada separadamente fora deste plano.
 
 ---
 
