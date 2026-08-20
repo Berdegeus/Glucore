@@ -101,7 +101,7 @@ T7 → T8
 
 ---
 
-### T2: Aplicar o gate e os logs no `SibionicsBleManager`
+### T2: Aplicar o gate e os logs no `SibionicsBleManager` ✅
 
 **What**: Trocar a decodificação do caminho de código desconhecido do `SIprocessData` por `decodeUnsolicited`, logando o descarte com o valor bruto, e logar quando o timestamp cair no relógio do dispositivo.
 **Where**: `android/app/src/main/kotlin/com/berdegeus/glucore/SibionicsBleManager.kt`
@@ -116,11 +116,11 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `handleDirectGlucoseResult` usa `decodeUnsolicited`; valor descartado gera `Log.w` contendo o valor bruto
-- [ ] `handleGlucoseReady` continua usando `decodePacked` e emite `Log.w` identificando o uso do fallback de timestamp e o valor bruto recebido
-- [ ] Nenhuma outra mudança de comportamento no arquivo (a promoção de timestamp por `lastSyncedTimestampMs` segue como está)
-- [ ] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
-- [ ] Contagem de testes: suítes Kotlin, Dart e backend com o mesmo total da T1, nenhuma removida
+- [x] `handleDirectGlucoseResult` usa `decodeUnsolicited`; valor descartado gera `Log.w` contendo o valor bruto
+- [x] `handleGlucoseReady` continua usando `decodePacked` e emite `Log.w` identificando o uso do fallback de timestamp e o valor bruto recebido
+- [x] Nenhuma outra mudança de comportamento no arquivo (a promoção de timestamp por `lastSyncedTimestampMs` segue como está)
+- [x] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
+- [x] Contagem de testes: suítes Kotlin, Dart e backend com o mesmo total da T1, nenhuma removida
 
 **Tests**: none (camada acoplada ao Android — matriz define build gate; a regra testável vive na T1)
 **Gate**: build

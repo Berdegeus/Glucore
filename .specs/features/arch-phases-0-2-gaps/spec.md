@@ -168,7 +168,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | ARCH-01 | P1: `CLAUDE.md` fiel | Tasks | Pending |
 | ARCH-02 | P1: `CLAUDE.md` fiel | Tasks | Pending |
 | ARCH-03 | P1: `CLAUDE.md` fiel | Tasks | Pending |
-| ARCH-04 | P1: Leitura implausível | Tasks | Pending |
+| ARCH-04 | P1: Leitura implausível | Implementing | Implementing |
 | ARCH-05 | P1: Leitura implausível | Implementing | Implementing |
 | ARCH-06 | P1: Leitura implausível | Implementing | Implementing |
 | ARCH-07 | P1: README do backend | Tasks | Pending |
