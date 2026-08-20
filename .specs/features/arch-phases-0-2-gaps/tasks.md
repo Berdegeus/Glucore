@@ -129,7 +129,7 @@ T7 → T8
 
 ---
 
-### T3: Documento de arquitetura multissensor
+### T3: Documento de arquitetura multissensor ✅
 
 **What**: Criar o documento de referência que descreve o contrato `BrandBleManager`, as três marcas suportadas e o ponto de escolha por marca, com citação de arquivo para cada afirmação estrutural.
 **Where**: `docs/reference/multi-sensor-architecture.md`
@@ -144,12 +144,12 @@ T7 → T8
 
 **Done when**:
 
-- [ ] O documento descreve o contrato comum e o que cada marca precisa implementar
-- [ ] Os três caminhos de aquisição estão descritos: Sibionics (BLE + JNI), Accu-Chek SmartGuide (BLE com PIN), Libre 2 (NFC + biblioteca Abbott)
-- [ ] Cada afirmação estrutural cita o arquivo Kotlin correspondente, e todo arquivo citado existe
-- [ ] `docs/README.md` lista o novo documento
-- [ ] Não duplica o protocolo Sibionics já descrito em `docs/architecture/sensor-pipeline.md` — referencia-o
-- [ ] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
+- [x] O documento descreve o contrato comum e o que cada marca precisa implementar
+- [x] Os três caminhos de aquisição estão descritos: Sibionics (BLE + JNI), Accu-Chek SmartGuide (BLE com PIN), Libre 2 (NFC + biblioteca Abbott)
+- [x] Cada afirmação estrutural cita o arquivo Kotlin correspondente, e todo arquivo citado existe
+- [x] `docs/README.md` lista o novo documento
+- [x] Não duplica o protocolo Sibionics já descrito em `docs/architecture/sensor-pipeline.md` — referencia-o
+- [x] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
 
 **Tests**: none (documentação — matriz define build gate)
 **Gate**: build
