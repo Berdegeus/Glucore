@@ -102,38 +102,136 @@ class SibionicsGlucoseDecoderTest {
     }
 
     @Test
-    fun normalizeTimestampMs_convertsSecondsToMilliseconds() {
-        val result = SibionicsGlucoseDecoder.normalizeTimestampMs(
+    fun normalizeTimestamp_convertsSecondsToMilliseconds() {
+        val result = SibionicsGlucoseDecoder.normalizeTimestamp(
             rawTimestamp = 1_720_000_000L,
             fallbackTimestampMs = 42L
         )
 
-        assertEquals(1_720_000_000_000L, result)
+        assertEquals(1_720_000_000_000L, result.valueMs)
+        assertEquals(false, result.usedFallback)
     }
 
     @Test
-    fun normalizeTimestampMs_passesMillisecondsThrough() {
-        val result = SibionicsGlucoseDecoder.normalizeTimestampMs(
+    fun normalizeTimestamp_passesMillisecondsThrough() {
+        val result = SibionicsGlucoseDecoder.normalizeTimestamp(
             rawTimestamp = 1_720_000_000_000L,
             fallbackTimestampMs = 42L
         )
 
-        assertEquals(1_720_000_000_000L, result)
+        assertEquals(1_720_000_000_000L, result.valueMs)
+        assertEquals(false, result.usedFallback)
     }
 
     @Test
-    fun normalizeTimestampMs_fallsBackForNonPositiveValues() {
+    fun normalizeTimestamp_fallsBackForNonPositiveValues() {
         assertEquals(
             42L,
-            SibionicsGlucoseDecoder.normalizeTimestampMs(rawTimestamp = 0L, fallbackTimestampMs = 42L)
+            SibionicsGlucoseDecoder.normalizeTimestamp(rawTimestamp = 0L, fallbackTimestampMs = 42L).valueMs
         )
         assertEquals(
             42L,
-            SibionicsGlucoseDecoder.normalizeTimestampMs(rawTimestamp = -5L, fallbackTimestampMs = 42L)
+            SibionicsGlucoseDecoder.normalizeTimestamp(rawTimestamp = -5L, fallbackTimestampMs = 42L).valueMs
         )
         assertEquals(
             42L,
-            SibionicsGlucoseDecoder.normalizeTimestampMs(rawTimestamp = null, fallbackTimestampMs = 42L)
+            SibionicsGlucoseDecoder.normalizeTimestamp(rawTimestamp = null, fallbackTimestampMs = 42L).valueMs
         )
+    }
+
+    @Test
+    fun normalizeTimestamp_flagsFallbackForNullZeroAndNegative() {
+        assertEquals(
+            true,
+            SibionicsGlucoseDecoder.normalizeTimestamp(rawTimestamp = null, fallbackTimestampMs = 42L).usedFallback
+        )
+        assertEquals(
+            true,
+            SibionicsGlucoseDecoder.normalizeTimestamp(rawTimestamp = 0L, fallbackTimestampMs = 42L).usedFallback
+        )
+        assertEquals(
+            true,
+            SibionicsGlucoseDecoder.normalizeTimestamp(rawTimestamp = -5L, fallbackTimestampMs = 42L).usedFallback
+        )
+    }
+
+    // ── Unused high bits (spec ARCH-05) ─────────────────────────────────────
+
+    @Test
+    fun decodePacked_rejectsPayloadWithNonZeroHighBits() {
+        val packed = pack(glucoseTenths = 1043L, rateThousandths = 21, alarmCode = 2) or
+            (1L shl 56)
+
+        val decoded = SibionicsGlucoseDecoder.decodePacked(
+            packedReading = packed,
+            timestampMs = 1_720_000_000_000L,
+            hasReliableSensorTimestamp = true
+        )
+
+        assertNull(decoded)
+    }
+
+    @Test
+    fun decodePacked_acceptsPayloadWithHighBitsClear() {
+        val packed = pack(glucoseTenths = 1043L, rateThousandths = 21, alarmCode = 2)
+
+        val decoded = SibionicsGlucoseDecoder.decodePacked(
+            packedReading = packed,
+            timestampMs = 1_720_000_000_000L,
+            hasReliableSensorTimestamp = true
+        )
+
+        assertNotNull(decoded)
+        assertEquals(104.3, decoded!!.mgdl, 1e-9)
+    }
+
+    // ── Unsolicited path (spec ARCH-04) ─────────────────────────────────────
+
+    @Test
+    fun decodeUnsolicited_discardsProtocolCode() {
+        val decoded = SibionicsGlucoseDecoder.decodeUnsolicited(
+            packedReading = 4L,
+            timestampMs = 1_720_000_000_000L
+        )
+
+        assertNull(decoded)
+    }
+
+    @Test
+    fun decodeUnsolicited_discardsBareGlucosePayloadWithoutRateOrAlarmBits() {
+        val decoded = SibionicsGlucoseDecoder.decodeUnsolicited(
+            packedReading = 1043L,
+            timestampMs = 1_720_000_000_000L
+        )
+
+        assertNull(decoded)
+    }
+
+    @Test
+    fun decodeUnsolicited_decodesPayloadCarryingRateBits() {
+        val packed = pack(glucoseTenths = 1043L, rateThousandths = 21, alarmCode = 0)
+
+        val decoded = SibionicsGlucoseDecoder.decodeUnsolicited(
+            packedReading = packed,
+            timestampMs = 1_720_000_000_000L
+        )
+
+        assertNotNull(decoded)
+        assertEquals(104.3, decoded!!.mgdl, 1e-9)
+        assertEquals(0.021, decoded.rate, 1e-9)
+        assertEquals(1_720_000_000_000L, decoded.timestampMs)
+        assertEquals(false, decoded.hasReliableSensorTimestamp)
+    }
+
+    @Test
+    fun decodeUnsolicited_stillRejectsImplausibleGlucoseAboveTheBitThreshold() {
+        val packed = pack(glucoseTenths = 6_001L, rateThousandths = 21, alarmCode = 0)
+
+        val decoded = SibionicsGlucoseDecoder.decodeUnsolicited(
+            packedReading = packed,
+            timestampMs = 1_720_000_000_000L
+        )
+
+        assertNull(decoded)
     }
 }

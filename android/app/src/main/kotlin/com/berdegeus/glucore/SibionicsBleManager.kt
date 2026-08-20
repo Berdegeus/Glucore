@@ -250,10 +250,10 @@ class SibionicsBleManager(
 
         Log.d(tag, "getlastGlucose raw: ${readings.toList()}")
 
-        val timestampMs = SibionicsGlucoseDecoder.normalizeTimestampMs(
+        val timestampMs = SibionicsGlucoseDecoder.normalizeTimestamp(
             rawTimestamp = readings.firstOrNull(),
             fallbackTimestampMs = System.currentTimeMillis()
-        )
+        ).valueMs
         val packedReading = if (readings.size >= 2) readings[1] else readings[0]
         val decoded = decodePackedGlucose(
             packedReading = packedReading,
