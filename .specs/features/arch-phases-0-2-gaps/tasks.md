@@ -217,7 +217,7 @@ T7 → T8
 
 ---
 
-### T6: Guia do processo de qualidade com caso real
+### T6: Guia do processo de qualidade com caso real ✅
 
 **What**: Criar o guia que descreve os gates em uso, o checklist de revisão de PR (incluindo o item anti-reincidência de P6 e a regra de migration da rubrica 27) e o caso real de reprovação em QA rastreável por commit.
 **Where**: `docs/guides/qa-process.md`
@@ -232,12 +232,12 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Gates documentados com quando cada um roda: `flutter analyze`, `flutter test`, `./gradlew :app:testDebugUnitTest`, `npm test`, `npx tsc --noEmit`
-- [ ] Checklist de PR inclui o item "mudou camada ou fluxo? atualizou `CLAUDE.md`/`docs/`"
-- [ ] Regra da rubrica 27 registrada: mudança em `schema.prisma` acompanha migration versionada no mesmo PR
-- [ ] Caso real descrito com os 5 gaps da rodada 1, os commits do fix round (`19d67ed`, `ea7d107`, `12f98b8`, `b2da51f`, `0174cc0`) e o veredito PASS da rodada 2 — todos os hashes conferidos com `git cat-file -e`
-- [ ] `docs/README.md` lista o novo guia
-- [ ] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
+- [x] Gates documentados com quando cada um roda: `flutter analyze`, `flutter test`, `./gradlew :app:testDebugUnitTest`, `npm test`, `npx tsc --noEmit`
+- [x] Checklist de PR inclui o item "mudou camada ou fluxo? atualizou `CLAUDE.md`/`docs/`"
+- [x] Regra da rubrica 27 registrada: mudança em `schema.prisma` acompanha migration versionada no mesmo PR
+- [x] Caso real descrito com os 5 gaps da rodada 1, os commits do fix round (`19d67ed`, `ea7d107`, `12f98b8`, `b2da51f`, `0174cc0`) e o veredito PASS da rodada 2 — todos os hashes conferidos com `git cat-file -e`
+- [x] `docs/README.md` lista o novo guia
+- [x] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
 
 **Tests**: none (documentação — matriz define build gate)
 **Gate**: build

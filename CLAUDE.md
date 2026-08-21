@@ -10,7 +10,7 @@ Glucore is an Android-first Flutter MVP for CGM sensors: Sibionics, Accu-Chek Sm
 
 **Versioning:** `dev` = integration branch for the in-progress version; `main` = tagged releases, device-regression-tested. See `docs/guides/versioning-and-branches.md` and `CHANGELOG.md`.
 
-**Docs:** detailed docs live in `docs/` (index: `docs/README.md`; multi-brand sensor stack: `docs/reference/multi-sensor-architecture.md`; architecture review & known issues: `docs/ARCHITECTURE_REVIEW.md`; fix plan: `docs/ARCHITECTURE_FIX_PLAN.md`). Domain skills in `.claude/skills/`. When CLAUDE.md and `docs/` conflict, `docs/` wins.
+**Docs:** detailed docs live in `docs/` (index: `docs/README.md`; multi-brand sensor stack: `docs/reference/multi-sensor-architecture.md`; QA gates and PR checklist: `docs/guides/qa-process.md`; architecture review & known issues: `docs/ARCHITECTURE_REVIEW.md`; fix plan: `docs/ARCHITECTURE_FIX_PLAN.md`). Domain skills in `.claude/skills/`. When CLAUDE.md and `docs/` conflict, `docs/` wins.
 
 This file holds stable invariants (native constraints, commands, layer map). Anything that changes sprint to sprint — data flow detail, screen inventory, feature status — belongs in `docs/`, not here.
 

@@ -174,8 +174,8 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | ARCH-07 | P1: README do backend | Implementing | Implementing |
 | ARCH-08 | P1: README do backend | Implementing | Implementing |
 | ARCH-09 | P2: Arquitetura multissensor | Implementing | Implementing |
-| ARCH-10 | P2: Processo de qualidade | Tasks | Pending |
-| ARCH-11 | P2: Processo de qualidade | Tasks | Pending |
+| ARCH-10 | P2: Processo de qualidade | Implementing | Implementing |
+| ARCH-11 | P2: Processo de qualidade | Implementing | Implementing |
 | ARCH-12 | P2: Plano e revisão fiéis | Tasks | Pending |
 
 **Coverage:** 12 total, 12 mapeados para tarefas, 0 não mapeados.
