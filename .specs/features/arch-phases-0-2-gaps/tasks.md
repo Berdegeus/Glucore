@@ -187,7 +187,7 @@ T7 → T8
 
 ---
 
-### T5: README do backend com referência de rotas
+### T5: README do backend com referência de rotas ✅
 
 **What**: Criar o README do backend com setup, variáveis de ambiente, contrato de erro `{ error, code }`, limites de taxa e uma entrada por rota com exemplo de requisição e resposta.
 **Where**: `backend/README.md`
@@ -202,13 +202,13 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Todo handler exportado em `backend/src/routes/*.ts` aparece no README com método, caminho e exigência de `Authorization`
-- [ ] Cada rota traz exemplo de corpo de requisição e de resposta cujos campos batem com o handler e com o `schema.prisma`
-- [ ] Setup documentado: `npm install`, `npx prisma migrate dev`, `npm run dev`, `npm test`, porta `3001`
-- [ ] Variáveis de ambiente listadas com obrigatoriedade e efeito: `JWT_SECRET`, `DATABASE_URL`, `CORS_ORIGIN`, `PORT`
-- [ ] Contrato de erro `{ error, code }` documentado com a lista de `code` que o backend emite hoje
-- [ ] Rotas com `rateLimit` declaram limite, janela e resposta `429`
-- [ ] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
+- [x] Todo handler exportado em `backend/src/routes/*.ts` aparece no README com método, caminho e exigência de `Authorization`
+- [x] Cada rota traz exemplo de corpo de requisição e de resposta cujos campos batem com o handler e com o `schema.prisma`
+- [x] Setup documentado: `npm install`, `npx prisma migrate dev`, `npm run dev`, `npm test`, porta `3001`
+- [x] Variáveis de ambiente listadas com obrigatoriedade e efeito: `JWT_SECRET`, `DATABASE_URL`, `CORS_ORIGIN`, `PORT`
+- [x] Contrato de erro `{ error, code }` documentado com a lista de `code` que o backend emite hoje
+- [x] Rotas com `rateLimit` declaram limite, janela e resposta `429`
+- [x] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
 
 **Tests**: none (documentação — matriz define build gate)
 **Gate**: build

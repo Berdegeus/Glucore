@@ -171,8 +171,8 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | ARCH-04 | P1: Leitura implausível | Implementing | Implementing |
 | ARCH-05 | P1: Leitura implausível | Implementing | Implementing |
 | ARCH-06 | P1: Leitura implausível | Implementing | Implementing |
-| ARCH-07 | P1: README do backend | Tasks | Pending |
-| ARCH-08 | P1: README do backend | Tasks | Pending |
+| ARCH-07 | P1: README do backend | Implementing | Implementing |
+| ARCH-08 | P1: README do backend | Implementing | Implementing |
 | ARCH-09 | P2: Arquitetura multissensor | Implementing | Implementing |
 | ARCH-10 | P2: Processo de qualidade | Tasks | Pending |
 | ARCH-11 | P2: Processo de qualidade | Tasks | Pending |
