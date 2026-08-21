@@ -90,17 +90,14 @@ Per-brand protocol and what `BrandBleManager` provides for free: `docs/reference
 
 `tk.glucodata.Natives` — direct JNI into `libg.so`. Call from Kotlin BLE layer only.
 
-`libg.so` JNI_OnLoad requires these Java stub classes to exist in the APK or it aborts:
+`libg.so` JNI_OnLoad resolves Java classes by fully-qualified name; a missing one aborts the process. The APK ships these five stubs today, in `android/app/src/main/java/tk/glucodata/` — the set the current code paths need:
 - `tk.glucodata.GlucoseCurve`
-- `tk.glucodata.strGlucose` (fields: `time long`, `value String`, `sensorid String`, `rate float`, `index int`, `sensorgen2 int`)
-- `tk.glucodata.nums.item` (fields: `time long`, `mealptr int`, `value float`, `label int`)
 - `tk.glucodata.Applic`
 - `tk.glucodata.EverSense`
 - `tk.glucodata.Libreview`
 - `tk.glucodata.MessageSender`
-- `tk.glucodata.NightPost`
 
-Source for these lives in `Juggluco/Common/src/main/java/tk/glucodata/`. If crash is `JNI FindClass called with pending exception ClassNotFoundException`, a stub is missing.
+Juggluco declares three more (`strGlucose`, `nums.item`, `NightPost`) that this app does **not** ship. If a crash reads `JNI FindClass called with pending exception ClassNotFoundException`, read the missing name from the log and add that stub — do not assume the list above is exhaustive for code paths not exercised yet. Field layouts, when needed, are in `docs/reference/native-stubs.md`.
 
 `SibionicsNativeBridgeAdapter` covers `init`, `registerSensor`, `restoreActiveSensor` — returns `CallResult.Success / NoData / Error`.
 
@@ -145,7 +142,7 @@ Source for these lives in `Juggluco/Common/src/main/java/tk/glucodata/`. If cras
 | `android/app/src/main/cpp/CMakeLists.txt` | C++17 build, links vendor `.so` |
 | `backend/src/index.ts` | Express app |
 
-`Juggluco/` — reference copy of open-source Juggluco. Do not modify; do not index the whole repo.
+`Juggluco/` — reference copy of open-source Juggluco. **Not in this working tree** (never committed); if you clone it locally for reference, do not modify it and do not index the whole repo.
 
 ## What no longer exists
 

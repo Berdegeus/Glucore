@@ -52,7 +52,7 @@ A segurança é bonding do próprio Android: ler a característica de status cif
 
 Duas etapas, dois arquivos.
 
-**NFC** (`LibreNfcHandler.kt:18`): lê o patch info e os 344 bytes de memória do sensor e entrega a `Natives.nfcdata`, que persiste o sensor no store da `libg`. O código de status resultante decide o que emitir: ativação, habilitar streaming, aquecimento, pronto ou encerrado. Roda na thread de reader-mode do NFC, e o transceive é bloqueante.
+**NFC** (`LibreNfcHandler.kt:19`): lê o patch info e os 344 bytes de memória do sensor e entrega a `Natives.nfcdata`, que persiste o sensor no store da `libg`. O código de status resultante decide o que emitir: ativação, habilitar streaming, aquecimento, pronto ou encerrado. Roda na thread de reader-mode do NFC, e o transceive é bloqueante.
 
 **BLE** (`Libre2BleManager.kt:23`): serviço Abbott `0xfde3`, login em `f001`, dados brutos em `f002` (`:29-31`). Duas gerações de segurança, reportadas por `Natives.getsensorgen`: gen 1 escreve `Natives.sensorUnlockKey` em `f001`; gen 2 faz desafio/resposta e usa a chave de sessão para decifrar cada pacote de 46 bytes. Os fragmentos de 20+18+8 bytes são remontados e interpretados por `Natives.processTooth`. As leituras chegam ~1/min, sem backlog, então são publicadas direto em vez de passar pelo fluxo de history sync (`Libre2BleManager.kt:343-350`).
 
@@ -60,9 +60,9 @@ Duas etapas, dois arquivos.
 
 A escolha acontece no Android, não no Flutter.
 
-`SensorCore` (`SensorCore.kt:24`) é dono do stack e mantém um manager por marca, criado sob demanda (`:35-47`). `SensorPlatformImpl` recebe esse mapa como provider (`SensorPlatformImpl.kt:31`) e resolve a marca ativa em `resolveBrand` (`:218`): pergunta ao nativo via `Natives.getLibreVersion(dataptr)` e converte o código com `SensorBrand.fromLibreVersion`; se a chamada nativa falhar, cai na marca persistida na sessão.
+`SensorCore` (`SensorCore.kt:24`) é dono do stack e mantém um manager por marca, criado sob demanda (`:37-47`). `SensorPlatformImpl` recebe esse mapa como provider (`SensorPlatformImpl.kt:31`) e resolve a marca ativa em `resolveBrand` (`:218`): pergunta ao nativo via `Natives.getLibreVersion(dataptr)` e converte o código com `SensorBrand.fromLibreVersion`; se a chamada nativa falhar, cai na marca persistida na sessão.
 
-O mapa de códigos vive em `SensorBrand.kt:11-27`, na convenção do Juggluco: `0x10` = Sibionics, `0x20` = Accu-Chek, `0x40` = Dexcom, `3` = Libre 3, qualquer outro = Libre 1/2. Libre 2 é o fallback justamente por não ter código próprio.
+O mapa de códigos vive em `SensorBrand.kt:12-27`, na convenção do Juggluco: `0x10` = Sibionics, `0x20` = Accu-Chek, `0x40` = Dexcom, `3` = Libre 3, qualquer outro = Libre 1/2. Libre 2 é o fallback justamente por não ter código próprio.
 
 ## Adicionando uma marca
 

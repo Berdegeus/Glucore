@@ -2,20 +2,27 @@
 
 > Quando usar: crash `JNI FindClass called with pending exception ClassNotFoundException`, ou mudanças em `android/app/src/main/java/tk/glucodata/`.
 
-`libg.so` (vendor Juggluco) resolve estas classes em `JNI_OnLoad`; se qualquer uma faltar no APK, o processo aborta no carregamento.
+`libg.so` (vendor Juggluco) resolve classes por nome totalmente qualificado em `JNI_OnLoad`; se uma que ele procura faltar no APK, o processo aborta no carregamento.
+
+**Presentes no APK hoje** (`android/app/src/main/java/tk/glucodata/`, conferido em 2026-08-20):
 
 | Classe | Campos exigidos |
 |---|---|
 | `tk.glucodata.GlucoseCurve` | — |
-| `tk.glucodata.strGlucose` | `time long`, `value String`, `sensorid String`, `rate float`, `index int`, `sensorgen2 int` |
-| `tk.glucodata.nums.item` | `time long`, `mealptr int`, `value float`, `label int` |
 | `tk.glucodata.Applic` | — |
 | `tk.glucodata.EverSense` | — |
 | `tk.glucodata.Libreview` | — |
 | `tk.glucodata.MessageSender` | — |
+
+**Declaradas pelo Juggluco e ausentes aqui** — o app roda sem elas porque os caminhos que as exigem não são exercitados. Se um crash apontar uma delas, crie o stub com estes campos:
+
+| Classe | Campos exigidos |
+|---|---|
+| `tk.glucodata.strGlucose` | `time long`, `value String`, `sensorid String`, `rate float`, `index int`, `sensorgen2 int` |
+| `tk.glucodata.nums.item` | `time long`, `mealptr int`, `value float`, `label int` |
 | `tk.glucodata.NightPost` | — |
 
-Fonte de referência: `Juggluco/Common/src/main/java/tk/glucodata/` (não modificar o diretório `Juggluco/`).
+Fonte de referência: `Juggluco/Common/src/main/java/tk/glucodata/` no repositório do Juggluco. O diretório `Juggluco/` **não existe neste working tree** — nunca foi commitado.
 
 ## `tk.glucodata.Natives`
 

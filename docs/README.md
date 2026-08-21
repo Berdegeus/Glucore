@@ -34,7 +34,7 @@ Skills por domínio em `.claude/skills/` (carregadas automaticamente por agentes
 ## Avisos críticos (resumo)
 
 - **CLAUDE.md foi realinhado com o código em 2026-08-20** (P6 fechado) e passou a ser versionado. Ele fica restrito a invariantes estáveis; detalhe volátil vive aqui em `docs/`. Em conflito, o código e estes docs vencem.
-- `Juggluco/` é cópia de referência do app open-source Juggluco. Não modificar, não indexar por inteiro.
+- `Juggluco/` é cópia de referência do app open-source Juggluco e **não está neste working tree** (nunca foi commitada). Se cloná-la localmente: não modificar, não indexar por inteiro.
 - Vendor `.so` são arm64-v8a apenas. Nunca adicionar ABI filters.
 
 ## Armadilhas
