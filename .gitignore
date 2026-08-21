@@ -70,4 +70,3 @@ backend/prisma/*.db
 
 # Local tooling / assistant context
 .claude/
-CLAUDE.md
