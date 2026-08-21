@@ -158,7 +158,7 @@ T7 → T8
 
 ---
 
-### T4: Realinhar o `CLAUDE.md` com o código
+### T4: Realinhar o `CLAUDE.md` com o código ✅
 
 **What**: Reescrever as seções divergentes do `CLAUDE.md` (persistência local-first, camada Android multimarca), trocar detalhe volátil por ponteiro para `docs/` e preservar as invariantes nativas.
 **Where**: `CLAUDE.md`
@@ -173,12 +173,12 @@ T7 → T8
 
 **Done when**:
 
-- [ ] A descrição do `PatientCubit` cita `LocalPatientDataSource`, `PatientSyncService` e `refreshFromRemote`, e não afirma mais persistência REST direta
-- [ ] O mapa da camada Android mostra `GlucoreApp → SensorCore → SensorPlatformImpl → BrandBleManager` com as três implementações, mais `CgmForegroundService` e `LibreNfcHandler`
-- [ ] Todo detalhe volátil substituído aponta para o documento correspondente em `docs/`
-- [ ] As invariantes nativas seguem presentes: guarda de SIGSEGV, resolução JNI, `arm64-v8a`, layout de `getlastGlucose()`, lista de stubs `tk.glucodata`
-- [ ] Toda classe ou arquivo citado no `CLAUDE.md` existe no repositório (conferido um a um)
-- [ ] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
+- [x] A descrição do `PatientCubit` cita `LocalPatientDataSource`, `PatientSyncService` e `refreshFromRemote`, e não afirma mais persistência REST direta
+- [x] O mapa da camada Android mostra `GlucoreApp → SensorCore → SensorPlatformImpl → BrandBleManager` com as três implementações, mais `CgmForegroundService` e `LibreNfcHandler`
+- [x] Todo detalhe volátil substituído aponta para o documento correspondente em `docs/`
+- [x] As invariantes nativas seguem presentes: guarda de SIGSEGV, resolução JNI, `arm64-v8a`, layout de `getlastGlucose()`, lista de stubs `tk.glucodata`
+- [x] Toda classe ou arquivo citado no `CLAUDE.md` existe no repositório (conferido um a um)
+- [x] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
 
 **Tests**: none (documentação — matriz define build gate)
 **Gate**: build

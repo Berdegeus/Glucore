@@ -165,9 +165,9 @@ Toda ambiguidade está resolvida ou registrada aqui.
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| ARCH-01 | P1: `CLAUDE.md` fiel | Tasks | Pending |
-| ARCH-02 | P1: `CLAUDE.md` fiel | Tasks | Pending |
-| ARCH-03 | P1: `CLAUDE.md` fiel | Tasks | Pending |
+| ARCH-01 | P1: `CLAUDE.md` fiel | Implementing | Implementing |
+| ARCH-02 | P1: `CLAUDE.md` fiel | Implementing | Implementing |
+| ARCH-03 | P1: `CLAUDE.md` fiel | Implementing | Implementing |
 | ARCH-04 | P1: Leitura implausível | Implementing | Implementing |
 | ARCH-05 | P1: Leitura implausível | Implementing | Implementing |
 | ARCH-06 | P1: Leitura implausível | Implementing | Implementing |
