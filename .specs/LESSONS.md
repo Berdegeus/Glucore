@@ -44,6 +44,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: lib/features/patient/presentation/widgets/user_app_bar.dart:91 (testing/regression-guards)
 - last seen: 2026-08-17T16:09:04Z
 
+### L-006 - Um caso de teste so prova um gate novo se o valor escolhido passar por todas as validacoes a montante e for barrado apenas pela nova regra. Aqui o teste com valor 4 (codigo de protocolo) sobreviveu a remocao do gate de 0x10000, porque 4 ja e barrado pela faixa 400..6000; quem discrimina e 1043, glicose plausivel sem bits de rate/alarm.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: arch-phases-0-2-gaps
+- evidence: .specs/features/arch-phases-0-2-gaps/validation.md (testing)
+- last seen: 2026-08-21T00:41:13Z
+
+### L-007 - Edicao de documento por str.replace do Python substitui TODAS as ocorrencias: um marcador de status que se repete por item (ex.: '**Parcial (data):**' em cada problema do review) foi sobrescrito em 4 itens de uma vez, marcando tres problemas nao resolvidos como resolvidos. Ao editar marcador repetido, ancore por secao/linha e confirme a contagem de ocorrencias antes e depois.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `tooling` · harmful: 0
+- features: arch-phases-0-2-gaps
+- evidence: .specs/features/arch-phases-0-2-gaps/validation.md (tooling)
+- last seen: 2026-08-21T00:41:13Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

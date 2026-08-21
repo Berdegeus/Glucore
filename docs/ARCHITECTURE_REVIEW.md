@@ -2,7 +2,7 @@
 
 > **Este arquivo é um relatório de problemas, separado da documentação estável.** Gerado por inspeção integral do código em 2026-07-05, branch `feat/insulin-and-carb-management`. **Atualizado em 2026-07-07** (branch `feat/multi-sensor-libre2-accuchek`) por uma segunda revisão independente: status de P1–P16 reavaliado contra o código atual e novos problemas P17–P35 adicionados. **Atualizado em 2026-07-30 (v1.1.0):** os 3 críticos P17, P18 e P19 foram corrigidos (ver CHANGELOG.md). Demais problemas seguem em diagnóstico.
 
-Sumário: **35 problemas** (P1–P35). Da revisão original, **8 resolvidos** (P1, P3, P7, P8, P9, P10, P14, P15), **4 parciais** (P2, P5, P11, P16) e **4 abertos** (P4, P6, P12, P13). A revisão de 2026-07-07 acrescentou os críticos P17, P18, P19 — **todos resolvidos na v1.1.0 (2026-07-30)**. Os demais de P20–P35 seguem abertos com **Solução proposta** (diagnóstico + desenho técnico). Seção A: revisão da conexão com sensores. Seção B: proposta de HAL Android/iOS.
+Sumário: **35 problemas** (P1–P35). Da revisão original, **10 resolvidos** (P1, P3, P6, P7, P8, P9, P10, P14, P15, P16), **3 parciais** (P2, P5, P11) e **3 abertos** (P4, P12, P13). P6 e P16 fecharam em 2026-08-20. A revisão de 2026-07-07 acrescentou os críticos P17, P18, P19 — **todos resolvidos na v1.1.0 (2026-07-30)**. Os demais de P20–P35 seguem abertos com **Solução proposta** (diagnóstico + desenho técnico). Seção A: revisão da conexão com sensores. Seção B: proposta de HAL Android/iOS.
 
 Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 

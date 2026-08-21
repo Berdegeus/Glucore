@@ -79,7 +79,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 4. WHEN o timestamp bruto do sensor for nulo, zero ou negativo e o app recorrer ao relógio do dispositivo THEN o app SHALL registrar um log identificando o uso do fallback e o valor bruto recebido.
 5. The system SHALL manter o `SibionicsGlucoseDecoder` sem qualquer dependência de classe Android, de modo que todas as regras acima sejam exercitáveis por teste JVM.
 
-**Independent Test**: `./gradlew :app:testDebugUnitTest` cobre: valor `4` (código de protocolo) descartado no caminho direto; `0x0100_0000_0000_0000 or 1043` rejeitado por bits altos sujos; `1043` com rate e alarm no caminho `getlastGlucose` aceito como 104,3 mg/dL; `normalizeTimestampMs` sinalizando fallback para `null`/`0`/negativo.
+**Independent Test**: `./gradlew :app:testDebugUnitTest` cobre: valor `1043` (glicose plausível **sem** bits de rate/alarm) descartado no caminho direto — este é o caso que prova o gate, porque `4` já seria barrado pela faixa 400–6000 a montante e por isso não discrimina; valor `4` mantido como regressão do código de protocolo; `0x0100_0000_0000_0000 or 1043` rejeitado por bits altos sujos; `1043` com rate e alarm no caminho `getlastGlucose` aceito como 104,3 mg/dL; `normalizeTimestampMs` sinalizando fallback para `null`/`0`/negativo.
 
 ---
 

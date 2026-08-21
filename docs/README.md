@@ -18,7 +18,7 @@ Glucore é um MVP Flutter (Android-first) para sensores CGM Sibionics, com backe
 | [guides/adding-features.md](guides/adding-features.md) | Receitas: nova página, novo campo persistido, nova rota | for adicionar funcionalidade |
 | [reference/platform-channels.md](reference/platform-channels.md) | Contrato exato MethodChannel/EventChannel | for mexer na fronteira Flutter↔Android |
 | [reference/multi-sensor-architecture.md](reference/multi-sensor-architecture.md) | Contrato `BrandBleManager`, as três marcas suportadas, quem escolhe a marca | for adicionar marca de sensor ou mexer no que é comum a todas |
-| [reference/native-stubs.md](reference/native-stubs.md) | Classes stub exigidas por `libg.so` | vir crash JNI `ClassNotFoundException` |
+| [reference/native-stubs.md](reference/native-stubs.md) | Stubs Java que o APK embarca hoje e os que o Juggluco declara | vir crash JNI `ClassNotFoundException` |
 | [reference/data-models.md](reference/data-models.md) | Modelos Flutter ↔ payload API ↔ Prisma | for adicionar/alterar campo de dados |
 | [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) | **Relatório**: problemas arquiteturais (P1–P35; P17/P18/P19 resolvidos na v1.1.0), proposta de HAL, revisão da conexão com sensores | for planejar refatoração ou corrigir débito técnico |
 | [ARCHITECTURE_FIX_PLAN.md](ARCHITECTURE_FIX_PLAN.md) | **Plano de correção**: 6 fases ordenadas, passos, critérios de aceite | for executar as correções do relatório |
