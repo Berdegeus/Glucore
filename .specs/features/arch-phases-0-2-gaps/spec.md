@@ -176,7 +176,7 @@ Toda ambiguidade está resolvida ou registrada aqui.
 | ARCH-09 | P2: Arquitetura multissensor | Implementing | Implementing |
 | ARCH-10 | P2: Processo de qualidade | Implementing | Implementing |
 | ARCH-11 | P2: Processo de qualidade | Implementing | Implementing |
-| ARCH-12 | P2: Plano e revisão fiéis | Tasks | Pending |
+| ARCH-12 | P2: Plano e revisão fiéis | Implementing | Implementing |
 
 **Coverage:** 12 total, 12 mapeados para tarefas, 0 não mapeados.
 

@@ -246,7 +246,7 @@ T7 → T8
 
 ---
 
-### T7: Sincronizar revisão e plano com o estado entregue
+### T7: Sincronizar revisão e plano com o estado entregue ✅
 
 **What**: Marcar P6 e o residual de P16 como resolvidos no review, com evidência `arquivo:linha`, e registrar no plano o corte do item 2.4 (CI/CD) com motivo e condição de retomada, além das verificações de device ainda pendentes.
 **Where**: `docs/ARCHITECTURE_REVIEW.md` (e `docs/ARCHITECTURE_FIX_PLAN.md`)
@@ -261,12 +261,12 @@ T7 → T8
 
 **Done when**:
 
-- [ ] P6 marcado como resolvido citando as linhas do `CLAUDE.md` que sustentam a correção, sem apagar o histórico do item
-- [ ] P16 marcado como resolvido citando `SibionicsGlucoseDecoder.kt` e `SibionicsBleManager.kt` com linha
-- [ ] Item 2.4 do plano declara o corte, o motivo (binários proprietários fora do versionamento) e o que seria necessário para retomar
-- [ ] Plano distingue o que foi fechado aqui do que segue pendente de device físico nas Fases 1 e 2
-- [ ] Toda referência `arquivo:linha` conferida contra o arquivo real
-- [ ] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
+- [x] P6 marcado como resolvido citando as linhas do `CLAUDE.md` que sustentam a correção, sem apagar o histórico do item
+- [x] P16 marcado como resolvido citando `SibionicsGlucoseDecoder.kt` e `SibionicsBleManager.kt` com linha
+- [x] Item 2.4 do plano declara o corte, o motivo (binários proprietários fora do versionamento) e o que seria necessário para retomar
+- [x] Plano distingue o que foi fechado aqui do que segue pendente de device físico nas Fases 1 e 2
+- [x] Toda referência `arquivo:linha` conferida contra o arquivo real
+- [x] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
 
 **Tests**: none (documentação — matriz define build gate)
 **Gate**: build
