@@ -10,7 +10,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Spec**: `.specs/features/arch-phases-0-2-gaps/spec.md`
 **Design**: não produzido — a única decisão de arquitetura (onde mora o gate de plausibilidade) está registrada nas Assumptions da spec; o restante é documentação e ajuste local.
-**Status**: In Progress
+**Status**: Done — aguardando verificação independente
 **Pré-condição de execução**: `feat/tcc-checklist-compliance` mergeada em `main` (fast-forward local) e branch `feat/arch-phases-0-2-gaps` criada a partir dela. Bloqueada enquanto `docs/TCC_Acompanhamento_Bernardo_Eduardo.xlsx` estiver aberto no Excel.
 
 ---
@@ -275,7 +275,7 @@ T7 → T8
 
 ---
 
-### T8: Parar de versionar arquivos de lock do Office
+### T8: Parar de versionar arquivos de lock do Office ✅
 
 **What**: Remover do versionamento o arquivo de lock `docs/~$TCC_Acompanhamento_Bernardo_Eduardo.xlsx`, commitado por engano, e ignorar o padrão `~$*`.
 **Where**: `.gitignore`
@@ -290,11 +290,11 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `git rm --cached` aplicado ao arquivo de lock, sem apagar o arquivo local do usuário
-- [ ] `.gitignore` ignora `~$*`
-- [ ] `git ls-files docs/` não lista nenhum arquivo iniciado por `~$`
-- [ ] A planilha `docs/TCC_Acompanhamento_Bernardo_Eduardo.xlsx` continua versionada
-- [ ] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
+- [x] `git rm --cached` aplicado ao arquivo de lock, sem apagar o arquivo local do usuário
+- [x] `.gitignore` ignora `~$*`
+- [x] `git ls-files docs/` não lista nenhum arquivo iniciado por `~$`
+- [x] A planilha `docs/TCC_Acompanhamento_Bernardo_Eduardo.xlsx` continua versionada
+- [x] Gate check passa: `flutter analyze && flutter test --no-pub && cd android && ./gradlew :app:testDebugUnitTest && cd ../backend && npx tsc --noEmit && npm test`
 
 **Tests**: none (configuração — matriz define build gate)
 **Gate**: build
