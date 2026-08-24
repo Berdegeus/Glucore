@@ -40,6 +40,9 @@ class UserAppBar extends StatelessWidget implements PreferredSizeWidget {
         ...?actions,
         PopupMenuButton<String>(
           tooltip: fullName,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           onSelected: (value) {
             if (value == 'logout') _confirmLogout(context, l10n);
           },
@@ -58,29 +61,85 @@ class UserAppBar extends StatelessWidget implements PreferredSizeWidget {
             const PopupMenuDivider(),
             PopupMenuItem<String>(
               value: 'logout',
-              child: Text(l10n.settingsLogoutTile),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.logout_rounded,
+                    size: 18,
+                    color: AppTheme.zoneLowBg,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    l10n.settingsLogoutTile,
+                    style: const TextStyle(
+                      color: AppTheme.zoneLowBg,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 96),
-                  child: Text(
-                    fullName,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, color: AppTheme.ink),
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppTheme.brandBlue,
+                    child: Text(
+                      _initial(fullName),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
-                const Icon(Icons.arrow_drop_down, color: AppTheme.inkMuted),
-              ],
+                  const SizedBox(width: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 80),
+                    child: Text(
+                      fullName,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.ink,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.expand_more_rounded,
+                    size: 20,
+                    color: AppTheme.inkMuted,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ],
     );
+  }
+
+  /// First letter of the first non-blank word in [name], uppercased, for the
+  /// avatar chip. Falls back to `?` for an empty name (should not happen in
+  /// practice: [build] always has [AppLocalizations.profileDefaultName] as a
+  /// non-empty fallback).
+  String _initial(String name) {
+    final trimmed = name.trim();
+    return trimmed.isEmpty ? '?' : trimmed[0].toUpperCase();
   }
 
   void _confirmLogout(BuildContext context, AppLocalizations l10n) {
