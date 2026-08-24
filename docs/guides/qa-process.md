@@ -6,7 +6,7 @@ O princípio é um só: **quem escreveu não é quem aprova**, e nenhuma afirma�
 
 ## Gates automatizados
 
-Todo gate roda localmente antes do commit. Não há CI hoje (ver [ARCHITECTURE_FIX_PLAN.md](../ARCHITECTURE_FIX_PLAN.md), item 2.4, para o motivo e a condição de retomada), então a disciplina de rodar é do autor e a conferência é do revisor.
+Desde 2026-08-24, os gates de análise/teste rodam em **GitHub Actions** (`.github/workflows/ci.yml`) a cada PR e push em `main`/`dev` — é a referência que vale para saber se um PR está verde, não a execução local do autor. Falta só o artefato de build/deploy (bloqueado — ver [ARCHITECTURE_FIX_PLAN.md](../ARCHITECTURE_FIX_PLAN.md), item 2.4, para o motivo e a condição de retomada). Até lá, rode os gates localmente antes de abrir o PR (mesmos comandos abaixo) para não gastar ciclo do CI com erro óbvio.
 
 | Gate | Comando | Quando roda |
 |---|---|---|
