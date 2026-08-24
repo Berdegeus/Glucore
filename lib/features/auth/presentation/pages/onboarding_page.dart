@@ -81,6 +81,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ),
                   const Spacer(),
                   FilledButton(
+                    // The app theme sets `minimumSize: Size.fromHeight(48)`,
+                    // i.e. an INFINITE minimum width, so that buttons fill the
+                    // width inside a Column. Here the button sits in a Row,
+                    // where it gets unbounded width constraints and that
+                    // infinite minimum is an invalid constraint: the page
+                    // fails to lay out and renders blank. Keep the 48dp height
+                    // from the design, but pin a finite minimum width.
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(64, 48),
+                    ),
                     onPressed: () {
                       if (_index == pages.length - 1) {
                         widget.onDone();
