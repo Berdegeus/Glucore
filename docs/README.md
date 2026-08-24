@@ -15,6 +15,7 @@ Glucore é um MVP Flutter (Android-first) para sensores CGM Sibionics, com backe
 | [guides/setup-and-build.md](guides/setup-and-build.md) | Comandos, variáveis, restrições de build | for compilar, rodar ou configurar ambiente |
 | [guides/versioning-and-branches.md](guides/versioning-and-branches.md) | Esquema `dev`/`main`, semver, fluxo por versão | for abrir PR, versionar ou decidir destino de uma mudança |
 | [guides/qa-process.md](guides/qa-process.md) | Gates, checklist de revisão de PR, verificação independente, caso real de reprovação | for abrir ou revisar PR |
+| [guides/kanban-board.md](guides/kanban-board.md) | Board GitHub Projects: views, campos, fluxo de card, IDs para automação via `gh` | for abrir, mover ou automatizar um card do board |
 | [guides/adding-features.md](guides/adding-features.md) | Receitas: nova página, novo campo persistido, nova rota | for adicionar funcionalidade |
 | [reference/platform-channels.md](reference/platform-channels.md) | Contrato exato MethodChannel/EventChannel | for mexer na fronteira Flutter↔Android |
 | [reference/multi-sensor-architecture.md](reference/multi-sensor-architecture.md) | Contrato `BrandBleManager`, as três marcas suportadas, quem escolhe a marca | for adicionar marca de sensor ou mexer no que é comum a todas |
