@@ -156,6 +156,30 @@ void main() {
     },
   );
 
+  // Moved here from user_app_bar_test.dart on 2026-08-24: the header's
+  // identity/logout chip was removed, so Settings is the only place that can
+  // end a session and the confirm path must be covered where it lives.
+  testWidgets(
+    'SettingsPage logout confirmation calls AuthCubit.logout()',
+    (tester) async {
+      await pumpSettings(tester);
+
+      final logoutButton =
+          find.widgetWithText(OutlinedButton, l10n.settingsLogoutTile);
+      await tester.ensureVisible(logoutButton);
+      await tester.pumpAndSettle();
+      await tester.tap(logoutButton);
+      await tester.pump();
+
+      // The dialog repeats the tile label on its confirm action; the last
+      // match is the one inside the dialog.
+      await tester.tap(find.text(l10n.settingsLogoutTile).last);
+      await tester.pumpAndSettle();
+
+      expect(authRepo.logoutCalls, 1);
+    },
+  );
+
   testWidgets(
     'ProfilePage renders sections, rows and formatted values from AppLocalizations',
     (tester) async {

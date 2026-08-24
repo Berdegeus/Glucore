@@ -82,12 +82,23 @@ void main() {
   };
 
   for (final entry in tabs.entries) {
-    testWidgets('${entry.key} shows the logged-in user and the logout menu',
+    // The identity chip and its "Sair da conta" menu were removed from the
+    // header by product decision (2026-08-24); logout lives only in Settings.
+    // What the header must still NOT do is offer account actions.
+    testWidgets('${entry.key} keeps the header free of account actions',
         (tester) async {
       await pumpTab(tester, entry.value);
 
-      expect(find.text('Ana Silva'), findsOneWidget);
-      expect(find.byType(PopupMenuButton<String>), findsOneWidget);
+      expect(find.byType(PopupMenuButton<String>), findsNothing);
+      // Scoped to the AppBar on purpose: SettingsPage still offers logout in
+      // its BODY, which is where it now lives.
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Sair da conta'),
+        ),
+        findsNothing,
+      );
     });
   }
 

@@ -13,7 +13,6 @@ import 'features/auth/presentation/pages/auth_gate.dart';
 import 'features/auth/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/splash_page.dart';
 import 'features/patient/presentation/cubit/patient_cubit.dart';
-import 'features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'features/patient/presentation/widgets/glucore_messenger.dart';
 import 'features/sensor/presentation/cubit/sensor_cubit.dart';
 import 'injection_container.dart';
@@ -110,11 +109,6 @@ class _AppState extends State<App> {
               if (state.status != AuthStatus.authenticated) {
                 return child!;
               }
-              // Read here, in a normal build, not inside a provider `create:`
-              // callback: `create:` runs at most once (lazily, on first
-              // read) and provider forbids listening to an InheritedWidget
-              // (Localizations, via context.l10n) from that one-shot scope.
-              final fallbackName = context.l10n.profileDefaultName;
               return MultiBlocProvider(
                 providers: [
                   BlocProvider<SensorCubit>(
@@ -123,12 +117,6 @@ class _AppState extends State<App> {
                   BlocProvider<PatientCubit>(
                     create: (context) => sl<PatientCubit>()
                       ..initialize(context.read<SensorCubit>()),
-                  ),
-                  // P19: recreated here alongside the other cubits so it
-                  // follows the same login/logout lifecycle and is never
-                  // reused across different users' sessions.
-                  BlocProvider<UserIdentityCubit>(
-                    create: (_) => sl<UserIdentityCubit>()..load(fallbackName),
                   ),
                 ],
                 child: child!,
