@@ -4,14 +4,21 @@
 
 Board: **Glucore — TCC Rubrica** — https://github.com/users/Berdegeus/projects/1 (owner `Berdegeus`, project number `1`). Gerenciado via `gh project` (CLI), não pela UI — qualquer agente pode reproduzir o que está aqui.
 
-## Duas views, dois propósitos
+## Três views, três propósitos
 
 | View | Filtro | Contém |
 |---|---|---|
 | **View 1 (padrão)** | nenhum | tudo: cards de rubrica + cards de arquitetura/PR/trabalho técnico não-rubrica |
 | **View 2 — "Rubrica TCC"** | `label:rubrica` | só os critérios da planilha `docs/TCC_Acompanhamento_Bernardo_Eduardo.xlsx` (aba Rubricas) |
+| **View 3 — "Processos Recorrentes"** | `label:processo-recorrente` | subconjunto da rubrica que exige constância por sprint, não é one-off — hoje #23 (qualidade) e #27 (migração Prisma) |
 
 Regra de separação: um item só entra na view "Rubrica TCC" se corresponder a um critério numerado da planilha (obrigatório 9–16 ou opcional comprometido — ver `docs/tcc-rubric-evolution-plan.md`). Trabalho de arquitetura, bugfix, PR de branch etc. **não leva a label `rubrica`** e fica só na view geral — evita poluir a visão da banca com trabalho interno.
+
+### Processos recorrentes
+
+Critérios cujo tier de nota é definido por **% das sprints** em que o processo foi aplicado (não por "feito uma vez") levam a label `processo-recorrente` além de `rubrica`. Cada issue desses mantém uma tabela "Contagem (referência viva)" no corpo, com uma linha por ocorrência (PR revisada, migration criada) — é o que sustenta o tier declarado, então **atualizar a tabela é obrigatório a cada ocorrência nova**, não só quando for reavaliar o critério.
+
+Campos do board dedicados a isso: **Qtd. Reviews** (número, usado em #23) e **Qtd. Migrations** (número, usado em #27) — devem sempre bater com o total da tabela na issue correspondente.
 
 ## Campos
 
@@ -59,8 +66,14 @@ Fase (single-select):   PVTSSF_lAHOA0su_M4BhXE-zhgTFu8
 
 Peso (texto):      PVTF_lAHOA0su_M4BhXE-zhgTFvE
 Critério (texto):  PVTF_lAHOA0su_M4BhXE-zhgTFvM
+Qtd. Reviews (número):    PVTF_lAHOA0su_M4BhXE-zhgTPbs
+Qtd. Migrations (número): PVTF_lAHOA0su_M4BhXE-zhgTPbw
 
-View "Rubrica TCC": PVTV_lAHOA0su_M4BhXE-zgLarNA (filter: label:rubrica)
+View "Rubrica TCC":            PVTV_lAHOA0su_M4BhXE-zgLarNA (filter: label:rubrica)
+View "Processos Recorrentes":  PVTV_lAHOA0su_M4BhXE-zgLar_0 (filter: label:processo-recorrente)
+
+Label rubrica:              cor 6f42c1
+Label processo-recorrente:  cor 0e8a16
 ```
 
 ### Criar um card de rubrica
