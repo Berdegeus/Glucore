@@ -7,7 +7,20 @@
       "Bash(awk '{print $3}')",
       "Bash(nm -D android/app/src/main/jniLibs/arm64-v8a/libdata-handle-lib.so)",
       "Bash(flutter build *)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(mkdir -p /tmp/glucore_design)",
+      "Bash(tar -xf \"/Users/berdegeus/.claude/projects/-Users-berdegeus-Glucore/fdea3e9f-a872-401c-ab54-868def8aefad/tool-results/webfetch-1779316656692-s4b2hx.bin\" -C /tmp/glucore_design)",
+      "Bash(flutter pub *)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter gen-l10n *)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Read(//mnt/**)",
+      "Read(//Users/berdegeus/.claude/**)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "dart"
+  ]
 }
