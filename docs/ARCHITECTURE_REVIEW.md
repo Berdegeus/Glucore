@@ -249,7 +249,9 @@ Cada evento só começa quando o anterior terminou (incluindo os awaits de `repo
 
 ### 🟡 P30 — Atalho de pareamento do monitor ignora a marca do sensor
 **Local:** `monitoring_home_page.dart:178-188` (ícone Bluetooth → `SensorLinkPage()` com brand default Sibionics)
-**Descrição:** o único atalho de pareamento da home abre sempre o fluxo Sibionics (copy, GS1, stepper). Usuário de Libre 2 (que precisa da página NFC) ou Accu-Chek recebe instruções erradas; a `SensorChoicePage` só é alcançável por Configurações/Perfil (e hoje crasha — P17).
+**✅ Resolvido (2026-08-20).** O ícone Bluetooth da home passou a abrir `SensorChoicePage` (`monitoring_home_page.dart:160-166`) em vez de `SensorLinkPage()` fixo — usuário de qualquer marca escolhe primeiro. A extração do helper `openSensorFlow` sugerida abaixo não foi feita (fix pontual, sem tocar `SensorChoicePage`/Configurações/Perfil, que já resolvem a marca corretamente cada um por conta própria); fica como melhoria futura se a duplicação incomodar. Regressão coberta por `monitoring_home_page_test.dart` ("P30: pairing icon opens brand selection, not a fixed brand flow").
+
+**Histórico — Descrição:** o único atalho de pareamento da home abre sempre o fluxo Sibionics (copy, GS1, stepper). Usuário de Libre 2 (que precisa da página NFC) ou Accu-Chek recebe instruções erradas; a `SensorChoicePage` só é alcançável por Configurações/Perfil (e hoje crasha — P17).
 **Solução proposta:** roteamento por estado da sessão no `onPressed` do ícone: sem sessão → `SensorChoicePage` (escolher marca); com sessão → página da marca ativa via `switch (sensorState.brand)` — `libre2` → `LibreNFCPage`, demais → `SensorLinkPage(brand: sensorState.brand)`. Extrair esse switch para um helper único (`openSensorFlow(context, state)`) e usá-lo também na `SensorChoicePage` e em Configurações/Perfil, para o mapeamento marca→página existir num lugar só. Depende do P17 para as rotas serem escopadas.
 
 ### 🟡 P31 — AuthCubit sinaliza erro com estado transiente duplo

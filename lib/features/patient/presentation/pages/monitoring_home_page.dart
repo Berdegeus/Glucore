@@ -16,7 +16,7 @@ import '../widgets/user_app_bar.dart';
 import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
 import 'notifications_page.dart';
-import 'sensor_link_page.dart';
+import 'sensor_choice_page.dart';
 
 class MonitoringHomePage extends StatefulWidget {
   const MonitoringHomePage({super.key});
@@ -159,7 +159,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
             onPressed: () => Navigator.of(context).push(
               buildPatientScopedRoute(
                 context,
-                const SensorLinkPage(),
+                const SensorChoicePage(),
                 withSensorCubit: true,
               ),
             ),

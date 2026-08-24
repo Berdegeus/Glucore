@@ -16,6 +16,7 @@ import 'package:glucore/features/patient/presentation/cubit/patient_state.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'package:glucore/features/patient/presentation/models/patient_models.dart';
 import 'package:glucore/features/patient/presentation/pages/monitoring_home_page.dart';
+import 'package:glucore/features/patient/presentation/pages/sensor_choice_page.dart';
 import 'package:glucore/features/sensor/domain/models.dart';
 import 'package:glucore/features/sensor/presentation/cubit/sensor_cubit.dart';
 import 'package:glucore/l10n/l10n.dart';
@@ -72,6 +73,18 @@ void main() {
 
       final tooltipFinder = find.byTooltip(l10n.monitoringPairSensorTooltip);
       expect(tooltipFinder, findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'P30: pairing icon opens brand selection, not a fixed brand flow',
+    (tester) async {
+      await pump(tester, const PatientState());
+
+      await tester.tap(find.byTooltip(l10n.monitoringPairSensorTooltip));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SensorChoicePage), findsOneWidget);
     },
   );
 
