@@ -6,7 +6,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "postinstall": "prisma generate",
-    "test": "node --no-warnings --import ./tests/tsResolve.mjs --test \"tests/**/*.test.ts\""
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -27,8 +29,12 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.0",
     "@types/nodemailer": "^8.0.0",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^3.2.7",
     "prisma": "^5.22.0",
+    "supertest": "^7.2.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.7"
   }
 }

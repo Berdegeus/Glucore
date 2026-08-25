@@ -1,7 +1,6 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, expect, it } from 'vitest';
 
-import { recordAudit, sanitizeMetadata, type AuditClient } from '../../src/lib/audit.ts';
+import { recordAudit, sanitizeMetadata, type AuditClient } from '../../src/lib/audit';
 
 /**
  * Spec: TCC-13 — spec.md "P3: Trilha de auditoria persistida" AC2, AC4 and AC5.
@@ -41,14 +40,14 @@ describe('sanitizeMetadata — never records a secret (AC4)', () => {
       passwordHash: '$2a$12$abc',
       token: 'a7c1-reset',
     });
-    assert.deepEqual(sanitized, { email: 'p@example.com' });
+    expect(sanitized).toEqual({ email: 'p@example.com' });
   });
 
   it('drops sensitive keys nested two levels deep', () => {
     const sanitized = sanitizeMetadata({
       user: { id: 'u1', credential: { passwordHash: '$2a$12$abc', lastLoginAt: '2026-08-16' } },
     });
-    assert.deepEqual(sanitized, { user: { id: 'u1', credential: { lastLoginAt: '2026-08-16' } } });
+    expect(sanitized).toEqual({ user: { id: 'u1', credential: { lastLoginAt: '2026-08-16' } } });
   });
 
   it('drops sensitive keys inside arrays of objects', () => {
@@ -58,12 +57,12 @@ describe('sanitizeMetadata — never records a secret (AC4)', () => {
         { id: 'b', currentPassword: 'secret-b' },
       ],
     });
-    assert.deepEqual(sanitized, { items: [{ id: 'a' }, { id: 'b' }] });
+    expect(sanitized).toEqual({ items: [{ id: 'a' }, { id: 'b' }] });
   });
 
   it('keeps non-sensitive values untouched', () => {
     const sanitized = sanitizeMetadata({ count: 3, ok: true, label: 'REPLACE', missing: null });
-    assert.deepEqual(sanitized, { count: 3, ok: true, label: 'REPLACE', missing: null });
+    expect(sanitized).toEqual({ count: 3, ok: true, label: 'REPLACE', missing: null });
   });
 });
 
@@ -81,8 +80,8 @@ describe('recordAudit — what gets persisted (AC2)', () => {
       },
       client,
     );
-    assert.equal(writes.length, 1);
-    assert.deepEqual(writes[0], {
+    expect(writes.length).toBe(1);
+    expect(writes[0]).toEqual({
       userId: 'user-1',
       entity: 'InsulinEvent',
       action: 'REPLACE',
@@ -103,17 +102,17 @@ describe('recordAudit — what gets persisted (AC2)', () => {
       },
       client,
     );
-    assert.deepEqual(writes[0].metadata, { email: 'p@example.com' });
+    expect(writes[0].metadata).toEqual({ email: 'p@example.com' });
   });
 
   it('defaults an absent user and request context to null', async () => {
     const { client, writes } = recordingClient();
     await recordAudit({ entity: 'User', action: 'FORGOT_PASSWORD' }, client);
-    assert.equal(writes[0].userId, null);
-    assert.equal(writes[0].entityId, null);
-    assert.equal(writes[0].ipAddress, null);
-    assert.equal(writes[0].userAgent, null);
-    assert.equal('metadata' in writes[0], false);
+    expect(writes[0].userId).toBe(null);
+    expect(writes[0].entityId).toBe(null);
+    expect(writes[0].ipAddress).toBe(null);
+    expect(writes[0].userAgent).toBe(null);
+    expect('metadata' in writes[0]).toBe(false);
   });
 });
 
@@ -128,20 +127,17 @@ describe('recordAudit — a failed write never breaks the request (AC5)', () => 
     };
     const console = captureConsoleError();
     try {
-      await assert.doesNotReject(() =>
+      await expect(
         recordAudit({ userId: 'user-1', entity: 'CarbEvent', action: 'REPLACE' }, failing),
-      );
+      ).resolves.toBeUndefined();
     } finally {
       console.restore();
     }
-    assert.equal(
-      console.lines.some(
+    expect(console.lines.some(
         (line) =>
           line.includes('CarbEvent/REPLACE') &&
           line.includes('relation "AuditLog" does not exist'),
-      ),
-      true,
-    );
+      )).toBe(true);
   });
 
   it('swallows a synchronous throw from the client', async () => {
@@ -154,12 +150,12 @@ describe('recordAudit — a failed write never breaks the request (AC5)', () => 
     } as unknown as AuditClient;
     const console = captureConsoleError();
     try {
-      await assert.doesNotReject(() =>
+      await expect(
         recordAudit({ entity: 'AlertThresholdConfig', action: 'UPDATE' }, failing),
-      );
+      ).resolves.toBeUndefined();
     } finally {
       console.restore();
     }
-    assert.equal(console.lines.length, 1);
+    expect(console.lines.length).toBe(1);
   });
 });

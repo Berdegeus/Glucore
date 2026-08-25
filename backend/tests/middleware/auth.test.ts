@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, expect, it } from 'vitest';
 import jwt from 'jsonwebtoken';
 import type { NextFunction, Response } from 'express';
 
@@ -15,7 +14,7 @@ import type { NextFunction, Response } from 'express';
 const JWT_SECRET = 'test-secret-for-unit-tests';
 process.env.JWT_SECRET = JWT_SECRET;
 
-const { verifyJwt, requireRole } = await import('../../src/middleware/auth.ts');
+const { verifyJwt, requireRole } = await import('../../src/middleware/auth');
 
 interface Captured {
   status?: number;
@@ -51,18 +50,18 @@ describe('verifyJwt — typed 401', () => {
     const { res, captured } = fakeRes();
     const { next, calls } = spyNext();
     verifyJwt(fakeReq() as never, res, next);
-    assert.equal(captured.status, 401);
-    assert.deepEqual(captured.body, { error: 'Unauthorized', code: 'TOKEN_INVALID' });
-    assert.equal(calls.length, 0);
+    expect(captured.status).toBe(401);
+    expect(captured.body).toEqual({ error: 'Unauthorized', code: 'TOKEN_INVALID' });
+    expect(calls.length).toBe(0);
   });
 
   it('answers 401 TOKEN_INVALID when the token cannot be verified', () => {
     const { res, captured } = fakeRes();
     const { next, calls } = spyNext();
     verifyJwt(fakeReq('Bearer not-a-real-token') as never, res, next);
-    assert.equal(captured.status, 401);
-    assert.deepEqual(captured.body, { error: 'Invalid token', code: 'TOKEN_INVALID' });
-    assert.equal(calls.length, 0);
+    expect(captured.status).toBe(401);
+    expect(captured.body).toEqual({ error: 'Invalid token', code: 'TOKEN_INVALID' });
+    expect(calls.length).toBe(0);
   });
 
   it('accepts a valid token and exposes the subject as userId', () => {
@@ -71,9 +70,9 @@ describe('verifyJwt — typed 401', () => {
     const { next, calls } = spyNext();
     const req = fakeReq(`Bearer ${token}`);
     verifyJwt(req as never, res, next);
-    assert.equal(captured.status, undefined);
-    assert.equal(calls.length, 1);
-    assert.equal((req as { userId?: string }).userId, 'user-1');
+    expect(captured.status).toBe(undefined);
+    expect(calls.length).toBe(1);
+    expect((req as { userId?: string }).userId).toBe('user-1');
   });
 });
 
@@ -84,8 +83,8 @@ describe("requireRole('PATIENT')", () => {
     const middleware = requireRole('PATIENT', { resolveRole: async () => 'PATIENT' });
     middleware(fakeReq(undefined, 'user-1') as never, res, next);
     await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(captured.status, undefined);
-    assert.deepEqual(calls, [undefined]);
+    expect(captured.status).toBe(undefined);
+    expect(calls).toEqual([undefined]);
   });
 
   it('answers 403 FORBIDDEN_ROLE when the resolved role is not allowed', async () => {
@@ -96,9 +95,9 @@ describe("requireRole('PATIENT')", () => {
     });
     middleware(fakeReq(undefined, 'user-1') as never, res, next);
     await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(captured.status, 403);
-    assert.deepEqual(captured.body, { error: 'Forbidden', code: 'FORBIDDEN_ROLE' });
-    assert.equal(calls.length, 0);
+    expect(captured.status).toBe(403);
+    expect(captured.body).toEqual({ error: 'Forbidden', code: 'FORBIDDEN_ROLE' });
+    expect(calls.length).toBe(0);
   });
 
   it('answers 401 TOKEN_INVALID when the authenticated user no longer exists', async () => {
@@ -107,9 +106,9 @@ describe("requireRole('PATIENT')", () => {
     const middleware = requireRole('PATIENT', { resolveRole: async () => null });
     middleware(fakeReq(undefined, 'ghost') as never, res, next);
     await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(captured.status, 401);
-    assert.deepEqual(captured.body, { error: 'Invalid token', code: 'TOKEN_INVALID' });
-    assert.equal(calls.length, 0);
+    expect(captured.status).toBe(401);
+    expect(captured.body).toEqual({ error: 'Invalid token', code: 'TOKEN_INVALID' });
+    expect(calls.length).toBe(0);
   });
 
   it('answers 401 TOKEN_INVALID when verifyJwt did not set a userId', async () => {
@@ -124,10 +123,10 @@ describe("requireRole('PATIENT')", () => {
     });
     middleware(fakeReq() as never, res, next);
     await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(captured.status, 401);
-    assert.deepEqual(captured.body, { error: 'Unauthorized', code: 'TOKEN_INVALID' });
-    assert.equal(resolverCalled, false);
-    assert.equal(calls.length, 0);
+    expect(captured.status).toBe(401);
+    expect(captured.body).toEqual({ error: 'Unauthorized', code: 'TOKEN_INVALID' });
+    expect(resolverCalled).toBe(false);
+    expect(calls.length).toBe(0);
   });
 
   it('accepts any role in the allowed list', async () => {
@@ -138,8 +137,8 @@ describe("requireRole('PATIENT')", () => {
     });
     middleware(fakeReq(undefined, 'user-1') as never, res, next);
     await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(captured.status, undefined);
-    assert.deepEqual(calls, [undefined]);
+    expect(captured.status).toBe(undefined);
+    expect(calls).toEqual([undefined]);
   });
 
   it('forwards a resolver failure to the error handler instead of answering', async () => {
@@ -153,7 +152,7 @@ describe("requireRole('PATIENT')", () => {
     });
     middleware(fakeReq(undefined, 'user-1') as never, res, next);
     await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(captured.status, undefined);
-    assert.deepEqual(calls, [failure]);
+    expect(captured.status).toBe(undefined);
+    expect(calls).toEqual([failure]);
   });
 });

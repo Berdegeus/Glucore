@@ -1,12 +1,11 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, expect, it } from 'vitest';
 
 import {
   assertStrongPassword,
   isStrongPassword,
   validatePassword,
   WeakPasswordError,
-} from '../../src/lib/passwordPolicy.ts';
+} from '../../src/lib/passwordPolicy';
 
 /**
  * Spec: TCC-01 / spec.md P1 AC1 and AC3 — a new password is only accepted with
@@ -20,62 +19,62 @@ import {
  */
 describe('validatePassword — design case table', () => {
   it('Senha123! is valid (meets all 5 rules)', () => {
-    assert.equal(validatePassword('Senha123!'), null);
+    expect(validatePassword('Senha123!')).toBe(null);
   });
 
   it('Sen1! is rejected for being shorter than 8 characters', () => {
-    assert.equal(validatePassword('Sen1!'), 'tooShort');
+    expect(validatePassword('Sen1!')).toBe('tooShort');
   });
 
   it('senha123! is rejected for missing an uppercase letter', () => {
-    assert.equal(validatePassword('senha123!'), 'missingUppercase');
+    expect(validatePassword('senha123!')).toBe('missingUppercase');
   });
 
   it('SENHA123! is rejected for missing a lowercase letter', () => {
-    assert.equal(validatePassword('SENHA123!'), 'missingLowercase');
+    expect(validatePassword('SENHA123!')).toBe('missingLowercase');
   });
 
   it('SenhaSenha! is rejected for missing a digit', () => {
-    assert.equal(validatePassword('SenhaSenha!'), 'missingDigit');
+    expect(validatePassword('SenhaSenha!')).toBe('missingDigit');
   });
 
   it('Senha1234 is rejected for missing a non-alphanumeric character', () => {
-    assert.equal(validatePassword('Senha1234'), 'missingSpecial');
+    expect(validatePassword('Senha1234')).toBe('missingSpecial');
   });
 
   it('Senha 123! is valid — a space counts as non-alphanumeric', () => {
-    assert.equal(validatePassword('Senha 123!'), null);
+    expect(validatePassword('Senha 123!')).toBe(null);
   });
 
   it('the empty string is rejected for being shorter than 8 characters', () => {
-    assert.equal(validatePassword(''), 'tooShort');
+    expect(validatePassword('')).toBe('tooShort');
   });
 
   it('Senha1! is rejected for being 7 characters — below the minimum', () => {
-    assert.equal(validatePassword('Senha1!'), 'tooShort');
+    expect(validatePassword('Senha1!')).toBe('tooShort');
   });
 
   it('Senha12! is valid at exactly 8 characters — the minimum boundary', () => {
-    assert.equal(validatePassword('Senha12!'), null);
+    expect(validatePassword('Senha12!')).toBe(null);
   });
 });
 
 describe('isStrongPassword', () => {
   it('is true only for the passwords the design table accepts', () => {
-    assert.equal(isStrongPassword('Senha123!'), true);
-    assert.equal(isStrongPassword('Senha 123!'), true);
-    assert.equal(isStrongPassword('Sen1!'), false);
-    assert.equal(isStrongPassword('senha123!'), false);
-    assert.equal(isStrongPassword('SENHA123!'), false);
-    assert.equal(isStrongPassword('SenhaSenha!'), false);
-    assert.equal(isStrongPassword('Senha1234'), false);
-    assert.equal(isStrongPassword(''), false);
+    expect(isStrongPassword('Senha123!')).toBe(true);
+    expect(isStrongPassword('Senha 123!')).toBe(true);
+    expect(isStrongPassword('Sen1!')).toBe(false);
+    expect(isStrongPassword('senha123!')).toBe(false);
+    expect(isStrongPassword('SENHA123!')).toBe(false);
+    expect(isStrongPassword('SenhaSenha!')).toBe(false);
+    expect(isStrongPassword('Senha1234')).toBe(false);
+    expect(isStrongPassword('')).toBe(false);
   });
 });
 
 describe('assertStrongPassword', () => {
   it('accepts a password that satisfies the policy', () => {
-    assert.doesNotThrow(() => assertStrongPassword('Senha123!'));
+    expect(() => assertStrongPassword('Senha123!')).not.toThrow();
   });
 
   it('throws the WEAK_PASSWORD contract with the violated rule', () => {
@@ -86,10 +85,10 @@ describe('assertStrongPassword', () => {
       thrown = error;
     }
 
-    assert.ok(thrown instanceof WeakPasswordError);
-    assert.equal((thrown as WeakPasswordError).message, 'Weak password');
-    assert.equal((thrown as WeakPasswordError).code, 'WEAK_PASSWORD');
-    assert.equal((thrown as WeakPasswordError).status, 400);
-    assert.equal((thrown as WeakPasswordError).reason, 'missingUppercase');
+    expect(thrown).toBeInstanceOf(WeakPasswordError);
+    expect((thrown as WeakPasswordError).message).toBe('Weak password');
+    expect((thrown as WeakPasswordError).code).toBe('WEAK_PASSWORD');
+    expect((thrown as WeakPasswordError).status).toBe(400);
+    expect((thrown as WeakPasswordError).reason).toBe('missingUppercase');
   });
 });
