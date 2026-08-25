@@ -1,8 +1,8 @@
-gradle-wrapper.jar
+# The Gradle wrapper (gradlew, gradlew.bat, gradle-wrapper.jar) is committed on
+# purpose, against the Flutter template default: without it a clean CI runner has
+# nothing to invoke, and the wrapper is what pins the Gradle version for everyone.
 /.gradle
 /captures/
-/gradlew
-/gradlew.bat
 /local.properties
 GeneratedPluginRegistrant.java
 .cxx/

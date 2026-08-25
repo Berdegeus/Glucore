@@ -29,6 +29,16 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      # android/settings.gradle.kts reads flutter.sdk from local.properties, and
+      # the app module depends on the Flutter plugin projects that `pub get`
+      # generates — so the Flutter SDK has to be present even for a JVM-only run.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # local.properties is gitignored (it is machine-specific), so write it here.
+      - run: echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
       - working-directory: android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
