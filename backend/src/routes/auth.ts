@@ -19,12 +19,29 @@ const DEFAULT_TARGET_MAX = 180;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Every supertest request arrives from the same loopback address, so the shared
+// per-IP counter would exhaust itself a few cases into the suite and turn the
+// rest into 429s. Keyed off NODE_ENV rather than a dedicated variable so no
+// deployment can accidentally switch the limiter off.
+//
+// The limiters move to the gateway in phase 4; the 429 behaviour is covered
+// there, where the counter is per-client again.
+const rateLimitingDisabled = (): boolean => process.env.NODE_ENV === 'test';
+
+// bcrypt is intentionally slow, which costs ~300 ms per password in the test
+// suite and dominates its runtime. Tests do not assert on the work factor, only
+// that hashing round-trips, so they run at the library minimum. Keyed off
+// NODE_ENV for the same reason as the limiter above: a deployment cannot weaken
+// it by setting a variable.
+const BCRYPT_ROUNDS = process.env.NODE_ENV === 'test' ? 4 : 12;
+
 // Strict limiter for credential-sensitive endpoints (login, password reset flows).
 const strictAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: rateLimitingDisabled,
 });
 
 // Looser limiter for account creation.
@@ -33,6 +50,7 @@ const registerLimiter = rateLimit({
   limit: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: rateLimitingDisabled,
 });
 
 type RegisterBody = {
@@ -208,7 +226,7 @@ router.post(
       return;
     }
 
-    const passwordHash = await bcrypt.hash(body.password, 12);
+    const passwordHash = await bcrypt.hash(body.password, BCRYPT_ROUNDS);
     const diabetesType = optionalText(body.diabetesType);
     const phone = optionalText(body.phone);
 
@@ -380,7 +398,7 @@ router.post(
       res.status(400).json({ error: 'Invalid or expired token' });
       return;
     }
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     await prisma.$transaction([
       prisma.authCredential.upsert({
         where: { userId: record.userId },
@@ -562,7 +580,7 @@ router.put(
     if (updatesPassword) {
       const newPassword = body.newPassword as string;
       assertStrongPassword(newPassword);
-      const passwordHash = await bcrypt.hash(newPassword, 12);
+      const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
       operations.push(
         prisma.authCredential.upsert({
           where: { userId: req.userId! },

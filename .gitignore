@@ -78,3 +78,4 @@ backend/prisma/*.db
 # Test coverage reports
 backend/coverage/
 backend/dist/
+backend/.env.test
