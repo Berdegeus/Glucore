@@ -8,6 +8,7 @@ import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../models/patient_models.dart';
 import '../widgets/glucore_widgets.dart';
+import '../widgets/user_app_bar.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
@@ -15,7 +16,7 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Histórico')),
+      appBar: UserAppBar(title: const Text('Histórico')),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           if (state.readings.isEmpty) {

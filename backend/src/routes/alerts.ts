@@ -1,13 +1,15 @@
 import { Router, Response } from 'express';
 import { AlertType } from '@prisma/client';
-import { verifyJwt, AuthRequest } from '../middleware/auth';
+import { verifyJwt, requireRole, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { ensurePatient } from '../lib/patient';
+import { auditRequestContext, recordAudit } from '../lib/audit';
 
 const router = Router();
 
 router.use(verifyJwt);
+router.use(requireRole('PATIENT'));
 
 function toDbAlertType(type: string): AlertType {
   switch (type) {
@@ -78,6 +80,14 @@ router.post(
         alertType: toDbAlertType(a.type),
         triggeredAt: new Date(a.timestampMs),
       })),
+    });
+    await recordAudit({
+      userId: req.userId,
+      entity: 'AlertEvent',
+      action: 'REPLACE',
+      entityId: patientId,
+      metadata: { count: alerts.length },
+      ...auditRequestContext(req),
     });
     res.status(204).send();
   }),

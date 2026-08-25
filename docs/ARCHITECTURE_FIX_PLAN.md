@@ -4,24 +4,30 @@
 
 Data: 2026-07-05 · Branch base sugerida: uma branch por fase a partir de `main`.
 
+> **Rubrica do TCC (2026-08-20):** este plano também fecha os itens opcionais **comprometidos** da rubrica (aba `Rubricas` de `docs/TCC_Acompanhamento_Bernardo_Eduardo.xlsx`, colunas **K**/**L** — commitment "Sim") que caem na mesma área de código já em escopo aqui — cada um entrou como item novo, marcado "Rubrica N", sem alterar os itens já existentes. Ficam **fora deste documento**, por serem trabalho de produto/processo e não correção de arquitetura: negociação de escopo com os professores (crit. 9), formato de documentação de sprint (crit. 10), a feature de 2º perfil de acesso + dashboard do profissional (crit. 14/15, obrigatórios) e a prototipação em Figma com teste de usuário (crit. 24). Esses seguem detalhados em [tcc-rubric-evolution-plan.md](tcc-rubric-evolution-plan.md).
+
 ## Visão geral das fases
 
-| Fase | Problemas | Tema | Esforço | Depende de |
-|---|---|---|---|---|
-| 0 | P6, P11, P3(quick-fix), P12(parcial), P14 | Higiene rápida + segurança mínima | ~½ dia | — |
-| 1 | P9, P8, P16 | Estabilidade BLE | 1–2 dias | — |
-| 2 | P7, P10, P15 | Background + fronteira Flutter↔Android | 2–3 dias | Fase 1 |
-| 3 | P1, P3(definitivo), P5 | Offline-first | 3–5 dias | — (melhor após 2) |
-| 4 | P4, P2 | Identidade + API por item | 2–3 dias | Fase 3 |
-| 5 | P13, P12(restante) | Mock via DI + poda final | ~½ dia | — |
+| Fase | Problemas | Tema | Esforço | Depende de | Rubrica (opcional) |
+|---|---|---|---|---|---|
+| 0 | P6, P11, P3(quick-fix), P12(parcial), P14 | Higiene rápida + segurança mínima | ~1 dia | — | 23, 26, 27, 42 |
+| 1 | P9, P8, P16 | Estabilidade BLE | 1–2 dias | — | — |
+| 2 | P7, P10, P15 | Background + fronteira Flutter↔Android | 2–3 dias | Fase 1 | 39 |
+| 3 | P1, P3(definitivo), P5 | Offline-first | 3–5 dias | — (melhor após 2) | 35 (parcial), 37 |
+| 4 | P4, P2 | Identidade + API por item | 2–3 dias | Fase 3 | 25, 28, 33 |
+| 5 | P13, P12(restante) | Mock via DI + poda final | ~½ dia | — | — |
+
+> **Estado em 2026-08-20:** Fases 0, 1 e 2 **concluídas**. Duas exceções, ambas explícitas: o item 2.4 (CI/CD, rubrica 39) foi **cortado do escopo** com motivo técnico registrado na seção 2.4, e as verificações em **device físico** das Fases 1 e 2 seguem pendentes por exigirem hardware arm64 com sensor real. Rastro da entrega: `.specs/features/arch-phases-0-2-gaps/`.
+>
+> **Atualização 2026-08-24:** o item 2.4 deixou de ser corte total — os estágios analyze/test/lint (que não dependem do `.so` vendor) foram retomados via GitHub Actions; só o artefato de build/deploy segue bloqueado. Ver seção 2.4.
 
 Racional da ordem dos críticos: **P8/P9 antes de P7** — colocar BLE instável num ForegroundService 24/7 só amplia os bugs de fila/threading. **P1 antes de P2/P4** — offline-first muda quem é a fonte de verdade; redesenhar a API antes disso geraria retrabalho.
 
 ---
 
-## Fase 0 — Higiene rápida (~½ dia)
+## Fase 0 — Higiene rápida (~1 dia)
 
-### 0.1 · P6 — Atualizar CLAUDE.md
+### 0.1 · P6 — Atualizar CLAUDE.md — ✅ **Feito (2026-08-20)**
 Corrigir as 5 afirmações desatualizadas (persistência, auth, SQLite, decode de glicose, mock) e apontar `docs/` como fonte detalhada.
 **Aceite:** nenhuma afirmação do CLAUDE.md contradiz o código; link para `docs/README.md`.
 
@@ -45,7 +51,19 @@ Deletar: `lib/features/auth/presentation/pages/home_page.dart`; `parseJsonResult
 `sensor_cubit.dart`: extrair `SensorUiState _mapEventToState(SensorEvent event, {required bool isMock})`; usar nos dois listeners.
 **Aceite:** um único ponto de mapeamento; comportamento idêntico (testar mock + real).
 
-**Verificação da fase:** `flutter analyze && flutter test`; backend: boot com/sem env, login manual; smoke em device (conectar sensor, ver 1 POST no morgan).
+### 0.6 · Rubrica 26 — README + doc de rotas do backend — ✅ **Feito (2026-08-20)**
+`backend/README.md`: sumário de todos os serviços (`/auth`, `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`) com descrição, exemplo real de payload de request/response, e passo a passo de setup (`npm install`, `npx prisma migrate dev`, `npm run dev`).
+**Aceite:** todo endpoint documentado com exemplo real; README cobre instalação e env vars. → `backend/README.md`, 24/24 handlers.
+
+### 0.7 · Rubrica 42 — Documentar a arquitetura multissensor já implementada — ✅ **Feito (2026-08-20)**
+A stack multi-sensor (Sibionics BLE + Accu-Chek SmartGuide PIN + Libre 2 NFC/Abbott, unificada em `BrandBleManager`) já está implementada e em produção; falta só o registro técnico formal. Aproveitar a atualização do CLAUDE.md (0.1) para produzir um doc curto em `docs/reference/` descrevendo a arquitetura brand-agnostic.
+**Aceite:** doc técnico existe, referenciado no CLAUDE.md/`docs/README.md`. → `docs/reference/multi-sensor-architecture.md`.
+
+### 0.8 · Rubrica 23 — Registrar o processo de qualidade já praticado — ✅ **Feito (2026-08-20)**
+Doc curto em `docs/` descrevendo o processo de QA em uso (checklist de PR review, critério de aceite por fase já usado neste plano) + registrar no board de sprint pelo menos 1 exemplo real de tarefa reprovada em QA e corrigida.
+**Aceite:** doc existe; exemplo real referenciado. → `docs/guides/qa-process.md`, caso da rodada 1 reprovada da feature `checklist-tcc-compliance`.
+
+**Verificação da fase:** `flutter analyze && flutter test`; backend: boot com/sem env, login manual; smoke em device (conectar sensor, ver 1 POST no morgan); README do backend revisado com um endpoint testado manualmente a partir dos exemplos.
 
 ---
 
@@ -69,13 +87,13 @@ Estado do manager passa a ser tocado só no main looper — sem locks.
 - API 33+: `gatt.writeCharacteristic(char, bytes, WRITE_TYPE_DEFAULT)` e `writeDescriptor(cccd, ENABLE_NOTIFICATION_VALUE)`; fallback via `Build.VERSION.SDK_INT` para o caminho antigo. Callback novo de notificação `onCharacteristicChanged(gatt, ch, value)` (o `value` já chega copiado) mantendo o antigo para < 33.
 **Aceite:** sequência código 4→5 (re-auth + time-sync) nunca perde a segunda escrita (log de fila); zero uso de `characteristic.value =` em API ≥ 33.
 
-### 1.3 · P16 — Validação + testes do decode
+### 1.3 · P16 — Validação + testes do decode — ✅ **Feito (2026-08-20)**
 - Extrair `decodePackedGlucose` para objeto puro testável (ex.: `SibionicsGlucoseDecoder` sem dependência Android).
 - Faixa aceita: 400..6000 décimos (40–600 mg/dL); fora disso rejeita e loga. Códigos desconhecidos de `SIprocessData`: logar e **não** decodificar por padrão (decodificação direta só quando `lastSyncedTimestampMs != null`, i.e., sync em andamento).
 - Testes JUnit: packing/unpacking (valores limite, rate negativa, alarm), `normalizeTimestampMs` (s vs ms), out-of-order.
 **Aceite:** testes passam no `./gradlew test`; leitura implausível não chega ao Flutter.
 
-**Verificação da fase:** `./gradlew test` + sessão real de sensor ≥ 1 h sem queda; forçar reconexão (afastar telefone) e observar re-auth completo nos logs.
+**Verificação da fase:** ✅ `./gradlew :app:testDebugUnitTest` verde (34 testes em 2026-08-20). ⬜ **pendente de device físico**: sessão real de sensor ≥ 1 h sem queda e reconexão forçada (afastar o telefone) com re-auth completo nos logs.
 
 ---
 
@@ -108,7 +126,12 @@ Passos:
 `SessionDbHelper.onUpgrade`: trocar DROP por `ALTER TABLE` incremental por versão (padrão `when (oldVersion) { ... }`).
 **Aceite:** upgrade simulado de DB_VERSION preserva a sessão registrada.
 
-**Verificação da fase:** teste manual de background (tela desligada 30 min, app swipado); `adb shell dumpsys activity services` mostra o service; registro de sensor com app recém-aberto funciona.
+### 2.4 · Rubrica 39 — CI/CD (build + test + deploy) — ⚠️ **Parcial (2026-08-24)**
+Retirado do escopo o artefato de build/deploy, por decisão do usuário, com motivo técnico: os `.so` proprietários (`libg.so`, bibliotecas Abbott) são gitignored (`.gitignore:58`) e não estão no repositório, então **nenhum runner limpo consegue produzir um APK funcional** — o job de artefato de build da rubrica não teria como existir de forma honesta, e o `./gradlew` do projeto depende desses binários para o link nativo.
+**Já retomado (2026-08-24):** os três estágios que não dependem do `.so` — `flutter analyze && flutter test`, `./gradlew :app:testDebugUnitTest`, `npx tsc --noEmit && npm test` — rodam automatizados em `.github/workflows/ci.yml`, disparados em PR e push para `main`/`dev`. Essa é agora a referência de review: um PR só é considerado pronto com o CI verde.
+**Condição para retomar o resto (build + deploy):** um caminho autorizado de distribuição dos `.so` para o CI (secret/artifact store privado com licença que permita, ou runner self-hosted com os binários já provisionados).
+
+**Verificação da fase:** ⬜ **pendente de device físico** — teste manual de background (tela desligada 30 min, app swipado), `adb shell dumpsys activity services` mostrando o service, e registro de sensor com app recém-aberto. O código de 2.1–2.3 está entregue e verificado por leitura/teste; o que falta é exclusivamente a regressão em hardware arm64 com sensor real.
 
 ---
 
@@ -137,7 +160,15 @@ Junto com a introdução do datasource local real (evita churn duplo):
 - ⬜ `AuthLocalDataSource` → `AuthDataSource` (pendente — fora do escopo do PR da Fase 3).
 **Aceite da fase:** modo avião → registrar carbo/insulina, receber leituras mock → tudo visível e persistido; religar rede → backend converge (verificar linhas no Postgres); app reiniciado offline mostra dados.
 
-**Verificação:** testes de unidade do sync service (fila, retry, reconciliação); cenário avião manual; `flutter test`.
+### 3.4 · Rubrica 37 — Camada `domain/` no feature `patient`
+`auth` e `sensor` já têm `domain/`; `patient` não. Aproveitando a reorganização 3.1/3.3 (que já separa `PatientRepository`/`PatientDataSource`), extrair entidades e casos de uso para `lib/features/patient/domain/`, no mesmo padrão dos outros dois features.
+**Aceite:** `PatientCubit` passa a depender de casos de uso do `domain/`, não direto do repository.
+
+### 3.5 · Rubrica 35 (parcial) — Dark mode / light mode
+Escopo restrito ao item (a) do critério (temas claro/escuro); customização salva por tela e otimização de desktop ficam de reserva. `ThemeMode` + `AppTheme.light()`/`AppTheme.dark()`, toggle nas configurações, preferência persistida (mesmo mecanismo do `onboarding_done`).
+**Aceite:** app alterna tema em tempo real; preferência sobrevive a restart.
+
+**Verificação:** testes de unidade do sync service (fila, retry, reconciliação); cenário avião manual; `flutter test`; alternar tema e reabrir o app mantém a escolha.
 
 ---
 
@@ -162,7 +193,14 @@ GET    inalterado (agora inclui id)
 - Limite de 100 itens deixa de truncar dados: GET pagina (`?before=timeMs&limit=100`); histórico completo preservado no banco.
 **Aceite:** editar 1 entrada gera 1 PUT; IDs estáveis entre saves (verificar no Postgres); duas entradas no mesmo minuto são editáveis independentemente; dois devices simultâneos não se apagam.
 
-**Verificação:** testes de rota (supertest ou curl scriptado); cenário 2 clientes; migração de dados legados testada com dump real.
+### 4.3 · Rubrica 25, 28, 33 — Qualidade dos novos endpoints
+Ao construir os endpoints de 4.2:
+- Estruturar em camadas (route → controller → service → repository Prisma) em vez de handlers direto na rota — só nas rotas novas, sem refatorar o resto do backend (rubrica 33).
+- Índice Prisma (`@@index`) na coluna usada por `?before=timeMs`, pra paginação não degradar (rubrica 28).
+- Cobrir os endpoints novos com testes supertest (create/update/delete/paginação/2-devices), mirando 75%+ de cobertura no backend (rubrica 25).
+**Aceite:** rotas novas seguem a estrutura em camadas; migration inclui o índice; `npm test` cobre os cenários acima.
+
+**Verificação:** testes de rota (supertest ou curl scriptado); cenário 2 clientes; migração de dados legados testada com dump real; `npm test` sem falhas.
 
 ---
 
@@ -191,7 +229,17 @@ GET    inalterado (agora inclui id)
 3. Nada de rewrite do caminho vendor/JNI — as fases só movem propriedade e adicionam camadas em volta do trio BLE existente.
 4. Fases 1–2 exigem device arm64 físico com sensor para verificação final; fases 3–5 verificáveis com mock.
 5. Ao concluir cada P, marcar como resolvido no [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) (não apagar — histórico).
+6. **Rubrica 27:** toda mudança de schema Prisma (qualquer fase que toque `backend/prisma/`) inclui a migration versionada no mesmo PR — já é a prática atual, aqui só formalizada.
 
 ## Fora do plano (registrado, sem ação)
 - HAL multiplataforma completo + Pigeon (Seção B do review): fazer **depois** da Fase 2 — o `SensorCore` da Fase 2 já é o embrião do HAL; Pigeon vira candidato natural quando o contrato estabilizar.
 - iOS: bloqueado por `libg.so` (arm64 Android). Primeiro alvo viável: Libre via CoreNFC, projeto separado.
+
+## Reserva de rubrica — só se sobrar tempo (registrado, sem compromisso)
+Itens opcionais da rubrica marcados como reserva na aba `Rubricas` (coluna L = "Reserva"). Não fazem parte do escopo comprometido; ficam aqui só para o caso de sobrar tempo depois das fases acima — ver [tcc-rubric-evolution-plan.md](tcc-rubric-evolution-plan.md) para o racional completo.
+- **39** (CI/CD) — só o artefato de build/deploy segue reservado/bloqueado: sem os `.so` proprietários no repositório, não há build reproduzível em runner limpo (ver 2.4). Analyze/test/lint já rodam em CI, fora da reserva.
+- **22** (BDD/UML/diagramas de requisitos) — documentação extra, sem tocar código.
+- **32** (cloud services), **40** (IaC) — fora do escopo deste plano (não há infra cloud hoje).
+- **34** (cobertura de testes frontend 75%+) — se entrar, encaixa como extensão da Fase 3 (`flutter test` já roda ali).
+- **41** (monitoramento/observabilidade) — se entrar, encaixa na Fase 2 (logging estruturado do backoff de reconexão do `CgmForegroundService`).
+- **38** (acessibilidade) — reaproveitaria a sessão de teste de usuário da prototipação (fora deste documento, ver `tcc-rubric-evolution-plan.md`).

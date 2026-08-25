@@ -103,6 +103,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String fullName,
     required String email,
     required String password,
+    String? phone,
     DateTime? birthDate,
     double? weightKg,
     int? targetRangeMin,
@@ -115,6 +116,7 @@ class AuthCubit extends Cubit<AuthState> {
           fullName: fullName,
           email: email,
           password: password,
+          phone: phone,
           birthDate: birthDate,
           weightKg: weightKg,
           targetRangeMin: targetRangeMin,
@@ -161,7 +163,22 @@ class AuthCubit extends Cubit<AuthState> {
       case DioExceptionType.connectionError:
         return AuthError.networkError;
       default:
-        return AuthError.serverError;
+        return _mapErrorCode(e.response?.data) ?? AuthError.serverError;
+    }
+  }
+
+  /// Reads the `code` the backend puts in the error body. Deciding on the code
+  /// instead of the status is what tells a weak password apart from any other
+  /// 400, and a database outage apart from a generic 5xx.
+  AuthError? _mapErrorCode(dynamic data) {
+    if (data is! Map) return null;
+    switch (data['code']) {
+      case 'WEAK_PASSWORD':
+        return AuthError.weakPassword;
+      case 'DATABASE_UNAVAILABLE':
+        return AuthError.serviceUnavailable;
+      default:
+        return null;
     }
   }
 }

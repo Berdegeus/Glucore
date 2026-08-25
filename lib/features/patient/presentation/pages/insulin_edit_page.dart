@@ -4,8 +4,11 @@ import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../cubit/patient_cubit.dart';
 import '../models/patient_models.dart';
+import '../widgets/glucore_messenger.dart';
+import '../widgets/user_app_bar.dart';
 
 class InsulinEditPage extends StatefulWidget {
   const InsulinEditPage({super.key, required this.entry});
@@ -62,7 +65,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().editInsulinEntry(
       InsulinEntry(
@@ -73,9 +76,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
       ),
     );
     if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text(context.l10n.insulinEditSavedSuccessMessage)),
-    );
+    GlucoreMessenger.success(context, l10n.insulinEditSavedSuccessMessage);
     navigator.pop();
   }
 
@@ -92,7 +93,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
             child: Text(l10n.genericCancelButton),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.zoneLowBg),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l10n.entryDeleteConfirmButton),
           ),
@@ -100,13 +101,11 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final deletedMessage = context.l10n.insulinEditDeletedSuccessMessage;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().deleteInsulinEntry(widget.entry);
     if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text(context.l10n.insulinEditDeletedSuccessMessage)),
-    );
+    GlucoreMessenger.success(context, deletedMessage);
     navigator.pop();
   }
 
@@ -115,7 +114,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.insulinEditTitle)),
+      appBar: UserAppBar(title: Text(l10n.insulinEditTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -189,7 +188,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
               const SizedBox(height: 8),
               OutlinedButton(
                 onPressed: _delete,
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                style: OutlinedButton.styleFrom(foregroundColor: AppTheme.zoneLowBg),
                 child: Text(l10n.carbEditDeleteButton),
               ),
             ],

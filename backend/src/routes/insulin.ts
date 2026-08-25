@@ -1,12 +1,14 @@
 import { Router, Response } from 'express';
-import { verifyJwt, AuthRequest } from '../middleware/auth';
+import { verifyJwt, requireRole, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { ensurePatient } from '../lib/patient';
+import { auditRequestContext, recordAudit } from '../lib/audit';
 
 const router = Router();
 
 router.use(verifyJwt);
+router.use(requireRole('PATIENT'));
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -90,6 +92,13 @@ router.post(
         dayOfWeek: dayOfWeek ?? '',
       },
     });
+    await recordAudit({
+      userId: req.userId,
+      entity: 'InsulinEvent',
+      action: 'CREATE',
+      entityId: created.id,
+      ...auditRequestContext(req),
+    });
     res.status(201).json({ id: created.id });
   }),
 );
@@ -131,6 +140,13 @@ router.put(
       res.status(404).json({ error: 'not found' });
       return;
     }
+    await recordAudit({
+      userId: req.userId,
+      entity: 'InsulinEvent',
+      action: 'UPDATE',
+      entityId: id,
+      ...auditRequestContext(req),
+    });
     res.status(204).send();
   }),
 );
@@ -153,6 +169,13 @@ router.delete(
       res.status(404).json({ error: 'not found' });
       return;
     }
+    await recordAudit({
+      userId: req.userId,
+      entity: 'InsulinEvent',
+      action: 'DELETE',
+      entityId: id,
+      ...auditRequestContext(req),
+    });
     res.status(204).send();
   }),
 );
@@ -186,6 +209,14 @@ router.post(
         eventAt: new Date(i.timeMs),
         dayOfWeek: i.dayOfWeek ?? '',
       })),
+    });
+    await recordAudit({
+      userId: req.userId,
+      entity: 'InsulinEvent',
+      action: 'REPLACE',
+      entityId: patientId,
+      metadata: { count: insulin.length },
+      ...auditRequestContext(req),
     });
     res.status(204).send();
   }),

@@ -14,9 +14,12 @@ Glucore é um MVP Flutter (Android-first) para sensores CGM Sibionics, com backe
 | [architecture/backend.md](architecture/backend.md) | API Express, Prisma, o que é usado vs planejado | for mexer no backend ou na sincronização |
 | [guides/setup-and-build.md](guides/setup-and-build.md) | Comandos, variáveis, restrições de build | for compilar, rodar ou configurar ambiente |
 | [guides/versioning-and-branches.md](guides/versioning-and-branches.md) | Esquema `dev`/`main`, semver, fluxo por versão | for abrir PR, versionar ou decidir destino de uma mudança |
+| [guides/qa-process.md](guides/qa-process.md) | Gates, checklist de revisão de PR, verificação independente, caso real de reprovação | for abrir ou revisar PR |
+| [guides/kanban-board.md](guides/kanban-board.md) | Board GitHub Projects: views, campos, fluxo de card, IDs para automação via `gh` | for abrir, mover ou automatizar um card do board |
 | [guides/adding-features.md](guides/adding-features.md) | Receitas: nova página, novo campo persistido, nova rota | for adicionar funcionalidade |
 | [reference/platform-channels.md](reference/platform-channels.md) | Contrato exato MethodChannel/EventChannel | for mexer na fronteira Flutter↔Android |
-| [reference/native-stubs.md](reference/native-stubs.md) | Classes stub exigidas por `libg.so` | vir crash JNI `ClassNotFoundException` |
+| [reference/multi-sensor-architecture.md](reference/multi-sensor-architecture.md) | Contrato `BrandBleManager`, as três marcas suportadas, quem escolhe a marca | for adicionar marca de sensor ou mexer no que é comum a todas |
+| [reference/native-stubs.md](reference/native-stubs.md) | Stubs Java que o APK embarca hoje e os que o Juggluco declara | vir crash JNI `ClassNotFoundException` |
 | [reference/data-models.md](reference/data-models.md) | Modelos Flutter ↔ payload API ↔ Prisma | for adicionar/alterar campo de dados |
 | [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) | **Relatório**: problemas arquiteturais (P1–P35; P17/P18/P19 resolvidos na v1.1.0), proposta de HAL, revisão da conexão com sensores | for planejar refatoração ou corrigir débito técnico |
 | [ARCHITECTURE_FIX_PLAN.md](ARCHITECTURE_FIX_PLAN.md) | **Plano de correção**: 6 fases ordenadas, passos, critérios de aceite | for executar as correções do relatório |
@@ -31,11 +34,11 @@ Skills por domínio em `.claude/skills/` (carregadas automaticamente por agentes
 
 ## Avisos críticos (resumo)
 
-- **CLAUDE.md está parcialmente desatualizado** em relação ao código real (persistência não é mais `SharedPreferences`; auth não é mais local-only; decodificação de glicose mudou). Detalhes em [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) §P6. Em conflito, o código e estes docs vencem.
-- `Juggluco/` é cópia de referência do app open-source Juggluco. Não modificar, não indexar por inteiro.
+- **CLAUDE.md foi realinhado com o código em 2026-08-20** (P6 fechado) e passou a ser versionado. Ele fica restrito a invariantes estáveis; detalhe volátil vive aqui em `docs/`. Em conflito, o código e estes docs vencem.
+- `Juggluco/` é cópia de referência do app open-source Juggluco e **não está neste working tree** (nunca foi commitada). Se cloná-la localmente: não modificar, não indexar por inteiro.
 - Vendor `.so` são arm64-v8a apenas. Nunca adicionar ABI filters.
 
 ## Armadilhas
 
-- Não reintroduzir: `SensorController`, `SensorPage` como raiz, `FakeSensorRepository`, `PatientMockStore`. O mock atual legítimo é `MockSensorRepository` acionado só pelo `DebugPanel` em `kDebugMode`.
+- Não reintroduzir: `SensorController`, `SensorPage` como raiz, `FakeSensorRepository`, `PatientMockStore`. `MockSensorRepository` e `DebugPanel` existiram por pouco tempo e foram revertidos em `f91adea` — não há caminho de sensor falso em `lib/` hoje.
 - Nunca editar `lib/l10n/generated/` — rodar `flutter gen-l10n` após editar os `.arb`.

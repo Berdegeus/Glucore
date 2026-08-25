@@ -1,12 +1,14 @@
 import { Router, Response } from 'express';
-import { verifyJwt, AuthRequest } from '../middleware/auth';
+import { verifyJwt, requireRole, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { ensurePatient } from '../lib/patient';
+import { auditRequestContext, recordAudit } from '../lib/audit';
 
 const router = Router();
 
 router.use(verifyJwt);
+router.use(requireRole('PATIENT'));
 
 router.get(
   '/alerts',
@@ -43,6 +45,13 @@ router.put(
         lowGlucoseMgDl: lowThreshold,
         highGlucoseMgDl: highThreshold,
       },
+    });
+    await recordAudit({
+      userId: req.userId,
+      entity: 'AlertThresholdConfig',
+      action: 'UPDATE',
+      entityId: patientId,
+      ...auditRequestContext(req),
     });
     res.status(204).send();
   }),

@@ -6,7 +6,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../models/patient_models.dart';
+import '../widgets/glucore_form_layout.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/user_app_bar.dart';
 import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
 
@@ -16,27 +18,20 @@ class DiaryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Diário')),
+      appBar: UserAppBar(title: const Text('Diário')),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
-          final entries = _buildEntries(context, state);
+          final groups = _buildDayGroups(context, state);
 
-          if (entries.isEmpty) {
+          if (groups.isEmpty) {
             return const _EmptyDiary();
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-            itemCount: entries.length,
-            itemBuilder: (context, i) {
-              final entry = entries[i];
-              if (entry is _DayHeader) {
-                return _DayHeaderWidget(label: entry.label);
-              }
-              if (entry is _DiaryItem) {
-                return _DiaryItemTile(item: entry);
-              }
-              return const SizedBox.shrink();
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return constraints.maxWidth <= GlucoreFormLayout.breakpoint
+                  ? _SingleColumnDiary(groups: groups)
+                  : _TwoColumnDiary(groups: groups);
             },
           );
         },
@@ -44,7 +39,11 @@ class DiaryPage extends StatelessWidget {
     );
   }
 
-  List<Object> _buildEntries(BuildContext context, PatientState state) {
+  /// Builds carb/insulin entries grouped by day, newest day first. Splitting
+  /// into groups (rather than a flat header/item list) lets the wide layout
+  /// hand whole days to a column without ever separating a header from its
+  /// own entries.
+  List<_DayGroup> _buildDayGroups(BuildContext context, PatientState state) {
     final items = <_DiaryItem>[];
 
     for (final c in state.carbs) {
@@ -74,19 +73,19 @@ class DiaryPage extends StatelessWidget {
 
     items.sort((a, b) => b.time.compareTo(a.time));
 
-    final result = <Object>[];
+    final groups = <_DayGroup>[];
     String? lastDay;
 
     for (final item in items) {
       final dayKey = DateFormat('yyyy-MM-dd').format(item.time);
       if (dayKey != lastDay) {
-        result.add(_DayHeader(label: _dayLabel(item.time)));
+        groups.add(_DayGroup(label: _dayLabel(item.time)));
         lastDay = dayKey;
       }
-      result.add(item);
+      groups.last.items.add(item);
     }
 
-    return result;
+    return groups;
   }
 
   String _insulinLabel(InsulinType type) => switch (type) {
@@ -105,9 +104,78 @@ class DiaryPage extends StatelessWidget {
   }
 }
 
-class _DayHeader {
-  const _DayHeader({required this.label});
+class _DayGroup {
+  _DayGroup({required this.label});
   final String label;
+  final List<_DiaryItem> items = <_DiaryItem>[];
+}
+
+/// Layout at or below [GlucoreFormLayout.breakpoint]: the pre-existing single
+/// scrolling column, day header followed by that day's entries.
+class _SingleColumnDiary extends StatelessWidget {
+  const _SingleColumnDiary({required this.groups});
+  final List<_DayGroup> groups;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      children: [for (final group in groups) _DayGroupColumn(group: group)],
+    );
+  }
+}
+
+/// Layout above [GlucoreFormLayout.breakpoint]: whole day groups are dealt
+/// alternately into two side-by-side columns so a day's header always stays
+/// with its own entries.
+class _TwoColumnDiary extends StatelessWidget {
+  const _TwoColumnDiary({required this.groups});
+  final List<_DayGroup> groups;
+
+  @override
+  Widget build(BuildContext context) {
+    final left = <_DayGroup>[];
+    final right = <_DayGroup>[];
+    for (var i = 0; i < groups.length; i++) {
+      (i.isEven ? left : right).add(groups[i]);
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              children: [for (final group in left) _DayGroupColumn(group: group)],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              children: [for (final group in right) _DayGroupColumn(group: group)],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayGroupColumn extends StatelessWidget {
+  const _DayGroupColumn({required this.group});
+  final _DayGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _DayHeaderWidget(label: group.label),
+        for (final item in group.items) _DiaryItemTile(item: item),
+      ],
+    );
+  }
 }
 
 class _DiaryItem {

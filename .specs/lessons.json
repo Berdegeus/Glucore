@@ -1,0 +1,135 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 8,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::quando um ac fixa um limite numerico min 8 caracteres 600 dp a tabela de casos precisa de uma amostra imediatamente abaixo e outra exatamente no limite sem isso a constante pode derivar com a suite verde",
+      "text": "Quando um AC fixa um limite numérico (min 8 caracteres, 600 dp), a tabela de casos precisa de uma amostra imediatamente abaixo e outra exatamente no limite; sem isso a constante pode derivar com a suíte verde.",
+      "signal": "surviving_mutant",
+      "scope": "testing/boundaries",
+      "status": "candidate",
+      "features": [
+        "checklist-tcc-compliance"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "design.md:93-102 (tabela de casos da política de senha) (testing/boundaries)"
+      ],
+      "created": "2026-08-17T01:59:16Z",
+      "last_seen": "2026-08-17T01:59:16Z"
+    },
+    {
+      "id": "L-002",
+      "key": "ac_gap::ac com quantificador global nenhuma tela nenhuma ocorrencia em lib exige uma tarefa cujo done when seja o proprio grep global se as tarefas so listam arquivos nomeados o ac nasce impossivel de cumprir",
+      "text": "AC com quantificador global ('nenhuma tela', 'nenhuma ocorrência em lib/') exige uma tarefa cujo Done-when seja o próprio grep global; se as tarefas só listam arquivos nomeados, o AC nasce impossível de cumprir.",
+      "signal": "ac_gap",
+      "scope": "planning/scope",
+      "status": "candidate",
+      "features": [
+        "checklist-tcc-compliance"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md P2 Mensagens AC2 / P3 Visual AC2 (planning/scope)"
+      ],
+      "created": "2026-08-17T01:59:17Z",
+      "last_seen": "2026-08-17T01:59:17Z"
+    },
+    {
+      "id": "L-003",
+      "key": "ac_gap::ao criar um widget compartilhado obrigatorio por ac enumerar os call sites com um grep do padrao antigo obscuretext snackbar colors red e citar a contagem no done when em vez de confiar na lista de telas da tarefa",
+      "text": "Ao criar um widget compartilhado obrigatório por AC, enumerar os call sites com um grep do padrão antigo (obscureText, SnackBar, Colors.red) e citar a contagem no Done-when, em vez de confiar na lista de telas da tarefa.",
+      "signal": "ac_gap",
+      "scope": "planning/tasks",
+      "status": "candidate",
+      "features": [
+        "checklist-tcc-compliance"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "lib/features/patient/presentation/pages/profile_edit_page.dart:340-348 (P1 AC5) (planning/tasks)"
+      ],
+      "created": "2026-08-17T01:59:17Z",
+      "last_seen": "2026-08-17T01:59:17Z"
+    },
+    {
+      "id": "L-004",
+      "key": "ac_gap::copiar um literal de uma tela legada para um widget novo cria um passivo se uma tarefa posterior migrar aquela tela para l10n o widget novo fica como unica fonte do literal usar l10n desde a criacao",
+      "text": "Copiar um literal de uma tela legada para um widget novo cria um passivo: se uma tarefa posterior migrar aquela tela para l10n, o widget novo fica como única fonte do literal — usar l10n desde a criação.",
+      "signal": "ac_gap",
+      "scope": "flutter/l10n",
+      "status": "candidate",
+      "features": [
+        "checklist-tcc-compliance"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "lib/features/patient/presentation/widgets/user_app_bar.dart:91,95 (P3 AC1) (flutter/l10n)"
+      ],
+      "created": "2026-08-17T01:59:17Z",
+      "last_seen": "2026-08-17T01:59:17Z"
+    },
+    {
+      "id": "L-005",
+      "key": "spec_precision_gap::ac de higiene fechado por grep snackbar colors red literal em l10n precisa de um teste estrutural que leia o fonte do arquivo migrado sem isso o padrao antigo volta sem quebrar a suite porque o valor l10n e identico ao literal",
+      "text": "AC de higiene fechado por grep (SnackBar, Colors.red, literal em l10n) precisa de um teste estrutural que leia o fonte do arquivo migrado; sem isso o padrao antigo volta sem quebrar a suite, porque o valor l10n e identico ao literal.",
+      "signal": "spec_precision_gap",
+      "scope": "testing/regression-guards",
+      "status": "candidate",
+      "features": [
+        "checklist-tcc-compliance"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "lib/features/patient/presentation/widgets/user_app_bar.dart:91 (testing/regression-guards)"
+      ],
+      "created": "2026-08-17T16:09:04Z",
+      "last_seen": "2026-08-17T16:09:04Z"
+    },
+    {
+      "id": "L-006",
+      "key": "surviving_mutant::um caso de teste so prova um gate novo se o valor escolhido passar por todas as validacoes a montante e for barrado apenas pela nova regra aqui o teste com valor 4 codigo de protocolo sobreviveu a remocao do gate de 0x10000 porque 4 ja e barrado pela faixa 400 6000 quem discrimina e 1043 glicose plausivel sem bits de rate alarm",
+      "text": "Um caso de teste so prova um gate novo se o valor escolhido passar por todas as validacoes a montante e for barrado apenas pela nova regra. Aqui o teste com valor 4 (codigo de protocolo) sobreviveu a remocao do gate de 0x10000, porque 4 ja e barrado pela faixa 400..6000; quem discrimina e 1043, glicose plausivel sem bits de rate/alarm.",
+      "signal": "surviving_mutant",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "arch-phases-0-2-gaps"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/arch-phases-0-2-gaps/validation.md (testing)"
+      ],
+      "created": "2026-08-21T00:41:13Z",
+      "last_seen": "2026-08-21T00:41:13Z"
+    },
+    {
+      "id": "L-007",
+      "key": "ac_gap::edicao de documento por str replace do python substitui todas as ocorrencias um marcador de status que se repete por item ex parcial data em cada problema do review foi sobrescrito em 4 itens de uma vez marcando tres problemas nao resolvidos como resolvidos ao editar marcador repetido ancore por secao linha e confirme a contagem de ocorrencias antes e depois",
+      "text": "Edicao de documento por str.replace do Python substitui TODAS as ocorrencias: um marcador de status que se repete por item (ex.: '**Parcial (data):**' em cada problema do review) foi sobrescrito em 4 itens de uma vez, marcando tres problemas nao resolvidos como resolvidos. Ao editar marcador repetido, ancore por secao/linha e confirme a contagem de ocorrencias antes e depois.",
+      "signal": "ac_gap",
+      "scope": "tooling",
+      "status": "candidate",
+      "features": [
+        "arch-phases-0-2-gaps"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/arch-phases-0-2-gaps/validation.md (tooling)"
+      ],
+      "created": "2026-08-21T00:41:13Z",
+      "last_seen": "2026-08-21T00:41:13Z"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+jobs:
+  flutter:
+    name: Flutter analyze + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --no-pub
+
+  android-unit:
+    name: Kotlin unit tests (JVM)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      # android/settings.gradle.kts reads flutter.sdk from local.properties, and
+      # the app module depends on the Flutter plugin projects that `pub get`
+      # generates — so the Flutter SDK has to be present even for a JVM-only run.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # local.properties is gitignored (it is machine-specific), so write it here.
+      - run: echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+      - working-directory: android
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+  backend:
+    name: Backend typecheck + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # 22, not 20: `node --test` only expands glob patterns from Node 21 on.
+          # On 20 the `tests/**/*.test.ts` argument is taken as a literal path.
+          node-version: "22"
+      - run: npm install
+      - run: npx tsc --noEmit
+      - run: npm test

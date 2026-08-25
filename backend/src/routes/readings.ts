@@ -1,12 +1,14 @@
 import { Router, Response } from 'express';
-import { verifyJwt, AuthRequest } from '../middleware/auth';
+import { verifyJwt, requireRole, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { ensurePatient } from '../lib/patient';
+import { auditRequestContext, recordAudit } from '../lib/audit';
 
 const router = Router();
 
 router.use(verifyJwt);
+router.use(requireRole('PATIENT'));
 
 router.get(
   '/',
@@ -79,6 +81,13 @@ router.delete(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const patientId = await ensurePatient(req.userId!);
     await prisma.glucoseReading.deleteMany({ where: { patientId } });
+    await recordAudit({
+      userId: req.userId,
+      entity: 'GlucoseReading',
+      action: 'DELETE',
+      entityId: patientId,
+      ...auditRequestContext(req),
+    });
     res.status(204).send();
   }),
 );

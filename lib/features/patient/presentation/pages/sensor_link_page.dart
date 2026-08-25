@@ -9,6 +9,7 @@ import '../../../../core/utils/gs1_barcode.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/user_app_bar.dart';
 
 class SensorLinkPage extends StatefulWidget {
   const SensorLinkPage({super.key, this.brand = SensorBrand.sibionics});
@@ -53,7 +54,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.sensorLinkTitle)),
+      appBar: UserAppBar(title: Text(l10n.sensorLinkTitle)),
       body: BlocBuilder<SensorCubit, SensorUiState>(
         builder: (context, state) {
           return ListView(
@@ -64,7 +65,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
               if (state.failure != null) ...[
                 Text(
                   l10n.genericErrorLabel(state.failure!.message),
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: AppTheme.zoneLowBg),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -276,7 +277,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
         break;
       case SensorConnectionStatus.error:
         subtitle = state.failure?.message ?? l10n.sensorFailureUnknown;
-        color = Colors.red;
+        color = AppTheme.zoneLowBg;
         icon = Icons.error_outline;
         break;
       case SensorConnectionStatus.idle:
@@ -372,7 +373,7 @@ class _TutorialStepper extends StatelessWidget {
                             color: active
                                 ? AppTheme.brandPrimary
                                 : done
-                                    ? Colors.green
+                                    ? AppTheme.zoneTargetBg
                                     : Colors.grey),
                         const SizedBox(width: 6),
                         Flexible(
@@ -422,7 +423,7 @@ class _StepCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: done
-            ? Colors.green
+            ? AppTheme.zoneTargetBg
             : active
                 ? AppTheme.brandPrimary
                 : Colors.grey.shade300,

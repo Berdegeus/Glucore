@@ -69,6 +69,8 @@ backend/.env
 *.env
 backend/prisma/*.db
 
+# Office lock files (created while a document is open; never a project artifact)
+~$*
+
 # Local tooling / assistant context
 .claude/
-CLAUDE.md

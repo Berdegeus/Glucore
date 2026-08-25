@@ -2,7 +2,7 @@
 
 > **Este arquivo é um relatório de problemas, separado da documentação estável.** Gerado por inspeção integral do código em 2026-07-05, branch `feat/insulin-and-carb-management`. **Atualizado em 2026-07-07** (branch `feat/multi-sensor-libre2-accuchek`) por uma segunda revisão independente: status de P1–P16 reavaliado contra o código atual e novos problemas P17–P35 adicionados. **Atualizado em 2026-07-30 (v1.1.0):** os 3 críticos P17, P18 e P19 foram corrigidos (ver CHANGELOG.md). Demais problemas seguem em diagnóstico.
 
-Sumário: **35 problemas** (P1–P35). Da revisão original, **8 resolvidos** (P1, P3, P7, P8, P9, P10, P14, P15), **4 parciais** (P2, P5, P11, P16) e **4 abertos** (P4, P6, P12, P13). A revisão de 2026-07-07 acrescentou os críticos P17, P18, P19 — **todos resolvidos na v1.1.0 (2026-07-30)**. Os demais de P20–P35 seguem abertos com **Solução proposta** (diagnóstico + desenho técnico). Seção A: revisão da conexão com sensores. Seção B: proposta de HAL Android/iOS.
+Sumário: **35 problemas** (P1–P35). Da revisão original, **10 resolvidos** (P1, P3, P6, P7, P8, P9, P10, P14, P15, P16), **3 parciais** (P2, P5, P11) e **3 abertos** (P4, P12, P13). P6 e P16 fecharam em 2026-08-20. A revisão de 2026-07-07 acrescentou os críticos P17, P18, P19 — **todos resolvidos na v1.1.0 (2026-07-30)**. Os demais de P20–P35 seguem abertos com **Solução proposta** (diagnóstico + desenho técnico). Seção A: revisão da conexão com sensores. Seção B: proposta de HAL Android/iOS.
 
 Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 
@@ -19,6 +19,7 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 **Local:** `backend/src/routes/carbs.ts:145-170`, `insulin.ts:179-180`, `alerts.ts:74-75`; cliente em `patient_sync_service.dart:90-117` (POST da coleção inteira)
 **Descrição:** adicionar/editar/apagar 1 item apaga **todas** as linhas do paciente e recria a coleção; máximo 100 itens (excedente silenciosamente truncado).
 **Impacto:** perda de dados em concorrência (dois devices = last-writer-wins da coleção inteira); histórico >100 entradas destruído.
+
 **🟡 Parcial (2026-07-07):** o backend ganhou endpoints por item (`POST /carbs/item`, `PUT/DELETE /carbs/item/:id` — o batch está marcado deprecated em `carbs.ts:145`) e o replace-all agora preserva ids enviados pelo cliente, **mas o app continua usando exclusivamente o replace-all em lote** (`patient_remote_datasource.dart:73-86`). O risco multi-device permanece integral. Agravante novo: o replace-all não é atômico — ver P27.
 **Solução proposta:** migrar o app para a API por item, em cima do P4 (UUID no cliente):
 1. Trocar a flag `synced` por coluna de coleção por um **op-log local**: tabela `pending_ops(id, entity, entity_id, op ∈ {upsert, delete}, payload_json, created_at)`. Cada `addCarbEntry`/`edit*`/`delete*` grava a linha do dado **e** enfileira uma op.
@@ -44,12 +45,15 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 
 ### 🟠 P5 — Nomes que mentem sobre a arquitetura
 **Local:** `auth_local_datasource.dart` (interface `AuthLocalDataSource` ← impl `RemoteAuthDataSource`)
+
 **🟡 Parcial (2026-07-07):** `patient_local_datasource.dart` agora contém um datasource local de verdade (`LocalPatientDataSource`) e o remoto vive em `patient_remote_datasource.dart` — resolvido no lado patient. Permanece a mentira no auth: `AuthLocalDataSource` é implementada só por `RemoteAuthDataSource` (`auth_local_datasource.dart:6-21`).
 **Solução proposta:** rename mecânico, sem mudança de comportamento: interface `AuthLocalDataSource` → `AuthDataSource`, arquivo `auth_local_datasource.dart` → `auth_datasource.dart`; ajustar o registro em `injection_container.dart:39-41` e imports. Se o P18 introduzir um modo offline com estado de auth cacheado, aí sim criar um `LocalAuthDataSource` real (token + userId em secure storage) e a interface volta a ter duas implementações honestas.
 
 ### 🟠 P6 — CLAUDE.md desatualizado em pontos críticos
 **Local:** `CLAUDE.md`
-**Status 2026-07-07: aberto (conteúdo mudou, desatualização persiste).** Os itens originais foram corrigidos, mas o arquivo voltou a divergir: descreve o `PatientCubit` como persistindo "via REST to the backend through RemotePatientDataSource" quando hoje a persistência primária é local/offline-first com sync em background, e não menciona `LocalPatientDataSource`, `PatientSyncService` nem o suporte multi-marca (Accu-Chek/Libre 2, `BrandBleManager`, `SensorCore`, `CgmForegroundService`).
+**✅ Resolvido (2026-08-20).** O arquivo foi reescrito contra o código: `CLAUDE.md:44-48` descreve a persistência local-first (`PatientRepository` → `LocalPatientDataSource` sqflite + `PatientSyncService`), `CLAUDE.md:74-85` traz o mapa `GlucoreApp → SensorCore → SensorPlatformImpl → BrandBleManager {Sibionics, AccuChek, Libre2}` com `CgmForegroundService` e `LibreNfcHandler`, e `CLAUDE.md:15` fixa a regra de que detalhe volátil vive em `docs/`. Três divergências extras foram encontradas e corrigidas no caminho: o painel de debug e o `MockSensorRepository` não existem mais (revertidos em `f91adea`), a faixa do packed reading estava documentada como 200..10000 quando o decoder aceita 400..6000, e a lista de métodos do canal não tinha as chamadas NFC do Libre. **Causa tratada, não só o sintoma:** o arquivo deixou de ser gitignored (`.gitignore` perdeu a linha `CLAUDE.md`) e passou a ser versionado, então a divergência agora aparece em diff de PR; o item de checklist "mudou camada ou fluxo? atualizou CLAUDE.md/docs?" está em `docs/guides/qa-process.md`.
+
+**Histórico — Status 2026-07-07: aberto (conteúdo mudou, desatualização persiste).** Os itens originais foram corrigidos, mas o arquivo voltou a divergir: descreve o `PatientCubit` como persistindo "via REST to the backend through RemotePatientDataSource" quando hoje a persistência primária é local/offline-first com sync em background, e não menciona `LocalPatientDataSource`, `PatientSyncService` nem o suporte multi-marca (Accu-Chek/Libre 2, `BrandBleManager`, `SensorCore`, `CgmForegroundService`).
 **Solução proposta:** tratar a causa, não só o sintoma:
 1. Reescrever as seções divergentes: `PatientCubit` = escrita local-first (`LocalPatientDataSource`) + `PatientSyncService` (debounce/retry/connectivity) + `refreshFromRemote`; camada Android = `GlucoreApp → SensorCore → SensorPlatformImpl → BrandBleManager {Sibionics, AccuChek, Libre2} + CgmForegroundService + LibreNfcHandler`.
 2. Reduzir o CLAUDE.md a invariantes estáveis (constraints nativas, comandos, mapa de camadas) e mover detalhe volátil para `docs/` — a regra "quando conflitar, docs/ vence" já existe; o CLAUDE.md deve parar de duplicar o que muda por sprint.
@@ -69,6 +73,7 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 **✅ Resolvido (Fase 2.2):** `registerSensor` retorna o snapshot (ou `PlatformException`) no MethodChannel; `SensorCore` guarda o último evento e o `onListen` do EventChannel o reemite ao novo sink (`SensorCore.kt:156-165`). Efeito colateral novo: erro chega duplicado (exceção + evento) — ver P29.
 
 ### 🟡 P11 — Segurança do backend: segredo default, CORS aberto, sem rate-limit
+
 **🟡 Parcial (2026-07-07):** `JWT_SECRET` agora é obrigatório com fail-fast no boot (`backend/src/lib/env.ts:1-11`) e o CORS é restringível por `CORS_ORIGIN` (`index.ts:17-21`) — mas sem a env cai em `cors()` aberto. Rate-limit em `/auth/login`/forgot-password continua ausente.
 **Solução proposta:**
 1. `express-rate-limit` escopado nas rotas de auth: ex. login 10 req/15 min por IP, register 5/15 min, forgot-password 3/h; resposta 429 com `Retry-After`. Montar só em `/auth`, não global (o sync do app é legitimamente chatty).
@@ -97,7 +102,10 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 **✅ Resolvido (2026-07-07):** migração aditiva por versão com comentário proibindo DROP (`SensorSessionManager.kt:136-143`).
 
 ### ⚪ P16 — Validações e heurísticas frágeis no caminho de leitura
-**🟡 Parcial (2026-07-07):** decodificação extraída para `SibionicsGlucoseDecoder` (Kotlin puro, testável), faixa aceita restringida para 40–600 mg/dL (`SibionicsGlucoseDecoder.kt:18-19`), e códigos desconhecidos de `SIprocessData` só são tentados como leitura quando um history sync já produziu timestamp (`SibionicsBleManager.kt:216-225`). Residual: durante um sync ativo, um código vendor inesperado ainda pode virar leitura plausível; a heurística s/ms de timestamp permanece (`SibionicsGlucoseDecoder.kt:58-62`).
+
+**✅ Resolvido (2026-08-20).** O residual foi fechado no decoder puro: `SibionicsGlucoseDecoder.kt:51` rejeita qualquer payload com bits 56–63 diferentes de zero (bits não usados pelo formato) e `SibionicsGlucoseDecoder.kt:79-84` acrescenta `decodeUnsolicited`, que descarta todo valor abaixo de `0x10000` — ou seja, sem bits de rate/alarm — porque nessa faixa um código de protocolo é indistinguível de uma leitura. `SibionicsBleManager.kt:278-284` passou a usar esse caminho e loga o descarte com o valor bruto. A heurística s/ms continua, mas agora `normalizeTimestamp` devolve `usedFallback` (`SibionicsGlucoseDecoder.kt:97-98`) e `SibionicsBleManager.kt:258-264` registra em log quando o relógio do device foi usado, o que torna sensor com relógio quebrado detectável em campo. Cobertura: `SibionicsGlucoseDecoderTest` foi de 10 para 17 testes, e as quatro mutações do sensor de discriminação (remover o gate de bits altos, zerar o limiar de `decodeUnsolicited`, fixar `usedFallback` em false, alargar a faixa) são todas mortas por teste.
+
+**Histórico — 🟡 Parcial (2026-07-07):** decodificação extraída para `SibionicsGlucoseDecoder` (Kotlin puro, testável), faixa aceita restringida para 40–600 mg/dL (`SibionicsGlucoseDecoder.kt:18-19`), e códigos desconhecidos de `SIprocessData` só são tentados como leitura quando um history sync já produziu timestamp (`SibionicsBleManager.kt:216-225`). Residual: durante um sync ativo, um código vendor inesperado ainda pode virar leitura plausível; a heurística s/ms de timestamp permanece (`SibionicsGlucoseDecoder.kt:58-62`).
 **Solução proposta:**
 1. Fechar o residual do `handleDirectGlucoseResult`: além do gate por `lastSyncedTimestampMs`, exigir estrutura de leitura plausível — código com bits de rate/alarm coerentes (ex.: rejeitar quando os bits 56–63, não usados pelo formato, são ≠ 0) e valor pequeno demais para ser um packed reading (`code < 0x10000` já cobre os códigos de protocolo 1–10; nunca decodificar nessa faixa).
 2. Timestamp: manter a heurística s/ms mas registrar métrica/log estruturado sempre que o fallback `System.currentTimeMillis()` for usado, para detectar sensor com relógio quebrado em campo.
@@ -241,7 +249,9 @@ Cada evento só começa quando o anterior terminou (incluindo os awaits de `repo
 
 ### 🟡 P30 — Atalho de pareamento do monitor ignora a marca do sensor
 **Local:** `monitoring_home_page.dart:178-188` (ícone Bluetooth → `SensorLinkPage()` com brand default Sibionics)
-**Descrição:** o único atalho de pareamento da home abre sempre o fluxo Sibionics (copy, GS1, stepper). Usuário de Libre 2 (que precisa da página NFC) ou Accu-Chek recebe instruções erradas; a `SensorChoicePage` só é alcançável por Configurações/Perfil (e hoje crasha — P17).
+**✅ Resolvido (2026-08-20).** O ícone Bluetooth da home passou a abrir `SensorChoicePage` (`monitoring_home_page.dart:160-166`) em vez de `SensorLinkPage()` fixo — usuário de qualquer marca escolhe primeiro. A extração do helper `openSensorFlow` sugerida abaixo não foi feita (fix pontual, sem tocar `SensorChoicePage`/Configurações/Perfil, que já resolvem a marca corretamente cada um por conta própria); fica como melhoria futura se a duplicação incomodar. Regressão coberta por `monitoring_home_page_test.dart` ("P30: pairing icon opens brand selection, not a fixed brand flow").
+
+**Histórico — Descrição:** o único atalho de pareamento da home abre sempre o fluxo Sibionics (copy, GS1, stepper). Usuário de Libre 2 (que precisa da página NFC) ou Accu-Chek recebe instruções erradas; a `SensorChoicePage` só é alcançável por Configurações/Perfil (e hoje crasha — P17).
 **Solução proposta:** roteamento por estado da sessão no `onPressed` do ícone: sem sessão → `SensorChoicePage` (escolher marca); com sessão → página da marca ativa via `switch (sensorState.brand)` — `libre2` → `LibreNFCPage`, demais → `SensorLinkPage(brand: sensorState.brand)`. Extrair esse switch para um helper único (`openSensorFlow(context, state)`) e usá-lo também na `SensorChoicePage` e em Configurações/Perfil, para o mapeamento marca→página existir num lugar só. Depende do P17 para as rotas serem escopadas.
 
 ### 🟡 P31 — AuthCubit sinaliza erro com estado transiente duplo

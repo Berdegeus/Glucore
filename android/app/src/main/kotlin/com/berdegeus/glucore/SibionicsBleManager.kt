@@ -226,8 +226,9 @@ class SibionicsBleManager(
                 // Only attempt to interpret an unknown code as a packed reading
                 // once this connection finished the handshake; otherwise an
                 // unexpected vendor return value could masquerade as glucose.
-                // The plausibility range in decodePackedGlucose is the second
-                // gate, so a stray in-range value still has to survive that.
+                // decodeUnsolicited is the second gate: it drops anything
+                // without rate/alarm bits and re-checks the plausible range,
+                // so a stray in-range value still has to survive that.
                 if (handshakeSettled) {
                     handleDirectGlucoseResult(code, timestampMs)
                 } else {
@@ -250,10 +251,18 @@ class SibionicsBleManager(
 
         Log.d(tag, "getlastGlucose raw: ${readings.toList()}")
 
-        val timestampMs = SibionicsGlucoseDecoder.normalizeTimestampMs(
+        val normalized = SibionicsGlucoseDecoder.normalizeTimestamp(
             rawTimestamp = readings.firstOrNull(),
             fallbackTimestampMs = System.currentTimeMillis()
         )
+        if (normalized.usedFallback) {
+            Log.w(
+                tag,
+                "getlastGlucose timestamp unusable (raw=${readings.firstOrNull()}); " +
+                    "falling back to device clock ${normalized.valueMs}"
+            )
+        }
+        val timestampMs = normalized.valueMs
         val packedReading = if (readings.size >= 2) readings[1] else readings[0]
         val decoded = decodePackedGlucose(
             packedReading = packedReading,
@@ -266,16 +275,19 @@ class SibionicsBleManager(
     }
 
     private fun handleDirectGlucoseResult(result: Long, timestampMs: Long) {
-        var decoded = decodePackedGlucose(
+        var decoded = SibionicsGlucoseDecoder.decodeUnsolicited(
             packedReading = result,
-            timestampMs = timestampMs,
-            source = "SIprocessData",
-            hasReliableSensorTimestamp = false
+            timestampMs = timestampMs
         )
         if (decoded == null) {
-            Log.w(tag, "Unhandled SIprocessData result: $result")
+            Log.w(tag, "Discarded unsolicited SIprocessData result: $result")
             return
         }
+        Log.i(
+            tag,
+            "Decoded glucose from SIprocessData: ${decoded.mgdl} mg/dL " +
+                "rate=${decoded.rate} alarm=${decoded.alarmCode}"
+        )
 
         val syncedTimestampMs = lastSyncedTimestampMs
         if (!hasDeliveredCurrentReading &&

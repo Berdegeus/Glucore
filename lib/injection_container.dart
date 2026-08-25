@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 
 import 'core/api/api_client.dart';
 import 'core/api/auth_token_store.dart';
+import 'core/session/session_expiry_notifier.dart';
 import 'features/auth/data/datasources/account_service.dart';
 import 'features/auth/data/datasources/auth_local_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -17,6 +18,7 @@ import 'features/patient/data/datasources/patient_remote_datasource.dart';
 import 'features/patient/data/repositories/patient_repository.dart';
 import 'features/patient/data/sync/patient_sync_service.dart';
 import 'features/patient/presentation/cubit/patient_cubit.dart';
+import 'features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'features/sensor/data/platform/sensor_platform.dart';
 import 'features/sensor/data/repositories/android_sensor_repository.dart';
 import 'features/sensor/domain/sensor_repository.dart';
@@ -31,9 +33,14 @@ Future<void> initDependencies() async {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
   final tokenStore = AuthTokenStore(secureStorage);
-  final dio = ApiClient.create(tokenStore);
+  final sessionExpiry = SessionExpiryNotifier();
+  final dio = ApiClient.create(tokenStore, sessionExpiry);
 
   sl.registerLazySingleton<AuthTokenStore>(() => tokenStore);
+  sl.registerLazySingleton<SessionExpiryNotifier>(
+    () => sessionExpiry,
+    dispose: (notifier) => notifier.dispose(),
+  );
   sl.registerLazySingleton<AccountService>(() => AccountService(dio));
 
   sl.registerLazySingleton<AuthLocalDataSource>(
@@ -84,4 +91,5 @@ Future<void> initDependencies() async {
   );
   sl.registerFactory(() => SensorCubit(repository: sl()));
   sl.registerFactory(() => PatientCubit(repository: sl()));
+  sl.registerFactory(() => UserIdentityCubit(accountService: sl()));
 }

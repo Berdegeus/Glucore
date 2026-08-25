@@ -6,6 +6,7 @@ class RegisterParams {
     required this.fullName,
     required this.email,
     required this.password,
+    this.phone,
     this.birthDate,
     this.weightKg,
     this.targetRangeMin,
@@ -15,6 +16,7 @@ class RegisterParams {
   final String fullName;
   final String email;
   final String password;
+  final String? phone;
   final DateTime? birthDate;
   final double? weightKg;
   final int? targetRangeMin;
@@ -32,6 +34,7 @@ class RegisterUseCase implements UseCase<bool, RegisterParams> {
       fullName: params.fullName,
       email: params.email,
       password: params.password,
+      phone: params.phone,
       birthDate: params.birthDate,
       weightKg: params.weightKg,
       targetRangeMin: params.targetRangeMin,

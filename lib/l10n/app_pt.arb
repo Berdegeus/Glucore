@@ -28,8 +28,19 @@
   "genericPasswordLabel": "Senha",
   "genericInvalidEmailError": "Informe um e-mail válido",
   "genericPasswordMinLengthError": "A senha deve ter ao menos 8 caracteres",
+  "passwordPolicyMinLengthError": "A senha deve ter ao menos 8 caracteres",
+  "passwordPolicyUppercaseError": "A senha deve conter ao menos uma letra maiúscula",
+  "passwordPolicyLowercaseError": "A senha deve conter ao menos uma letra minúscula",
+  "passwordPolicyDigitError": "A senha deve conter ao menos um número",
+  "passwordPolicySpecialError": "A senha deve conter ao menos um caractere especial",
+  "passwordPolicyHint": "Mínimo de 8 caracteres, com maiúscula, minúscula, número e caractere especial",
+  "fieldOptionalSuffix": "(opcional)",
   "genericNumericValueError": "Informe um valor numérico",
   "genericRequiredFieldError": "Campo obrigatório",
+  "genericPhoneLabel": "Telefone",
+  "genericPhoneHint": "(00) 00000-0000",
+  "genericPhoneIncompleteError": "Telefone incompleto",
+  "genericInvalidDateError": "Data inválida",
   "genericResetButton": "Resetar",
   "genericCancelButton": "Cancelar",
   "genericDisconnectButton": "Desconectar",
@@ -52,6 +63,8 @@
       "value": {}
     }
   },
+  "genericSensorSectionTitle": "Sensor",
+  "genericDataSectionTitle": "Dados",
   "loginTitle": "Entrar",
   "loginWelcomeTitle": "Bem-vindo ao Glucore",
   "loginSubtitle": "Acompanhe seus dados de CGM com clareza e confiança.",
@@ -67,6 +80,7 @@
   "forgotPasswordSuccessMessage": "Se o e-mail estiver cadastrado, as instruções foram enviadas.",
   "forgotPasswordNetworkError": "Sem conexão. Verifique sua rede e tente novamente.",
   "forgotPasswordTokenLabel": "Código recebido por e-mail",
+  "forgotPasswordTokenHint": "O código chega por e-mail e expira em 6 horas",
   "forgotPasswordNewPasswordLabel": "Nova senha",
   "forgotPasswordResetButton": "Redefinir senha",
   "forgotPasswordResetSuccess": "Senha redefinida com sucesso. Faça login para continuar.",
@@ -172,6 +186,18 @@
   "settingsSensorLinkTile": "Vinculação de sensor CGM",
   "settingsAlertSettingsTile": "Configuração de alertas",
   "settingsLogoutTile": "Sair da conta",
+  "settingsGlucoseSectionTitle": "Glicose",
+  "settingsGlucoseAlertsRowLabel": "Alertas de glicose",
+  "settingsConfigureRowValue": "Configurar",
+  "settingsManageSensorRowLabel": "Gerenciar sensor",
+  "settingsSelectRowValue": "Selecionar",
+  "settingsExportDataRowLabel": "Exportar dados",
+  "settingsComingSoonRowValue": "Em breve",
+  "settingsLogoutConfirmMessage": "Deseja sair da sua conta?",
+  "settingsNotificationsSectionTitle": "NOTIFICAÇÕES",
+  "settingsLowGlucoseAlertToggleLabel": "Alerta de glicose baixa",
+  "settingsHighGlucoseAlertToggleLabel": "Alerta de glicose alta",
+  "settingsSignalLossToggleLabel": "Perda de sinal",
   "sensorLinkTitle": "Vincular sensor CGM",
   "sensorLinkRebindAttemptMessage": "Tentando revincular sensor...",
   "sensorLinkRebindButton": "Revincular sensor",
@@ -214,9 +240,15 @@
   "profileBirthDateLabel": "Data de nascimento",
   "profileWeightLabel": "Peso (kg)",
   "profileTargetRangeLabel": "Faixa alvo de glicose (mg/dL)",
+  "profileWeightHint": "kg",
+  "profileTargetRangeHelper": "Formato mín-máx em mg/dL, por exemplo 80-180",
+  "profileTargetRangeFormatError": "Use o formato 80-180, com o valor mínimo menor que o máximo",
+  "registerConfirmPasswordLabel": "Confirmar senha",
   "profileUpdatedSuccessMessage": "Perfil atualizado com sucesso.",
   "profileSaveChangesButton": "Salvar alterações",
   "profileAccountSectionTitle": "Conta",
+  "profileCurrentEmailLabel": "E-mail atual",
+  "profileAccountCreatedAtLabel": "Conta criada em",
   "profileCurrentPasswordLabel": "Senha atual",
   "profileNewEmailLabel": "Novo e-mail",
   "profileNewPasswordLabel": "Nova senha",
@@ -227,12 +259,75 @@
   "profilePasswordMismatch": "As senhas não coincidem.",
   "profileEmailSaveButton": "Atualizar e-mail",
   "profilePasswordSaveButton": "Atualizar senha",
+  "profileChangePasswordLink": "Alterar senha",
+  "profileEditProfileLink": "Editar perfil",
+  "profileSensorIdRowLabel": "ID do sensor",
+  "profileLastReadingRowLabel": "Última leitura",
+  "profileDaysLeftRowLabel": "Dias restantes",
+  "profileDaysLeftValue": "{days} dias",
+  "@profileDaysLeftValue": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "profileGlucoseTargetsSectionTitle": "Metas de glicose",
+  "profileLowAlertRowLabel": "Alerta baixo",
+  "profileHighAlertRowLabel": "Alerta alto",
+  "profileReadingsHistoryRowLabel": "Histórico de leituras",
+  "profileReadingsCountValue": "{count} leituras",
+  "@profileReadingsCountValue": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "profileSharedCareTitle": "Cuidado compartilhado",
+  "profileSharedCareSubtitle": "Em breve — conecte seu médico",
+  "changePasswordTitle": "Alterar senha",
   "monitoringStaleReadingBadge": "Desconectado · leitura de {time}",
   "@monitoringStaleReadingBadge": {
     "placeholders": {
       "time": {}
     }
   },
+  "monitoringPairSensorTooltip": "Parear sensor",
+  "monitoringCarbPopupTitle": "{grams} g carb",
+  "@monitoringCarbPopupTitle": {
+    "placeholders": {
+      "grams": {}
+    }
+  },
+  "monitoringInsulinPopupTitle": "{units} UI · {type}",
+  "@monitoringInsulinPopupTitle": {
+    "placeholders": {
+      "units": {},
+      "type": {}
+    }
+  },
+  "monitoringChartSectionTitle": "Últimas 12 horas",
+  "monitoringTimeInTargetLabel": "Tempo no alvo",
+  "monitoringAverageLabel": "Média",
+  "monitoringGmiEstimateLabel": "GMI est.",
+  "monitoringSensorDaysLeftLabel": "{days}d restantes · {sensorId}",
+  "@monitoringSensorDaysLeftLabel": {
+    "placeholders": {
+      "days": {},
+      "sensorId": {}
+    }
+  },
+  "monitoringNoSensorScanningTitle": "Procurando sensor…",
+  "monitoringNoSensorScanningSubtitle": "Aguardando sinal Bluetooth",
+  "monitoringNoSensorConnectingTitle": "Conectando…",
+  "monitoringNoSensorConnectingSubtitle": "Estabelecendo conexão com o sensor",
+  "monitoringNoSensorPairingTitle": "Pareamento necessário",
+  "monitoringNoSensorPairingSubtitle": "Digite o PIN do sensor no diálogo do sistema",
+  "monitoringNoSensorSyncingTitle": "Sincronizando histórico",
+  "monitoringNoSensorSyncingSubtitle": "Aguardando leituras do sensor",
+  "monitoringNoSensorWarmingTitle": "Aquecendo sensor",
+  "monitoringNoSensorWarmingSubtitle": "O sensor está se calibrando",
+  "monitoringNoSensorErrorTitle": "Erro de conexão",
+  "monitoringNoSensorErrorSubtitle": "Verifique o sensor e tente novamente",
+  "monitoringNoSensorDefaultTitle": "Sem sensor conectado",
+  "monitoringNoSensorDefaultSubtitle": "Toque no ícone Bluetooth para parear",
   "carbEntryTitle": "Registrar carboidrato",
   "carbEntryQuantityLabel": "Quantidade (g)",
   "carbEntryDescriptionLabel": "Descrição da refeição",
@@ -314,5 +409,7 @@
   "sensorFailureUnknown": "Não foi possível concluir a operação com o sensor.",
   "registerEmailAlreadyExistsError": "Este e-mail já está cadastrado.",
   "authNetworkError": "Sem conexão. Verifique sua rede.",
+  "authSessionExpiredWarning": "Sua sessão expirou. Entre novamente.",
+  "authServiceUnavailableError": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
   "authServerError": "Erro no servidor. Tente novamente."
 }

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/user_app_bar.dart';
 import 'alert_settings_page.dart';
 import 'sensor_choice_page.dart';
 
@@ -27,19 +28,16 @@ class _SettingsPageState extends State<SettingsPage> {
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceElevated,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surfaceCanvas,
-        title: Text(l10n.settingsTitle),
-      ),
+      appBar: UserAppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
         children: [
           GlucoreSectionCard(
-            title: 'Glicose',
+            title: l10n.settingsGlucoseSectionTitle,
             rows: [
               GlucoreSectionRow(
-                label: 'Alertas de glicose',
-                value: 'Configurar',
+                label: l10n.settingsGlucoseAlertsRowLabel,
+                value: l10n.settingsConfigureRowValue,
                 onTap: () => Navigator.of(context).push(
                   buildPatientScopedRoute(context, const AlertSettingsPage()),
                 ),
@@ -48,11 +46,11 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           GlucoreSectionCard(
-            title: 'Sensor',
+            title: l10n.genericSensorSectionTitle,
             rows: [
               GlucoreSectionRow(
-                label: 'Gerenciar sensor',
-                value: 'Selecionar',
+                label: l10n.settingsManageSensorRowLabel,
+                value: l10n.settingsSelectRowValue,
                 onTap: () => Navigator.of(context).push(
                   buildPatientScopedRoute(
                     context,
@@ -74,11 +72,11 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           GlucoreSectionCard(
-            title: 'Dados',
+            title: l10n.genericDataSectionTitle,
             rows: [
               GlucoreSectionRow(
-                label: 'Exportar dados',
-                value: 'Em breve',
+                label: l10n.settingsExportDataRowLabel,
+                value: l10n.settingsComingSoonRowValue,
                 // TODO: implement PDF export with pdf package
               ),
             ],
@@ -102,11 +100,11 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text(l10n.settingsLogoutTile),
-        content: const Text('Deseja sair da sua conta?'),
+        content: Text(l10n.settingsLogoutConfirmMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(l10n.genericCancelButton),
           ),
           TextButton(
             onPressed: () {
@@ -141,14 +139,15 @@ class _NotifSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 8),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            'NOTIFICAÇÕES',
-            style: TextStyle(
+            l10n.settingsNotificationsSectionTitle,
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: AppTheme.inkMuted,
@@ -164,19 +163,19 @@ class _NotifSection extends StatelessWidget {
           child: Column(
             children: [
               _ToggleRow(
-                label: 'Alerta de glicose baixa',
+                label: l10n.settingsLowGlucoseAlertToggleLabel,
                 value: notifLow,
                 onChanged: onLowChanged,
               ),
               const Divider(height: 1, indent: 16, endIndent: 16),
               _ToggleRow(
-                label: 'Alerta de glicose alta',
+                label: l10n.settingsHighGlucoseAlertToggleLabel,
                 value: notifHigh,
                 onChanged: onHighChanged,
               ),
               const Divider(height: 1, indent: 16, endIndent: 16),
               _ToggleRow(
-                label: 'Perda de sinal',
+                label: l10n.settingsSignalLossToggleLabel,
                 value: notifSignal,
                 onChanged: onSignalChanged,
               ),
