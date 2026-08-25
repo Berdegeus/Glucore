@@ -42,7 +42,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # 22, not 20: `node --test` only expands glob patterns from Node 21 on.
+          # On 20 the `tests/**/*.test.ts` argument is taken as a literal path.
+          node-version: "22"
       - run: npm install
       - run: npx tsc --noEmit
       - run: npm test
