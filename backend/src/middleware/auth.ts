@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../lib/env';
+import { getJwtSecret } from '../lib/env';
 import { prisma } from '../lib/prisma';
 
 export interface AuthRequest extends Request {
@@ -15,7 +15,7 @@ export function verifyJwt(req: AuthRequest, res: Response, next: NextFunction): 
   }
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as unknown as { sub: string };
+    const payload = jwt.verify(token, getJwtSecret()) as unknown as { sub: string };
     req.userId = payload.sub;
     next();
   } catch {

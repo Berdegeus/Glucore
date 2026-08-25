@@ -2,19 +2,20 @@ import { describe, expect, it } from 'vitest';
 import jwt from 'jsonwebtoken';
 import type { NextFunction, Response } from 'express';
 
+import { requireRole, verifyJwt } from '../../src/middleware/auth';
+
 /**
  * Spec: TCC-12 — spec.md "P2: Autorização por papel e sessão inválida tratada"
  * AC1, AC2 and AC4, plus the TOKEN_INVALID / FORBIDDEN_ROLE rows of the
  * design's "Contratos de erro (backend -> app)" table.
  *
- * `src/lib/env.ts` aborts the process when JWT_SECRET is unset, so the secret is
- * set before the middleware module is loaded.
+ * The secret is read per call by `getJwtSecret()`, not at import time, so a
+ * plain static import is enough — setting it before the assertions run is all
+ * that matters.
  */
 
 const JWT_SECRET = 'test-secret-for-unit-tests';
 process.env.JWT_SECRET = JWT_SECRET;
-
-const { verifyJwt, requireRole } = await import('../../src/middleware/auth');
 
 interface Captured {
   status?: number;

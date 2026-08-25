@@ -1,45 +1,26 @@
 import 'dotenv/config';
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-import authRouter from './routes/auth';
-import readingsRouter from './routes/readings';
-import carbsRouter from './routes/carbs';
-import insulinRouter from './routes/insulin';
-import alertsRouter from './routes/alerts';
-import settingsRouter from './routes/settings';
-import { prismaErrorHandler } from './middleware/prismaError';
+import { buildApp } from './app';
+import { loadEnv } from './lib/env';
 
-const app = express();
-const PORT = process.env.PORT ?? 3001;
+/**
+ * Process bootstrap. Everything that assembles the application lives in
+ * `app.ts`; this file only reads the environment and binds the port.
+ *
+ * `loadEnv` throws on bad configuration rather than exiting, so the exit code is
+ * decided here — a server with no JWT_SECRET must still refuse to start.
+ */
+function main(): void {
+  const env = loadEnv();
+  const app = buildApp({ corsOrigins: env.corsOrigins, requestLogging: true });
 
-// Restrict CORS to the origins listed in CORS_ORIGIN (comma-separated).
-// When unset, stay permissive for local development.
-const corsOrigins = process.env.CORS_ORIGIN?.split(',')
-  .map((origin) => origin.trim())
-  .filter((origin) => origin.length > 0);
+  app.listen(env.port, () => {
+    console.log(`Glucore backend running on :${env.port}`);
+  });
+}
 
-app.use(corsOrigins && corsOrigins.length > 0 ? cors({ origin: corsOrigins }) : cors());
-app.use(express.json());
-app.use(morgan('dev'));
-
-app.use('/auth', authRouter);
-app.use('/readings', readingsRouter);
-app.use('/carbs', carbsRouter);
-app.use('/insulin', insulinRouter);
-app.use('/alerts', alertsRouter);
-app.use('/settings', settingsRouter);
-
-// Classifies known failures into `{ error, code }`; the handler below is the
-// last-resort net for anything it delegates (response already started).
-app.use(prismaErrorHandler);
-
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(`[${new Date().toISOString()}] Unhandled error: ${err.message}`);
-  if (process.env.NODE_ENV !== 'production') console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-app.listen(PORT, () => {
-  console.log(`Glucore backend running on :${PORT}`);
-});
+try {
+  main();
+} catch (error) {
+  console.error(`FATAL: ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+}

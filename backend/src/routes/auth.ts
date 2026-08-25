@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
-import { JWT_SECRET } from '../lib/env';
+import { getJwtSecret } from '../lib/env';
 import { assertStrongPassword } from '../lib/passwordPolicy';
 import { auditRequestContext, recordAudit } from '../lib/audit';
 
@@ -61,7 +61,7 @@ type ProfileBody = {
 };
 
 function signToken(userId: string): string {
-  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign({ sub: userId }, getJwtSecret(), { expiresIn: '30d' });
 }
 
 function normalizeEmail(email: string): string {
