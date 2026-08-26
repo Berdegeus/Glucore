@@ -4,24 +4,73 @@ API REST do app Glucore: autenticação JWT e CRUD dos dados do paciente (leitur
 
 O app Flutter é offline-first: escreve local primeiro e empurra para cá em background (`PatientSyncService`). Esta API é o destino desse push e a fonte de reconciliação, não o caminho crítico da UI.
 
+## Arquitetura
+
+O backend é um **monorepo npm workspaces**. Hoje há um serviço; o alvo são três
+(`gateway`, `auth-service`, `glucose-service`), e o layout já é o de destino.
+
+```
+backend/
+  package.json                 # workspaces: packages/*, services/*
+  tsconfig.base.json           # composite: true — project references, não `paths`
+  vitest.config.ts             # opções de RAIZ (projects, coverage, paralelismo)
+  packages/shared/src/         # código sem dono de banco: errors/, http/, util/, audit/
+  services/glucose-service/    # a API atual
+```
+
+`packages/shared` **não depende de `@prisma/client`**: o contrato de erro é uma cadeia de
+classifiers (`createErrorHandler`), e o link que conhece Prisma vive no serviço. É o que permitirá
+ao gateway consumir o mesmo handler sem arrastar um cliente de banco que ele não usa.
+
+Dentro do serviço, cada área de domínio é um módulo com camadas explícitas:
+
+```
+src/modules/<nome>/
+  <nome>.routes.ts       Router, zero lógica
+  <nome>.controller.ts   só req/res
+  <nome>.service.ts      regra de negócio; lança AppError; sem express, sem prisma
+  <nome>.repository.ts   I<Nome>Repository + Prisma<Nome>Repository
+  <nome>.schema.ts       validação e tipos
+  <nome>.mapper.ts       linha Prisma <-> DTO
+```
+
+Módulos: `readings`, `carbs`, `insulin`, `alerts`, `settings`, `patient`. As dependências são
+injetadas por construtor a partir de `src/container.ts`, escrito à mão — nesse tamanho o wiring é
+três linhas por módulo e continua tipado, enquanto um container com decorators custaria um passo de
+build de metadados e esconderia o grafo.
+
+`src/routes/auth.ts` é a única rota ainda não convertida: ela escreve `User`, `Patient` e
+`AuthCredential` numa transação só, e parti-la pertence à extração do `auth-service`.
+
+`buildApp(options)` monta o Express **sem** chamar `listen`, e aceita um `container` opcional — é o
+que permite `request(buildApp())` no supertest e repositórios em memória nos testes de unidade.
+
 ## Setup
 
 ```bash
 cd backend
 npm install
-cp .env.example .env          # preencha DATABASE_URL e JWT_SECRET
-npx prisma migrate dev        # cria/atualiza o schema e gera o client
+cp services/glucose-service/.env.example services/glucose-service/.env   # DATABASE_URL e JWT_SECRET
+npm run migrate:dev           # cria/atualiza o schema e gera o client
 npm run dev                   # sobe em http://localhost:3001
 ```
 
-Outros comandos:
+Outros comandos, todos a partir de `backend/`:
 
 | Comando | O que faz |
 |---|---|
-| `npm run build` | Compila TypeScript para `dist/` |
-| `npm start` | Roda o build de `dist/index.js` |
-| `npm test` | Suíte do runner nativo do Node (`node --test`), sem banco |
-| `npx tsc --noEmit` | Checagem de tipos isolada |
+| `npm run build` | `tsc -b` dos projetos **e** typecheck de `tests/` |
+| `npm test` | Vitest, 312 testes. A integração exige Postgres — ver abaixo |
+| `npm run test:coverage` | Idem com cobertura v8; os thresholds reprovam numa queda |
+| `npm run migrate:deploy` | Aplica migrations num ambiente já provisionado |
+
+Não use `npx tsc --noEmit`: sem `tsconfig.json` na raiz ele não acha projeto, **imprime o texto de
+ajuda e sai 0**. E `--noEmit` é incompatível com `composite: true`, que as project references
+exigem. `npm run build` é a checagem de tipos.
+
+Os testes de integração rodam contra um Postgres real, não contra um mock — é a única forma de
+verificar as constraints e o SQL. A URL sai de `services/glucose-service/.env.test` (copiar de
+`.env.test.example`); esse arquivo é por máquina e não é versionado.
 
 O app conecta com `--dart-define=API_URL=http://<ip-da-máquina>:3001`. Sem esse define, o padrão é `http://localhost:3001` (`lib/core/api/api_client.dart`) — que só funciona em emulador, não em device físico.
 
@@ -29,8 +78,8 @@ O app conecta com `--dart-define=API_URL=http://<ip-da-máquina>:3001`. Sem esse
 
 | Variável | Obrigatória | Efeito |
 |---|---|---|
-| `JWT_SECRET` | **sim** | Segredo de assinatura do JWT. Ausente ou vazio, o processo **aborta no boot** com mensagem explícita (`src/lib/env.ts`). Não existe fallback de desenvolvimento. |
-| `DATABASE_URL` | **sim** | String de conexão PostgreSQL usada pelo Prisma (`prisma/schema.prisma:3`). |
+| `JWT_SECRET` | **sim** | Segredo de assinatura do JWT. Ausente ou vazio, `loadEnv()` lança `MissingEnvError` e o bootstrap sai com código 1 — o processo **não sobe** (`services/glucose-service/src/lib/env.ts`, `src/index.ts`). Não existe fallback de desenvolvimento. O `throw` é deliberado no lugar de `process.exit`: um `exit` alcançável por import derruba o worker do runner de teste sem falha reportada e sem saída. |
+| `DATABASE_URL` | **sim** | String de conexão PostgreSQL usada pelo Prisma (`services/glucose-service/prisma/schema.prisma`). |
 | `PORT` | não | Porta HTTP. Padrão `3001`. |
 | `CORS_ORIGIN` | não | Lista de origens separadas por vírgula. Definida, restringe o CORS a elas; ausente, o CORS fica permissivo (conveniente em desenvolvimento, **defina em produção**). |
 | `NODE_ENV` | não | Fora de `production`, o handler de erro imprime o stack trace no log. |
@@ -42,7 +91,7 @@ O app conecta com `--dart-define=API_URL=http://<ip-da-máquina>:3001`. Sem esse
 - **Autorização**: as rotas de dados do paciente exigem papel `PATIENT`, lido do banco a cada requisição (não do JWT), então um rebaixamento vale na hora.
 - **Erros**: toda falha de autenticação e de banco responde `{ "error": "...", "code": "..." }`. O app decide pelo `code`, nunca pelo status isolado — `401` significa coisas diferentes em "token inválido" e em "senha atual errada".
 - **Tempo**: todo timestamp de entrada e saída é epoch em milissegundos (`timestampMs`, `timeMs`).
-- **Senha forte**: mínimo 8 caracteres com maiúscula, minúscula, dígito e caractere não alfanumérico (`src/lib/passwordPolicy.ts`). Vale em cadastro, redefinição e troca no perfil; **não** vale no login.
+- **Senha forte**: mínimo 8 caracteres com maiúscula, minúscula, dígito e caractere não alfanumérico (`services/glucose-service/src/lib/passwordPolicy.ts`). Vale em cadastro, redefinição e troca no perfil; **não** vale no login.
 
 ### Códigos de erro
 
@@ -390,4 +439,6 @@ A trilha nunca guarda senha, hash, token de redefinição nem valores de campo; 
 
 ## Migrations
 
-Toda mudança em `prisma/schema.prisma` acompanha a migration versionada em `prisma/migrations/`, no mesmo PR. Aplicar: `npx prisma migrate dev` em desenvolvimento, `npx prisma migrate deploy` em ambiente já provisionado.
+Toda mudança em `services/glucose-service/prisma/schema.prisma` acompanha a migration versionada em `services/glucose-service/prisma/migrations/`, no mesmo PR. Aplicar: `npm run migrate:dev` em desenvolvimento, `npm run migrate:deploy` em ambiente já provisionado.
+
+CHECK constraints e índices parciais não são expressáveis no schema do Prisma 5: gerar com `prisma migrate dev --create-only`, editar o SQL à mão e então aplicar.
