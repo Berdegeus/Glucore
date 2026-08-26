@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { defineConfig } from 'vitest/config';
 
 import { TEST_DATABASE_URL, TEST_JWT_SECRET } from './tests/helpers/testEnv';
@@ -10,6 +12,16 @@ import { TEST_DATABASE_URL, TEST_JWT_SECRET } from './tests/helpers/testEnv';
  * here.
  */
 export default defineConfig({
+  resolve: {
+    alias: {
+      // Point at the source, not at packages/shared/dist. Coverage is measured
+      // over `packages/*/src/**`, so resolving the built JS would leave every
+      // shared module reported at 0 % while its code ran under a path the
+      // report never looks at. It also drops the "rebuild before you test"
+      // step, so a test can never pass against a stale dist.
+      '@glucore/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
+    },
+  },
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],

@@ -8,14 +8,22 @@ import { Prisma } from '@prisma/client';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
 import { asyncHandler, optionalText } from '@glucore/shared';
 import { prisma } from '../lib/prisma';
+import {
+  DEFAULT_TARGET_MAX,
+  DEFAULT_TARGET_MIN,
+  toProfileDto,
+} from '../modules/patient/patient.mapper';
+import {
+  parseOptionalDate,
+  parseOptionalInt,
+  parseOptionalNumber,
+} from '../modules/patient/patient.parsers';
 import { getJwtSecret } from '../lib/env';
 import { assertStrongPassword } from '../lib/passwordPolicy';
 import { auditRequestContext, recordAudit } from '../lib/audit';
 
 const router = Router();
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const DEFAULT_TARGET_MIN = 80;
-const DEFAULT_TARGET_MAX = 180;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -84,86 +92,6 @@ function signToken(userId: string): string {
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
-}
-
-function parseOptionalDate(value: unknown): Date | null | undefined {
-  if (value === undefined) return undefined;
-  if (value === null || String(value).trim() === '') return null;
-  const text = String(value).trim();
-  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
-  if (dateOnly) {
-    const year = Number(dateOnly[1]);
-    const month = Number(dateOnly[2]);
-    const day = Number(dateOnly[3]);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
-      return date;
-    }
-    return undefined;
-  }
-  const brDate = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text);
-  if (brDate) {
-    const day = Number(brDate[1]);
-    const month = Number(brDate[2]);
-    const year = Number(brDate[3]);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
-      return date;
-    }
-    return undefined;
-  }
-  const date = new Date(text);
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-function parseOptionalNumber(value: unknown): number | null | undefined {
-  if (value === undefined) return undefined;
-  if (value === null || String(value).trim() === '') return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : undefined;
-}
-
-function parseOptionalInt(value: unknown): number | undefined {
-  if (value === undefined || value === null || String(value).trim() === '') {
-    return undefined;
-  }
-  const number = Number(value);
-  return Number.isInteger(number) ? number : undefined;
-}
-
-function serializeProfile(user: {
-  id: string;
-  email: string;
-  fullName: string;
-  phone: string | null;
-  status: string;
-  role: string;
-  createdAt: Date;
-  patient: {
-    birthDate: Date | null;
-    diabetesType: string | null;
-    weightKg: unknown;
-    targetRangeMin: number;
-    targetRangeMax: number;
-  } | null;
-}) {
-  const patient = user.patient;
-  return {
-    id: user.id,
-    email: user.email,
-    fullName: user.fullName,
-    phone: user.phone,
-    status: user.status,
-    role: user.role,
-    createdAt: user.createdAt.toISOString(),
-    patient: {
-      birthDate: patient?.birthDate?.toISOString().slice(0, 10) ?? null,
-      diabetesType: patient?.diabetesType ?? null,
-      weightKg: patient?.weightKg == null ? null : Number(patient.weightKg),
-      targetRangeMin: patient?.targetRangeMin ?? DEFAULT_TARGET_MIN,
-      targetRangeMax: patient?.targetRangeMax ?? DEFAULT_TARGET_MAX,
-    },
-  };
 }
 
 async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
@@ -330,7 +258,7 @@ router.get(
       res.status(404).json({ error: 'User not found' });
       return;
     }
-    res.json(serializeProfile(user));
+    res.json(toProfileDto(user));
   }),
 );
 

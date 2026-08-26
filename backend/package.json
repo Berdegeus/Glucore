@@ -7,13 +7,14 @@
     "services/*"
   ],
   "scripts": {
-    "build": "tsc -b packages/shared services/glucose-service",
+    "build": "tsc -b packages/shared services/glucose-service && npm run typecheck:tests",
     "dev": "npm run dev -w @glucore/glucose-service",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "migrate:dev": "npm run migrate:dev -w @glucore/glucose-service",
-    "migrate:deploy": "npm run migrate:deploy -w @glucore/glucose-service"
+    "migrate:deploy": "npm run migrate:deploy -w @glucore/glucose-service",
+    "typecheck:tests": "tsc -p services/glucose-service/tsconfig.test.json"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
