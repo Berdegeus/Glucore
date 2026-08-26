@@ -1,11 +1,14 @@
 export { asyncHandler } from './http/asyncHandler';
 export { optionalText } from './util/optionalText';
+export { isUuid, optionalUuid, requireUuid } from './util/uuid';
 export {
   auditRequestContext,
   recordAudit,
   sanitizeMetadata,
   type AuditClient,
+  type AuditContext,
   type AuditEntry,
+  type RecordAudit,
   type AuditRequestSource,
 } from './audit/audit';
 export { AppError } from './errors/AppError';

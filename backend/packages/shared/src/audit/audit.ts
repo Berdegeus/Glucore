@@ -42,6 +42,19 @@ export function auditRequestContext(req: AuditRequestSource): {
   return { ipAddress: req.ip ?? null, userAgent: req.get('user-agent') ?? null };
 }
 
+/**
+ * Request context an audit entry carries, as a service layer sees it. The
+ * controller derives it with `auditRequestContext` so the service never touches
+ * a request object.
+ */
+export type AuditContext = Pick<AuditEntry, 'ipAddress' | 'userAgent'>;
+
+/**
+ * The audit writer as a service depends on it: already bound to a database, so
+ * the service does not know which one.
+ */
+export type RecordAudit = (entry: AuditEntry) => Promise<void>;
+
 /** Minimal surface `recordAudit` needs, so tests can pass a double. */
 export interface AuditClient {
   auditLog: {
