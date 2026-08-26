@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { config as loadDotenv } from 'dotenv';
 
 /**
@@ -10,7 +12,9 @@ import { config as loadDotenv } from 'dotenv';
  * `.env.test` is gitignored and machine-specific (see `.env.test.example`); the
  * fallback is the shape CI's postgres service container exposes.
  */
-loadDotenv({ path: '.env.test', quiet: true });
+// Resolved from this file rather than the process cwd: the vitest workspace at
+// the backend root runs each project with cwd set there, not in the service.
+loadDotenv({ path: path.resolve(__dirname, '../../.env.test'), quiet: true });
 
 export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ??

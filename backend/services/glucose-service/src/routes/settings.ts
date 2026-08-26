@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { verifyJwt, requireRole, AuthRequest } from '../middleware/auth';
-import { asyncHandler } from '../middleware/asyncHandler';
+import { asyncHandler } from '@glucore/shared';
 import { prisma } from '../lib/prisma';
 import { ensurePatient } from '../lib/patient';
 import { auditRequestContext, recordAudit } from '../lib/audit';

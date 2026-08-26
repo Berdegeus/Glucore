@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer';
 import rateLimit from 'express-rate-limit';
 import { Prisma } from '@prisma/client';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
-import { asyncHandler } from '../middleware/asyncHandler';
+import { asyncHandler, optionalText } from '@glucore/shared';
 import { prisma } from '../lib/prisma';
 import { getJwtSecret } from '../lib/env';
 import { assertStrongPassword } from '../lib/passwordPolicy';
@@ -84,13 +84,6 @@ function signToken(userId: string): string {
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
-}
-
-function optionalText(value: unknown): string | null | undefined {
-  if (value === undefined) return undefined;
-  if (value === null) return null;
-  const text = String(value).trim();
-  return text.length === 0 ? null : text;
 }
 
 function parseOptionalDate(value: unknown): Date | null | undefined {

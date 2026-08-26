@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { recordAudit, sanitizeMetadata, type AuditClient } from '../../src/lib/audit';
+import { recordAudit, sanitizeMetadata, type AuditClient } from '@glucore/shared';
 
 /**
  * Spec: TCC-13 — spec.md "P3: Trilha de auditoria persistida" AC2, AC4 and AC5.

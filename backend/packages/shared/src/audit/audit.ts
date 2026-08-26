@@ -3,14 +3,17 @@
  *
  * Two rules govern this module, both from spec.md "P3: Trilha de auditoria":
  *
+ * The client is a required parameter rather than a module-level import: this
+ * package is shared by services that own different databases, so it must not
+ * bind itself to any one PrismaClient. Each service binds its own (see each
+ * service's src/lib/audit.ts).
+ *
  * 1. It never throws to the caller (AD-5). Losing a trail entry is less serious
  *    than losing a patient's insulin record, and the migration may not be
  *    applied on every development machine.
  * 2. It never persists a password, a password hash or a recovery token. Every
  *    metadata payload goes through `sanitizeMetadata` first.
  */
-
-import { prisma } from './prisma';
 
 export interface AuditEntry {
   userId?: string | null;
@@ -67,10 +70,7 @@ export function sanitizeMetadata(value: unknown): unknown {
   return value;
 }
 
-export async function recordAudit(
-  entry: AuditEntry,
-  client: AuditClient = prisma as unknown as AuditClient,
-): Promise<void> {
+export async function recordAudit(entry: AuditEntry, client: AuditClient): Promise<void> {
   try {
     await client.auditLog.create({
       data: {

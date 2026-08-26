@@ -320,7 +320,7 @@ describe('PUT /auth/profile', () => {
   });
 
   it('re-syncs the alert thresholds when the target range moves', async () => {
-    await put({ targetRangeMin: 70, targetRangeMax: 200 });
+    expect((await put({ targetRangeMin: 70, targetRangeMax: 200 })).status).toBe(200);
 
     const settings = await request(app).get('/settings/alerts').set(auth());
     expect(settings.body).toEqual({ lowThreshold: 70, highThreshold: 200 });

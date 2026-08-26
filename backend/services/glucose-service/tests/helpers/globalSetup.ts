@@ -1,6 +1,10 @@
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 
 import { TEST_DATABASE_URL } from './testEnv';
+
+/** This service's root, where prisma/schema.prisma lives. */
+const SERVICE_ROOT = path.resolve(__dirname, '../..');
 
 /**
  * Brings the test database up to the current migration set, once per run.
@@ -23,6 +27,9 @@ export default function setup(): void {
 
   try {
     execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
+      // Pinned to the service root: run from the workspace root instead, prisma
+      // would look for prisma/schema.prisma in backend/ and find nothing.
+      cwd: SERVICE_ROOT,
       env: { ...process.env, DATABASE_URL: databaseUrl },
       stdio: 'pipe',
     });

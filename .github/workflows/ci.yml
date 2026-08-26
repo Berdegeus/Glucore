@@ -73,7 +73,11 @@ jobs:
         with:
           node-version: "22"
       - run: npm ci
-      - run: npx tsc --noEmit
+      # `tsc -b` over the workspace projects, not `tsc --noEmit`: the monorepo
+      # builds with project references (`composite: true`), which --noEmit rejects.
+      # A bare `npx tsc` here finds no tsconfig at all, prints its help text and
+      # exits 0 — a type error would pass the job unnoticed.
+      - run: npm run build
       # Coverage rather than a bare test run: rubric #25 wants evidence from a
       # tool, and the thresholds in vitest.config.ts fail the job on a drop.
       - run: npm run test:coverage

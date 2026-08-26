@@ -56,7 +56,9 @@ export async function registerUser(
 
   if (response.status !== 201) {
     throw new Error(
-      `registerUser expected 201, got ${response.status}: ${JSON.stringify(response.body)}`,
+      `registerUser expected 201, got ${response.status}\n` +
+        `headers=${JSON.stringify(response.headers)}\n` +
+        `text=${response.text}`,
     );
   }
 
