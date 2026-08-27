@@ -12,8 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Pinned, not `channel: stable`. An unpinned stable moves on its own, so
+      # the runner silently drifts away from the SDK the project is developed
+      # against and the build breaks with no commit to blame — which is exactly
+      # how the Kotlin job below died on 2026-08-25. Bump this deliberately.
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: 3.35.2
           channel: stable
           cache: true
       - run: flutter pub get
@@ -32,8 +37,15 @@ jobs:
       # android/settings.gradle.kts reads flutter.sdk from local.properties, and
       # the app module depends on the Flutter plugin projects that `pub get`
       # generates — so the Flutter SDK has to be present even for a JVM-only run.
+      # Same pin as the job above, and here it is load-bearing: the Flutter
+      # Gradle plugin refuses to configure when the wrapper is older than the
+      # minimum that SDK version demands. Flutter 3.35.2 accepts the 8.12
+      # wrapper in android/gradle/wrapper/gradle-wrapper.properties; a later
+      # stable started requiring 8.14.0 and failed the job with
+      # `DependencyValidationException`. Move the two together, never one alone.
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: 3.35.2
           channel: stable
           cache: true
       - run: flutter pub get
