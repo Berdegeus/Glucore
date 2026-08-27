@@ -1,9 +1,12 @@
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite/sqflite.dart'
     show ConflictAlgorithm, Database, DatabaseFactory;
+import 'package:uuid/uuid.dart';
 
 import '../../presentation/models/patient_models.dart';
 import 'patient_datasource.dart';
+
+const _uuid = Uuid();
 
 /// Coleções persistidas localmente (uma tabela por coleção).
 enum PatientCollection { readings, alerts, carbs, insulin, settings }
@@ -20,7 +23,7 @@ class LocalPatientDataSource implements PatientDataSource {
         _databasePath = databasePath;
 
   static const _dbName = 'glucore_patient.db';
-  static const _dbVersion = 2;
+  static const _dbVersion = 3;
 
   final DatabaseFactory? _factory;
   final String? _databasePath;
@@ -47,31 +50,12 @@ class LocalPatientDataSource implements PatientDataSource {
               synced INTEGER NOT NULL DEFAULT 0
             )
           ''');
-          await db.execute('''
-            CREATE TABLE alerts(
-              type TEXT NOT NULL,
-              timestamp_ms INTEGER NOT NULL,
-              synced INTEGER NOT NULL DEFAULT 0,
-              PRIMARY KEY(type, timestamp_ms)
-            )
-          ''');
-          await db.execute('''
-            CREATE TABLE carbs(
-              time_ms INTEGER PRIMARY KEY,
-              grams INTEGER NOT NULL,
-              description TEXT NOT NULL,
-              synced INTEGER NOT NULL DEFAULT 0
-            )
-          ''');
-          await db.execute('''
-            CREATE TABLE insulin(
-              time_ms INTEGER PRIMARY KEY,
-              units REAL NOT NULL,
-              type TEXT NOT NULL,
-              day_of_week TEXT NOT NULL,
-              synced INTEGER NOT NULL DEFAULT 0
-            )
-          ''');
+          await db.execute(_createAlertsTable);
+          await db.execute(_indexAlertsTime);
+          await db.execute(_createCarbsTable);
+          await db.execute(_indexCarbsTime);
+          await db.execute(_createInsulinTable);
+          await db.execute(_indexInsulinTime);
           await db.execute('''
             CREATE TABLE settings(
               id INTEGER PRIMARY KEY CHECK(id = 1),
@@ -87,9 +71,111 @@ class LocalPatientDataSource implements PatientDataSource {
           if (oldVersion < 2) {
             await _createMetaTable(db);
           }
+          if (oldVersion < 3) {
+            await _migrateDiaryToUuidKeys(db);
+          }
         },
       ),
     );
+  }
+
+  // ── schema das coleções do diário (v3) ────────────────────────────────────
+
+  static const _createAlertsTable = '''
+        CREATE TABLE alerts(
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          timestamp_ms INTEGER NOT NULL,
+          synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''';
+  static const _indexAlertsTime =
+      'CREATE INDEX idx_alerts_time ON alerts(timestamp_ms)';
+
+  static const _createCarbsTable = '''
+        CREATE TABLE carbs(
+          id TEXT PRIMARY KEY,
+          time_ms INTEGER NOT NULL,
+          grams INTEGER NOT NULL,
+          description TEXT NOT NULL,
+          synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''';
+  static const _indexCarbsTime =
+      'CREATE INDEX idx_carbs_time ON carbs(time_ms)';
+
+  static const _createInsulinTable = '''
+        CREATE TABLE insulin(
+          id TEXT PRIMARY KEY,
+          time_ms INTEGER NOT NULL,
+          units REAL NOT NULL,
+          type TEXT NOT NULL,
+          day_of_week TEXT NOT NULL,
+          synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''';
+  static const _indexInsulinTime =
+      'CREATE INDEX idx_insulin_time ON insulin(time_ms)';
+
+  /// v2 → v3 (IDENT-05): troca a PK das três coleções do diário por `id TEXT`,
+  /// gerando um UUID v4 por linha existente. Nenhuma linha do paciente é
+  /// descartada. O sqflite já executa `onUpgrade` dentro de uma transação, então
+  /// uma falha no meio desfaz tudo e o banco permanece na v2.
+  static Future<void> _migrateDiaryToUuidKeys(Database db) async {
+    await _rebuildWithUuidKey(
+      db,
+      table: 'alerts',
+      createTable: _createAlertsTable,
+      carriedColumns: ['type', 'timestamp_ms', 'synced'],
+      createIndex: _indexAlertsTime,
+    );
+    await _rebuildWithUuidKey(
+      db,
+      table: 'carbs',
+      createTable: _createCarbsTable,
+      carriedColumns: ['time_ms', 'grams', 'description', 'synced'],
+      createIndex: _indexCarbsTime,
+    );
+    await _rebuildWithUuidKey(
+      db,
+      table: 'insulin',
+      createTable: _createInsulinTable,
+      carriedColumns: [
+        'time_ms',
+        'units',
+        'type',
+        'day_of_week',
+        'synced',
+      ],
+      createIndex: _indexInsulinTime,
+    );
+  }
+
+  static Future<void> _rebuildWithUuidKey(
+    Database db, {
+    required String table,
+    required String createTable,
+    required List<String> carriedColumns,
+    required String createIndex,
+  }) async {
+    final legacyRows = await db.query(table);
+
+    await db.execute(
+      createTable.replaceFirst('TABLE $table(', 'TABLE ${table}_new('),
+    );
+
+    final batch = db.batch();
+    for (final row in legacyRows) {
+      batch.insert('${table}_new', {
+        'id': _uuid.v4(),
+        for (final column in carriedColumns) column: row[column],
+      });
+    }
+    await batch.commit(noResult: true);
+
+    await db.execute('DROP TABLE $table');
+    await db.execute('ALTER TABLE ${table}_new RENAME TO $table');
+    await db.execute(createIndex);
   }
 
   /// Single-row table binding the local database to its owning user (P19).

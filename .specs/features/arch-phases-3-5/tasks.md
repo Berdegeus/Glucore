@@ -137,15 +137,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `onCreate` cria `carbs`, `insulin` e `alerts` com `id TEXT PRIMARY KEY` e índice sobre a coluna de horário
-- [ ] `onUpgrade` migra v2 → v3 dentro de uma transação, gerando UUID por linha, sem perder nenhuma
-- [ ] Teste abre um banco v2 semeado, migra e confere contagem de linhas preservada e ids válidos
-- [ ] Teste cobre falha no meio da migração deixando o banco utilizável na v2
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] `onCreate` cria `carbs`, `insulin` e `alerts` com `id TEXT PRIMARY KEY` e índice sobre a coluna de horário
+- [x] `onUpgrade` migra v2 → v3 dentro de uma transação, gerando UUID por linha, sem perder nenhuma
+- [x] Teste abre um banco v2 semeado, migra e confere contagem de linhas preservada e ids válidos
+- [x] Teste cobre falha no meio da migração deixando o banco utilizável na v2
+- [x] Gate: `flutter test --no-pub` verde (197 testes, 3 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(patient): migrate the local diary tables to uuid keys`
+**Status**: ✅ Complete
 
 ---
 
