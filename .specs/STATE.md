@@ -54,12 +54,13 @@
 
 ## Handoff
 
-**Feature ativa**: `arch-phases-0-2-gaps` (lacunas remanescentes das Fases 0–2 do `docs/ARCHITECTURE_FIX_PLAN.md`)
-**Fase**: Execute concluído (8/8 tarefas), fix round da rodada 1 de verificação aplicado; rodada 2 de verificação em andamento.
-**Branch**: `feat/arch-phases-0-2-gaps`, criada da `main` depois do merge fast-forward de `feat/tcc-checklist-compliance`. Nada foi enviado ao remoto.
-**Commits**: `7b09e5f..b8ecf9a` — 10 commits.
-**Próximo passo**: ler o veredito da rodada 2 em `.specs/features/arch-phases-0-2-gaps/validation.md`; se PASS, abrir PR (precisa de autorização explícita para `git push`).
-**Escopo entregue**: P6 (CLAUDE.md realinhado e agora versionado), residual de P16 (gates de plausibilidade no decoder + logs), rubrica 26 (`backend/README.md`), rubrica 42 (`docs/reference/multi-sensor-architecture.md`), rubricas 23/27 (`docs/guides/qa-process.md`), sincronização de review e plano, e remoção do lock do Office do versionamento.
-**Fora de escopo por decisão do usuário**: item 2.4 (CI/CD, rubrica 39) — os `.so` proprietários são gitignored, então nenhum runner limpo gera APK funcional; motivo e condição de retomada registrados na seção 2.4 do plano.
-**Pendente, não esquecido**: verificação em device físico arm64 com sensor real das Fases 1 e 2 (sessão ≥ 1 h, background 30 min).
-**Arquivos não commitados**: `.claude/settings.local.json`, `pubspec.lock` (bumps transitivos), diretórios `.agents/`, `.cursor/`, `.windsurf/` não rastreados — todos preexistentes a este trabalho.
+**Feature ativa**: `arch-phases-3-5` (Fases 3, 4 e 5 do `docs/ARCHITECTURE_FIX_PLAN.md`)
+**Fase**: Execute em andamento — 6 de 34 tarefas concluídas (Fase 1 inteira + T6). Parada pedida pelo usuário ao fim do lote 2, que foi interrompido no meio do T7.
+**Branch**: `feat/arch-phases-3-5`, criada do HEAD de `feat/arch-phases-0-2-gaps` (que segue 15 commits à frente da `main`). Nada foi enviado ao remoto; `git push` continua exigindo autorização explícita.
+**Commits**: `037a8bc` (planejamento) e `8e9ee64..b541129` — 6 commits de implementação.
+**Concluído**: T1–T5 (identidade UUID no app: modelos, SQLite v3 com migração e backfill, linhas e `mark*Synced` por `id`, `id` no datasource remoto, edição/remoção por `id`) e T6 (`carbRepository` com Prisma injetado). Gates verdes na parada: 219 testes Flutter, `flutter analyze` limpo, 56 testes de backend.
+**Próximo passo**: fechar o T7 — só falta a suíte de rota com supertest (`backend/tests/routes/carbs.test.ts`) e o commit atômico. Depois seguir T8→T13 (lote 2) e então T14 (op-log), que é o começo do lote 3.
+**Trabalho não commitado, deliberado**: o T7 ficou quase pronto na árvore — `backend/src/services/{carbService,pagination,result}.ts`, `backend/src/controllers/{carbController,httpFailure}.ts`, `backend/tests/helpers/testApp.ts`, `backend/src/routes/carbs.ts` reduzido a fiação (51 linhas), `asyncHandler.ts` com import type, e `supertest`/`@types/supertest` adicionados ao `package.json`. `npm test` passa nesse estado, mas os módulos novos ainda não têm teste de rota. **Não descartar**: é a base do T7.
+**Decisão pendente de registro**: `AD-009` (op-log de operações unitárias idempotentes; replace-all restrito a coleções append-only) está desenhado em `design.md` e previsto para ser gravado aqui no T34.
+**Verificador**: não roda ainda — é o passo de fechamento da feature inteira, e faltam 28 tarefas.
+**Arquivos sujos preexistentes, alheios a este trabalho**: `.claude/settings.local.json`, `CHANGELOG.md`, `backend/package-lock.json`, alterações em `.specs/features/checklist-tcc-compliance/`, a deleção de `TCC I - Checklist - Avaliacao.md` e os diretórios não rastreados `.agents/`, `.cursor/`, `.windsurf/`.
