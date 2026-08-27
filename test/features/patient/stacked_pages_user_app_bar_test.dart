@@ -114,10 +114,10 @@ void main() {
     'SensorLinkPage': const SensorLinkPage(),
     'ProfileEditPage': const ProfileEditPage(),
     'CarbEditPage': CarbEditPage(
-      entry: CarbEntry(grams: 30, description: 'x', time: DateTime(2026, 1, 1)),
+      entry: CarbEntry.create(grams: 30, description: 'x', time: DateTime(2026, 1, 1)),
     ),
     'InsulinEditPage': InsulinEditPage(
-      entry: InsulinEntry(
+      entry: InsulinEntry.create(
         units: 4,
         type: InsulinType.bolus,
         time: DateTime(2026, 1, 1),

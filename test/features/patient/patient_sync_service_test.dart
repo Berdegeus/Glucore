@@ -87,7 +87,7 @@ void main() {
   test('pushNow sends pending collections to remote and clears flags',
       () async {
     await local.saveCarbs([
-      CarbEntry(grams: 25, description: 'Café', time: entryTime),
+      CarbEntry.create(grams: 25, description: 'Café', time: entryTime),
     ]);
     await local.saveAlertSettings(
       const AlertSettingsModel(lowThreshold: 70, highThreshold: 200),
@@ -117,7 +117,7 @@ void main() {
       () async {
     remote.failuresRemaining = 2; // esgota a tentativa inicial + retry
     await local.saveCarbs([
-      CarbEntry(grams: 25, description: 'Café', time: entryTime),
+      CarbEntry.create(grams: 25, description: 'Café', time: entryTime),
     ]);
 
     final pushed = await service.pushNow();
@@ -135,7 +135,7 @@ void main() {
   test('transient failure is retried within the same pushNow', () async {
     remote.failuresRemaining = 1; // primeira tentativa falha, retry passa
     await local.saveCarbs([
-      CarbEntry(grams: 25, description: 'Café', time: entryTime),
+      CarbEntry.create(grams: 25, description: 'Café', time: entryTime),
     ]);
 
     final pushed = await service.pushNow();
@@ -147,7 +147,7 @@ void main() {
 
   test('schedulePush debounces bursts into a single push', () async {
     await local.saveCarbs([
-      CarbEntry(grams: 25, description: 'Café', time: entryTime),
+      CarbEntry.create(grams: 25, description: 'Café', time: entryTime),
     ]);
 
     service.schedulePush();

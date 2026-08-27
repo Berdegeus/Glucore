@@ -104,7 +104,7 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
                     return;
                   }
                   await context.read<PatientCubit>().addCarbEntry(
-                    CarbEntry(
+                    CarbEntry.create(
                       grams: int.parse(_gramsController.text),
                       description: _descController.text.trim(),
                       time: _selectedTime,

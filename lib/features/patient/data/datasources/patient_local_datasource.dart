@@ -346,7 +346,7 @@ class LocalPatientDataSource implements PatientDataSource {
         'synced': synced,
       };
 
-  static AppAlertItem _rowToAlert(Map<String, Object?> r) => AppAlertItem(
+  static AppAlertItem _rowToAlert(Map<String, Object?> r) => AppAlertItem.create(
         type: AppAlertType.values.byName(r['type'] as String),
         timestamp:
             DateTime.fromMillisecondsSinceEpoch(r['timestamp_ms'] as int),
@@ -362,7 +362,7 @@ class LocalPatientDataSource implements PatientDataSource {
         'synced': synced,
       };
 
-  static CarbEntry _rowToCarb(Map<String, Object?> r) => CarbEntry(
+  static CarbEntry _rowToCarb(Map<String, Object?> r) => CarbEntry.create(
         grams: r['grams'] as int,
         description: r['description'] as String,
         time: DateTime.fromMillisecondsSinceEpoch(r['time_ms'] as int),
@@ -379,7 +379,7 @@ class LocalPatientDataSource implements PatientDataSource {
         'synced': synced,
       };
 
-  static InsulinEntry _rowToInsulin(Map<String, Object?> r) => InsulinEntry(
+  static InsulinEntry _rowToInsulin(Map<String, Object?> r) => InsulinEntry.create(
         units: (r['units'] as num).toDouble(),
         type: InsulinType.values.byName(r['type'] as String),
         time: DateTime.fromMillisecondsSinceEpoch(r['time_ms'] as int),

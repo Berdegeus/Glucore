@@ -68,7 +68,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
     final l10n = context.l10n;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().editInsulinEntry(
-      InsulinEntry(
+      widget.entry.copyWith(
         units: double.parse(_unitsController.text),
         type: _selectedType,
         time: _selectedTime,

@@ -62,7 +62,7 @@ class _CarbEditPageState extends State<CarbEditPage> {
     final l10n = context.l10n;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().editCarbEntry(
-      CarbEntry(
+      widget.entry.copyWith(
         grams: int.parse(_gramsController.text),
         description: _descController.text.trim(),
         time: _selectedTime,

@@ -49,7 +49,7 @@ void main() {
     test('wipeAllData clears collections but keeps the owner', () async {
       await local.setOwner('user-A');
       await local.saveCarbs([
-        CarbEntry(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
+        CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
       ]);
 
       await local.wipeAllData();
@@ -100,7 +100,7 @@ void main() {
     test('different user wipes and reports switch', () async {
       await local.setOwner('user-A');
       await local.saveCarbs([
-        CarbEntry(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
+        CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
       ]);
       tokenStore.userId = 'user-B';
 
@@ -139,7 +139,7 @@ void main() {
         () async {
       await local.setOwner('user-A');
       await local.saveCarbs([
-        CarbEntry(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
+        CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
       ]);
       tokenStore.userId = 'user-B'; // wrong account
 
@@ -151,7 +151,7 @@ void main() {
     test('pushes when the owner matches the current user', () async {
       await local.setOwner('user-A');
       await local.saveCarbs([
-        CarbEntry(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
+        CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
       ]);
       tokenStore.userId = 'user-A';
 

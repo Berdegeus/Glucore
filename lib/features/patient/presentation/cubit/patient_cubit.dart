@@ -168,7 +168,7 @@ class PatientCubit extends Cubit<PatientState> {
             previousStatus == SensorConnectionStatus.error)) {
       final updatedAlerts = _prependAlert(
         alerts,
-        AppAlertItem(
+        AppAlertItem.create(
           type: AppAlertType.sensorReconnected,
           timestamp: DateTime.now(),
         ),
@@ -184,7 +184,7 @@ class PatientCubit extends Cubit<PatientState> {
         sensorState.failure != null) {
       final updatedAlerts = _prependAlert(
         alerts,
-        AppAlertItem(
+        AppAlertItem.create(
           type: AppAlertType.syncFailure,
           timestamp: DateTime.now(),
         ),
@@ -251,12 +251,12 @@ class PatientCubit extends Cubit<PatientState> {
     if (currentReading.value <= alertSettings.lowThreshold) {
       updated = _prependAlert(
         updated,
-        AppAlertItem(type: AppAlertType.glucoseLow, timestamp: now),
+        AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: now),
       );
     } else if (currentReading.value >= alertSettings.highThreshold) {
       updated = _prependAlert(
         updated,
-        AppAlertItem(type: AppAlertType.glucoseHigh, timestamp: now),
+        AppAlertItem.create(type: AppAlertType.glucoseHigh, timestamp: now),
       );
     }
     return updated;

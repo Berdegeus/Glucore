@@ -115,7 +115,7 @@ class RemotePatientDataSource implements PatientDataSource {
         'alarmCode': r.alarmCode,
       };
 
-  static AppAlertItem _rowToAlert(Map<String, dynamic> r) => AppAlertItem(
+  static AppAlertItem _rowToAlert(Map<String, dynamic> r) => AppAlertItem.create(
         type: AppAlertType.values.byName(r['type'] as String),
         timestamp: DateTime.fromMillisecondsSinceEpoch((r['timestampMs'] as num).toInt()),
       );
@@ -125,7 +125,7 @@ class RemotePatientDataSource implements PatientDataSource {
         'timestampMs': a.timestamp.millisecondsSinceEpoch,
       };
 
-  static CarbEntry _rowToCarb(Map<String, dynamic> r) => CarbEntry(
+  static CarbEntry _rowToCarb(Map<String, dynamic> r) => CarbEntry.create(
         grams: (r['grams'] as num).toInt(),
         description: r['description'] as String,
         time: DateTime.fromMillisecondsSinceEpoch((r['timeMs'] as num).toInt()),
@@ -137,7 +137,7 @@ class RemotePatientDataSource implements PatientDataSource {
         'timeMs': c.time.millisecondsSinceEpoch,
       };
 
-  static InsulinEntry _rowToInsulin(Map<String, dynamic> r) => InsulinEntry(
+  static InsulinEntry _rowToInsulin(Map<String, dynamic> r) => InsulinEntry.create(
         units: (r['units'] as num).toDouble(),
         type: InsulinType.values.byName(r['type'] as String),
         time: DateTime.fromMillisecondsSinceEpoch((r['timeMs'] as num).toInt()),

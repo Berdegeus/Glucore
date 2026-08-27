@@ -68,8 +68,8 @@ void main() {
 
   PatientState diaryState() => PatientState(
         carbs: [
-          CarbEntry(grams: 40, description: 'Café da manhã', time: now),
-          CarbEntry(
+          CarbEntry.create(grams: 40, description: 'Café da manhã', time: now),
+          CarbEntry.create(
             grams: 60,
             description: 'Jantar de ontem',
             time: yesterday,

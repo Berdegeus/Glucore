@@ -131,7 +131,7 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
                     return;
                   }
                   await context.read<PatientCubit>().addInsulinEntry(
-                    InsulinEntry(
+                    InsulinEntry.create(
                       units: double.parse(_unitsController.text),
                       type: _selectedType,
                       time: _selectedTime,

@@ -76,8 +76,8 @@ void main() {
   group('alerts', () {
     test('round-trip + pending flag + markSynced', () async {
       final alerts = [
-        AppAlertItem(type: AppAlertType.glucoseLow, timestamp: t0),
-        AppAlertItem(type: AppAlertType.sensorReconnected, timestamp: t0),
+        AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: t0),
+        AppAlertItem.create(type: AppAlertType.sensorReconnected, timestamp: t0),
       ];
       await dataSource.saveAlerts(alerts);
 
@@ -100,7 +100,7 @@ void main() {
   group('carbs', () {
     test('round-trip + pending flag + markSynced', () async {
       final carbs = [
-        CarbEntry(grams: 45, description: 'Almoço', time: t0),
+        CarbEntry.create(grams: 45, description: 'Almoço', time: t0),
       ];
       await dataSource.saveCarbs(carbs);
 
@@ -119,7 +119,7 @@ void main() {
   group('insulin', () {
     test('round-trip + pending flag + markSynced', () async {
       final insulin = [
-        InsulinEntry(
+        InsulinEntry.create(
           units: 4.5,
           type: InsulinType.bolus,
           time: t0,
@@ -172,7 +172,7 @@ void main() {
   group('replaceWithServerSnapshot', () {
     test('server rows land synced=1 and local pending rows survive', () async {
       // Entrada local ainda pendente de push.
-      final pendingCarb = CarbEntry(grams: 30, description: 'Lanche', time: t1);
+      final pendingCarb = CarbEntry.create(grams: 30, description: 'Lanche', time: t1);
       await dataSource.saveCarbs([pendingCarb]);
 
       final serverSnapshot = PatientSnapshot(
@@ -185,7 +185,7 @@ void main() {
           ),
         ],
         alerts: const [],
-        carbs: [CarbEntry(grams: 60, description: 'Jantar', time: t0)],
+        carbs: [CarbEntry.create(grams: 60, description: 'Jantar', time: t0)],
         insulin: const [],
         alertSettings:
             const AlertSettingsModel(lowThreshold: 75, highThreshold: 190),

@@ -109,15 +109,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] As três classes têm `final String id`, factory de criação que gera UUID v4 e `copyWith` que preserva o `id`
-- [ ] `fromJson` usa o `id` do servidor quando ele é UUID válido e gera um local quando ausente ou malformado
-- [ ] `toJson` inclui `id`
-- [ ] Teste novo cobre: geração v4, `copyWith` preservando id ao mudar horário, `fromJson` sem id e com id inválido
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] As três classes têm `final String id`, factory de criação que gera UUID v4 e `copyWith` que preserva o `id`
+- [x] `fromJson` usa o `id` do servidor quando ele é UUID válido e gera um local quando ausente ou malformado
+- [x] `toJson` inclui `id`
+- [x] Teste novo cobre: geração v4, `copyWith` preservando id ao mudar horário, `fromJson` sem id e com id inválido
+- [x] Gate: `flutter test --no-pub` verde (194 testes, 13 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(patient): give diary entries a stable uuid`
+**Status**: ✅ Complete
 
 ---
 
