@@ -192,14 +192,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Envio e leitura das três coleções carregam `id`
-- [ ] Entrada remota sem `id` válido recebe um id local ao ser materializada
-- [ ] Teste cobre round-trip com id e resposta sem id
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] Envio e leitura das três coleções carregam `id`
+- [x] Entrada remota sem `id` válido recebe um id local ao ser materializada
+- [x] Teste cobre round-trip com id e resposta sem id
+- [x] Gate: `flutter test --no-pub` verde (211 testes, 7 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(patient): carry entry ids over the remote datasource`
+**Status**: ✅ Complete
 
 ---
 

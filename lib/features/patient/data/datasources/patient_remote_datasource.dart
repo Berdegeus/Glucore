@@ -115,39 +115,22 @@ class RemotePatientDataSource implements PatientDataSource {
         'alarmCode': r.alarmCode,
       };
 
-  static AppAlertItem _rowToAlert(Map<String, dynamic> r) => AppAlertItem.create(
-        type: AppAlertType.values.byName(r['type'] as String),
-        timestamp: DateTime.fromMillisecondsSinceEpoch((r['timestampMs'] as num).toInt()),
-      );
+  // As três coleções do diário viajam com `id` (IDENT-06): o contrato de linha
+  // do backend é o mesmo `toJson`/`fromJson` da entidade, então o mapeamento
+  // delega a ele — inclusive a regra de gerar id local quando o servidor manda
+  // um id ausente ou malformado.
 
-  static Map<String, dynamic> _alertToRow(AppAlertItem a) => {
-        'type': a.type.name,
-        'timestampMs': a.timestamp.millisecondsSinceEpoch,
-      };
+  static AppAlertItem _rowToAlert(Map<String, dynamic> r) =>
+      AppAlertItem.fromJson(r);
 
-  static CarbEntry _rowToCarb(Map<String, dynamic> r) => CarbEntry.create(
-        grams: (r['grams'] as num).toInt(),
-        description: r['description'] as String,
-        time: DateTime.fromMillisecondsSinceEpoch((r['timeMs'] as num).toInt()),
-      );
+  static Map<String, dynamic> _alertToRow(AppAlertItem a) => a.toJson();
 
-  static Map<String, dynamic> _carbToRow(CarbEntry c) => {
-        'grams': c.grams,
-        'description': c.description,
-        'timeMs': c.time.millisecondsSinceEpoch,
-      };
+  static CarbEntry _rowToCarb(Map<String, dynamic> r) => CarbEntry.fromJson(r);
 
-  static InsulinEntry _rowToInsulin(Map<String, dynamic> r) => InsulinEntry.create(
-        units: (r['units'] as num).toDouble(),
-        type: InsulinType.values.byName(r['type'] as String),
-        time: DateTime.fromMillisecondsSinceEpoch((r['timeMs'] as num).toInt()),
-        dayOfWeek: r['dayOfWeek']?.toString() ?? kDaysOfWeek[0],
-      );
+  static Map<String, dynamic> _carbToRow(CarbEntry c) => c.toJson();
 
-  static Map<String, dynamic> _insulinToRow(InsulinEntry i) => {
-        'units': i.units,
-        'type': i.type.name,
-        'timeMs': i.time.millisecondsSinceEpoch,
-        'dayOfWeek': i.dayOfWeek,
-      };
+  static InsulinEntry _rowToInsulin(Map<String, dynamic> r) =>
+      InsulinEntry.fromJson(r);
+
+  static Map<String, dynamic> _insulinToRow(InsulinEntry i) => i.toJson();
 }
