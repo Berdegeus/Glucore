@@ -42,7 +42,7 @@ Endpoints: `GET/POST/DELETE /readings` (GET limita 288; POST = batch upsert).
 | `type AppAlertType {glucoseLow,glucoseHigh,sensorReconnected,syncFailure}` | `type` | `alertType AlertType` (enum DB: HYPO_RISK, HYPER_RISK, SENSOR_RECONNECTED, SYNC_FAILURE, FAST_DROP, FAST_RISE) |
 | `timestamp DateTime` | `timestampMs` | `triggeredAt DateTime` |
 
-Mapeamento app↔DB em `backend/src/routes/alerts.ts`; FAST_DROP/FAST_RISE não têm equivalente no app (viram `syncFailure` no GET).
+Mapeamento app↔DB (padrão Adapter) em `backend/services/glucose-service/src/modules/alerts/alerts.mapper.ts`; FAST_DROP/FAST_RISE não têm equivalente no app (viram `syncFailure` no GET — lossy na volta, e travado por teste de caracterização de propósito).
 
 ## AlertSettingsModel
 
@@ -64,8 +64,9 @@ Mapeamento app↔DB em `backend/src/routes/alerts.ts`; FAST_DROP/FAST_RISE não 
 | `lib/features/patient/presentation/models/patient_models.dart` | Todos os modelos Flutter + `kDaysOfWeek` |
 | `lib/features/patient/data/datasources/patient_remote_datasource.dart` | Mappers Dart↔JSON (fonte do contrato do app) |
 | `lib/features/patient/data/datasources/patient_local_datasource.dart` | Tabelas sqflite locais (`glucore_patient.db`, mesmas colunas + flag `synced`) |
-| `backend/src/routes/*.ts` | Mappers JSON↔Prisma (fonte do contrato do servidor) |
-| `backend/prisma/schema.prisma` | Colunas e tipos |
+| `backend/services/glucose-service/src/modules/*/*.mapper.ts` | Mappers JSON↔Prisma (fonte do contrato do servidor) |
+| `backend/services/glucose-service/src/modules/*/*.schema.ts` | Validação e parse do body de entrada |
+| `backend/services/glucose-service/prisma/schema.prisma` | Colunas e tipos |
 
 ## Armadilhas
 

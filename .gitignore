@@ -74,3 +74,12 @@ backend/prisma/*.db
 
 # Local tooling / assistant context
 .claude/
+
+# Test coverage reports
+backend/coverage/
+backend/dist/
+backend/.env.test
+backend/**/tsconfig.tsbuildinfo
+backend/services/*/dist/
+backend/packages/*/dist/
+backend/services/*/.env.test

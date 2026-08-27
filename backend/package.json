@@ -1,34 +1,25 @@
 {
   "name": "glucore-backend",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "postinstall": "prisma generate",
-    "test": "node --no-warnings --import ./tests/tsResolve.mjs --test \"tests/**/*.test.ts\""
-  },
-  "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "@types/morgan": "^1.9.10",
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^17.4.2",
-    "express": "^4.21.2",
-    "express-rate-limit": "^8.5.2",
-    "jsonwebtoken": "^9.0.2",
-    "morgan": "^1.10.1",
-    "nodemailer": "^8.0.7"
+    "build": "tsc -b packages/shared services/glucose-service && npm run typecheck:tests",
+    "dev": "npm run dev -w @glucore/glucose-service",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "migrate:dev": "npm run migrate:dev -w @glucore/glucose-service",
+    "migrate:deploy": "npm run migrate:deploy -w @glucore/glucose-service",
+    "typecheck:tests": "tsc -p services/glucose-service/tsconfig.test.json"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
-    "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.0",
-    "@types/nodemailer": "^8.0.0",
-    "prisma": "^5.22.0",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.7.2"
+    "@vitest/coverage-v8": "^3.2.7",
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.7"
   }
 }

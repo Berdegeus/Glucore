@@ -60,13 +60,42 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    # The route tests run against a real database on purpose: they assert the
+    # schema's own guarantees (the [patientId, recordedAt] upsert, cascades),
+    # which a mocked Prisma client cannot verify.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: glucore_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/glucore_test?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          # 22, not 20: `node --test` only expands glob patterns from Node 21 on.
-          # On 20 the `tests/**/*.test.ts` argument is taken as a literal path.
           node-version: "22"
-      - run: npm install
-      - run: npx tsc --noEmit
-      - run: npm test
+      - run: npm ci
+      # `tsc -b` over the workspace projects, not `tsc --noEmit`: the monorepo
+      # builds with project references (`composite: true`), which --noEmit rejects.
+      # A bare `npx tsc` here finds no tsconfig at all, prints its help text and
+      # exits 0 — a type error would pass the job unnoticed.
+      - run: npm run build
+      # Coverage rather than a bare test run: rubric #25 wants evidence from a
+      # tool, and the thresholds in vitest.config.ts fail the job on a drop.
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          retention-days: 30

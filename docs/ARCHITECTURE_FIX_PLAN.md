@@ -33,9 +33,9 @@ Corrigir as 5 afirmações desatualizadas (persistência, auth, SQLite, decode d
 
 ### 0.2 · P11 — Segurança mínima do backend
 Security — written plainly:
-- `backend/src/middleware/auth.ts` e `routes/auth.ts`: remove the `?? 'dev-secret'` fallback; read `JWT_SECRET` once at boot and `process.exit(1)` with a clear message if it is missing.
+- `backend/services/glucose-service/src/middleware/auth.ts` e `routes/auth.ts`: remove the `?? 'dev-secret'` fallback; read `JWT_SECRET` once at boot and `process.exit(1)` with a clear message if it is missing. ✅ feito — `lib/env.ts` lança `MissingEnvError` e `index.ts` traduz em exit 1.
 - Add `express-rate-limit` on `/auth/login`, `/auth/forgot-password`, `/auth/reset-password` (e.g., 10 req / 15 min per IP).
-- `index.ts`: `cors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true })` — permissive in dev, restrictable in prod.
+- `backend/services/glucose-service/src/app.ts`: `cors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true })` — permissive in dev, restrictable in prod.
 **Aceite:** boot sem `JWT_SECRET` falha; 429 após exceder limite; app continua funcionando em dev.
 
 ### 0.3 · P3 quick-fix — Debounce de persistência no history sync
@@ -52,7 +52,7 @@ Deletar: `lib/features/auth/presentation/pages/home_page.dart`; `parseJsonResult
 **Aceite:** um único ponto de mapeamento; comportamento idêntico (testar mock + real).
 
 ### 0.6 · Rubrica 26 — README + doc de rotas do backend — ✅ **Feito (2026-08-20)**
-`backend/README.md`: sumário de todos os serviços (`/auth`, `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`) com descrição, exemplo real de payload de request/response, e passo a passo de setup (`npm install`, `npx prisma migrate dev`, `npm run dev`).
+`backend/README.md`: sumário de todos os serviços (`/auth`, `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`) com descrição, exemplo real de payload de request/response, e passo a passo de setup (`npm install`, `npm run migrate:dev`, `npm run dev`).
 **Aceite:** todo endpoint documentado com exemplo real; README cobre instalação e env vars. → `backend/README.md`, 24/24 handlers.
 
 ### 0.7 · Rubrica 42 — Documentar a arquitetura multissensor já implementada — ✅ **Feito (2026-08-20)**
@@ -128,7 +128,7 @@ Passos:
 
 ### 2.4 · Rubrica 39 — CI/CD (build + test + deploy) — ⚠️ **Parcial (2026-08-24)**
 Retirado do escopo o artefato de build/deploy, por decisão do usuário, com motivo técnico: os `.so` proprietários (`libg.so`, bibliotecas Abbott) são gitignored (`.gitignore:58`) e não estão no repositório, então **nenhum runner limpo consegue produzir um APK funcional** — o job de artefato de build da rubrica não teria como existir de forma honesta, e o `./gradlew` do projeto depende desses binários para o link nativo.
-**Já retomado (2026-08-24):** os três estágios que não dependem do `.so` — `flutter analyze && flutter test`, `./gradlew :app:testDebugUnitTest`, `npx tsc --noEmit && npm test` — rodam automatizados em `.github/workflows/ci.yml`, disparados em PR e push para `main`/`dev`. Essa é agora a referência de review: um PR só é considerado pronto com o CI verde.
+**Já retomado (2026-08-24):** os três estágios que não dependem do `.so` — `flutter analyze && flutter test`, `./gradlew :app:testDebugUnitTest`, `npm run build && npm run test:coverage` — rodam automatizados em `.github/workflows/ci.yml`, disparados em PR e push para `main`/`dev`. Essa é agora a referência de review: um PR só é considerado pronto com o CI verde.
 **Condição para retomar o resto (build + deploy):** um caminho autorizado de distribuição dos `.so` para o CI (secret/artifact store privado com licença que permita, ou runner self-hosted com os binários já provisionados).
 
 **Verificação da fase:** ⬜ **pendente de device físico** — teste manual de background (tela desligada 30 min, app swipado), `adb shell dumpsys activity services` mostrando o service, e registro de sensor com app recém-aberto. O código de 2.1–2.3 está entregue e verificado por leitura/teste; o que falta é exclusivamente a regressão em hardware arm64 com sensor real.
@@ -229,7 +229,7 @@ Ao construir os endpoints de 4.2:
 3. Nada de rewrite do caminho vendor/JNI — as fases só movem propriedade e adicionam camadas em volta do trio BLE existente.
 4. Fases 1–2 exigem device arm64 físico com sensor para verificação final; fases 3–5 verificáveis com mock.
 5. Ao concluir cada P, marcar como resolvido no [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) (não apagar — histórico).
-6. **Rubrica 27:** toda mudança de schema Prisma (qualquer fase que toque `backend/prisma/`) inclui a migration versionada no mesmo PR — já é a prática atual, aqui só formalizada.
+6. **Rubrica 27:** toda mudança de schema Prisma (qualquer fase que toque `backend/services/*/prisma/`) inclui a migration versionada no mesmo PR — já é a prática atual, aqui só formalizada.
 
 ## Fora do plano (registrado, sem ação)
 - HAL multiplataforma completo + Pigeon (Seção B do review): fazer **depois** da Fase 2 — o `SensorCore` da Fase 2 já é o embrião do HAL; Pigeon vira candidato natural quando o contrato estabilizar.
