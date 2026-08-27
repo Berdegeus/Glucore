@@ -219,14 +219,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] As quatro operações casam por `id`
-- [ ] `carb_edit_page.dart` e `insulin_edit_page.dart` devolvem a entrada editada com o id original
-- [ ] Teste de cubit: duas entradas no mesmo milissegundo, editar a primeira mudando o horário e apagar a segunda deixa exatamente a esperada
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] As quatro operações casam por `id`
+- [x] `carb_edit_page.dart` e `insulin_edit_page.dart` devolvem a entrada editada com o id original (as duas telas passaram a usar `copyWith` em T1, quando o `id` virou obrigatório; aqui ganharam teste de widget)
+- [x] Teste de cubit: duas entradas no mesmo milissegundo, editar a primeira mudando o horário e apagar a segunda deixa exatamente a esperada
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (219 testes, 8 novos)
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `fix(patient): match diary edits and deletes by entry id`
+**Status**: ✅ Complete
 
 ---
 
