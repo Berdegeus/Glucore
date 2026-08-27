@@ -169,6 +169,131 @@ void main() {
     });
   });
 
+  group('IDENT-04/IDENT-07: linhas do diário chaveadas por id', () {
+    test('duas entradas de carboidrato no mesmo time_ms persistem as duas',
+        () async {
+      final first = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final second =
+          CarbEntry.create(grams: 60, description: 'Jantar', time: t0);
+
+      await dataSource.saveCarbs([first, second]);
+      final snapshot = await dataSource.load();
+
+      expect(snapshot.carbs, hasLength(2));
+      expect(
+        snapshot.carbs.map((c) => c.id),
+        containsAll([first.id, second.id]),
+      );
+      expect(
+        snapshot.carbs.map((c) => c.description),
+        containsAll(['Lanche', 'Jantar']),
+      );
+    });
+
+    test('duas entradas no mesmo time_ms são atualizáveis independentemente',
+        () async {
+      final first = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final second =
+          CarbEntry.create(grams: 60, description: 'Jantar', time: t0);
+      await dataSource.saveCarbs([first, second]);
+
+      // Muda o horário e as gramas só da primeira.
+      await dataSource
+          .saveCarbs([first.copyWith(time: t1, grams: 35), second]);
+      final snapshot = await dataSource.load();
+
+      expect(snapshot.carbs, hasLength(2));
+      final edited = snapshot.carbs.firstWhere((c) => c.id == first.id);
+      final untouched = snapshot.carbs.firstWhere((c) => c.id == second.id);
+      expect(edited.time, t1);
+      expect(edited.grams, 35);
+      expect(untouched.time, t0);
+      expect(untouched.grams, 60);
+      expect(untouched.description, 'Jantar');
+    });
+
+    test('markCarbsSynced marca só a linha do id enviado', () async {
+      final first = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final second =
+          CarbEntry.create(grams: 60, description: 'Jantar', time: t0);
+      await dataSource.saveCarbs([first, second]);
+
+      await dataSource.markCarbsSynced([first]);
+      expect(await dataSource.pendingCollections(), {PatientCollection.carbs});
+
+      await dataSource.markCarbsSynced([second]);
+      expect(await dataSource.pendingCollections(), isEmpty);
+    });
+
+    test('markCarbsSynced casa por id mesmo com o horário alterado', () async {
+      final entry = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      await dataSource.saveCarbs([entry]);
+
+      // Mesmo id, horário diferente do gravado: o casamento é por id.
+      await dataSource.markCarbsSynced([entry.copyWith(time: t1)]);
+
+      expect(await dataSource.pendingCollections(), isEmpty);
+    });
+
+    test('markInsulinSynced casa por id mesmo com o horário alterado',
+        () async {
+      final entry = InsulinEntry.create(
+        units: 4.5,
+        type: InsulinType.bolus,
+        time: t0,
+        dayOfWeek: kDaysOfWeek[2],
+      );
+      await dataSource.saveInsulin([entry]);
+
+      await dataSource.markInsulinSynced([entry.copyWith(time: t1)]);
+
+      expect(await dataSource.pendingCollections(), isEmpty);
+    });
+
+    test('dois alertas do mesmo tipo e horário persistem e sincronizam por id',
+        () async {
+      final first =
+          AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: t0);
+      final second =
+          AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: t0);
+      await dataSource.saveAlerts([first, second]);
+
+      final snapshot = await dataSource.load();
+      expect(snapshot.alerts, hasLength(2));
+      expect(
+        snapshot.alerts.map((a) => a.id),
+        containsAll([first.id, second.id]),
+      );
+
+      await dataSource.markAlertsSynced([first]);
+      expect(await dataSource.pendingCollections(), {PatientCollection.alerts});
+
+      await dataSource.markAlertsSynced([second]);
+      expect(await dataSource.pendingCollections(), isEmpty);
+    });
+
+    test('o id sobrevive ao round-trip das três coleções', () async {
+      final carb = CarbEntry.create(grams: 45, description: 'Almoço', time: t0);
+      final insulin = InsulinEntry.create(
+        units: 4.5,
+        type: InsulinType.bolus,
+        time: t0,
+        dayOfWeek: kDaysOfWeek[2],
+      );
+      final alert =
+          AppAlertItem.create(type: AppAlertType.syncFailure, timestamp: t0);
+
+      await dataSource.saveCarbs([carb]);
+      await dataSource.saveInsulin([insulin]);
+      await dataSource.saveAlerts([alert]);
+      final snapshot = await dataSource.load();
+
+      expect(snapshot.carbs.single.id, carb.id);
+      expect(snapshot.insulin.single.id, insulin.id);
+      expect(snapshot.alerts.single.id, alert.id);
+    });
+  });
+
   group('replaceWithServerSnapshot', () {
     test('server rows land synced=1 and local pending rows survive', () async {
       // Entrada local ainda pendente de push.

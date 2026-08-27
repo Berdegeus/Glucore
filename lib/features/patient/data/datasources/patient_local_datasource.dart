@@ -300,27 +300,14 @@ class LocalPatientDataSource implements PatientDataSource {
       _markSyncedByKey('readings', 'timestamp_ms',
           readings.map((r) => r.timestamp.millisecondsSinceEpoch));
 
-  Future<void> markAlertsSynced(Iterable<AppAlertItem> alerts) async {
-    final db = await _db;
-    final batch = db.batch();
-    for (final alert in alerts) {
-      batch.update(
-        'alerts',
-        {'synced': 1},
-        where: 'type = ? AND timestamp_ms = ?',
-        whereArgs: [alert.type.name, alert.timestamp.millisecondsSinceEpoch],
-      );
-    }
-    await batch.commit(noResult: true);
-  }
+  Future<void> markAlertsSynced(Iterable<AppAlertItem> alerts) =>
+      _markSyncedByKey('alerts', 'id', alerts.map((a) => a.id));
 
   Future<void> markCarbsSynced(Iterable<CarbEntry> carbs) =>
-      _markSyncedByKey(
-          'carbs', 'time_ms', carbs.map((c) => c.time.millisecondsSinceEpoch));
+      _markSyncedByKey('carbs', 'id', carbs.map((c) => c.id));
 
   Future<void> markInsulinSynced(Iterable<InsulinEntry> insulin) =>
-      _markSyncedByKey('insulin', 'time_ms',
-          insulin.map((i) => i.time.millisecondsSinceEpoch));
+      _markSyncedByKey('insulin', 'id', insulin.map((i) => i.id));
 
   Future<void> markSettingsSynced() async {
     final db = await _db;
@@ -389,7 +376,7 @@ class LocalPatientDataSource implements PatientDataSource {
   Future<void> _markSyncedByKey(
     String table,
     String keyColumn,
-    Iterable<int> keys,
+    Iterable<Object> keys,
   ) async {
     final db = await _db;
     final batch = db.batch();
@@ -432,7 +419,8 @@ class LocalPatientDataSource implements PatientDataSource {
         'synced': synced,
       };
 
-  static AppAlertItem _rowToAlert(Map<String, Object?> r) => AppAlertItem.create(
+  static AppAlertItem _rowToAlert(Map<String, Object?> r) => AppAlertItem(
+        id: r['id'] as String,
         type: AppAlertType.values.byName(r['type'] as String),
         timestamp:
             DateTime.fromMillisecondsSinceEpoch(r['timestamp_ms'] as int),
@@ -443,12 +431,14 @@ class LocalPatientDataSource implements PatientDataSource {
     required int synced,
   }) =>
       {
+        'id': a.id,
         'type': a.type.name,
         'timestamp_ms': a.timestamp.millisecondsSinceEpoch,
         'synced': synced,
       };
 
-  static CarbEntry _rowToCarb(Map<String, Object?> r) => CarbEntry.create(
+  static CarbEntry _rowToCarb(Map<String, Object?> r) => CarbEntry(
+        id: r['id'] as String,
         grams: r['grams'] as int,
         description: r['description'] as String,
         time: DateTime.fromMillisecondsSinceEpoch(r['time_ms'] as int),
@@ -459,13 +449,15 @@ class LocalPatientDataSource implements PatientDataSource {
     required int synced,
   }) =>
       {
+        'id': c.id,
         'time_ms': c.time.millisecondsSinceEpoch,
         'grams': c.grams,
         'description': c.description,
         'synced': synced,
       };
 
-  static InsulinEntry _rowToInsulin(Map<String, Object?> r) => InsulinEntry.create(
+  static InsulinEntry _rowToInsulin(Map<String, Object?> r) => InsulinEntry(
+        id: r['id'] as String,
         units: (r['units'] as num).toDouble(),
         type: InsulinType.values.byName(r['type'] as String),
         time: DateTime.fromMillisecondsSinceEpoch(r['time_ms'] as int),
@@ -477,6 +469,7 @@ class LocalPatientDataSource implements PatientDataSource {
     required int synced,
   }) =>
       {
+        'id': i.id,
         'time_ms': i.time.millisecondsSinceEpoch,
         'units': i.units,
         'type': i.type.name,

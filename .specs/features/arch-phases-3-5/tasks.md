@@ -165,14 +165,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `_rowToCarb`/`_carbToRow` e equivalentes de insulin e alerts levam `id`
-- [ ] `mark*Synced` casam por `id`
-- [ ] Teste grava duas entradas com o mesmo `time_ms` e confere que as duas persistem e são atualizáveis de forma independente
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] `_rowToCarb`/`_carbToRow` e equivalentes de insulin e alerts levam `id`
+- [x] `mark*Synced` casam por `id`
+- [x] Teste grava duas entradas com o mesmo `time_ms` e confere que as duas persistem e são atualizáveis de forma independente
+- [x] Gate: `flutter test --no-pub` verde (204 testes, 7 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `fix(patient): key local diary rows by id instead of timestamp`
+**Status**: ✅ Complete
 
 ---
 
