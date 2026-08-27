@@ -14,23 +14,28 @@
 1. **Modelo Flutter** — `lib/features/patient/presentation/models/patient_models.dart`: campo + `toJson`/`fromJson` (com default para retrocompatibilidade).
 2. **Tabela local (sqflite)** — `lib/features/patient/data/datasources/patient_local_datasource.dart`: coluna no `CREATE TABLE` + mappers `_rowToX`/`_xToRow`; **bump de `_dbVersion` + `onUpgrade` com `ALTER TABLE ADD COLUMN ... DEFAULT ...`** para bancos existentes.
 3. **Datasource remoto** — `lib/features/patient/data/datasources/patient_remote_datasource.dart`: mappers `_rowToX`/`_xToRow` (contrato JSON).
-4. **Schema Prisma** — `backend/prisma/schema.prisma`: coluna (com `@default` para linhas existentes) → `npx prisma migrate dev --name add_x`.
-5. **Rota backend** — `backend/src/routes/<x>.ts`: incluir campo no map do GET e no `createMany` do POST.
+4. **Schema Prisma** — `backend/services/glucose-service/prisma/schema.prisma`: coluna (com `@default` para linhas existentes) → `cd backend && npm run migrate:dev -- --name add_x`.
+5. **Backend em camadas** — em `backend/services/glucose-service/src/modules/<x>/`: campo no `<x>.schema.ts` (parse/validação do body), no `<x>.mapper.ts` (JSON↔Prisma, nos dois sentidos) e no `<x>.repository.ts` (select/create). Controller e service normalmente não mudam.
 6. **UI** — páginas entry/edit correspondentes (`insulin_entry_page.dart`, `insulin_edit_page.dart` etc.).
 
 Exemplo real completo: campo `dayOfWeek` de `InsulinEntry` (commit `dcfaf84` + migração `20260608232021_add_day_of_week_to_insulin_event`).
 
 ## Nova rota backend
 
-Padrão (copiar de `backend/src/routes/carbs.ts`):
-```ts
-router.use(verifyJwt);
-router.get('/', asyncHandler(async (req: AuthRequest, res) => {
-  const patientId = await ensurePatient(req.userId!);
-  // prisma + res.json(rows.map(toApiShape))
-}));
-```
-Registrar em `backend/src/index.ts` (`app.use('/x', xRouter)`). Sempre `asyncHandler` + `ensurePatient`; formato de resposta camelCase com `timestampMs`/`timeMs` em epoch ms (ver [reference/data-models.md](../reference/data-models.md)).
+Um módulo por domínio em `backend/services/glucose-service/src/modules/<x>/` — copiar a forma de `modules/carbs/`, que tem os seis arquivos:
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `<x>.routes.ts` | `createXRouter(service)`; `router.use(verifyJwt)` + `router.use(requireRole('PATIENT'))`, depois um `asyncHandler` por endpoint |
+| `<x>.controller.ts` | Lê o request, chama o service, escolhe status/corpo. Sem Prisma. |
+| `<x>.service.ts` | Regra de negócio; resolve `patientId` via `ensurePatient`. Sem Express. |
+| `<x>.repository.ts` | Interface + implementação Prisma. É o único arquivo que importa `prisma`. |
+| `<x>.schema.ts` | Parse/validação do body; erros de entrada como 400 |
+| `<x>.mapper.ts` | JSON↔Prisma nos dois sentidos |
+
+Registrar em dois lugares: instanciar repositório e service em `src/container.ts`, e montar em `src/app.ts` (`app.use('/x', createXRouter(container.x))`). Sempre `asyncHandler` + `ensurePatient`; formato de resposta camelCase com `timestampMs`/`timeMs` em epoch ms (ver [reference/data-models.md](../reference/data-models.md)).
+
+O teste vem em dois níveis: unidade do service contra os fakes tipados de `tests/helpers/fakes.ts`, e integração da rota contra Postgres real em `tests/routes/`.
 
 ## Novo evento do sensor (Android → Flutter)
 
