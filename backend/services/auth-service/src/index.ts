@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import { buildApp } from './app';
+import { createContainer } from './container';
 import { loadEnv } from './lib/env';
 
 /**
@@ -12,7 +13,11 @@ import { loadEnv } from './lib/env';
  */
 function main(): void {
   const env = loadEnv();
-  const app = buildApp({ corsOrigins: env.corsOrigins, requestLogging: true });
+  const app = buildApp({
+    corsOrigins: env.corsOrigins,
+    requestLogging: true,
+    container: createContainer(env),
+  });
 
   app.listen(env.port, () => {
     console.log(`Glucore auth-service running on :${env.port}`);
