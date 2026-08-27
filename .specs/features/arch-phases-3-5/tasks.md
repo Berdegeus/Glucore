@@ -246,14 +246,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `findPage({ patientId, before, limit })` devolve em ordem decrescente, respeitando `before` e `limit`
-- [ ] `update` e `remove` são escopados por `patientId` e devolvem booleano
-- [ ] Teste unitário com client Prisma falso cobre paginação, escopo por paciente e caminho de erro
-- [ ] Gate: `cd backend && npm test` verde
+- [x] `findPage({ patientId, before, limit })` devolve em ordem decrescente, respeitando `before` e `limit`
+- [x] `update` e `remove` são escopados por `patientId` e devolvem booleano
+- [x] Teste unitário com client Prisma falso cobre paginação, escopo por paciente e caminho de erro
+- [x] Gate: `cd backend && npm test` verde (56 testes, 13 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `refactor(backend): extract the carb repository from the route`
+**Status**: ✅ Complete
 
 ---
 
