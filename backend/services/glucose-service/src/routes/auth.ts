@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer';
 import rateLimit from 'express-rate-limit';
 import { Prisma } from '@prisma/client';
 import { verifyJwt, AuthRequest } from '../middleware/auth';
-import { asyncHandler, optionalText } from '@glucore/shared';
+import { asyncHandler, optionalText, signAccessToken, type UserRoleName } from '@glucore/shared';
 import { prisma } from '../lib/prisma';
 import {
   DEFAULT_TARGET_MAX,
@@ -86,8 +86,8 @@ type ProfileBody = {
   targetRangeMax?: number | string;
 };
 
-function signToken(userId: string): string {
-  return jwt.sign({ sub: userId }, getJwtSecret(), { expiresIn: '30d' });
+function signToken(userId: string, role: UserRoleName): string {
+  return signAccessToken({ sub: userId, role }, getJwtSecret());
 }
 
 function normalizeEmail(email: string): string {
@@ -193,7 +193,7 @@ router.post(
       metadata: { email },
       ...auditRequestContext(req),
     });
-    res.status(201).json({ token: signToken(user.id) });
+    res.status(201).json({ token: signToken(user.id, user.role) });
   }),
 );
 
@@ -238,7 +238,7 @@ router.post(
       entityId: user.id,
       ...auditRequestContext(req),
     });
-    res.json({ token: signToken(user.id) });
+    res.json({ token: signToken(user.id, user.role) });
   }),
 );
 

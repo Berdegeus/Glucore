@@ -1,10 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { verifyAccessToken, type UserRoleName } from '@glucore/shared';
+
 import { getJwtSecret } from '../lib/env';
-import { prisma } from '../lib/prisma';
 
 export interface AuthRequest extends Request {
   userId?: string;
+  userRole?: UserRoleName;
 }
 
 export function verifyJwt(req: AuthRequest, res: Response, next: NextFunction): void {
@@ -13,64 +14,49 @@ export function verifyJwt(req: AuthRequest, res: Response, next: NextFunction): 
     res.status(401).json({ error: 'Unauthorized', code: 'TOKEN_INVALID' });
     return;
   }
-  const token = header.slice(7);
-  try {
-    const payload = jwt.verify(token, getJwtSecret()) as unknown as { sub: string };
-    req.userId = payload.sub;
-    next();
-  } catch {
+
+  const claims = verifyAccessToken(header.slice(7), getJwtSecret());
+  if (!claims) {
     res.status(401).json({ error: 'Invalid token', code: 'TOKEN_INVALID' });
+    return;
   }
-}
 
-/** Resolves the role of an authenticated user, or `null` when there is no such user. */
-export type RoleResolver = (userId: string) => Promise<string | null>;
-
-export interface RequireRoleOptions {
-  /** Overridable for unit tests; defaults to reading the role from the database. */
-  resolveRole?: RoleResolver;
-}
-
-async function resolveRoleFromDatabase(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-  return user?.role ?? null;
+  req.userId = claims.sub;
+  req.userRole = claims.role;
+  next();
 }
 
 /**
  * Authorizes the request against the allowed roles. Must run after `verifyJwt`.
  *
- * The role is read from the database on every request instead of from a JWT
- * claim (design AD-4): demoting a user takes effect immediately, without
- * waiting out the 30 d token TTL.
+ * The role comes from the verified token, not from a database lookup. This
+ * service is about to stop owning the `User` table altogether, so there is no
+ * row here to read — but the reasoning would hold even if there were: see
+ * `packages/shared/src/auth/claims.ts` for why the trade the other way costs
+ * more than it buys.
+ *
+ * Synchronous by consequence. The previous version returned a promise because
+ * it queried; now that the answer is already on the request, making the caller
+ * wait a tick would be theatre.
  */
-export function requireRole(
-  roles: string | readonly string[],
-  options: RequireRoleOptions = {},
-) {
+export function requireRole(roles: string | readonly string[]) {
   const allowed = typeof roles === 'string' ? [roles] : [...roles];
-  const resolveRole = options.resolveRole ?? resolveRoleFromDatabase;
 
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const userId = req.userId;
-    if (!userId) {
+    // Both `userId` and `userRole` are set together by verifyJwt, so either one
+    // being absent means this middleware ran without it — a wiring mistake, not
+    // a client one. It still answers 401 rather than 500: an unauthenticated
+    // request is exactly what reaches here when the order is wrong.
+    if (!req.userId || !req.userRole) {
       res.status(401).json({ error: 'Unauthorized', code: 'TOKEN_INVALID' });
       return;
     }
-    resolveRole(userId)
-      .then((role) => {
-        if (role === null) {
-          res.status(401).json({ error: 'Invalid token', code: 'TOKEN_INVALID' });
-          return;
-        }
-        if (!allowed.includes(role)) {
-          res.status(403).json({ error: 'Forbidden', code: 'FORBIDDEN_ROLE' });
-          return;
-        }
-        next();
-      })
-      .catch(next);
+
+    if (!allowed.includes(req.userRole)) {
+      res.status(403).json({ error: 'Forbidden', code: 'FORBIDDEN_ROLE' });
+      return;
+    }
+
+    next();
   };
 }
