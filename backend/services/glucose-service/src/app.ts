@@ -1,7 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import authRouter from './routes/auth';
 import { createAlertsRouter } from './modules/alerts/alerts.routes';
 import { createCarbsRouter } from './modules/carbs/carbs.routes';
 import { createInsulinRouter } from './modules/insulin/insulin.routes';
@@ -40,7 +39,6 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use(express.json());
   if (requestLogging) app.use(morgan('dev'));
 
-  app.use('/auth', authRouter);
   app.use('/readings', createReadingsRouter(container.readings));
   app.use('/carbs', createCarbsRouter(container.carbs));
   app.use('/insulin', createInsulinRouter(container.insulin));

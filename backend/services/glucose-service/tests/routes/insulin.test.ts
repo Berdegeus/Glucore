@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app';
-import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } from '../helpers/db';
+import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
 
 /**
  * Characterization tests for /insulin. Same intent as readings.test.ts.
@@ -14,7 +14,7 @@ import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } fr
  */
 
 let app: Express;
-let user: RegisteredUser;
+let user: SignedInPatient;
 
 beforeAll(() => {
   app = buildApp();
@@ -22,7 +22,7 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await truncateAll();
-  user = await registerUser(app);
+  user = await signedInPatient();
 });
 
 afterAll(async () => {
@@ -90,7 +90,7 @@ describe('GET /insulin', () => {
   });
 
   it('never returns another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await seedInsulin(other.userId);
     expect((await request(app).get('/insulin').set(auth())).body).toEqual([]);
   });
@@ -169,7 +169,7 @@ describe('PUT /insulin/item/:id', () => {
   });
 
   it('answers 404 for another patient entry, and leaves it untouched', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     const row = await seedInsulin(other.userId);
 
     expect((await request(app).put(`/insulin/item/${row.id}`).set(auth()).send(patch)).status).toBe(
@@ -196,7 +196,7 @@ describe('DELETE /insulin/item/:id', () => {
   });
 
   it('answers 404 for another patient entry, and leaves it in place', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     const row = await seedInsulin(other.userId);
 
     expect((await request(app).delete(`/insulin/item/${row.id}`).set(auth())).status).toBe(404);
@@ -242,7 +242,7 @@ describe('POST /insulin (deprecated replace-all)', () => {
   });
 
   it('does not touch another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await seedInsulin(other.userId);
 
     await request(app).post('/insulin').set(auth()).send({ insulin: [] });

@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 import type { NextFunction, Request, Response } from 'express';
 
 import { prismaErrorHandler } from '../../src/middleware/prismaError';
-import { WeakPasswordError } from '../../src/lib/passwordPolicy';
 
 /**
  * Spec: TCC-09 / TCC-17 — spec.md "P2: Erros de banco com mensagem específica"
@@ -113,10 +112,25 @@ describe('prismaErrorHandler — classified database failures', () => {
 });
 
 describe('prismaErrorHandler — errors carrying their own contract', () => {
-  it('answers a WeakPasswordError with 400 WEAK_PASSWORD', () => {
-    const { captured } = handle(new WeakPasswordError('missingUppercase'));
+  /**
+   * The last link of the chain: a foreign error — not an AppError, not a Prisma
+   * one — that already knows its own status and code is answered with them
+   * rather than flattened to 500.
+   *
+   * The case used to be written with `WeakPasswordError`, which moved to
+   * auth-service along with the password policy. A local stand-in keeps the
+   * classifier covered here, where the real one is now asserted; the
+   * WeakPasswordError case itself lives in auth-service's suite.
+   */
+  class ForeignContractError extends Error {
+    readonly status = 400;
+    readonly code = 'FOREIGN_CONTRACT';
+  }
+
+  it('answers an error carrying status and code with exactly those', () => {
+    const { captured } = handle(new ForeignContractError('rejected upstream'));
     expect(captured.status).toBe(400);
-    expect(captured.body).toEqual({ error: 'Weak password', code: 'WEAK_PASSWORD' });
+    expect(captured.body).toEqual({ error: 'rejected upstream', code: 'FOREIGN_CONTRACT' });
   });
 });
 

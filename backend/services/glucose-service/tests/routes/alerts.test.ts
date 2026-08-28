@@ -4,7 +4,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app';
-import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } from '../helpers/db';
+import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
 
 /**
  * Characterization tests for /alerts.
@@ -16,7 +16,7 @@ import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } fr
  */
 
 let app: Express;
-let user: RegisteredUser;
+let user: SignedInPatient;
 
 beforeAll(() => {
   app = buildApp();
@@ -24,7 +24,7 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await truncateAll();
-  user = await registerUser(app);
+  user = await signedInPatient();
 });
 
 afterAll(async () => {
@@ -62,7 +62,7 @@ describe('GET /alerts', () => {
   });
 
   it('never returns another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await prisma.alertEvent.create({
       data: { patientId: other.userId, alertType: AlertType.HYPO_RISK },
     });
@@ -151,7 +151,7 @@ describe('POST /alerts (replace-all)', () => {
   });
 
   it('does not touch another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await prisma.alertEvent.create({
       data: { patientId: other.userId, alertType: AlertType.HYPO_RISK },
     });

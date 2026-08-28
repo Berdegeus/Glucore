@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app';
-import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } from '../helpers/db';
+import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
 
 /**
  * Characterization tests for /settings/alerts.
@@ -15,7 +15,7 @@ import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } fr
  */
 
 let app: Express;
-let user: RegisteredUser;
+let user: SignedInPatient;
 
 beforeAll(() => {
   app = buildApp();
@@ -23,7 +23,7 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await truncateAll();
-  user = await registerUser(app);
+  user = await signedInPatient();
 });
 
 afterAll(async () => {
@@ -44,7 +44,7 @@ describe('GET /settings/alerts', () => {
   });
 
   it('reflects a custom target range chosen at registration', async () => {
-    const custom = await registerUser(app, { targetRangeMin: 70, targetRangeMax: 200 });
+    const custom = await signedInPatient({ targetRangeMin: 70, targetRangeMax: 200 });
     const res = await request(app)
       .get('/settings/alerts')
       .set('Authorization', `Bearer ${custom.token}`);
@@ -58,7 +58,7 @@ describe('GET /settings/alerts', () => {
   });
 
   it('never leaks another patient thresholds', async () => {
-    await registerUser(app, { targetRangeMin: 60, targetRangeMax: 240 });
+    await signedInPatient({ targetRangeMin: 60, targetRangeMax: 240 });
     const res = await request(app).get('/settings/alerts').set(auth());
     expect(res.body).toEqual({ lowThreshold: 80, highThreshold: 180 });
   });
@@ -106,7 +106,7 @@ describe('PUT /settings/alerts', () => {
   });
 
   it('does not affect another patient config', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
 
     await request(app)
       .put('/settings/alerts')

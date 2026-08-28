@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app';
-import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } from '../helpers/db';
+import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
 
 /**
  * Characterization tests for /carbs. See readings.test.ts for the intent: these
@@ -15,7 +15,7 @@ import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } fr
  */
 
 let app: Express;
-let user: RegisteredUser;
+let user: SignedInPatient;
 
 beforeAll(() => {
   app = buildApp();
@@ -23,7 +23,7 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await truncateAll();
-  user = await registerUser(app);
+  user = await signedInPatient();
 });
 
 afterAll(async () => {
@@ -95,7 +95,7 @@ describe('GET /carbs', () => {
   });
 
   it('never returns another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await seedCarb(other.userId);
     const res = await request(app).get('/carbs').set(auth());
     expect(res.body).toEqual([]);
@@ -187,7 +187,7 @@ describe('PUT /carbs/item/:id', () => {
   });
 
   it('answers 404 for another patient entry, and leaves it untouched', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     const row = await seedCarb(other.userId);
 
     const res = await request(app).put(`/carbs/item/${row.id}`).set(auth()).send(patch);
@@ -217,7 +217,7 @@ describe('DELETE /carbs/item/:id', () => {
   });
 
   it('answers 404 for another patient entry, and leaves it in place', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     const row = await seedCarb(other.userId);
 
     expect((await request(app).delete(`/carbs/item/${row.id}`).set(auth())).status).toBe(404);
@@ -278,7 +278,7 @@ describe('POST /carbs (deprecated replace-all)', () => {
   });
 
   it('does not touch another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await seedCarb(other.userId);
 
     await request(app).post('/carbs').set(auth()).send({ carbs: [] });

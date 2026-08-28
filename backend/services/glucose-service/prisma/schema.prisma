@@ -1,3 +1,19 @@
+// Clinical data, and nothing else.
+//
+// Identity — User, AuthCredential, PasswordResetToken, AuthSession — moved to
+// auth-service and its own database. What is left joins to a person only by the
+// userId carried in the JWT, which is why `Patient.userId`,
+// `HealthProfessional.userId` and `Administrator.userId` are bare UUIDs with no
+// relation: the table they pointed at is not in this database any more.
+//
+// Seventeen of the original twenty foreign keys are still here, and they are the
+// ones that matter clinically: sensor -> binding -> patient -> reading stays
+// intact and still cascades.
+//
+// What was given up: ON DELETE CASCADE from User to Patient. This database can
+// no longer prevent an orphaned patient, so deleting an account has to become an
+// explicit cross-service operation instead of a row deletion.
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -5,18 +21,6 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  BLOCKED
-}
-
-enum UserRole {
-  PATIENT
-  HEALTH_PROFESSIONAL
-  ADMINISTRATOR
 }
 
 enum SensorSessionState {
@@ -45,84 +49,33 @@ enum AlertType {
   SYNC_FAILURE
 }
 
-model User {
-  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fullName            String
-  email               String               @unique
-  phone               String?
-  status              UserStatus           @default(ACTIVE)
-  role                UserRole             @default(PATIENT)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  authCredential      AuthCredential?
-  patient             Patient?
-  healthProfessional  HealthProfessional?
-  administrator       Administrator?
-  passwordResetTokens PasswordResetToken[]
-  authSessions        AuthSession[]
-  auditLogs           AuditLog[]
-}
-
 model Patient {
-  userId                 String                  @id @db.Uuid
-  birthDate              DateTime?               @db.Date
-  diabetesType           String?
-  weightKg               Decimal?                @db.Decimal(6, 2)
-  targetRangeMin         Int                     @default(80)
-  targetRangeMax         Int                     @default(180)
-  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sensorBindings         SensorBinding[]
-  readings               GlucoseReading[]
-  alertEvents            AlertEvent[]
-  carbs                  CarbEvent[]
-  insulin                InsulinEvent[]
-  alertThresholdConfig   AlertThresholdConfig?
-  clinicalReports        ClinicalReport[]
-  dashboardAccessGrants  DashboardAccessGrant[]
+  userId                String                 @id @db.Uuid
+  birthDate             DateTime?              @db.Date
+  diabetesType          String?
+  weightKg              Decimal?               @db.Decimal(6, 2)
+  targetRangeMin        Int                    @default(80)
+  targetRangeMax        Int                    @default(180)
+  sensorBindings        SensorBinding[]
+  readings              GlucoseReading[]
+  alertEvents           AlertEvent[]
+  carbs                 CarbEvent[]
+  insulin               InsulinEvent[]
+  alertThresholdConfig  AlertThresholdConfig?
+  clinicalReports       ClinicalReport[]
+  dashboardAccessGrants DashboardAccessGrant[]
 }
 
 model HealthProfessional {
   userId                String                 @id @db.Uuid
   licenseNumber         String
   specialty             String
-  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   dashboardAccessGrants DashboardAccessGrant[]
 }
 
 model Administrator {
   userId       String @id @db.Uuid
   employeeCode String
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model AuthCredential {
-  userId       String    @id @db.Uuid
-  passwordHash String
-  mfaSecret    String?
-  lastLoginAt  DateTime?
-  isMfaEnabled Boolean   @default(false)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model PasswordResetToken {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  token     String    @unique
-  userId    String    @db.Uuid
-  expiresAt DateTime
-  usedAt    DateTime?
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model AuthSession {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String   @db.Uuid
-  issuedAt  DateTime @default(now())
-  expiresAt DateTime
-  userAgent String?
-  isRevoked Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, isRevoked])
 }
 
 model SensorDevice {
@@ -310,8 +263,16 @@ model DashboardAccessGrant {
   @@index([clinicalReportId])
 }
 
-/// Trilha de auditoria (item 4.11 do checklist). `userId` é nulável com
-/// onDelete: SetNull para que a trilha sobreviva à exclusão da conta.
+/// Trilha de auditoria (item 4.11 do checklist), das escritas clínicas —
+/// leituras, carboidratos, insulina, alertas e thresholds. As ações de conta
+/// (LOGIN, REGISTER, RESET_PASSWORD) são gravadas na tabela equivalente do
+/// auth-service.
+///
+/// `userId` continua nulável mas já não tem FK: não existe `User` neste banco
+/// para referenciar. O efeito prático do antigo `onDelete: SetNull` — a trilha
+/// sobreviver à exclusão da conta — vale de graça agora, já que nada apaga
+/// estas linhas em cascata.
+///
 /// `metadata` nunca recebe senha, hash de senha ou token de recuperação.
 model AuditLog {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -323,8 +284,6 @@ model AuditLog {
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([entity, createdAt])
