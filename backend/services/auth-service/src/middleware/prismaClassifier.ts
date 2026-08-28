@@ -2,15 +2,21 @@
  * Turns a Prisma failure into the `{ error, code }` contract the app reads.
  *
  * This link of the chain lives in the service rather than in `@glucore/shared`
- * because it is the only part that needs `@prisma/client`: the gateway consumes
- * the same shared handler and has no database, and once the split lands each
- * service generates its own client.
+ * because it is the only part that needs a Prisma client, and each service now
+ * generates its own from its own schema. The gateway consumes the same shared
+ * handler with no database at all.
  *
  * See design.md "Contratos de erro (backend -> app)".
  */
 
-import { Prisma } from '@prisma/client';
 import type { ErrorClassifier, ErrorContract } from '@glucore/shared';
+
+// From this service's generated client, not from '@prisma/client'. The two are
+// different classes: '@prisma/client' resolves to the workspace-wide client
+// that glucose-service generates, and `instanceof` against it would be false
+// for every error this service's own client throws — every P2002 would come
+// back as a 500. The unit test for this file is what caught it.
+import { Prisma } from '../lib/prisma';
 
 const UNCLASSIFIED: ErrorContract = {
   status: 500,
