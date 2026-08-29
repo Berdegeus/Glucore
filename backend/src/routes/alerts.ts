@@ -1,96 +1,62 @@
-import { Router, Response } from 'express';
-import { AlertType } from '@prisma/client';
-import { verifyJwt, requireRole, AuthRequest } from '../middleware/auth';
+/**
+ * `/alerts` — wiring only. Validation lives in `alertService`, HTTP
+ * translation in `alertController`, queries and the enum mapping in
+ * `alertRepository` (design.md "Camadas do backend"). Nothing here touches
+ * Prisma.
+ *
+ * Endpoints:
+ *   GET    /alerts?before=<epoch ms>&limit=<1..500>  → page, newest first
+ *   POST   /alerts/item                              → 201 { id }
+ *   PUT    /alerts/item/:id                          → 204 | 404
+ *   DELETE /alerts/item/:id                          → 204 | 404
+ *   POST   /alerts                                   → 204 (deprecated batch)
+ */
+
+import { Router } from 'express';
+import type { RequireRoleOptions } from '../middleware/auth';
+import { verifyJwt, requireRole } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { prisma } from '../lib/prisma';
 import { ensurePatient } from '../lib/patient';
-import { auditRequestContext, recordAudit } from '../lib/audit';
+import { recordAudit } from '../lib/audit';
+import type { AlertPrismaClient } from '../repositories/alertRepository';
+import { createAlertRepository } from '../repositories/alertRepository';
+import { createAlertService } from '../services/alertService';
+import type { AlertController } from '../controllers/alertController';
+import { createAlertController } from '../controllers/alertController';
 
-const router = Router();
-
-router.use(verifyJwt);
-router.use(requireRole('PATIENT'));
-
-function toDbAlertType(type: string): AlertType {
-  switch (type) {
-    case 'glucoseLow':
-    case 'HYPO_RISK':
-      return AlertType.HYPO_RISK;
-    case 'glucoseHigh':
-    case 'HYPER_RISK':
-      return AlertType.HYPER_RISK;
-    case 'sensorReconnected':
-    case 'SENSOR_RECONNECTED':
-      return AlertType.SENSOR_RECONNECTED;
-    case 'syncFailure':
-    case 'SYNC_FAILURE':
-      return AlertType.SYNC_FAILURE;
-    case 'FAST_DROP':
-      return AlertType.FAST_DROP;
-    case 'FAST_RISE':
-      return AlertType.FAST_RISE;
-    default:
-      return AlertType.SYNC_FAILURE;
-  }
+export interface AlertsRouterDeps {
+  /** Defaults to the production controller over the Prisma singleton. */
+  controller?: AlertController;
+  /** Lets a test authorize without a database (see `requireRole`). */
+  requireRoleOptions?: RequireRoleOptions;
 }
 
-function toAppAlertType(type: AlertType): string {
-  switch (type) {
-    case AlertType.HYPO_RISK:
-      return 'glucoseLow';
-    case AlertType.HYPER_RISK:
-      return 'glucoseHigh';
-    case AlertType.SENSOR_RECONNECTED:
-      return 'sensorReconnected';
-    case AlertType.FAST_DROP:
-    case AlertType.FAST_RISE:
-    case AlertType.SYNC_FAILURE:
-      return 'syncFailure';
-  }
+function defaultController(): AlertController {
+  return createAlertController(
+    createAlertService({
+      repository: createAlertRepository(prisma as unknown as AlertPrismaClient),
+      ensurePatient,
+      recordAudit,
+    }),
+  );
 }
 
-router.get(
-  '/',
-  asyncHandler(async (req: AuthRequest, res: Response) => {
-    const patientId = await ensurePatient(req.userId!);
-    const rows = await prisma.alertEvent.findMany({
-      where: { patientId },
-      orderBy: { triggeredAt: 'desc' },
-      take: 100,
-    });
-    res.json(rows.map(a => ({ type: toAppAlertType(a.alertType), timestampMs: a.triggeredAt.getTime() })));
-  }),
-);
+export function createAlertsRouter(deps: AlertsRouterDeps = {}): Router {
+  const controller = deps.controller ?? defaultController();
+  const router = Router();
 
-router.post(
-  '/',
-  asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { alerts } = req.body as {
-      alerts?: Array<{ type: string; timestampMs: number }>;
-    };
-    if (!Array.isArray(alerts)) {
-      res.status(400).json({ error: 'alerts must be array' });
-      return;
-    }
-    const patientId = await ensurePatient(req.userId!);
-    await prisma.alertEvent.deleteMany({ where: { patientId } });
-    await prisma.alertEvent.createMany({
-      data: alerts.slice(0, 100).map(a => ({
-        patientId,
-        alertType: toDbAlertType(a.type),
-        triggeredAt: new Date(a.timestampMs),
-      })),
-    });
-    await recordAudit({
-      userId: req.userId,
-      entity: 'AlertEvent',
-      action: 'REPLACE',
-      entityId: patientId,
-      metadata: { count: alerts.length },
-      ...auditRequestContext(req),
-    });
-    res.status(204).send();
-  }),
-);
+  router.use(verifyJwt);
+  router.use(requireRole('PATIENT', deps.requireRoleOptions));
 
-export default router;
+  router.get('/', asyncHandler(controller.list));
+  router.post('/item', asyncHandler(controller.create));
+  router.put('/item/:id', asyncHandler(controller.update));
+  router.delete('/item/:id', asyncHandler(controller.remove));
+  // Deprecated: replace-all em lote — usar POST /alerts/item, PUT/DELETE /alerts/item/:id.
+  router.post('/', asyncHandler(controller.replaceAll));
+
+  return router;
+}
+
+export default createAlertsRouter();

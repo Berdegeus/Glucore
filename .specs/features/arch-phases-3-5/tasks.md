@@ -381,16 +381,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Os três verbos unitários existem, com 201/204/404 e validação de UUID
-- [ ] `PUT`/`DELETE` de id de outro paciente respondem 404 sem alterar dado
-- [ ] `GET /alerts` devolve `id` e aceita `before`/`limit`
-- [ ] O `POST /alerts` de coleção continua funcionando, marcado deprecated
-- [ ] Testes supertest cobrem feliz, 400, 404 de outro paciente e paginação
-- [ ] Gate: `cd backend && npx tsc --noEmit && npm test` verde
+- [x] Os três verbos unitários existem, com 201/204/404 e validação de UUID
+- [x] `PUT`/`DELETE` de id de outro paciente respondem 404 sem alterar dado
+- [x] `GET /alerts` devolve `id` e aceita `before`/`limit`
+- [x] O `POST /alerts` de coleção continua funcionando, marcado deprecated — e passou a preservar o `id` do cliente, que antes era descartado
+- [x] Testes supertest cobrem feliz, 400, 404 de outro paciente e paginação
+- [x] Gate: `cd backend && npx tsc --noEmit && npm test` verde (143 testes, 20 novos)
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(backend): add per-item alert endpoints`
+**Status**: ✅ Complete
 
 ---
 
