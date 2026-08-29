@@ -166,9 +166,51 @@ void main() {
       }
       await db.close();
     });
+
+    test('onCreate cria a tabela pending_ops do op-log', () async {
+      final dataSource = LocalPatientDataSource(
+        databaseFactory: databaseFactoryFfi,
+        databasePath: dbPath,
+      );
+      await dataSource.load();
+      await dataSource.close();
+
+      final db = await openRaw();
+      final columns = await db.rawQuery('PRAGMA table_info(pending_ops)');
+      expect(
+        columns.map((c) => c['name']),
+        containsAll([
+          'seq',
+          'entity',
+          'entity_id',
+          'op',
+          'payload_json',
+          'created_at',
+        ]),
+      );
+      expect(columns.firstWhere((c) => c['name'] == 'seq')['pk'], 1);
+      await db.close();
+    });
   });
 
   group('IDENT-05: migração v2 → v3', () {
+    test('cria a tabela pending_ops num banco vindo da v2', () async {
+      await seedVersion2();
+
+      final dataSource = LocalPatientDataSource(
+        databaseFactory: databaseFactoryFfi,
+        databasePath: dbPath,
+      );
+      await dataSource.load();
+      await dataSource.close();
+
+      final db = await openRaw();
+      expect(await userVersion(db), 3);
+      final columns = await db.rawQuery('PRAGMA table_info(pending_ops)');
+      expect(columns.map((c) => c['name']), contains('entity_id'));
+      await db.close();
+    });
+
     test('preserva todas as linhas do diário e preenche um id por linha',
         () async {
       await seedVersion2();

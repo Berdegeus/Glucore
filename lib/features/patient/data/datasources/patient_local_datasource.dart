@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart'
 import 'package:uuid/uuid.dart';
 
 import '../../presentation/models/patient_models.dart';
+import '../sync/pending_op.dart';
 import 'patient_datasource.dart';
 
 const _uuid = Uuid();
@@ -65,6 +66,7 @@ class LocalPatientDataSource implements PatientDataSource {
             )
           ''');
           await _createMetaTable(db);
+          await db.execute(_createPendingOpsTable);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           // Additive only — never DROP patient data on upgrade.
@@ -117,11 +119,26 @@ class LocalPatientDataSource implements PatientDataSource {
   static const _indexInsulinTime =
       'CREATE INDEX idx_insulin_time ON insulin(time_ms)';
 
-  /// v2 → v3 (IDENT-05): troca a PK das três coleções do diário por `id TEXT`,
-  /// gerando um UUID v4 por linha existente. Nenhuma linha do paciente é
-  /// descartada. O sqflite já executa `onUpgrade` dentro de uma transação, então
-  /// uma falha no meio desfaz tudo e o banco permanece na v2.
+  /// Op-log do diário (SYNC-01/SYNC-02): `seq` dá a ordem total de drenagem,
+  /// independente do relógio do aparelho.
+  static const _createPendingOpsTable = '''
+        CREATE TABLE pending_ops(
+          seq INTEGER PRIMARY KEY AUTOINCREMENT,
+          entity TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          op TEXT NOT NULL,
+          payload_json TEXT,
+          created_at INTEGER NOT NULL
+        )
+      ''';
+
+  /// v2 → v3 (IDENT-05): cria o op-log e troca a PK das três coleções do
+  /// diário por `id TEXT`, gerando um UUID v4 por linha existente. Nenhuma
+  /// linha do paciente é descartada. O sqflite já executa `onUpgrade` dentro de
+  /// uma transação, então uma falha no meio desfaz tudo e o banco permanece na
+  /// v2.
   static Future<void> _migrateDiaryToUuidKeys(Database db) async {
+    await db.execute(_createPendingOpsTable);
     await _rebuildWithUuidKey(
       db,
       table: 'alerts',
@@ -215,7 +232,37 @@ class LocalPatientDataSource implements PatientDataSource {
       await txn.delete('carbs');
       await txn.delete('insulin');
       await txn.delete('settings');
+      // A fila vai junto: uma operação do dono anterior enviada sob o novo
+      // login gravaria o diário de um paciente na conta de outro (P19).
+      await txn.delete('pending_ops');
     });
+  }
+
+  // ── op-log do diário (SYNC-01/SYNC-02) ────────────────────────────────────
+
+  /// Enfileira uma operação unitária. Escritas de diário chamam a variante
+  /// transacional (uma linha e sua operação nunca se separam).
+  Future<void> enqueueOp(PendingOp op) async {
+    final db = await _db;
+    await db.insert('pending_ops', op.toRow());
+  }
+
+  /// Operações pendentes em ordem crescente de `seq` — a ordem em que foram
+  /// criadas é a ordem em que precisam chegar ao backend (SYNC-02).
+  Future<List<PendingOp>> pendingOps({int limit = 200}) async {
+    final db = await _db;
+    final rows = await db.query(
+      'pending_ops',
+      orderBy: 'seq ASC',
+      limit: limit,
+    );
+    return rows.map(PendingOp.fromRow).toList();
+  }
+
+  /// Remove uma operação confirmada pelo backend (SYNC-09).
+  Future<void> deleteOp(int seq) async {
+    final db = await _db;
+    await db.delete('pending_ops', where: 'seq = ?', whereArgs: [seq]);
   }
 
   Future<void> close() async {

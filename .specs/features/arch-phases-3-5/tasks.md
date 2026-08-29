@@ -464,14 +464,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Tabela criada no `onCreate` e na migração da v3
-- [ ] `enqueueOp`, `pendingOps` (ordem crescente de `seq`) e `deleteOp` implementados
-- [ ] Teste cobre ordem de saída e remoção por `seq`
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] Tabela criada no `onCreate` e na migração da v3
+- [x] `enqueueOp`, `pendingOps` (ordem crescente de `seq`) e `deleteOp` implementados
+- [x] Teste cobre ordem de saída e remoção por `seq`
+- [x] `wipeAllData` também esvazia a fila — sem isso a troca de conta empurraria a operação do dono anterior sob o novo login (P19)
+- [x] Gate: `flutter test --no-pub` verde (229 testes, 10 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(patient): add a local pending-operations log`
+**Status**: ✅ Complete
 
 ---
 
