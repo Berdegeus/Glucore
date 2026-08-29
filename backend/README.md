@@ -388,6 +388,32 @@ Operações relevantes (login, registro, recuperação e troca de senha, altera�
 
 A trilha nunca guarda senha, hash, token de redefinição nem valores de campo; em alteração de perfil registra apenas os **nomes** dos campos alterados.
 
+## Índices da paginação
+
+As três listagens do diário rodam a mesma consulta: igualdade em `patientId`, faixa em
+`< before` sobre a coluna de horário, ordenação decrescente por essa mesma coluna e `take`.
+Um índice composto `(patientId, <coluna de horário>)` atende as três partes de uma vez —
+filtra pelo prefixo, corta a faixa e já entrega as linhas ordenadas, sem sort adicional.
+
+| Consulta | Índice que a atende | Onde é declarado |
+| -------- | ------------------- | ---------------- |
+| `GET /carbs` — `where { patientId, eventAt: { lt } }`, `orderBy eventAt desc` | `CarbEvent_patientId_eventAt_idx` | `schema.prisma`, `@@index([patientId, eventAt])` do `CarbEvent` |
+| `GET /insulin` — `where { patientId, eventAt: { lt } }`, `orderBy eventAt desc` | `InsulinEvent_patientId_eventAt_idx` | `schema.prisma`, `@@index([patientId, eventAt])` do `InsulinEvent` |
+| `GET /alerts` — `where { patientId, triggeredAt: { lt } }`, `orderBy triggeredAt desc` | `AlertEvent_patientId_triggeredAt_idx` | `schema.prisma`, `@@index([patientId, triggeredAt])` do `AlertEvent` |
+
+Os três já existiam e são criados pela migration `20260517172000_domain_model_alignment`.
+A verificação não encontrou índice faltando, então esta release não acrescenta migration de
+índice. Índice novo só entra se uma consulta nova não for coberta por um destes.
+
+## Tabelas de roadmap
+
+Dez modelos do schema não têm rota nesta release e estão anotados com `/// roadmap` em
+`prisma/schema.prisma`: `HealthProfessional`, `Administrator`, `SensorDevice`,
+`SensorBinding`, `SensorSession`, `SensorStatusEvent`, `GlucosePrediction`,
+`ClinicalReport`, `MetricsSnapshot` e `DashboardAccessGrant`. Eles ficam no schema de
+propósito — descrevem o modelo de domínio planejado. A anotação existe para que a próxima
+leitura não os confunda com tabela morta e tente removê-los.
+
 ## Migrations
 
 Toda mudança em `prisma/schema.prisma` acompanha a migration versionada em `prisma/migrations/`, no mesmo PR. Aplicar: `npx prisma migrate dev` em desenvolvimento, `npx prisma migrate deploy` em ambiente já provisionado.

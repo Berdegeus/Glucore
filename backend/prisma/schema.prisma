@@ -81,6 +81,7 @@ model Patient {
   dashboardAccessGrants  DashboardAccessGrant[]
 }
 
+/// roadmap: perfil do profissional de saude. Sem rota nesta release; mantido para o painel clinico planejado.
 model HealthProfessional {
   userId                String                 @id @db.Uuid
   licenseNumber         String
@@ -89,6 +90,7 @@ model HealthProfessional {
   dashboardAccessGrants DashboardAccessGrant[]
 }
 
+/// roadmap: perfil administrativo. Sem rota nesta release; mantido para a gestao de usuarios planejada.
 model Administrator {
   userId       String @id @db.Uuid
   employeeCode String
@@ -125,6 +127,7 @@ model AuthSession {
   @@index([userId, isRevoked])
 }
 
+/// roadmap: cadastro de aparelho de sensor no servidor. Sem rota nesta release; hoje a sessao do sensor vive no SQLite do Android.
 model SensorDevice {
   id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   serialNumber    String          @unique
@@ -137,6 +140,7 @@ model SensorDevice {
   sessions        SensorSession[]
 }
 
+/// roadmap: vinculo paciente-sensor no servidor. Sem rota nesta release.
 model SensorBinding {
   id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   patientId      String       @db.Uuid
@@ -151,6 +155,7 @@ model SensorBinding {
   @@index([sensorDeviceId])
 }
 
+/// roadmap: sessao de sensor no servidor. Sem rota nesta release; a sessao ativa e mantida pelo app.
 model SensorSession {
   id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   sensorDeviceId String              @db.Uuid
@@ -166,6 +171,7 @@ model SensorSession {
   @@index([sensorDeviceId, startedAt])
 }
 
+/// roadmap: telemetria de status do sensor. Sem rota nesta release.
 model SensorStatusEvent {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   sensorSessionId String        @db.Uuid
@@ -208,6 +214,7 @@ model AlertThresholdConfig {
   predictions         GlucosePrediction[]
 }
 
+/// roadmap: predicao de glicemia. Sem rota nesta release; AlertEvent.glucosePredictionId fica nulo.
 model GlucosePrediction {
   id                     String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   glucoseReadingId       String               @db.Uuid
@@ -264,6 +271,7 @@ model InsulinEvent {
   @@index([patientId, eventAt])
 }
 
+/// roadmap: relatorio clinico gerado. Sem rota nesta release.
 model ClinicalReport {
   id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   patientId             String                 @db.Uuid
@@ -278,6 +286,7 @@ model ClinicalReport {
   @@index([patientId, generatedAt])
 }
 
+/// roadmap: metricas agregadas de um relatorio clinico. Sem rota nesta release.
 model MetricsSnapshot {
   id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   clinicalReportId String         @db.Uuid
@@ -293,6 +302,7 @@ model MetricsSnapshot {
   @@index([clinicalReportId])
 }
 
+/// roadmap: consentimento de acesso do profissional ao painel do paciente. Sem rota nesta release.
 model DashboardAccessGrant {
   id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   patientId            String             @db.Uuid

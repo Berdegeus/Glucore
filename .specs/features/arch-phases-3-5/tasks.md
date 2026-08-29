@@ -410,14 +410,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Verificação registrada no `backend/README.md` com o nome do índice que atende cada consulta
-- [ ] Migration versionada incluída apenas se algum índice faltar
-- [ ] Tabelas sem rota anotadas com `/// roadmap`, sem remoção
-- [ ] Gate: `cd backend && npx tsc --noEmit && npm test` verde
+- [x] Verificação registrada no `backend/README.md` com o nome do índice que atende cada consulta (`CarbEvent_patientId_eventAt_idx`, `InsulinEvent_patientId_eventAt_idx`, `AlertEvent_patientId_triggeredAt_idx`)
+- [x] Migration versionada incluída apenas se algum índice faltar — nenhum faltava, os três vêm de `20260517172000_domain_model_alignment`, então nenhuma migration foi criada
+- [x] Tabelas sem rota anotadas com `/// roadmap`, sem remoção (10 modelos; diff do schema é 10 inserções, 0 remoções)
+- [x] Gate: `cd backend && npx tsc --noEmit && npm test` verde (143 testes, 0 falhas)
 
 **Tests**: none
 **Gate**: build
 **Commit**: `chore(backend): verify pagination indexes and mark roadmap tables`
+**Status**: ✅ Complete
 
 ---
 
