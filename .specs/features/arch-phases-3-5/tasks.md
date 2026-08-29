@@ -301,13 +301,14 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `findPage`, `create`, `update` e `remove` implementados e escopados por paciente
-- [ ] Teste unitário com client falso cobre paginação, escopo e erro
-- [ ] Gate: `cd backend && npm test` verde
+- [x] `findPage`, `create`, `update` e `remove` implementados e escopados por paciente
+- [x] Teste unitário com client falso cobre paginação, escopo e erro
+- [x] Gate: `cd backend && npm test` verde (84 testes, 14 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `refactor(backend): extract the insulin repository from the route`
+**Status**: ✅ Complete
 
 ---
 
