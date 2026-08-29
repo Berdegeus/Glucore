@@ -780,14 +780,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Preferência lida e gravada em `SharedPreferences` na chave `theme_mode`, default `system`
-- [ ] `MaterialApp` recebe `theme`, `darkTheme` e `themeMode` do cubit
-- [ ] Teste cobre persistência entre execuções e o modo `system` seguindo a plataforma
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Preferência lida e gravada em `SharedPreferences` na chave `theme_mode`, default `system`
+- [x] `MaterialApp` recebe `theme`, `darkTheme` e `themeMode` do cubit
+- [x] Teste cobre persistência entre execuções e o modo `system` seguindo a plataforma
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (313 testes, 9 novos)
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(theme): persist the light and dark preference`
+**Status**: ✅ Complete
+
+**Nota**: `session_expiry_app_test.dart` passou a registrar `ThemeCubit` no GetIt — o `App` agora o resolve do container. Nenhuma asserção do teste mudou.
 
 ---
 

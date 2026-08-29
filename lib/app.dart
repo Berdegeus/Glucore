@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/session/session_expiry_notifier.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_cubit.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/cubit/auth_state.dart';
 import 'features/auth/presentation/pages/auth_gate.dart';
@@ -29,6 +30,7 @@ class _AppState extends State<App> {
   // Held here (rather than created inside BlocProvider) so the session-expiry
   // listener can log out without a BuildContext below the provider.
   final AuthCubit _authCubit = sl<AuthCubit>();
+  final ThemeCubit _themeCubit = sl<ThemeCubit>();
   final SessionExpiryNotifier _sessionExpiry = sl<SessionExpiryNotifier>();
   StreamSubscription<AuthState>? _authSubscription;
 
@@ -45,6 +47,7 @@ class _AppState extends State<App> {
       if (state.status == AuthStatus.authenticated) _sessionExpiry.reset();
     });
     _authCubit.checkAuthStatus();
+    _themeCubit.load();
     _loadOnboardingFlag();
   }
 
@@ -53,6 +56,7 @@ class _AppState extends State<App> {
     _sessionExpiry.removeListener(_handleSessionExpired);
     _authSubscription?.cancel();
     _authCubit.close();
+    _themeCubit.close();
     super.dispose();
   }
 
@@ -88,52 +92,58 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AuthCubit>.value(
-      value: _authCubit,
-      child: MaterialApp(
-        navigatorKey: _navigatorKey,
-        onGenerateTitle: (context) => context.l10n.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        // Patient/Sensor cubits live ABOVE the root Navigator so every pushed
-        // route inherits them (fixes P17: routes pushed on the root Navigator
-        // used to sit above providers created inside AuthGate). Gated on the
-        // authenticated state so they follow the login/logout lifecycle.
-        builder: (context, child) {
-          return BlocBuilder<AuthCubit, AuthState>(
-            buildWhen: (previous, current) =>
-                previous.status != current.status,
-            builder: (context, state) {
-              if (state.status != AuthStatus.authenticated) {
-                return child!;
-              }
-              return MultiBlocProvider(
-                providers: [
-                  BlocProvider<SensorCubit>(
-                    create: (_) => sl<SensorCubit>()..initialize(),
-                  ),
-                  BlocProvider<PatientCubit>(
-                    create: (context) => sl<PatientCubit>()
-                      ..initialize(context.read<SensorCubit>()),
-                  ),
-                ],
-                child: child!,
-              );
-            },
-          );
-        },
-        home: _resolveInitialFlow(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>.value(value: _authCubit),
+        BlocProvider<ThemeCubit>.value(value: _themeCubit),
+      ],
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) => MaterialApp(
+          navigatorKey: _navigatorKey,
+          onGenerateTitle: (context) => context.l10n.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: themeMode,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          // Patient/Sensor cubits live ABOVE the root Navigator so every pushed
+          // route inherits them (fixes P17: routes pushed on the root Navigator
+          // used to sit above providers created inside AuthGate). Gated on the
+          // authenticated state so they follow the login/logout lifecycle.
+          builder: (context, child) {
+            return BlocBuilder<AuthCubit, AuthState>(
+              buildWhen: (previous, current) =>
+                  previous.status != current.status,
+              builder: (context, state) {
+                if (state.status != AuthStatus.authenticated) {
+                  return child!;
+                }
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider<SensorCubit>(
+                      create: (_) => sl<SensorCubit>()..initialize(),
+                    ),
+                    BlocProvider<PatientCubit>(
+                      create: (context) =>
+                          sl<PatientCubit>()
+                            ..initialize(context.read<SensorCubit>()),
+                    ),
+                  ],
+                  child: child!,
+                );
+              },
+            );
+          },
+          home: _resolveInitialFlow(),
+        ),
       ),
     );
   }
 
   Widget _resolveInitialFlow() {
     if (_showSplash) {
-      return SplashPage(
-        onFinish: () => setState(() => _showSplash = false),
-      );
+      return SplashPage(onFinish: () => setState(() => _showSplash = false));
     }
 
     if (!_onboardingLoaded) {

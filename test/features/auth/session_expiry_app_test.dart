@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/app.dart';
 import 'package:glucore/core/session/session_expiry_notifier.dart';
 import 'package:glucore/core/theme/app_theme.dart';
+import 'package:glucore/core/theme/theme_cubit.dart';
 import 'package:glucore/features/auth/domain/repositories/auth_repository.dart';
 import 'package:glucore/features/auth/domain/usecases/get_auth_status_usecase.dart';
 import 'package:glucore/features/auth/domain/usecases/login_usecase.dart';
@@ -33,10 +34,11 @@ void main() {
       registerUseCase: RegisterUseCase(repo),
       connectivityChanges: const Stream.empty(),
     );
-    // App resolves both from the container; the factory hands back the same
-    // instance so the test can drive it.
+    // App resolves all three from the container; the factory hands back the
+    // same instance so the test can drive it.
     sl.registerFactory<AuthCubit>(() => cubit);
     sl.registerLazySingleton<SessionExpiryNotifier>(() => notifier);
+    sl.registerLazySingleton<ThemeCubit>(ThemeCubit.new);
   });
 
   tearDown(() async {

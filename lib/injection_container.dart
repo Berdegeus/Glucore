@@ -4,6 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'core/api/api_client.dart';
 import 'core/api/auth_token_store.dart';
 import 'core/session/session_expiry_notifier.dart';
+import 'core/theme/theme_cubit.dart';
+import 'core/theme/theme_preference_store.dart';
 import 'features/auth/data/datasources/account_service.dart';
 import 'features/auth/data/datasources/auth_local_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -95,6 +97,9 @@ Future<void> initDependencies() async {
       registerUseCase: sl(),
     ),
   );
+  sl.registerLazySingleton(() => const ThemePreferenceStore());
+  // Single instance: the theme is app-wide state, not per-screen.
+  sl.registerLazySingleton(() => ThemeCubit(store: sl<ThemePreferenceStore>()));
   sl.registerFactory(() => SensorCubit(repository: sl()));
   sl.registerFactory(() => PatientCubit(useCases: sl()));
   sl.registerFactory(() => UserIdentityCubit(accountService: sl()));
