@@ -694,14 +694,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Um caso de uso por operação hoje chamada no repositório pelo cubit
-- [ ] Cada um recebe o repositório por construtor e expõe `call`
-- [ ] Teste unitário por caso de uso com repositório dublê
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] Um caso de uso por operação hoje chamada no repositório pelo cubit — doze, atrás do barrel `patient_usecases.dart`
+- [x] Cada um recebe o repositório por construtor e expõe `call`
+- [x] Teste unitário por caso de uso com repositório dublê — cada teste confere o método chamado e o argumento, não só que houve chamada
+- [x] Gate: `flutter test --no-pub` verde (293 testes, 14 novos)
+
+**Nota de contrato**: o `design.md` listava `SaveAlerts` e `ClearReadings`. Nenhum dos dois sobrevive à Fase 4 como operação distinta do repositório: alerta viaja por item (`addAlert`) e limpar histórico é `saveReadings([])`. O conjunto entregue espelha a superfície de escrita que existe hoje, não a que o design esboçou antes.
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(patient): add patient use cases in the domain layer`
+**Status**: ✅ Complete
 
 ---
 
