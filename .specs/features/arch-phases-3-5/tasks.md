@@ -610,15 +610,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Adicionar, editar e apagar carboidrato e insulina chamam a operação unitária
-- [ ] Alerta novo gerado pelo cubit é gravado por item
-- [ ] Leituras continuam pela gravação de coleção com debounce
-- [ ] Teste cobre uma edição gerando exatamente uma operação pendente
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Adicionar, editar e apagar carboidrato e insulina chamam a operação unitária
+- [x] Alerta novo gerado pelo cubit é gravado por item — `_withThresholdAlerts` virou `_thresholdAlertFor`, que devolve o alerta novo para o cubit saber o que gravar; `_sameAlertList`, órfão dessa troca, saiu
+- [x] Leituras continuam pela gravação de coleção com debounce
+- [x] Teste cobre uma edição gerando exatamente uma operação pendente
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (273 testes, 6 novos)
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(patient): route diary mutations through per-entry writes`
+**Status**: ✅ Complete
 
 ---
 
