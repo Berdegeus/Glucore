@@ -9,9 +9,12 @@ import 'package:glucore/features/patient/presentation/models/patient_models.dart
 /// Adaptador Dio dublê: devolve o corpo configurado por caminho e guarda o que
 /// foi enviado.
 class _StubAdapter implements HttpClientAdapter {
-  _StubAdapter(this.bodies);
+  _StubAdapter(this.bodies, {this.statuses = const {}});
 
   final Map<String, Object?> bodies;
+
+  /// Status por requisição, na chave `'MÉTODO caminho'`; ausente = 200.
+  final Map<String, int> statuses;
   final requests = <RequestOptions>[];
 
   @override
@@ -23,7 +26,7 @@ class _StubAdapter implements HttpClientAdapter {
     requests.add(options);
     return ResponseBody.fromString(
       jsonEncode(bodies[options.path] ?? const <dynamic>[]),
-      200,
+      statuses['${options.method} ${options.path}'] ?? 200,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },
@@ -47,8 +50,8 @@ void main() {
   late _StubAdapter adapter;
   late RemotePatientDataSource remote;
 
-  void buildWith(Map<String, Object?> bodies) {
-    adapter = _StubAdapter(bodies);
+  void buildWith(Map<String, Object?> bodies, {Map<String, int> statuses = const {}}) {
+    adapter = _StubAdapter(bodies, statuses: statuses);
     final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3001'))
       ..httpClientAdapter = adapter;
     remote = RemotePatientDataSource(dio);
@@ -173,6 +176,127 @@ void main() {
           (sentBody('/carbs')['carbs'] as List<dynamic>).first as Map;
       expect(sent['id'], entry.id);
       expect(snapshot.carbs.single.id, entry.id);
+    });
+  });
+
+  group('SYNC-06/API-01: chamadas por item', () {
+    final carb =
+        CarbEntry(id: carbId, grams: 45, description: 'Almoço', time: t0);
+    final insulin = InsulinEntry(
+      id: insulinId,
+      units: 4.5,
+      type: InsulinType.bolus,
+      time: t0,
+      dayOfWeek: kDaysOfWeek[2],
+    );
+    final alert = AppAlertItem(
+      id: alertId,
+      type: AppAlertType.glucoseLow,
+      timestamp: t0,
+    );
+
+    List<String> calls() =>
+        adapter.requests.map((r) => '${r.method} ${r.path}').toList();
+
+    test('upsertCarb manda PUT no id com o corpo da entrada', () async {
+      buildWith(defaultBodies(), statuses: {'PUT /carbs/item/$carbId': 204});
+
+      await remote.upsertCarb(carb);
+
+      expect(calls(), ['PUT /carbs/item/$carbId']);
+      final body = adapter.requests.single.data as Map<String, dynamic>;
+      expect(body['id'], carbId);
+      expect(body['grams'], 45);
+      expect(body['timeMs'], t0.millisecondsSinceEpoch);
+    });
+
+    test('upsertInsulin e upsertAlert usam o caminho da própria entidade',
+        () async {
+      buildWith(defaultBodies(), statuses: {
+        'PUT /insulin/item/$insulinId': 204,
+        'PUT /alerts/item/$alertId': 204,
+      });
+
+      await remote.upsertInsulin(insulin);
+      await remote.upsertAlert(alert);
+
+      expect(calls(), [
+        'PUT /insulin/item/$insulinId',
+        'PUT /alerts/item/$alertId',
+      ]);
+      expect(
+        (adapter.requests.first.data as Map<String, dynamic>)['units'],
+        4.5,
+      );
+      expect(
+        (adapter.requests.last.data as Map<String, dynamic>)['type'],
+        'glucoseLow',
+      );
+    });
+
+    test('PUT com 404 cai para POST criando a entrada com o mesmo id',
+        () async {
+      buildWith(defaultBodies(), statuses: {
+        'PUT /carbs/item/$carbId': 404,
+        'POST /carbs/item': 201,
+      });
+
+      await remote.upsertCarb(carb);
+
+      expect(calls(), ['PUT /carbs/item/$carbId', 'POST /carbs/item']);
+      final created = adapter.requests.last.data as Map<String, dynamic>;
+      expect(created['id'], carbId);
+      expect(created['grams'], 45);
+    });
+
+    test('deleteCarb manda DELETE no id', () async {
+      buildWith(defaultBodies(), statuses: {'DELETE /carbs/item/$carbId': 204});
+
+      await remote.deleteCarb(carbId);
+
+      expect(calls(), ['DELETE /carbs/item/$carbId']);
+    });
+
+    test('DELETE com 404 é sucesso e não tenta criar nada', () async {
+      buildWith(defaultBodies(), statuses: {'DELETE /carbs/item/$carbId': 404});
+
+      await remote.deleteCarb(carbId);
+
+      expect(calls(), ['DELETE /carbs/item/$carbId']);
+    });
+
+    test('deleteInsulin e deleteAlert também tratam 404 como sucesso',
+        () async {
+      buildWith(defaultBodies(), statuses: {
+        'DELETE /insulin/item/$insulinId': 404,
+        'DELETE /alerts/item/$alertId': 404,
+      });
+
+      await remote.deleteInsulin(insulinId);
+      await remote.deleteAlert(alertId);
+
+      expect(calls(), [
+        'DELETE /insulin/item/$insulinId',
+        'DELETE /alerts/item/$alertId',
+      ]);
+    });
+
+    test('erro que não é 404 propaga em vez de virar sucesso', () async {
+      buildWith(defaultBodies(), statuses: {
+        'PUT /carbs/item/$carbId': 500,
+        'DELETE /carbs/item/$carbId': 500,
+      });
+
+      await expectLater(
+        remote.upsertCarb(carb),
+        throwsA(isA<DioException>()),
+      );
+      await expectLater(
+        remote.deleteCarb(carbId),
+        throwsA(isA<DioException>()),
+      );
+      // O 500 no PUT não pode disparar o POST de criação.
+      expect(calls().where((c) => c.startsWith('POST')), isEmpty);
     });
   });
 

@@ -29,3 +29,17 @@ abstract class PatientDataSource {
   Future<void> saveInsulin(List<InsulinEntry> insulin);
   Future<void> saveAlertSettings(AlertSettingsModel settings);
 }
+
+/// Contrato do lado remoto: as coleções acima mais as operações por item que a
+/// drenagem do op-log usa (SYNC-01/SYNC-06).
+///
+/// `upsert*` é idempotente por desenho — vale como criação e como edição —, e
+/// remover algo que o servidor já não tem é sucesso, não erro.
+abstract class PatientRemoteApi implements PatientDataSource {
+  Future<void> upsertCarb(CarbEntry entry);
+  Future<void> deleteCarb(String id);
+  Future<void> upsertInsulin(InsulinEntry entry);
+  Future<void> deleteInsulin(String id);
+  Future<void> upsertAlert(AppAlertItem alert);
+  Future<void> deleteAlert(String id);
+}

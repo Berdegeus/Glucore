@@ -8,7 +8,11 @@ import 'patient_datasource.dart';
 /// POST de coleções é replace-all no servidor (ver docs/reference/backend.md);
 /// a fonte primária do app é o [LocalPatientDataSource] — este datasource é
 /// usado pelo `PatientSyncService` (push) e pelo refresh em background (pull).
-class RemotePatientDataSource implements PatientDataSource {
+///
+/// As mutações de diário viajam pelas chamadas por item (`upsert*`/`delete*`),
+/// que o `PatientSyncService` dispara ao drenar o op-log; o replace-all sobra
+/// para leituras e thresholds (SYNC-10).
+class RemotePatientDataSource implements PatientRemoteApi {
   const RemotePatientDataSource(this._dio);
 
   final Dio _dio;
@@ -94,6 +98,59 @@ class RemotePatientDataSource implements PatientDataSource {
         'highThreshold': settings.highThreshold,
       },
     );
+  }
+
+  // ── operações por item (op-log) ───────────────────────────────────────────
+
+  @override
+  Future<void> upsertCarb(CarbEntry entry) =>
+      _upsertItem('/carbs/item', entry.id, _carbToRow(entry));
+
+  @override
+  Future<void> deleteCarb(String id) => _deleteItem('/carbs/item', id);
+
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) =>
+      _upsertItem('/insulin/item', entry.id, _insulinToRow(entry));
+
+  @override
+  Future<void> deleteInsulin(String id) => _deleteItem('/insulin/item', id);
+
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) =>
+      _upsertItem('/alerts/item', alert.id, _alertToRow(alert));
+
+  @override
+  Future<void> deleteAlert(String id) => _deleteItem('/alerts/item', id);
+
+  /// `PUT …/item/:id`; se o servidor não conhece o id, cria com o MESMO id via
+  /// `POST …/item`. É o que torna o reenvio idempotente: o app não precisa
+  /// saber se o backend já viu a entrada (SYNC-06).
+  Future<void> _upsertItem(
+    String path,
+    String id,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      await _dio.put<void>('$path/$id', data: body);
+    } on DioException catch (error) {
+      if (error.response?.statusCode != 404) {
+        rethrow;
+      }
+      await _dio.post<void>(path, data: body);
+    }
+  }
+
+  /// `DELETE …/item/:id`; 404 é sucesso — a entrada já não existe lá, que é
+  /// exatamente o estado pedido pela operação.
+  Future<void> _deleteItem(String path, String id) async {
+    try {
+      await _dio.delete<void>('$path/$id');
+    } on DioException catch (error) {
+      if (error.response?.statusCode != 404) {
+        rethrow;
+      }
+    }
   }
 
   // ── mappers ───────────────────────────────────────────────────────────────

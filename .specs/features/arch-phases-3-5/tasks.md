@@ -519,15 +519,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] As seis chamadas unitárias existem para carbs, insulin e alerts
-- [ ] `PUT` que devolve 404 cai para `POST` com o mesmo id
-- [ ] `DELETE` que devolve 404 é tratado como sucesso
-- [ ] Teste cobre os três caminhos com Dio dublê
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] As seis chamadas unitárias existem para carbs, insulin e alerts
+- [x] `PUT` que devolve 404 cai para `POST` com o mesmo id
+- [x] `DELETE` que devolve 404 é tratado como sucesso
+- [x] Teste cobre os três caminhos com Dio dublê, mais a guarda de que um erro não-404 propaga em vez de virar sucesso
+- [x] Contrato `PatientRemoteApi` declarado em `patient_datasource.dart` — é o tipo que a drenagem do T17 consome
+- [x] Gate: `flutter test --no-pub` verde (246 testes, 7 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(patient): talk to the per-item diary API`
+**Status**: ✅ Complete
 
 ---
 
