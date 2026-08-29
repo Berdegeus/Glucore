@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_form_layout.dart';
 import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';

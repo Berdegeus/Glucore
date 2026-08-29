@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../../presentation/models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import 'patient_datasource.dart';
 
 /// Datasource remoto: espelha os dados do paciente no backend via REST.

@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/features/patient/data/datasources/patient_remote_datasource.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 
 /// Adaptador Dio dublê: devolve o corpo configurado por caminho e guarda o que
 /// foi enviado.

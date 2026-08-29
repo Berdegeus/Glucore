@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/auth/presentation/cubit/auth_state.dart';
-import '../features/patient/presentation/models/patient_models.dart';
+import '../features/patient/domain/entities/patient_entities.dart';
 import '../features/sensor/domain/models.dart';
 import 'l10n.dart';
 

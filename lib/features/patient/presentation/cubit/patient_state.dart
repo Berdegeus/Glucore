@@ -1,5 +1,5 @@
 import '../../../sensor/domain/models.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 
 class PatientState {
   const PatientState({

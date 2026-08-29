@@ -5,7 +5,7 @@ import 'package:glucore/features/patient/data/datasources/patient_datasource.dar
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class _FakeRemote implements PatientRemoteApi {

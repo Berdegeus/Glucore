@@ -7,7 +7,7 @@ import 'package:glucore/features/patient/data/datasources/patient_local_datasour
 import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// SYNC-01, API-03 e IDENT-07: o repositório escreve por entrada, não trunca o

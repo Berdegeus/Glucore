@@ -4,7 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/api/auth_token_store.dart';
-import '../../presentation/models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../datasources/patient_datasource.dart';
 import '../datasources/patient_local_datasource.dart';
 import 'pending_op.dart';

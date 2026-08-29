@@ -638,14 +638,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Entidades e enums vivem em `domain/entities/`, exportados por um barrel
-- [ ] Nenhum arquivo importa mais `presentation/models/patient_models.dart`
-- [ ] Testes existentes atualizados e verdes, sem mudança de asserção
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Entidades e enums vivem em `domain/entities/`, exportados por um barrel — cinco arquivos de entidade mais `entry_id.dart`, que carrega o gerador de UUID antes privado ao modelo de tela
+- [x] Nenhum arquivo importa mais `presentation/models/patient_models.dart` — o arquivo e o diretório `models/` foram removidos, sem re-export de compatibilidade
+- [x] Testes existentes atualizados e verdes, sem mudança de asserção — só a linha de `import` mudou nos 14 arquivos de teste
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (276 testes, 3 novos)
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `refactor(patient): move patient entities into domain`
+**Status**: ✅ Complete
 
 ---
 

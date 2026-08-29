@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart'
     show ConflictAlgorithm, Database, DatabaseExecutor, DatabaseFactory;
 import 'package:uuid/uuid.dart';
 
-import '../../presentation/models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../sync/pending_op.dart';
 import 'patient_datasource.dart';
 

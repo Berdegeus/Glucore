@@ -1,4 +1,4 @@
-import '../../presentation/models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 
 /// Snapshot completo dos dados do paciente (todas as coleções + thresholds).
 class PatientSnapshot {

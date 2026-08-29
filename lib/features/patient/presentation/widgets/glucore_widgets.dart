@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 
 enum GlucoseZone { urgentLow, low, target, high, urgentHigh }
 

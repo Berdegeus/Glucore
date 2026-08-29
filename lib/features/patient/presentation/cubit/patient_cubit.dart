@@ -6,7 +6,7 @@ import '../../../../core/notifications/notification_service.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../../data/repositories/patient_repository.dart';
-import '../../presentation/models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import 'patient_state.dart';
 
 class PatientCubit extends Cubit<PatientState> {

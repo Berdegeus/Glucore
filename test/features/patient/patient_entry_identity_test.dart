@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 
 /// IDENT-01, IDENT-02 e IDENT-06: identidade própria e estável das entradas de
 /// diário (carboidrato, insulina e alerta).

@@ -20,7 +20,7 @@ import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_state.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/profile_page.dart';
 import 'package:glucore/features/patient/presentation/pages/settings_page.dart';
 import 'package:glucore/features/sensor/domain/models.dart';

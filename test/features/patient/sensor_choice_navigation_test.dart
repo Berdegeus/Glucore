@@ -13,7 +13,7 @@ import 'package:glucore/features/patient/data/repositories/patient_repository.da
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/libre_nfc_page.dart';
 import 'package:glucore/features/patient/presentation/pages/sensor_choice_page.dart';
 import 'package:glucore/features/patient/presentation/pages/sensor_link_page.dart';

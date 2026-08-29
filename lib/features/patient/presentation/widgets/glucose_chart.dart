@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 
 class GlucoseChart extends StatelessWidget {
   const GlucoseChart({

@@ -8,7 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../sensor/domain/models.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/glucose_chart.dart';
 import '../widgets/patient_widgets.dart';

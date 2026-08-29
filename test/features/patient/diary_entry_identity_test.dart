@@ -9,7 +9,7 @@ import 'package:glucore/features/patient/data/datasources/patient_local_datasour
 import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/carb_edit_page.dart';
 import 'package:glucore/features/patient/presentation/pages/insulin_edit_page.dart';
 import 'package:glucore/l10n/l10n.dart';
