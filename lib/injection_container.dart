@@ -15,8 +15,9 @@ import 'features/auth/domain/usecases/register_usecase.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/patient/data/datasources/patient_local_datasource.dart';
 import 'features/patient/data/datasources/patient_remote_datasource.dart';
-import 'features/patient/data/repositories/patient_repository.dart';
+import 'features/patient/data/repositories/patient_repository_impl.dart';
 import 'features/patient/data/sync/patient_sync_service.dart';
+import 'features/patient/domain/repositories/patient_repository.dart';
 import 'features/patient/presentation/cubit/patient_cubit.dart';
 import 'features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'features/sensor/data/platform/sensor_platform.dart';
@@ -72,8 +73,8 @@ Future<void> initDependencies() async {
     ),
     dispose: (service) => service.dispose(),
   );
-  sl.registerLazySingleton(
-    () => PatientRepository(
+  sl.registerLazySingleton<PatientRepository>(
+    () => PatientRepositoryImpl(
       local: sl<LocalPatientDataSource>(),
       remote: sl<RemotePatientDataSource>(),
       syncService: sl<PatientSyncService>(),

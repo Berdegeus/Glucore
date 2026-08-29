@@ -13,7 +13,8 @@ import 'package:glucore/features/auth/domain/usecases/register_usecase.dart';
 import 'package:glucore/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
-import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
@@ -220,7 +221,7 @@ class _FakePatientCubit extends PatientCubit {
       connectivityChanges: const Stream.empty(),
     );
     return _FakePatientCubit._(
-      PatientRepository(
+      PatientRepositoryImpl(
         local: local,
         remote: remote,
         syncService: sync,

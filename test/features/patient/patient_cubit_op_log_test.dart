@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/core/api/auth_token_store.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
-import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
@@ -30,7 +30,7 @@ void main() {
     );
     final remote = _FakeRemote();
     cubit = PatientCubit(
-      repository: PatientRepository(
+      repository: PatientRepositoryImpl(
         local: local,
         remote: remote,
         // Sync inerte: o teste olha a fila como o cubit a deixa, sem um push

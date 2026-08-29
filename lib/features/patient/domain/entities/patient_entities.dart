@@ -9,3 +9,4 @@ export 'app_alert_item.dart';
 export 'carb_entry.dart';
 export 'glucose_reading_item.dart';
 export 'insulin_entry.dart';
+export 'patient_snapshot.dart';

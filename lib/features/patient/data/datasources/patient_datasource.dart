@@ -1,22 +1,5 @@
 import '../../domain/entities/patient_entities.dart';
 
-/// Snapshot completo dos dados do paciente (todas as coleções + thresholds).
-class PatientSnapshot {
-  const PatientSnapshot({
-    required this.readings,
-    required this.alerts,
-    required this.carbs,
-    required this.insulin,
-    required this.alertSettings,
-  });
-
-  final List<GlucoseReadingItem> readings;
-  final List<AppAlertItem> alerts;
-  final List<CarbEntry> carbs;
-  final List<InsulinEntry> insulin;
-  final AlertSettingsModel alertSettings;
-}
-
 /// Contrato comum aos datasources de dados do paciente.
 ///
 /// Implementado por [LocalPatientDataSource] (sqflite, fonte primária) e

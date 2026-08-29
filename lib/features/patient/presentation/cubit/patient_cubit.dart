@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/notifications/notification_service.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
-import '../../data/repositories/patient_repository.dart';
+import '../../domain/repositories/patient_repository.dart';
 import '../../domain/entities/patient_entities.dart';
 import 'patient_state.dart';
 

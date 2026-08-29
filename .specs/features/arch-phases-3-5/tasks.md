@@ -665,14 +665,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Interface no domain com a assinatura completa usada pelo cubit
-- [ ] Implementação em `data/repositories/patient_repository_impl.dart`
-- [ ] `injection_container.dart` registra a interface
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Interface no domain com a assinatura completa usada pelo cubit — inclui `maxReadings`/`maxAlerts`, que o cubit lê estaticamente
+- [x] Implementação em `data/repositories/patient_repository_impl.dart` — o arquivo antigo saiu, sem alias de compatibilidade
+- [x] `injection_container.dart` registra a interface
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (279 testes, 3 novos)
+
+**Nota de contrato**: `PatientSnapshot` mudou de `data/datasources/patient_datasource.dart` para `domain/entities/patient_snapshot.dart` e entrou no barrel. É o tipo de retorno do contrato: deixá-lo em `data/` faria o domínio importar a camada de dados, invertendo a dependência que esta tarefa existe para estabelecer. Nenhuma asserção mudou.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `refactor(patient): declare the repository contract in domain`
+**Status**: ✅ Complete
 
 ---
 
