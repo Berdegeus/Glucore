@@ -752,15 +752,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Extensão com todas as cores hoje estáticas, em instância clara e escura
-- [ ] Matizes das faixas clínicas idênticos nos dois temas; variantes suaves, tintas e superfícies recalculadas
-- [ ] `AppTheme.dark()` monta o `ThemeData` escuro com a extensão registrada
-- [ ] Teste confere que as faixas clínicas têm o mesmo matiz nos dois temas
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] Extensão com todas as cores hoje estáticas, em instância clara e escura — 24 campos mais três apelidos como getter, para não duplicar valor
+- [x] Matizes das faixas clínicas idênticos nos dois temas; variantes suaves, tintas e superfícies recalculadas
+- [x] `AppTheme.dark()` monta o `ThemeData` escuro com a extensão registrada — `light()` e `dark()` passaram a sair da mesma montagem, parametrizada pela paleta
+- [x] Teste confere que as faixas clínicas têm o mesmo matiz nos dois temas — mais um teste que a instância clara reproduz cada constante estática, provando que o tema claro não mudou de cor
+- [x] Gate: `flutter test --no-pub` verde (304 testes, 8 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(theme): add a dark palette behind a theme extension`
+**Status**: ✅ Complete
 
 ---
 
