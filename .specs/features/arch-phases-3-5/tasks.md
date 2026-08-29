@@ -273,15 +273,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `carbService.ts` e `carbController.ts` existem e a rota não toca `prisma` diretamente
-- [ ] `GET /carbs` aceita `before` e `limit` (1–500), responde 400 com `{ error, code }` fora da faixa e mantém o default de 100 mais recentes sem parâmetros
-- [ ] Contrato dos endpoints unitários preservado (201 com id, 204, 404)
-- [ ] Testes supertest cobrem feliz, 400, 404, paginação até o fim e dois aparelhos editando entradas distintas
-- [ ] Gate: `cd backend && npx tsc --noEmit && npm test` verde
+- [x] `carbService.ts` e `carbController.ts` existem e a rota não toca `prisma` diretamente
+- [x] `GET /carbs` aceita `before` e `limit` (1–500), responde 400 com `{ error, code }` fora da faixa e mantém o default de 100 mais recentes sem parâmetros
+- [x] Contrato dos endpoints unitários preservado (201 com id, 204, 404)
+- [x] Testes supertest cobrem feliz, 400, 404, paginação até o fim e dois aparelhos editando entradas distintas
+- [x] Gate: `cd backend && npx tsc --noEmit && npm test` verde (70 testes, 0 falhas)
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `refactor(backend): layer the carb routes and add pagination`
+**Status**: ✅ Complete
 
 ---
 
