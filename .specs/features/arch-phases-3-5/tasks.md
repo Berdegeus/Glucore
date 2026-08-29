@@ -327,14 +327,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `insulinService.ts` e `insulinController.ts` existem e a rota não toca `prisma`
-- [ ] Paginação e validação idênticas às de carbs
-- [ ] Testes supertest cobrem feliz, 400, 404 e paginação
-- [ ] Gate: `cd backend && npx tsc --noEmit && npm test` verde
+- [x] `insulinService.ts` e `insulinController.ts` existem e a rota não toca `prisma`
+- [x] Paginação e validação idênticas às de carbs
+- [x] Testes supertest cobrem feliz, 400, 404 e paginação
+- [x] Gate: `cd backend && npx tsc --noEmit && npm test` verde (103 testes, 19 novos)
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `refactor(backend): layer the insulin routes and add pagination`
+**Status**: ✅ Complete
 
 ---
 

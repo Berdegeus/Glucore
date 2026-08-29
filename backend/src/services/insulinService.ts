@@ -1,15 +1,18 @@
 /**
- * Business rules of the carbohydrate diary: input validation, patient
- * resolution, audit trail and the deprecated batch truncation.
+ * Business rules of the insulin diary: input validation, patient resolution,
+ * audit trail and the deprecated batch truncation.
  *
- * Every collaborator arrives by constructor — repository, `ensurePatient` and
- * `recordAudit` — so the service runs without PostgreSQL. Auditing stays
- * best-effort (AD-004): `recordAudit` swallows its own failures, and this
- * service does not treat it as part of the write.
+ * Same construction as `carbService` — repository, `ensurePatient` and
+ * `recordAudit` all arrive by constructor, so the service runs without
+ * PostgreSQL. Auditing stays best-effort (AD-004).
  */
 
 import type { AuditEntry } from '../lib/audit';
-import type { CarbEntry, CarbInput, CarbRepository } from '../repositories/carbRepository';
+import type {
+  InsulinEntry,
+  InsulinInput,
+  InsulinRepository,
+} from '../repositories/insulinRepository';
 import type { PageQuery } from './pagination';
 import { parsePageQuery } from './pagination';
 import type { RequestContext } from './requestContext';
@@ -26,24 +29,37 @@ const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
 /** Same messages the route answered before the split; the contract is public. */
-function validateCarbBody(body: unknown): string | null {
-  const b = body as { grams?: unknown; description?: unknown; timeMs?: unknown };
-  if (!isFiniteNumber(b.grams)) return 'grams must be a number';
-  if (typeof b.description !== 'string') return 'description must be a string';
+function validateInsulinBody(body: unknown): string | null {
+  const b = body as {
+    units?: unknown;
+    type?: unknown;
+    timeMs?: unknown;
+    dayOfWeek?: unknown;
+  };
+  if (!isFiniteNumber(b.units)) return 'units must be a number';
+  if (typeof b.type !== 'string' || b.type.trim().length === 0) {
+    return 'type must be a non-empty string';
+  }
   if (!isFiniteNumber(b.timeMs)) return 'timeMs must be a number (epoch ms)';
+  if (b.dayOfWeek !== undefined && typeof b.dayOfWeek !== 'string') {
+    return 'dayOfWeek must be a string';
+  }
   return null;
 }
 
 export type { RequestContext } from './requestContext';
 
-export interface CarbServiceDeps {
-  repository: CarbRepository;
+export interface InsulinServiceDeps {
+  repository: InsulinRepository;
   ensurePatient: (userId: string) => Promise<string>;
   recordAudit: (entry: AuditEntry) => Promise<void>;
 }
 
-export interface CarbService {
-  list(userId: string, query: { before?: unknown; limit?: unknown }): Promise<Result<CarbEntry[]>>;
+export interface InsulinService {
+  list(
+    userId: string,
+    query: { before?: unknown; limit?: unknown },
+  ): Promise<Result<InsulinEntry[]>>;
   create(context: RequestContext, body: unknown): Promise<Result<{ id: string }>>;
   update(context: RequestContext, id: string, body: unknown): Promise<Result<null>>;
   remove(context: RequestContext, id: string): Promise<Result<null>>;
@@ -53,7 +69,7 @@ export interface CarbService {
 /** Cap kept from the pre-split batch endpoint; the per-item path has none. */
 const BATCH_LIMIT = 100;
 
-export function createCarbService(deps: CarbServiceDeps): CarbService {
+export function createInsulinService(deps: InsulinServiceDeps): InsulinService {
   const { repository, ensurePatient, recordAudit } = deps;
 
   return {
@@ -65,21 +81,24 @@ export function createCarbService(deps: CarbServiceDeps): CarbService {
     },
 
     async create(context, body) {
-      const message = validateCarbBody(body);
+      const message = validateInsulinBody(body);
       if (message) return invalid(message);
-      const { id, grams, description, timeMs } = body as CarbInput & { id?: unknown };
+      const { id, units, type, timeMs, dayOfWeek } = body as InsulinInput & {
+        id?: unknown;
+      };
       if (id !== undefined && !isUuid(id)) return invalid('id must be a UUID');
 
       const patientId = await ensurePatient(context.userId);
       const createdId = await repository.create(patientId, {
         ...(id === undefined ? {} : { id: id as string }),
-        grams,
-        description,
+        units,
+        type,
         timeMs,
+        dayOfWeek,
       });
       await recordAudit({
         userId: context.userId,
-        entity: 'CarbEvent',
+        entity: 'InsulinEvent',
         action: 'CREATE',
         entityId: createdId,
         ipAddress: context.ipAddress,
@@ -90,16 +109,21 @@ export function createCarbService(deps: CarbServiceDeps): CarbService {
 
     async update(context, id, body) {
       if (!isUuid(id)) return invalid('id must be a UUID');
-      const message = validateCarbBody(body);
+      const message = validateInsulinBody(body);
       if (message) return invalid(message);
-      const { grams, description, timeMs } = body as CarbInput;
+      const { units, type, timeMs, dayOfWeek } = body as InsulinInput;
 
       const patientId = await ensurePatient(context.userId);
-      const changed = await repository.update(id, patientId, { grams, description, timeMs });
+      const changed = await repository.update(id, patientId, {
+        units,
+        type,
+        timeMs,
+        dayOfWeek,
+      });
       if (!changed) return notFound();
       await recordAudit({
         userId: context.userId,
-        entity: 'CarbEvent',
+        entity: 'InsulinEvent',
         action: 'UPDATE',
         entityId: id,
         ipAddress: context.ipAddress,
@@ -115,7 +139,7 @@ export function createCarbService(deps: CarbServiceDeps): CarbService {
       if (!removed) return notFound();
       await recordAudit({
         userId: context.userId,
-        entity: 'CarbEvent',
+        entity: 'InsulinEvent',
         action: 'DELETE',
         entityId: id,
         ipAddress: context.ipAddress,
@@ -125,27 +149,28 @@ export function createCarbService(deps: CarbServiceDeps): CarbService {
     },
 
     async replaceAll(context, body) {
-      const { carbs } = (body ?? {}) as {
-        carbs?: Array<CarbInput & { id?: unknown }>;
+      const { insulin } = (body ?? {}) as {
+        insulin?: Array<InsulinInput & { id?: unknown }>;
       };
-      if (!Array.isArray(carbs)) return invalid('carbs must be array');
+      if (!Array.isArray(insulin)) return invalid('insulin must be array');
 
       const patientId = await ensurePatient(context.userId);
       await repository.replaceAll(
         patientId,
-        carbs.slice(0, BATCH_LIMIT).map((entry) => ({
+        insulin.slice(0, BATCH_LIMIT).map((entry) => ({
           ...(isUuid(entry.id) ? { id: entry.id } : {}),
-          grams: entry.grams,
-          description: entry.description,
+          units: entry.units,
+          type: entry.type,
           timeMs: entry.timeMs,
+          dayOfWeek: entry.dayOfWeek,
         })),
       );
       await recordAudit({
         userId: context.userId,
-        entity: 'CarbEvent',
+        entity: 'InsulinEvent',
         action: 'REPLACE',
         entityId: patientId,
-        metadata: { count: carbs.length },
+        metadata: { count: insulin.length },
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
       });
