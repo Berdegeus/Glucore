@@ -437,14 +437,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Script `test:coverage` roda `node --test --experimental-test-coverage`
-- [ ] Relatório mostra ≥ 75% de linhas nos módulos de carbs, insulin e alerts criados nas fases 2 e 3
-- [ ] Lacunas fechadas com teste de comportamento, nunca afrouxando asserção existente
-- [ ] Gate: `cd backend && npx tsc --noEmit && npm test` verde
+- [x] Script `test:coverage` roda `node --test --experimental-test-coverage`
+- [x] Relatório mostra ≥ 75% de linhas nos módulos de carbs, insulin e alerts criados nas fases 2 e 3 — os doze (repository, service, controller e rota das três entidades) ficaram em 100,00% de linhas
+- [x] Lacunas fechadas com teste de comportamento, nunca afrouxando asserção existente — 3 testes novos (lote inválido de carbs, `type` vazio em alerts, `dayOfWeek` não-string em insulin); nenhum teste alterado ou removido
+- [x] Gate: `cd backend && npx tsc --noEmit && npm test` verde (146 testes, 3 novos)
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `test(backend): cover the new diary modules to the coverage target`
+**Status**: ✅ Complete
 
 ---
 

@@ -210,6 +210,16 @@ test('POST /carbs (deprecated batch) still replaces the collection (API-06)', as
   assert.equal(rows[0].carbsGrams, 30);
 });
 
+test('POST /carbs rejects a non-array payload with 400 (deprecated batch)', async () => {
+  const { app, rows } = appOver([rowAt('id-0', PATIENT_A, 500)]);
+
+  const res = await request(app).post('/carbs').set(auth(PATIENT_A)).send({ carbs: 'nope' });
+
+  assert.equal(res.status, 400);
+  assert.equal(res.body.error, 'carbs must be array');
+  assert.equal(rows.length, 1, 'the collection was not wiped by an invalid payload');
+});
+
 test('a repository failure surfaces as 500, not a silent 200 (error path, QUAL-01 boundary)', async () => {
   const client = { carbEvent: createFailingTable(new Error('db down')) } as unknown as CarbPrismaClient;
   const controller = createCarbController(

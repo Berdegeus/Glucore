@@ -177,6 +177,19 @@ test('POST /insulin/item rejects an empty type with 400', async () => {
   assert.match(res.body.error, /type/);
 });
 
+test('POST /insulin/item rejects a non-string dayOfWeek with 400', async () => {
+  const { app, rows } = appOver([]);
+
+  const res = await request(app)
+    .post('/insulin/item')
+    .set(auth(PATIENT_A))
+    .send({ units: 3, type: 'bolus', timeMs: 1_700_000, dayOfWeek: 7 });
+
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /dayOfWeek/);
+  assert.equal(rows.length, 0, 'nothing was persisted');
+});
+
 test('POST /insulin/item rejects a non-UUID id with 400', async () => {
   const { app, rows } = appOver([]);
 

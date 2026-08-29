@@ -184,6 +184,19 @@ test('POST /alerts/item rejects an invalid body with 400', async () => {
   assert.match(res.body.error, /timestampMs/);
 });
 
+test('POST /alerts/item rejects an empty type with 400', async () => {
+  const { app, rows } = appOver([]);
+
+  const res = await request(app)
+    .post('/alerts/item')
+    .set(auth(PATIENT_A))
+    .send({ type: '   ', timestampMs: 1_700_000 });
+
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /type/);
+  assert.equal(rows.length, 0, 'nothing was persisted');
+});
+
 test('POST /alerts/item rejects a non-UUID id with 400 and stores nothing', async () => {
   const { app, rows } = appOver([]);
 
