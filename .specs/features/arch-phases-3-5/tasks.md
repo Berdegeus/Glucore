@@ -548,17 +548,20 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Ops drenadas em ordem de `seq`; op confirmada sai da fila
-- [ ] Falha recuperável interrompe a drenagem preservando a op e as posteriores
-- [ ] 401 interrompe o push e preserva a fila
-- [ ] Op com entidade desconhecida ou payload ilegível é descartada com log e a fila continua
-- [ ] Readings e settings continuam pelo caminho de coleção
-- [ ] Testes cobrem ordem, parada no erro, 401, descarte e reenvio idempotente
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Ops drenadas em ordem de `seq`; op confirmada sai da fila
+- [x] Falha recuperável interrompe a drenagem preservando a op e as posteriores
+- [x] 401 interrompe o push e preserva a fila — o datasource remoto traduz o 401 em `PatientUnauthorizedException`, que o retry reconhece como "não adianta repetir"
+- [x] Op com entidade desconhecida ou payload ilegível é descartada com log e a fila continua
+- [x] Readings e settings continuam pelo caminho de coleção
+- [x] Testes cobrem ordem, parada no erro, 401, descarte e reenvio idempotente
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (255 testes, 9 novos)
+
+**Nota de contrato**: com SYNC-10, o replace-all deixa de valer para as três coleções do diário. Quatro testes do sync e os dois do guarda de dono (P19) foram reescritos do caminho de coleção para o de op — mesma pergunta, mecanismo novo; nenhuma asserção foi afrouxada. Os dublês de `PatientDataSource` dos testes de widget passaram a `PatientRemoteApi`.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(patient): drain diary changes as ordered per-item operations`
+**Status**: ✅ Complete
 
 ---
 

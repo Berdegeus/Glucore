@@ -30,6 +30,17 @@ abstract class PatientDataSource {
   Future<void> saveAlertSettings(AlertSettingsModel settings);
 }
 
+/// Sessão recusada pelo backend (401) durante uma operação por item.
+///
+/// Não é falha recuperável: repetir com o mesmo token dá o mesmo 401. A
+/// drenagem para e deixa a fila intacta até a sessão voltar.
+class PatientUnauthorizedException implements Exception {
+  const PatientUnauthorizedException();
+
+  @override
+  String toString() => 'PatientUnauthorizedException: sessão recusada (401)';
+}
+
 /// Contrato do lado remoto: as coleções acima mais as operações por item que a
 /// drenagem do op-log usa (SYNC-01/SYNC-06).
 ///

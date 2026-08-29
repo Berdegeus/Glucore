@@ -167,7 +167,7 @@ class _FakeSensorRepository implements SensorRepository {
   Future<void> stopNfcScan() async {}
 }
 
-class _FakePatientRemote implements PatientDataSource {
+class _FakePatientRemote implements PatientRemoteApi {
   @override
   Future<PatientSnapshot> load() async =>
       throw UnimplementedError('not used in this test');
@@ -186,6 +186,24 @@ class _FakePatientRemote implements PatientDataSource {
 
   @override
   Future<void> saveAlertSettings(AlertSettingsModel settings) async {}
+
+  @override
+  Future<void> upsertCarb(CarbEntry entry) async {}
+
+  @override
+  Future<void> deleteCarb(String id) async {}
+
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) async {}
+
+  @override
+  Future<void> deleteInsulin(String id) async {}
+
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) async {}
+
+  @override
+  Future<void> deleteAlert(String id) async {}
 }
 
 // `identityCubit.load()` is never called in this test — it only checks that

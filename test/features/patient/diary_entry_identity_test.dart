@@ -282,7 +282,7 @@ class _FakeTokenStore extends AuthTokenStore {
   Future<String?> readUserId() async => null;
 }
 
-class _FakeRemote implements PatientDataSource {
+class _FakeRemote implements PatientRemoteApi {
   @override
   Future<PatientSnapshot> load() => throw UnimplementedError();
   @override
@@ -295,4 +295,22 @@ class _FakeRemote implements PatientDataSource {
   Future<void> saveInsulin(List<InsulinEntry> insulin) async {}
   @override
   Future<void> saveAlertSettings(AlertSettingsModel settings) async {}
+
+  @override
+  Future<void> upsertCarb(CarbEntry entry) async {}
+
+  @override
+  Future<void> deleteCarb(String id) async {}
+
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) async {}
+
+  @override
+  Future<void> deleteInsulin(String id) async {}
+
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) async {}
+
+  @override
+  Future<void> deleteAlert(String id) async {}
 }

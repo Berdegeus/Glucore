@@ -16,8 +16,13 @@ enum PatientCollection { readings, alerts, carbs, insulin, settings }
 ///
 /// Banco `glucore_patient.db`, colunas espelhando docs/reference/data-models.md
 /// mais a flag `synced` (0 = pendente de push ao backend, 1 = já espelhado).
-/// Os `save*` do contrato gravam replace-all com `synced = 0`; o
-/// `PatientSyncService` consulta [pendingCollections] e limpa via `mark*Synced`.
+///
+/// **O que conta como pendente depende da coleção.** Leituras e thresholds
+/// continuam no replace-all: gravam com `synced = 0`, o `PatientSyncService`
+/// consulta [pendingCollections] e limpa via `mark*Synced`. Carboidratos,
+/// insulina e alertas passaram a viajar pelo op-log: a pendência é a linha em
+/// `pending_ops` ([pendingOps], [pendingEntityIds]), não a flag — que nessas
+/// três tabelas sobrevive só como marca de origem do dado.
 class LocalPatientDataSource implements PatientDataSource {
   LocalPatientDataSource({DatabaseFactory? databaseFactory, String? databasePath})
       : _factory = databaseFactory,

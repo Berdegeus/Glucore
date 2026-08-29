@@ -130,26 +130,40 @@ class RemotePatientDataSource implements PatientRemoteApi {
     String path,
     String id,
     Map<String, dynamic> body,
-  ) async {
-    try {
-      await _dio.put<void>('$path/$id', data: body);
-    } on DioException catch (error) {
-      if (error.response?.statusCode != 404) {
-        rethrow;
-      }
-      await _dio.post<void>(path, data: body);
-    }
-  }
+  ) =>
+      _guardAuth(() async {
+        try {
+          await _dio.put<void>('$path/$id', data: body);
+        } on DioException catch (error) {
+          if (error.response?.statusCode != 404) {
+            rethrow;
+          }
+          await _dio.post<void>(path, data: body);
+        }
+      });
 
   /// `DELETE …/item/:id`; 404 é sucesso — a entrada já não existe lá, que é
   /// exatamente o estado pedido pela operação.
-  Future<void> _deleteItem(String path, String id) async {
+  Future<void> _deleteItem(String path, String id) => _guardAuth(() async {
+        try {
+          await _dio.delete<void>('$path/$id');
+        } on DioException catch (error) {
+          if (error.response?.statusCode != 404) {
+            rethrow;
+          }
+        }
+      });
+
+  /// Traduz 401 para [PatientUnauthorizedException], que a drenagem reconhece
+  /// como "pare o push e preserve a fila" em vez de tentar de novo.
+  Future<void> _guardAuth(Future<void> Function() call) async {
     try {
-      await _dio.delete<void>('$path/$id');
+      await call();
     } on DioException catch (error) {
-      if (error.response?.statusCode != 404) {
-        rethrow;
+      if (error.response?.statusCode == 401) {
+        throw const PatientUnauthorizedException();
       }
+      rethrow;
     }
   }
 

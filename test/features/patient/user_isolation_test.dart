@@ -138,26 +138,29 @@ void main() {
     test('does not push when the local owner differs from the current user',
         () async {
       await local.setOwner('user-A');
-      await local.saveCarbs([
+      await local.upsertCarb(
         CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
-      ]);
+      );
       tokenStore.userId = 'user-B'; // wrong account
 
       await sync.pushNow();
 
-      expect(remote.savedCarbs, isEmpty);
+      expect(remote.upsertedCarbs, isEmpty);
+      // A operação continua na fila, esperando o dono certo.
+      expect(await local.pendingOps(), hasLength(1));
     });
 
     test('pushes when the owner matches the current user', () async {
       await local.setOwner('user-A');
-      await local.saveCarbs([
+      await local.upsertCarb(
         CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
-      ]);
+      );
       tokenStore.userId = 'user-A';
 
       await sync.pushNow();
 
-      expect(remote.savedCarbs, hasLength(1));
+      expect(remote.upsertedCarbs, hasLength(1));
+      expect(remote.upsertedCarbs.single.grams, 30);
     });
   });
 }
@@ -169,15 +172,28 @@ class _FakeTokenStore extends AuthTokenStore {
   Future<String?> readUserId() async => userId;
 }
 
-class _FakeRemote implements PatientDataSource {
+class _FakeRemote implements PatientRemoteApi {
   final savedReadings = <List<GlucoseReadingItem>>[];
   final savedAlerts = <List<AppAlertItem>>[];
   final savedCarbs = <List<CarbEntry>>[];
   final savedInsulin = <List<InsulinEntry>>[];
   final savedSettings = <AlertSettingsModel>[];
+  final upsertedCarbs = <CarbEntry>[];
 
   @override
   Future<PatientSnapshot> load() => throw UnimplementedError();
+  @override
+  Future<void> upsertCarb(CarbEntry entry) async => upsertedCarbs.add(entry);
+  @override
+  Future<void> deleteCarb(String id) async {}
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) async {}
+  @override
+  Future<void> deleteInsulin(String id) async {}
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) async {}
+  @override
+  Future<void> deleteAlert(String id) async {}
   @override
   Future<void> saveReadings(List<GlucoseReadingItem> readings) async =>
       savedReadings.add(readings);

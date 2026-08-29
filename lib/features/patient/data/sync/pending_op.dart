@@ -79,6 +79,21 @@ class PendingOp {
   final String? payloadJson;
   final int createdAt;
 
+  /// Payload decodificado, ou `null` quando ausente ou ilegível — a drenagem
+  /// trata os dois casos como erro definitivo e descarta a operação (SYNC-05).
+  Map<String, dynamic>? decodePayload() {
+    final raw = payloadJson;
+    if (raw == null) {
+      return null;
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
   /// Linha para o `insert` — sem `seq`, que é atribuído pelo banco.
   Map<String, Object?> toRow() => {
         'entity': entity,
