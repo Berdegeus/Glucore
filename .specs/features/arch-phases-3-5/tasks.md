@@ -492,14 +492,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] As cinco operações existem e são atômicas (linha + op na mesma transação)
-- [ ] `pendingEntityIds(entity)` devolve os ids com operação pendente
-- [ ] Teste cobre atomicidade e o conjunto de ids pendentes
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] As cinco operações existem e são atômicas (linha + op na mesma transação)
+- [x] `pendingEntityIds(entity)` devolve os ids com operação pendente
+- [x] Teste cobre atomicidade e o conjunto de ids pendentes — a atomicidade é provada derrubando `pending_ops` por outra conexão: a escrita lança e a linha do diário não fica órfã
+- [x] Gate: `flutter test --no-pub` verde (239 testes, 10 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(patient): write diary rows and their pending op atomically`
+**Status**: ✅ Complete
 
 ---
 

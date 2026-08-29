@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
+import 'package:glucore/features/patient/presentation/models/patient_models.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// SYNC-01 e SYNC-02: a fila local de operações unitárias do diário existe,
@@ -148,6 +150,219 @@ void main() {
 
       final queued = await dataSource.pendingOps();
       expect(queued.single.seq, greaterThan(first.seq!));
+    });
+  });
+
+  group('SYNC-01: escrita unitária grava linha e operação juntas', () {
+    test('upsertCarb persiste a entrada e enfileira o upsert com o payload',
+        () async {
+      final entry =
+          CarbEntry.create(grams: 45, description: 'Almoço', time: t0);
+
+      await dataSource.upsertCarb(entry);
+
+      final snapshot = await dataSource.load();
+      expect(snapshot.carbs.single.id, entry.id);
+      expect(snapshot.carbs.single.grams, 45);
+
+      final queued = await dataSource.pendingOps();
+      expect(queued, hasLength(1));
+      expect(queued.single.entity, PendingOpEntity.carbs);
+      expect(queued.single.op, PendingOpKind.upsert);
+      expect(queued.single.entityId, entry.id);
+      final payload =
+          jsonDecode(queued.single.payloadJson!) as Map<String, dynamic>;
+      expect(payload['id'], entry.id);
+      expect(payload['grams'], 45);
+      expect(payload['timeMs'], t0.millisecondsSinceEpoch);
+    });
+
+    test('editar a mesma entrada atualiza a linha e enfileira a segunda op',
+        () async {
+      final entry =
+          CarbEntry.create(grams: 45, description: 'Almoço', time: t0);
+      await dataSource.upsertCarb(entry);
+
+      await dataSource.upsertCarb(entry.copyWith(grams: 60));
+
+      final snapshot = await dataSource.load();
+      expect(snapshot.carbs, hasLength(1));
+      expect(snapshot.carbs.single.grams, 60);
+
+      final queued = await dataSource.pendingOps();
+      expect(queued, hasLength(2));
+      expect(queued.map((o) => o.entityId).toSet(), {entry.id});
+      expect(
+        jsonDecode(queued.last.payloadJson!) as Map<String, dynamic>,
+        containsPair('grams', 60),
+      );
+    });
+
+    test('deleteCarb apaga a linha e enfileira o delete daquele id', () async {
+      final kept = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final removed =
+          CarbEntry.create(grams: 60, description: 'Jantar', time: t0);
+      await dataSource.upsertCarb(kept);
+      await dataSource.upsertCarb(removed);
+
+      await dataSource.deleteCarb(removed.id);
+
+      final snapshot = await dataSource.load();
+      expect(snapshot.carbs.single.id, kept.id);
+
+      final queued = await dataSource.pendingOps();
+      expect(queued.last.op, PendingOpKind.delete);
+      expect(queued.last.entityId, removed.id);
+      expect(queued.last.payloadJson, isNull);
+    });
+
+    test('upsertInsulin e deleteInsulin gravam linha e operação', () async {
+      final entry = InsulinEntry.create(
+        units: 4.5,
+        type: InsulinType.bolus,
+        time: t0,
+        dayOfWeek: kDaysOfWeek[2],
+      );
+
+      await dataSource.upsertInsulin(entry);
+      expect((await dataSource.load()).insulin.single.units, 4.5);
+      final afterUpsert = await dataSource.pendingOps();
+      expect(afterUpsert.single.entity, PendingOpEntity.insulin);
+      expect(afterUpsert.single.op, PendingOpKind.upsert);
+      expect(
+        jsonDecode(afterUpsert.single.payloadJson!) as Map<String, dynamic>,
+        containsPair('units', 4.5),
+      );
+
+      await dataSource.deleteInsulin(entry.id);
+      expect((await dataSource.load()).insulin, isEmpty);
+      final afterDelete = await dataSource.pendingOps();
+      expect(afterDelete.last.op, PendingOpKind.delete);
+      expect(afterDelete.last.entityId, entry.id);
+    });
+
+    test('upsertAlert grava o alerta e enfileira o upsert', () async {
+      final alert =
+          AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: t0);
+
+      await dataSource.upsertAlert(alert);
+
+      expect((await dataSource.load()).alerts.single.id, alert.id);
+      final queued = await dataSource.pendingOps();
+      expect(queued.single.entity, PendingOpEntity.alerts);
+      expect(queued.single.entityId, alert.id);
+      expect(
+        jsonDecode(queued.single.payloadJson!) as Map<String, dynamic>,
+        containsPair('type', 'glucoseLow'),
+      );
+    });
+
+    test('duas entradas no mesmo horário rendem duas linhas e duas operações',
+        () async {
+      final first = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final second =
+          CarbEntry.create(grams: 60, description: 'Jantar', time: t0);
+
+      await dataSource.upsertCarb(first);
+      await dataSource.upsertCarb(second);
+
+      expect((await dataSource.load()).carbs, hasLength(2));
+      final queued = await dataSource.pendingOps();
+      expect(queued.map((o) => o.entityId).toList(), [first.id, second.id]);
+    });
+  });
+
+  group('SYNC-01: a linha e a sua operação não se separam', () {
+    late Directory tempDir;
+    late String dbPath;
+
+    setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('glucore_op_atomicity');
+      dbPath = '${tempDir.path}/glucore_patient.db';
+    });
+
+    tearDown(() {
+      if (tempDir.existsSync()) {
+        tempDir.deleteSync(recursive: true);
+      }
+    });
+
+    test('falha ao enfileirar a operação desfaz a gravação da linha', () async {
+      final fileBacked = LocalPatientDataSource(
+        databaseFactory: databaseFactoryFfi,
+        databasePath: dbPath,
+      );
+      // Abre o banco (roda onCreate) antes de sabotar a fila.
+      await fileBacked.load();
+
+      final raw = await databaseFactoryFfi.openDatabase(dbPath);
+      await raw.execute('DROP TABLE pending_ops');
+
+      final entry =
+          CarbEntry.create(grams: 45, description: 'Almoço', time: t0);
+      await expectLater(
+        fileBacked.upsertCarb(entry),
+        throwsA(isA<Exception>()),
+      );
+
+      // A transação foi desfeita: a linha não ficou órfã no diário.
+      final rows = await raw.query('carbs');
+      expect(rows, isEmpty);
+
+      await raw.close();
+      await fileBacked.close();
+    });
+  });
+
+  group('IDENT-07: ids com operação pendente', () {
+    test('pendingEntityIds devolve os ids da entidade pedida', () async {
+      final carb = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final insulin = InsulinEntry.create(
+        units: 2,
+        type: InsulinType.basal,
+        time: t0,
+        dayOfWeek: kDaysOfWeek[0],
+      );
+      await dataSource.upsertCarb(carb);
+      await dataSource.upsertInsulin(insulin);
+
+      expect(
+        await dataSource.pendingEntityIds(PendingOpEntity.carbs),
+        {carb.id},
+      );
+      expect(
+        await dataSource.pendingEntityIds(PendingOpEntity.insulin),
+        {insulin.id},
+      );
+      expect(
+        await dataSource.pendingEntityIds(PendingOpEntity.alerts),
+        isEmpty,
+      );
+    });
+
+    test('o id sai do conjunto quando a operação é confirmada', () async {
+      final carb = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      await dataSource.upsertCarb(carb);
+      final queued = await dataSource.pendingOps();
+
+      await dataSource.deleteOp(queued.single.seq!);
+
+      expect(
+        await dataSource.pendingEntityIds(PendingOpEntity.carbs),
+        isEmpty,
+      );
+    });
+
+    test('id apagado continua pendente enquanto o delete não subiu', () async {
+      final carb = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      await dataSource.upsertCarb(carb);
+
+      await dataSource.deleteCarb(carb.id);
+
+      expect(
+        await dataSource.pendingEntityIds(PendingOpEntity.carbs),
+        {carb.id},
+      );
     });
   });
 

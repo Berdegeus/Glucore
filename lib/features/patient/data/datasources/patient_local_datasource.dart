@@ -265,6 +265,91 @@ class LocalPatientDataSource implements PatientDataSource {
     await db.delete('pending_ops', where: 'seq = ?', whereArgs: [seq]);
   }
 
+  /// Ids de [entity] com pelo menos uma operação ainda na fila.
+  ///
+  /// A reconciliação com o servidor usa este conjunto para não sobrescrever uma
+  /// entrada que o backend ainda não viu (IDENT-07).
+  Future<Set<String>> pendingEntityIds(String entity) async {
+    final db = await _db;
+    final rows = await db.query(
+      'pending_ops',
+      columns: ['entity_id'],
+      where: 'entity = ?',
+      whereArgs: [entity],
+      distinct: true,
+    );
+    return rows.map((row) => row['entity_id']! as String).toSet();
+  }
+
+  // ── escritas unitárias do diário (SYNC-01/SYNC-07) ────────────────────────
+  //
+  // Linha e operação são gravadas na MESMA transação: uma linha sem a sua
+  // operação nunca chegaria ao backend, e uma operação sem a sua linha
+  // empurraria dado que o paciente não tem.
+
+  Future<void> upsertCarb(CarbEntry entry) => _writeWithOp(
+        table: 'carbs',
+        row: _carbToRow(entry, synced: 0),
+        op: PendingOp.upsert(
+          entity: PendingOpEntity.carbs,
+          entityId: entry.id,
+          payload: entry.toJson(),
+        ),
+      );
+
+  Future<void> deleteCarb(String id) =>
+      _deleteWithOp(table: 'carbs', entity: PendingOpEntity.carbs, id: id);
+
+  Future<void> upsertInsulin(InsulinEntry entry) => _writeWithOp(
+        table: 'insulin',
+        row: _insulinToRow(entry, synced: 0),
+        op: PendingOp.upsert(
+          entity: PendingOpEntity.insulin,
+          entityId: entry.id,
+          payload: entry.toJson(),
+        ),
+      );
+
+  Future<void> deleteInsulin(String id) =>
+      _deleteWithOp(table: 'insulin', entity: PendingOpEntity.insulin, id: id);
+
+  Future<void> upsertAlert(AppAlertItem alert) => _writeWithOp(
+        table: 'alerts',
+        row: _alertToRow(alert, synced: 0),
+        op: PendingOp.upsert(
+          entity: PendingOpEntity.alerts,
+          entityId: alert.id,
+          payload: alert.toJson(),
+        ),
+      );
+
+  Future<void> _writeWithOp({
+    required String table,
+    required Map<String, Object?> row,
+    required PendingOp op,
+  }) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.insert(table, row, conflictAlgorithm: ConflictAlgorithm.replace);
+      await txn.insert('pending_ops', op.toRow());
+    });
+  }
+
+  Future<void> _deleteWithOp({
+    required String table,
+    required String entity,
+    required String id,
+  }) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete(table, where: 'id = ?', whereArgs: [id]);
+      await txn.insert(
+        'pending_ops',
+        PendingOp.delete(entity: entity, entityId: id).toRow(),
+      );
+    });
+  }
+
   Future<void> close() async {
     final open = _database;
     _database = null;
