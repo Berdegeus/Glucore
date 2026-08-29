@@ -354,14 +354,15 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `findPage`, `create`, `update` e `remove` implementados, escopados por paciente
-- [ ] Linhas devolvidas incluem `id`
-- [ ] Teste unitário com client falso cobre paginação, escopo, ida e volta do mapeamento de tipo
-- [ ] Gate: `cd backend && npm test` verde
+- [x] `findPage`, `create`, `update` e `remove` implementados, escopados por paciente
+- [x] Linhas devolvidas incluem `id`
+- [x] Teste unitário com client falso cobre paginação, escopo, ida e volta do mapeamento de tipo
+- [x] Gate: `cd backend && npm test` verde (123 testes, 20 novos)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `refactor(backend): extract the alert repository from the route`
+**Status**: ✅ Complete
 
 ---
 
