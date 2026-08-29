@@ -580,15 +580,18 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `addCarb`/`updateCarb`/`removeCarb` e equivalentes de insulin e alerts existem e agendam o push
-- [ ] `maxEntries` deixa de truncar o diário
-- [ ] `replaceWithServerSnapshot` preserva linhas citadas em `pending_ops`
-- [ ] Testes cobrem diário acima de 100 entradas e reconciliação com pendência
-- [ ] Gate: `flutter test --no-pub` verde
+- [x] `addCarb`/`updateCarb`/`removeCarb` e equivalentes de insulin e alerts existem e agendam o push — alerta só tem criação, porque o paciente nunca edita nem apaga um
+- [x] `maxEntries` deixa de truncar o diário
+- [x] `replaceWithServerSnapshot` preserva linhas citadas em `pending_ops`
+- [x] Testes cobrem diário acima de 100 entradas e reconciliação com pendência
+- [x] Gate: `flutter test --no-pub` verde (267 testes, 12 novos)
+
+**Nota de contrato**: no diário, "pendente" passou a ser a linha em `pending_ops`, não `synced = 0`; o teste de reconciliação existente foi reapontado para semear pela escrita unitária, com a mesma asserção.
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(patient): expose per-entry repository writes without truncation`
+**Status**: ✅ Complete
 
 ---
 

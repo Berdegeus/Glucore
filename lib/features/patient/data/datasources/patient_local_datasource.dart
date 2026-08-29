@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite/sqflite.dart'
-    show ConflictAlgorithm, Database, DatabaseFactory;
+    show ConflictAlgorithm, Database, DatabaseExecutor, DatabaseFactory;
 import 'package:uuid/uuid.dart';
 
 import '../../presentation/models/patient_models.dart';
@@ -274,9 +274,14 @@ class LocalPatientDataSource implements PatientDataSource {
   ///
   /// A reconciliação com o servidor usa este conjunto para não sobrescrever uma
   /// entrada que o backend ainda não viu (IDENT-07).
-  Future<Set<String>> pendingEntityIds(String entity) async {
-    final db = await _db;
-    final rows = await db.query(
+  Future<Set<String>> pendingEntityIds(String entity) async =>
+      _pendingIdsIn(await _db, entity);
+
+  static Future<Set<String>> _pendingIdsIn(
+    DatabaseExecutor executor,
+    String entity,
+  ) async {
+    final rows = await executor.query(
       'pending_ops',
       columns: ['entity_id'],
       where: 'entity = ?',
@@ -451,9 +456,12 @@ class LocalPatientDataSource implements PatientDataSource {
     await db.update('settings', {'synced': 1});
   }
 
-  /// Persiste um snapshot vindo do servidor com `synced = 1`, preservando as
-  /// linhas locais ainda pendentes (`synced = 0`), que vencem o servidor até
-  /// serem empurradas.
+  /// Persiste um snapshot vindo do servidor com `synced = 1`, sem atropelar o
+  /// que ainda não subiu.
+  ///
+  /// Em leituras, a pendência é `synced = 0`. Nas três coleções do diário, é a
+  /// linha citada em `pending_ops`: a entrada com operação na fila sobrevive à
+  /// reconciliação e vence o servidor até ser empurrada (IDENT-07).
   Future<void> replaceWithServerSnapshot(PatientSnapshot snapshot) async {
     final db = await _db;
     await db.transaction((txn) async {
@@ -469,14 +477,39 @@ class LocalPatientDataSource implements PatientDataSource {
         await batch.commit(noResult: true);
       }
 
+      Future<void> replaceDiary(
+        String table,
+        String entity,
+        Iterable<Map<String, Object?>> rows,
+      ) async {
+        final pending = await _pendingIdsIn(txn, entity);
+        if (pending.isEmpty) {
+          await txn.delete(table);
+        } else {
+          final marks = List.filled(pending.length, '?').join(', ');
+          await txn.delete(
+            table,
+            where: 'id NOT IN ($marks)',
+            whereArgs: pending.toList(),
+          );
+        }
+        final batch = txn.batch();
+        for (final row in rows) {
+          // `ignore`: a linha pendente com o mesmo id não é sobrescrita pela
+          // versão do servidor, que ainda não viu a alteração local.
+          batch.insert(table, row, conflictAlgorithm: ConflictAlgorithm.ignore);
+        }
+        await batch.commit(noResult: true);
+      }
+
       await replace('readings',
           snapshot.readings.map((r) => _readingToRow(r, synced: 1)));
-      await replace(
-          'alerts', snapshot.alerts.map((a) => _alertToRow(a, synced: 1)));
-      await replace(
-          'carbs', snapshot.carbs.map((c) => _carbToRow(c, synced: 1)));
-      await replace(
-          'insulin', snapshot.insulin.map((i) => _insulinToRow(i, synced: 1)));
+      await replaceDiary('alerts', PendingOpEntity.alerts,
+          snapshot.alerts.map((a) => _alertToRow(a, synced: 1)));
+      await replaceDiary('carbs', PendingOpEntity.carbs,
+          snapshot.carbs.map((c) => _carbToRow(c, synced: 1)));
+      await replaceDiary('insulin', PendingOpEntity.insulin,
+          snapshot.insulin.map((i) => _insulinToRow(i, synced: 1)));
 
       final pendingSettings = await txn.query(
         'settings',

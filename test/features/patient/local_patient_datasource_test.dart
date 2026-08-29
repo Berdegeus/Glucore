@@ -296,9 +296,10 @@ void main() {
 
   group('replaceWithServerSnapshot', () {
     test('server rows land synced=1 and local pending rows survive', () async {
-      // Entrada local ainda pendente de push.
+      // Entrada local ainda pendente de push: a pendência do diário é a
+      // operação em `pending_ops`, não a flag `synced` (IDENT-07).
       final pendingCarb = CarbEntry.create(grams: 30, description: 'Lanche', time: t1);
-      await dataSource.saveCarbs([pendingCarb]);
+      await dataSource.upsertCarb(pendingCarb);
 
       final serverSnapshot = PatientSnapshot(
         readings: [

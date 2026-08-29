@@ -27,7 +27,6 @@ class PatientRepository {
 
   static const maxReadings = 288;
   static const maxAlerts = 100;
-  static const maxEntries = 100;
 
   Future<PatientSnapshot> load() => _local.load();
 
@@ -62,13 +61,56 @@ class PatientRepository {
     _syncService.schedulePush();
   }
 
+  /// O diário não é truncado: cortar em N entradas na gravação local perdia
+  /// registro clínico do paciente sem o backend sequer participar (API-03).
   Future<void> saveCarbs(List<CarbEntry> carbs) async {
-    await _local.saveCarbs(carbs.take(maxEntries).toList());
+    await _local.saveCarbs(carbs);
     _syncService.schedulePush();
   }
 
   Future<void> saveInsulin(List<InsulinEntry> insulin) async {
-    await _local.saveInsulin(insulin.take(maxEntries).toList());
+    await _local.saveInsulin(insulin);
+    _syncService.schedulePush();
+  }
+
+  // ── escritas por entrada (SYNC-01) ────────────────────────────────────────
+  //
+  // Cada uma grava a linha e enfileira a sua operação, e só então agenda o
+  // push. Criar e editar são a mesma chamada porque a operação que viaja é um
+  // upsert idempotente (SYNC-06).
+
+  Future<void> addCarb(CarbEntry entry) => _upsertCarb(entry);
+
+  Future<void> updateCarb(CarbEntry entry) => _upsertCarb(entry);
+
+  Future<void> removeCarb(String id) async {
+    await _local.deleteCarb(id);
+    _syncService.schedulePush();
+  }
+
+  Future<void> addInsulin(InsulinEntry entry) => _upsertInsulin(entry);
+
+  Future<void> updateInsulin(InsulinEntry entry) => _upsertInsulin(entry);
+
+  Future<void> removeInsulin(String id) async {
+    await _local.deleteInsulin(id);
+    _syncService.schedulePush();
+  }
+
+  /// Alerta é gerado pelo app e nunca editado nem apagado pelo paciente, então
+  /// a entidade só tem a operação de criação.
+  Future<void> addAlert(AppAlertItem alert) async {
+    await _local.upsertAlert(alert);
+    _syncService.schedulePush();
+  }
+
+  Future<void> _upsertCarb(CarbEntry entry) async {
+    await _local.upsertCarb(entry);
+    _syncService.schedulePush();
+  }
+
+  Future<void> _upsertInsulin(InsulinEntry entry) async {
+    await _local.upsertInsulin(entry);
     _syncService.schedulePush();
   }
 
