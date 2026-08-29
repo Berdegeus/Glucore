@@ -723,14 +723,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] O cubit não referencia mais a implementação do repositório
-- [ ] `injection_container.dart` injeta os casos de uso
-- [ ] Comportamento observável preservado — suíte existente verde sem asserção alterada
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] O cubit não referencia mais a implementação do repositório — nenhuma chamada a `repository.` sobrou, e o arquivo não importa `data/`
+- [x] `injection_container.dart` injeta os casos de uso
+- [x] Comportamento observável preservado — suíte existente verde sem asserção alterada
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (296 testes, 3 novos)
+
+**Nota de contrato**: o cubit recebe `PatientUseCases`, um agregado dos doze casos de uso com `fromRepository` no próprio domínio, em vez de doze parâmetros de construtor. Mesma informação, e mantém os oito pontos de construção do cubit nos testes a uma linha de mudança cada — nenhuma asserção foi tocada. As constantes `maxReadings`/`maxAlerts` continuam lidas do contrato de domínio: DOMAIN-03 proíbe *chamar* o repositório, não ler uma constante do domínio.
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `refactor(patient): drive the cubit through domain use cases`
+**Status**: ✅ Complete
 
 ---
 

@@ -8,6 +8,7 @@ import 'package:glucore/features/patient/data/datasources/patient_datasource.dar
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/domain/usecases/patient_usecases.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
@@ -49,7 +50,9 @@ void main() {
       databaseFactory: databaseFactoryFfi,
       databasePath: inMemoryDatabasePath,
     );
-    cubit = PatientCubit(repository: buildRepository(local));
+    cubit = PatientCubit(
+      useCases: PatientUseCases.fromRepository(buildRepository(local)),
+    );
   });
 
   tearDown(() async {
@@ -263,7 +266,7 @@ void main() {
 
 class _RecordingPatientCubit extends PatientCubit {
   _RecordingPatientCubit(PatientRepository repository)
-      : super(repository: repository);
+      : super(useCases: PatientUseCases.fromRepository(repository));
 
   final editedCarbs = <CarbEntry>[];
   final editedInsulin = <InsulinEntry>[];

@@ -90,4 +90,32 @@ void main() {
       expect(di, contains('() => PatientRepositoryImpl('));
     });
   });
+
+  group('DOMAIN-03/DOMAIN-04: cubit atrás dos casos de uso', () {
+    final cubit = File(
+      'lib/features/patient/presentation/cubit/patient_cubit.dart',
+    ).readAsStringSync();
+
+    test('o cubit não chama o repositório nem vê a implementação', () {
+      final repositoryCalls = cubit
+          .split('\n')
+          .where(
+            (line) =>
+                line.contains('repository.') && !line.trimLeft().startsWith('import'),
+          )
+          .toList();
+      expect(repositoryCalls, isEmpty);
+      expect(cubit, isNot(contains('PatientRepositoryImpl')));
+    });
+
+    test('o cubit não importa a camada de dados', () {
+      expect(cubit, isNot(contains("import '../../data/")));
+    });
+
+    test('o DI injeta os casos de uso no cubit', () {
+      final di = File('lib/injection_container.dart').readAsStringSync();
+      expect(di, contains('PatientUseCases.fromRepository(sl<PatientRepository>())'));
+      expect(di, contains('PatientCubit(useCases: sl())'));
+    });
+  });
 }

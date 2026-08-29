@@ -15,6 +15,7 @@ import 'package:glucore/features/patient/data/datasources/patient_datasource.dar
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/domain/usecases/patient_usecases.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
@@ -169,7 +170,7 @@ class _FakeAuthRepository implements AuthRepository {
 // PatientState, mirroring sensor_choice_navigation_test.dart's fake.
 class _FakePatientCubit extends PatientCubit {
   _FakePatientCubit._(PatientRepository repository)
-      : super(repository: repository);
+      : super(useCases: PatientUseCases.fromRepository(repository));
 
   factory _FakePatientCubit() {
     final local = LocalPatientDataSource();

@@ -10,6 +10,7 @@ export 'edit_carb_entry.dart';
 export 'edit_insulin_entry.dart';
 export 'ensure_patient_owner.dart';
 export 'load_patient_data.dart';
+export 'patient_use_cases.dart';
 export 'refresh_patient_data.dart';
 export 'save_glucose_readings.dart';
 export 'update_alert_settings.dart';

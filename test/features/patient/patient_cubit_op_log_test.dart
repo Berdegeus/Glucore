@@ -9,6 +9,7 @@ import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
+import 'package:glucore/features/patient/domain/usecases/patient_usecases.dart';
 import 'package:glucore/features/sensor/domain/events.dart';
 import 'package:glucore/features/sensor/domain/models.dart';
 import 'package:glucore/features/sensor/domain/sensor_repository.dart';
@@ -30,7 +31,7 @@ void main() {
     );
     final remote = _FakeRemote();
     cubit = PatientCubit(
-      repository: PatientRepositoryImpl(
+      useCases: PatientUseCases.fromRepository(PatientRepositoryImpl(
         local: local,
         remote: remote,
         // Sync inerte: o teste olha a fila como o cubit a deixa, sem um push
@@ -41,7 +42,7 @@ void main() {
           connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
         ),
         tokenStore: _FakeTokenStore(),
-      ),
+      )),
     );
   });
 

@@ -3,16 +3,19 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/notifications/notification_service.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../../domain/repositories/patient_repository.dart';
+import '../../domain/usecases/patient_usecases.dart';
 import '../../domain/entities/patient_entities.dart';
 import 'patient_state.dart';
 
 class PatientCubit extends Cubit<PatientState> {
-  PatientCubit({required this.repository}) : super(const PatientState());
+  PatientCubit({required this.useCases}) : super(const PatientState());
 
-  final PatientRepository repository;
+  /// O cubit fala com o domínio, nunca com o repositório (DOMAIN-03).
+  final PatientUseCases useCases;
   StreamSubscription<SensorUiState>? _sensorSubscription;
 
   Future<void> initialize(SensorCubit sensorCubit) async {
@@ -20,13 +23,13 @@ class PatientCubit extends Cubit<PatientState> {
     // account is now signed in on this device, the local patient data was
     // wiped — also drop the sensor session so a previous patient's physical
     // sensor never streams into the new account.
-    final switchedAccount = await repository.ensureOwner();
+    final switchedAccount = await useCases.ensurePatientOwner(const NoParams());
     if (switchedAccount) {
       await sensorCubit.clearSession();
     }
 
     // Snapshot local — nunca depende de rede.
-    final snapshot = await repository.load();
+    final snapshot = await useCases.loadPatientData(const NoParams());
     emit(
       state.copyWith(
         readings: List<GlucoseReadingItem>.of(snapshot.readings, growable: false),
@@ -47,7 +50,7 @@ class PatientCubit extends Cubit<PatientState> {
   }
 
   Future<void> _refreshFromRemote() async {
-    final refreshed = await repository.refreshFromRemote();
+    final refreshed = await useCases.refreshPatientData(const NoParams());
     // refreshFromRemote já persistiu o snapshot do servidor localmente
     // (pendências locais preservadas) e devolveu o snapshot local resultante.
     if (refreshed == null || isClosed) {
@@ -72,14 +75,14 @@ class PatientCubit extends Cubit<PatientState> {
     final updated = [entry, ...state.carbs]
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(carbs: updated));
-    await repository.addCarb(entry);
+    await useCases.addCarbEntry(entry);
   }
 
   Future<void> addInsulinEntry(InsulinEntry entry) async {
     final updated = [entry, ...state.insulin]
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(insulin: updated));
-    await repository.addInsulin(entry);
+    await useCases.addInsulinEntry(entry);
   }
 
   Future<void> editCarbEntry(CarbEntry entry) async {
@@ -88,13 +91,13 @@ class PatientCubit extends Cubit<PatientState> {
         .toList()
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(carbs: updated));
-    await repository.updateCarb(entry);
+    await useCases.editCarbEntry(entry);
   }
 
   Future<void> deleteCarbEntry(CarbEntry entry) async {
     final updated = state.carbs.where((e) => e.id != entry.id).toList();
     emit(state.copyWith(carbs: updated));
-    await repository.removeCarb(entry.id);
+    await useCases.deleteCarbEntry(entry.id);
   }
 
   Future<void> editInsulinEntry(InsulinEntry entry) async {
@@ -103,23 +106,23 @@ class PatientCubit extends Cubit<PatientState> {
         .toList()
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(insulin: updated));
-    await repository.updateInsulin(entry);
+    await useCases.editInsulinEntry(entry);
   }
 
   Future<void> deleteInsulinEntry(InsulinEntry entry) async {
     final updated = state.insulin.where((e) => e.id != entry.id).toList();
     emit(state.copyWith(insulin: updated));
-    await repository.removeInsulin(entry.id);
+    await useCases.deleteInsulinEntry(entry.id);
   }
 
   Future<void> clearReadings() async {
     emit(state.copyWith(readings: const []));
-    await repository.saveReadings(const []);
+    await useCases.saveGlucoseReadings(const []);
   }
 
   Future<void> updateAlertSettings(AlertSettingsModel settings) async {
     emit(state.copyWith(alertSettings: settings));
-    await repository.saveAlertSettings(settings);
+    await useCases.updateAlertSettings(settings);
   }
 
   Future<void> _handleSensorState(SensorUiState sensorState) async {
@@ -209,10 +212,10 @@ class PatientCubit extends Cubit<PatientState> {
 
     // Leituras seguem no caminho de coleção com debounce (SYNC-10).
     if (persistReadings) {
-      await repository.saveReadings(readings);
+      await useCases.saveGlucoseReadings(readings);
     }
     for (final alert in newAlerts) {
-      await repository.addAlert(alert);
+      await useCases.addAlertEntry(alert);
     }
   }
 

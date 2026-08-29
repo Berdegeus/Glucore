@@ -18,6 +18,7 @@ import 'features/patient/data/datasources/patient_remote_datasource.dart';
 import 'features/patient/data/repositories/patient_repository_impl.dart';
 import 'features/patient/data/sync/patient_sync_service.dart';
 import 'features/patient/domain/repositories/patient_repository.dart';
+import 'features/patient/domain/usecases/patient_usecases.dart';
 import 'features/patient/presentation/cubit/patient_cubit.dart';
 import 'features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'features/sensor/data/platform/sensor_platform.dart';
@@ -82,6 +83,10 @@ Future<void> initDependencies() async {
     ),
   );
 
+  sl.registerLazySingleton<PatientUseCases>(
+    () => PatientUseCases.fromRepository(sl<PatientRepository>()),
+  );
+
   sl.registerFactory(
     () => AuthCubit(
       loginUseCase: sl(),
@@ -91,6 +96,6 @@ Future<void> initDependencies() async {
     ),
   );
   sl.registerFactory(() => SensorCubit(repository: sl()));
-  sl.registerFactory(() => PatientCubit(repository: sl()));
+  sl.registerFactory(() => PatientCubit(useCases: sl()));
   sl.registerFactory(() => UserIdentityCubit(accountService: sl()));
 }
