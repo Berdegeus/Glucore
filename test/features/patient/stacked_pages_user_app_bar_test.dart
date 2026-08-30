@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/core/api/auth_token_store.dart';
+import 'package:glucore/core/theme/theme_cubit.dart';
 import 'package:glucore/features/auth/data/datasources/account_service.dart';
 import 'package:glucore/features/auth/domain/repositories/auth_repository.dart';
 import 'package:glucore/features/auth/domain/usecases/get_auth_status_usecase.dart';
@@ -84,6 +85,7 @@ void main() {
           BlocProvider<UserIdentityCubit>.value(value: identity),
           BlocProvider<PatientCubit>.value(value: patientCubit),
           BlocProvider<SensorCubit>.value(value: sensorCubit),
+          BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

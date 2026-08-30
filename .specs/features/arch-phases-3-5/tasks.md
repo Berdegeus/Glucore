@@ -809,14 +809,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Três opções disponíveis, refletindo o estado atual
-- [ ] Textos vindos do l10n, com `flutter gen-l10n` rodado
-- [ ] Teste de widget troca para escuro e confere a mudança imediata
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Três opções disponíveis, refletindo o estado atual — seção "Aparência" no fim da lista, com marca de seleção em uma só linha
+- [x] Textos vindos do l10n, com `flutter gen-l10n` rodado — quatro chaves novas nos dois `.arb`
+- [x] Teste de widget troca para escuro e confere a mudança imediata — brilho e paleta resolvida viram as escuras com a mesma tela montada
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (318 testes, 5 novos)
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `feat(settings): let the user pick the app theme`
+**Status**: ✅ Complete
+
+**Nota**: a lista passou de um viewport. `settings_profile_l10n_test.dart` troca `ensureVisible` por `scrollUntilVisible` para alcançar o botão de sair, e `stacked_pages_user_app_bar_test.dart` passa a prover `ThemeCubit`. Nenhuma asserção mudou.
 
 ---
 

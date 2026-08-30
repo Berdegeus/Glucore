@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/patient_widgets.dart';
@@ -81,6 +82,8 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          const _ThemeSection(),
           const SizedBox(height: 32),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
@@ -115,6 +118,99 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Text(l10n.settingsLogoutTile),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Seletor de tema (THEME-01).
+///
+/// Escreve direto no [ThemeCubit]: o `MaterialApp` escuta o mesmo cubit, então
+/// o toque troca o tema na hora, sem reiniciar o app.
+class _ThemeSection extends StatelessWidget {
+  const _ThemeSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final options = <ThemeMode, String>{
+      ThemeMode.system: l10n.settingsThemeSystemLabel,
+      ThemeMode.light: l10n.settingsThemeLightLabel,
+      ThemeMode.dark: l10n.settingsThemeDarkLabel,
+    };
+
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, mode) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(
+              l10n.settingsAppearanceSectionTitle,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.inkMuted,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceCanvas,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                for (final entry in options.entries) ...[
+                  if (entry.key != options.keys.first)
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                  _ThemeOptionRow(
+                    label: entry.value,
+                    selected: entry.key == mode,
+                    onTap: () =>
+                        context.read<ThemeCubit>().setMode(entry.key),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeOptionRow extends StatelessWidget {
+  const _ThemeOptionRow({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 14, color: AppTheme.ink),
+              ),
+            ),
+            if (selected)
+              const Icon(Icons.check, size: 18, color: AppTheme.brandBlue),
+          ],
+        ),
       ),
     );
   }
