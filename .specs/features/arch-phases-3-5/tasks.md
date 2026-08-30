@@ -1041,14 +1041,19 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `AD-009` registrado no `.specs/STATE.md` com o desenho do op-log
-- [ ] P13 marcado como resolvido-por-remoção no `ARCHITECTURE_REVIEW.md`, citando `f91adea`, com o diagnóstico preservado
-- [ ] Itens 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 5.1 e 5.2 do plano refletindo o estado entregue
-- [ ] Gate de build completo verde
+- [x] `AD-009` registrado no `.specs/STATE.md` com o desenho do op-log — acrescentado depois do AD-008; nenhum AD anterior foi tocado
+- [x] P13 marcado como resolvido-por-remoção no `ARCHITECTURE_REVIEW.md`, citando `f91adea`, com o diagnóstico preservado sob `**Histórico**`, na convenção que o P16 já usava
+- [x] Itens 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 5.1 e 5.2 do plano refletindo o estado entregue — 5.1 marcado ⛔ **Retirado do plano**, dizendo explicitamente que não foi implementado, com o desenho original preservado como citação
+- [x] Seção `## Handoff` do `.specs/STATE.md` atualizada para o estado final, com substituição limitada à seção
+- [x] Rastreabilidade da spec: 47 requisitos de `Pending` para `Implementing`; a transição para `Verified` fica com o Verificador
+- [x] Gate de build completo verde (340 Flutter, 146 backend, 34 Kotlin, `tsc` limpo)
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs(plan): close phases 3-5 and record the op-log decision`
+**Status**: ✅ Complete
+
+**Nota**: além do P13, o review fechou P5, P12, P2 e P4 e passou P28 a parcial, com o sumário do topo recontado. São os registros do que estas fases entregaram; deixá-los dizendo "aberto" reproduziria o padrão P6 — documento que manda corrigir o que já foi corrigido — que é justamente o que a story P3 existe para impedir. Cada afirmação foi conferida no código, e o residual ficou honesto: o conflito do mesmo item em dois aparelhos continua last-writer-wins por item, e o desempate por `updated_at` que a Solução proposta do P2 previa não foi implementado.
 
 ---
 

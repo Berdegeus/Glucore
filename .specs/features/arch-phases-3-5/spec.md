@@ -244,59 +244,59 @@ Toda ambiguidade está resolvida ou registrada aqui.
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| IDENT-01 | P1: Entradas com identidade estável | Design | Pending |
-| IDENT-02 | P1: Entradas com identidade estável | Design | Pending |
-| IDENT-03 | P1: Entradas com identidade estável | Design | Pending |
-| IDENT-04 | P1: Entradas com identidade estável | Design | Pending |
-| IDENT-05 | P1: Entradas com identidade estável | Design | Pending |
-| IDENT-06 | P1: Entradas com identidade estável | Design | Pending |
-| IDENT-07 | P1: Entradas com identidade estável | Design | Pending |
-| SYNC-01 | P1: Sincronização por item | Design | Pending |
-| SYNC-02 | P1: Sincronização por item | Design | Pending |
-| SYNC-03 | P1: Sincronização por item | Design | Pending |
-| SYNC-04 | P1: Sincronização por item | Design | Pending |
-| SYNC-05 | P1: Sincronização por item | Design | Pending |
-| SYNC-06 | P1: Sincronização por item | Design | Pending |
-| SYNC-07 | P1: Sincronização por item | Design | Pending |
-| SYNC-08 | P1: Sincronização por item | Design | Pending |
-| SYNC-09 | P1: Sincronização por item | Design | Pending |
-| SYNC-10 | P1: Sincronização por item | Design | Pending |
-| API-01 | P1: API por item com histórico paginado | Design | Pending |
-| API-02 | P1: API por item com histórico paginado | Design | Pending |
-| API-03 | P1: API por item com histórico paginado | Design | Pending |
-| API-04 | P1: API por item com histórico paginado | Design | Pending |
-| API-05 | P1: API por item com histórico paginado | Design | Pending |
-| API-06 | P1: API por item com histórico paginado | Design | Pending |
-| QUAL-01 | P2: Rotas novas em camadas | Design | Pending |
-| QUAL-02 | P2: Rotas novas em camadas | Design | Pending |
-| QUAL-03 | P2: Rotas novas em camadas | Design | Pending |
-| QUAL-04 | P2: Rotas novas em camadas | Design | Pending |
-| QUAL-05 | P2: Rotas novas em camadas | Design | Pending |
-| DOMAIN-01 | P2: Camada domain no patient | Design | Pending |
-| DOMAIN-02 | P2: Camada domain no patient | Design | Pending |
-| DOMAIN-03 | P2: Camada domain no patient | Design | Pending |
-| DOMAIN-04 | P2: Camada domain no patient | Design | Pending |
-| THEME-01 | P2: Tema claro e escuro | Design | Pending |
-| THEME-02 | P2: Tema claro e escuro | Design | Pending |
-| THEME-03 | P2: Tema claro e escuro | Design | Pending |
-| THEME-04 | P2: Tema claro e escuro | Design | Pending |
-| THEME-05 | P2: Tema claro e escuro | Design | Pending |
-| DEAD-01 | P3: Nomes honestos e árvore sem código morto | Design | Pending |
-| DEAD-02 | P3: Nomes honestos e árvore sem código morto | Design | Pending |
-| DEAD-03 | P3: Nomes honestos e árvore sem código morto | Design | Pending |
-| DEAD-04 | P3: Nomes honestos e árvore sem código morto | Design | Pending |
-| DEAD-05 | P3: Nomes honestos e árvore sem código morto | Design | Pending |
-| DEAD-06 | P3: Nomes honestos e árvore sem código morto | Design | Pending |
-| PLAN-01 | P3: Plano e review fiéis ao estado real | Design | Pending |
-| PLAN-02 | P3: Plano e review fiéis ao estado real | Design | Pending |
-| PLAN-03 | P3: Plano e review fiéis ao estado real | Design | Pending |
-| PLAN-04 | P3: Plano e review fiéis ao estado real | Design | Pending |
+| IDENT-01 | P1: Entradas com identidade estável | Execute | Implementing |
+| IDENT-02 | P1: Entradas com identidade estável | Execute | Implementing |
+| IDENT-03 | P1: Entradas com identidade estável | Execute | Implementing |
+| IDENT-04 | P1: Entradas com identidade estável | Execute | Implementing |
+| IDENT-05 | P1: Entradas com identidade estável | Execute | Implementing |
+| IDENT-06 | P1: Entradas com identidade estável | Execute | Implementing |
+| IDENT-07 | P1: Entradas com identidade estável | Execute | Implementing |
+| SYNC-01 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-02 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-03 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-04 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-05 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-06 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-07 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-08 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-09 | P1: Sincronização por item | Execute | Implementing |
+| SYNC-10 | P1: Sincronização por item | Execute | Implementing |
+| API-01 | P1: API por item com histórico paginado | Execute | Implementing |
+| API-02 | P1: API por item com histórico paginado | Execute | Implementing |
+| API-03 | P1: API por item com histórico paginado | Execute | Implementing |
+| API-04 | P1: API por item com histórico paginado | Execute | Implementing |
+| API-05 | P1: API por item com histórico paginado | Execute | Implementing |
+| API-06 | P1: API por item com histórico paginado | Execute | Implementing |
+| QUAL-01 | P2: Rotas novas em camadas | Execute | Implementing |
+| QUAL-02 | P2: Rotas novas em camadas | Execute | Implementing |
+| QUAL-03 | P2: Rotas novas em camadas | Execute | Implementing |
+| QUAL-04 | P2: Rotas novas em camadas | Execute | Implementing |
+| QUAL-05 | P2: Rotas novas em camadas | Execute | Implementing |
+| DOMAIN-01 | P2: Camada domain no patient | Execute | Implementing |
+| DOMAIN-02 | P2: Camada domain no patient | Execute | Implementing |
+| DOMAIN-03 | P2: Camada domain no patient | Execute | Implementing |
+| DOMAIN-04 | P2: Camada domain no patient | Execute | Implementing |
+| THEME-01 | P2: Tema claro e escuro | Execute | Implementing |
+| THEME-02 | P2: Tema claro e escuro | Execute | Implementing |
+| THEME-03 | P2: Tema claro e escuro | Execute | Implementing |
+| THEME-04 | P2: Tema claro e escuro | Execute | Implementing |
+| THEME-05 | P2: Tema claro e escuro | Execute | Implementing |
+| DEAD-01 | P3: Nomes honestos e árvore sem código morto | Execute | Implementing |
+| DEAD-02 | P3: Nomes honestos e árvore sem código morto | Execute | Implementing |
+| DEAD-03 | P3: Nomes honestos e árvore sem código morto | Execute | Implementing |
+| DEAD-04 | P3: Nomes honestos e árvore sem código morto | Execute | Implementing |
+| DEAD-05 | P3: Nomes honestos e árvore sem código morto | Execute | Implementing |
+| DEAD-06 | P3: Nomes honestos e árvore sem código morto | Execute | Implementing |
+| PLAN-01 | P3: Plano e review fiéis ao estado real | Execute | Implementing |
+| PLAN-02 | P3: Plano e review fiéis ao estado real | Execute | Implementing |
+| PLAN-03 | P3: Plano e review fiéis ao estado real | Execute | Implementing |
+| PLAN-04 | P3: Plano e review fiéis ao estado real | Execute | Implementing |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 47 requisitos, todos mapeados a uma story; 0 mapeados a tarefas (fase Tasks ainda não executada).
+**Coverage:** 47 requisitos, todos mapeados a uma story e a pelo menos uma tarefa de `tasks.md`; as 34 tarefas estão implementadas e commitadas. A transição final para `Verified` cabe ao Verificador, que roda depois da última tarefa.
 
 ---
 
