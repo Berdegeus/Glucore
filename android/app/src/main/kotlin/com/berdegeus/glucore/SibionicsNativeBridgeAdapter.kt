@@ -146,8 +146,6 @@ class SibionicsNativeBridgeAdapter(private val context: Context) {
             }
         }
 
-        val transmitterId = extractString(sessionObject, TRANSMITTER_ID_KEYS)
-            ?: extractString(root, TRANSMITTER_ID_KEYS)
         val connected = extractBoolean(sessionObject, CONNECTED_KEYS)
             ?: extractBoolean(root, CONNECTED_KEYS)
             ?: false
@@ -157,7 +155,6 @@ class SibionicsNativeBridgeAdapter(private val context: Context) {
         return CallResult.Success(
             value = SensorSessionSnapshot(
                 sensorId = sensorId,
-                transmitterId = transmitterId,
                 connected = connected,
                 brand = libreVersion?.let { SensorBrand.fromLibreVersion(it) }
                     ?: SensorBrand.SIBIONICS
@@ -290,14 +287,6 @@ class SibionicsNativeBridgeAdapter(private val context: Context) {
             "sensor_barcode",
             "barcode",
             "id"
-        )
-        private val TRANSMITTER_ID_KEYS = arrayOf(
-            "transmitterId",
-            "transmitter_id",
-            "transmitterBarcode",
-            "transmitter_barcode",
-            "deviceId",
-            "device_id"
         )
         private val CONNECTED_KEYS = arrayOf("connected", "isConnected", "is_connected")
         private val LIBRE_VERSION_KEYS = arrayOf("libreVersion", "libre_version")

@@ -952,14 +952,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Canal, `SensorPlatformImpl`, `SensorCore`, `SibionicsBarcode` e o registro de sessão sem referência a transmissor
-- [ ] `WarmupPayload` removido; `warmingUp` e o caminho NFC do Libre 2 intactos
-- [ ] Gate: `cd android && ./gradlew :app:testDebugUnitTest` verde
-- [ ] Gate de build completo verde
+- [x] Canal, `SensorPlatformImpl`, `SensorCore`, `SibionicsBarcode` e o registro de sessão sem referência a transmissor — inclui os valores `AWAITING_TRANSMITTER` e `TRANSMITTER_ASSIGNED` do enum `SessionStatus`. A coluna `transmitter_id` fica, sem escrita, com comentário explicando o porquê
+- [x] `WarmupPayload` removido; `warmingUp` e o caminho NFC do Libre 2 intactos — `LibreNfcHandler.kt:78,95,104` continua emitindo `statusName = "warmingUp"`
+- [x] Gate: `cd android && ./gradlew :app:testDebugUnitTest` verde (34 testes, 0 falhas)
+- [x] Gate de build completo verde (340 Flutter, 146 backend, 34 Kotlin)
 
 **Tests**: none
 **Gate**: build
 **Commit**: `refactor(android)!: remove the transmitter flow and the ghost warmup payload`
+**Status**: ✅ Complete
+
+**Nota**: a remoção é verificada pelo compilador, não por teste novo — tirar o campo de `SibionicsSessionRecord` transforma qualquer referência sobrevivente em erro de `compileDebugKotlin`. Uma sessão já gravada com status `TRANSMITTER_ASSIGNED` cai para `REGISTERED` pelo `runCatching{}.getOrDefault` que já existia em `SensorSessionManager.kt:76-78`; nenhuma migração é necessária. O `emitEvent` mantém a chave `"warmup" to null` para o mapa de evento seguir idêntico ao que `BrandBleManager` e `LibreNfcHandler` já emitiam.
 
 ---
 

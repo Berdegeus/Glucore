@@ -41,11 +41,6 @@ class MainActivity : FlutterActivity() {
                             val brand = SensorBrand.fromWireName(call.argument<String>("brand"))
                             result.success(core.registerSensor(barcode, brand))
                         }
-                        "submitTransmitter" -> {
-                            val transmitterBarcode = call.argument<String>("transmitterBarcode") ?: ""
-                            core.submitTransmitter(transmitterBarcode)
-                            result.success(null)
-                        }
                         "startMonitoring" -> {
                             core.startMonitoring()
                             result.success(null)

@@ -17,14 +17,9 @@ class SensorSessionManager(context: Context) {
 
     fun syncSessionFromNative(snapshot: SensorSessionSnapshot): SensorSessionSnapshot {
         val connectedAtMs = if (snapshot.connected) System.currentTimeMillis() else null
-        val status = when {
-            snapshot.connected -> SessionStatus.CONNECTED
-            !snapshot.transmitterId.isNullOrBlank() -> SessionStatus.TRANSMITTER_ASSIGNED
-            else -> SessionStatus.REGISTERED
-        }
+        val status = if (snapshot.connected) SessionStatus.CONNECTED else SessionStatus.REGISTERED
         val session = SibionicsSessionRecord(
             sensorId = snapshot.sensorId,
-            transmitterId = snapshot.transmitterId,
             status = status,
             connectedAtMs = connectedAtMs,
             brand = snapshot.brand
@@ -32,21 +27,6 @@ class SensorSessionManager(context: Context) {
         currentSession = session
         persistSession(session)
         return session.toSnapshot()
-    }
-
-    fun submitTransmitter(transmitterBarcode: String): Result<SensorSessionSnapshot> {
-        val session = currentSession ?: return Result.failure(Exception("No active sensor session"))
-        val validation = SibionicsBarcode.validateTransmitterBarcode(transmitterBarcode)
-        return when (validation) {
-            is SibionicsBarcode.Result.Error -> Result.failure(Exception(validation.message))
-            is SibionicsBarcode.Result.Valid -> {
-                val updated = session.copyWithTransmitter(validation.barcode)
-                    .copyWithStatus(SessionStatus.TRANSMITTER_ASSIGNED)
-                currentSession = updated
-                persistSession(updated)
-                Result.success(updated.toSnapshot())
-            }
-        }
     }
 
     fun startMonitoring(): Result<Unit> {
@@ -79,7 +59,6 @@ class SensorSessionManager(context: Context) {
         val values = ContentValues().apply {
             put("id", 1)
             put("sensor_id", session.sensorId)
-            put("transmitter_id", session.transmitterId)
             put("status", session.status.name)
             put("connected_at_ms", session.connectedAtMs)
             put("updated_at", System.currentTimeMillis())
@@ -94,8 +73,6 @@ class SensorSessionManager(context: Context) {
             if (!it.moveToFirst()) return null
             SibionicsSessionRecord(
                 sensorId = it.getString(it.getColumnIndexOrThrow("sensor_id")),
-                transmitterId = (it.getString(it.getColumnIndexOrThrow("transmitter_id")) as String?)
-                    ?.takeIf { v -> v.isNotBlank() },
                 status = runCatching {
                     SessionStatus.valueOf(it.getString(it.getColumnIndexOrThrow("status")))
                 }.getOrDefault(SessionStatus.REGISTERED),
@@ -124,6 +101,9 @@ class SensorSessionManager(context: Context) {
                 CREATE TABLE IF NOT EXISTS sensor_session (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
                     sensor_id TEXT NOT NULL,
+                    -- Left in place, never written: none of the supported
+                    -- sensors uses a separate transmitter. Dropping it would
+                    -- cost a schema migration for a flow that no longer runs.
                     transmitter_id TEXT,
                     status TEXT NOT NULL,
                     connected_at_ms INTEGER,
