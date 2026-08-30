@@ -4,7 +4,7 @@ import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../../../../core/utils/gs1_barcode.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
@@ -65,7 +65,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
               if (state.failure != null) ...[
                 Text(
                   l10n.genericErrorLabel(state.failure!.message),
-                  style: const TextStyle(color: AppTheme.zoneLowBg),
+                  style: TextStyle(color: context.glucoreColors.zoneLowBg),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -244,40 +244,40 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
     switch (status) {
       case SensorConnectionStatus.scanning:
         subtitle = l10n.sensorLinkSearchingSubtitle;
-        color = AppTheme.brandSecondary;
+        color = context.glucoreColors.brandSecondary;
         icon = Icons.search;
         break;
       case SensorConnectionStatus.connecting:
         subtitle = l10n.sensorLinkReconnectingSubtitle;
-        color = AppTheme.brandSecondary;
+        color = context.glucoreColors.brandSecondary;
         icon = Icons.bluetooth_connected;
         break;
       case SensorConnectionStatus.pairing:
         subtitle =
             'Confirme o pareamento no diálogo do sistema e digite o PIN do sensor.';
-        color = AppTheme.brandSecondary;
+        color = context.glucoreColors.brandSecondary;
         icon = Icons.password;
         break;
       case SensorConnectionStatus.connected:
         subtitle = l10n.sensorPageConnectedMessage;
-        color = AppTheme.brandPrimary;
+        color = context.glucoreColors.brandPrimary;
         icon = Icons.check_circle_outline;
         break;
       case SensorConnectionStatus.syncingHistory:
         subtitle = l10n.sensorLinkSyncingHistorySubtitle(
           state.historySyncInfo?.receivedCount ?? 0,
         );
-        color = AppTheme.brandSecondary;
+        color = context.glucoreColors.brandSecondary;
         icon = Icons.sync;
         break;
       case SensorConnectionStatus.readingAvailable:
         subtitle = l10n.sensorLinkConnectedSubtitle;
-        color = AppTheme.brandPrimary;
+        color = context.glucoreColors.brandPrimary;
         icon = Icons.monitor_heart_outlined;
         break;
       case SensorConnectionStatus.error:
         subtitle = state.failure?.message ?? l10n.sensorFailureUnknown;
-        color = AppTheme.zoneLowBg;
+        color = context.glucoreColors.zoneLowBg;
         icon = Icons.error_outline;
         break;
       case SensorConnectionStatus.idle:
@@ -290,7 +290,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
         break;
       case SensorConnectionStatus.warmingUp:
         subtitle = l10n.sensorPageConnectedMessage;
-        color = AppTheme.brandSecondary;
+        color = context.glucoreColors.brandSecondary;
         icon = Icons.hourglass_bottom;
         break;
     }
@@ -371,9 +371,9 @@ class _TutorialStepper extends StatelessWidget {
                         Icon(icon,
                             size: 18,
                             color: active
-                                ? AppTheme.brandPrimary
+                                ? context.glucoreColors.brandPrimary
                                 : done
-                                    ? AppTheme.zoneTargetBg
+                                    ? context.glucoreColors.zoneTargetBg
                                     : Colors.grey),
                         const SizedBox(width: 6),
                         Flexible(
@@ -423,9 +423,9 @@ class _StepCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: done
-            ? AppTheme.zoneTargetBg
+            ? context.glucoreColors.zoneTargetBg
             : active
-                ? AppTheme.brandPrimary
+                ? context.glucoreColors.brandPrimary
                 : Colors.grey.shade300,
       ),
       child: Center(

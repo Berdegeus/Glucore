@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:glucore/l10n/l10n.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../../../auth/data/datasources/account_service.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
@@ -59,7 +59,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      backgroundColor: AppTheme.surfaceElevated,
+      backgroundColor: context.glucoreColors.surfaceElevated,
       appBar: UserAppBar(
         title: Text(l10n.profileTitle),
         actions: [
@@ -83,7 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: AppTheme.brandBlue,
+                      color: context.glucoreColors.brandBlue,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -113,10 +113,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         Text(
                           _loading ? '…' : _name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.ink,
+                            color: context.glucoreColors.ink,
                           ),
                         ),
                         TextButton(
@@ -222,13 +222,13 @@ class _ProfilePageState extends State<ProfilePage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceCanvas,
+                  color: context.glucoreColors.surfaceCanvas,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.surfaceSunken),
+                  border: Border.all(color: context.glucoreColors.surfaceSunken),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.people_outline, color: AppTheme.inkMuted),
+                    Icon(Icons.people_outline, color: context.glucoreColors.inkMuted),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -236,19 +236,19 @@ class _ProfilePageState extends State<ProfilePage> {
                         children: [
                           Text(
                             l10n.profileSharedCareTitle,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.ink,
+                              color: context.glucoreColors.ink,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             // TODO: shared care requires doctor web dashboard
                             l10n.profileSharedCareSubtitle,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.inkMuted,
+                              color: context.glucoreColors.inkMuted,
                             ),
                           ),
                         ],

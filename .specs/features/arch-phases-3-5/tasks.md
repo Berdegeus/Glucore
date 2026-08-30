@@ -838,13 +838,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Nenhuma cor de superfície ou de texto resolvida por constante estática nas telas do paciente
-- [ ] Teste de widget renderiza monitoramento, histórico e diário no tema escuro e falha se a superfície resolvida for a clara
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Nenhuma cor de superfície ou de texto resolvida por constante estática nas telas do paciente — sobra só `AppTheme.monoStyle`, fábrica de fonte, e a cor que ela recebe já vem do contexto (`history_page.dart:133`)
+- [x] Teste de widget renderiza monitoramento, histórico e diário no tema escuro e falha se a superfície resolvida for a clara — confirmado por mutação: trocar uma superfície do diário e uma tinta do histórico pela constante clara derruba o teste
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (329 testes, 11 novos)
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `refactor(patient): resolve screen colors from the active theme`
+**Status**: ✅ Complete
+
+**Nota**: `GlucoseZoneX.bg/soft/ink/chartLine` e `GlucoreMessageVariantX.background` viraram métodos que recebem `BuildContext` — getter estático não alcança o tema. `glucore_messenger_test.dart` passou a montar um contexto para resolvê-las; as asserções são as mesmas.
 
 ---
 

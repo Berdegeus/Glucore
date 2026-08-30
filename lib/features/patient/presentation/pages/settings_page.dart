@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../../../../core/theme/theme_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../widgets/glucore_widgets.dart';
@@ -28,7 +28,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      backgroundColor: AppTheme.surfaceElevated,
+      backgroundColor: context.glucoreColors.surfaceElevated,
       appBar: UserAppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
@@ -87,8 +87,8 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 32),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppTheme.zoneLowBg),
-              foregroundColor: AppTheme.zoneLowBg,
+              side: BorderSide(color: context.glucoreColors.zoneLowBg),
+              foregroundColor: context.glucoreColors.zoneLowBg,
             ),
             onPressed: () => _confirmLogout(context, l10n),
             child: Text(l10n.settingsLogoutTile),
@@ -114,7 +114,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Navigator.of(context).pop();
               context.read<AuthCubit>().logout();
             },
-            style: TextButton.styleFrom(foregroundColor: AppTheme.zoneLowBg),
+            style: TextButton.styleFrom(foregroundColor: context.glucoreColors.zoneLowBg),
             child: Text(l10n.settingsLogoutTile),
           ),
         ],
@@ -147,17 +147,17 @@ class _ThemeSection extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, bottom: 8),
             child: Text(
               l10n.settingsAppearanceSectionTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.inkMuted,
+                color: context.glucoreColors.inkMuted,
                 letterSpacing: 0.8,
               ),
             ),
           ),
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.surfaceCanvas,
+              color: context.glucoreColors.surfaceCanvas,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -204,11 +204,11 @@ class _ThemeOptionRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 14, color: AppTheme.ink),
+                style: TextStyle(fontSize: 14, color: context.glucoreColors.ink),
               ),
             ),
             if (selected)
-              const Icon(Icons.check, size: 18, color: AppTheme.brandBlue),
+              Icon(Icons.check, size: 18, color: context.glucoreColors.brandBlue),
           ],
         ),
       ),
@@ -243,17 +243,17 @@ class _NotifSection extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             l10n.settingsNotificationsSectionTitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+              color: context.glucoreColors.inkMuted,
               letterSpacing: 0.8,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.surfaceCanvas,
+            color: context.glucoreColors.surfaceCanvas,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -303,13 +303,13 @@ class _ToggleRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 14, color: AppTheme.ink),
+              style: TextStyle(fontSize: 14, color: context.glucoreColors.ink),
             ),
           ),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: AppTheme.brandBlue,
+            activeThumbColor: context.glucoreColors.brandBlue,
           ),
         ],
       ),

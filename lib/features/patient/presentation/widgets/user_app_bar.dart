@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 
 /// `AppBar` used by every authenticated screen, keeping their styling in one
 /// place.
@@ -24,7 +24,7 @@ class UserAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: AppTheme.surfaceCanvas,
+      backgroundColor: context.glucoreColors.surfaceCanvas,
       title: title,
       actions: actions,
     );

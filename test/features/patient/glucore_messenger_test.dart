@@ -69,9 +69,23 @@ void main() {
     expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
   });
 
-  test('the four variants are told apart by background colour and icon', () {
+  testWidgets('the four variants are told apart by background colour and icon',
+      (tester) async {
+    // A cor da variante agora sai do tema ativo, então precisa de um
+    // BuildContext montado para ser resolvida.
+    late BuildContext ctx;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: Builder(builder: (context) {
+          ctx = context;
+          return const SizedBox.shrink();
+        }),
+      ),
+    );
+
     final backgrounds = GlucoreMessageVariant.values
-        .map((variant) => variant.background)
+        .map((variant) => variant.background(ctx))
         .toSet();
     final icons =
         GlucoreMessageVariant.values.map((variant) => variant.icon).toSet();

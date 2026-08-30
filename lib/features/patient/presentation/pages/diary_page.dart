@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
@@ -50,7 +50,7 @@ class DiaryPage extends StatelessWidget {
       items.add(_DiaryItem(
         time: c.time,
         icon: Icons.restaurant_rounded,
-        color: AppTheme.zoneTargetBg,
+        color: context.glucoreColors.zoneTargetBg,
         title: c.description.isEmpty ? 'Refeição' : c.description,
         detail: '${c.grams} g carb',
         onTap: () => Navigator.of(context).push(
@@ -62,7 +62,7 @@ class DiaryPage extends StatelessWidget {
       items.add(_DiaryItem(
         time: ins.time,
         icon: Icons.vaccines_outlined,
-        color: AppTheme.brandBlue,
+        color: context.glucoreColors.brandBlue,
         title: _insulinLabel(ins.type),
         detail: '${ins.units.toStringAsFixed(1)} UI · ${ins.dayOfWeek}',
         onTap: () => Navigator.of(context).push(
@@ -206,10 +206,10 @@ class _DayHeaderWidget extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: AppTheme.inkMuted,
+          color: context.glucoreColors.inkMuted,
         ),
       ),
     );
@@ -228,7 +228,7 @@ class _DiaryItemTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCanvas,
+          color: context.glucoreColors.surfaceCanvas,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -249,16 +249,16 @@ class _DiaryItemTile extends StatelessWidget {
                 children: [
                   Text(
                     item.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.ink,
+                      color: context.glucoreColors.ink,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     item.detail,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                    style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
                   ),
                 ],
               ),
@@ -268,11 +268,11 @@ class _DiaryItemTile extends StatelessWidget {
               children: [
                 Text(
                   DateFormat.Hm().format(item.time),
-                  style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                  style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
                 ),
                 if (item.onTap != null) ...[
                   const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right, size: 16, color: AppTheme.inkMuted),
+                  Icon(Icons.chevron_right, size: 16, color: context.glucoreColors.inkMuted),
                 ],
               ],
             ),
@@ -294,18 +294,18 @@ class _EmptyDiary extends StatelessWidget {
         children: [
           Icon(Icons.book_outlined, size: 48, color: Colors.grey.shade400),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Nenhuma observação ainda',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.inkMuted,
+              color: context.glucoreColors.inkMuted,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Use o botão + para registrar refeições e insulina',
-            style: TextStyle(fontSize: 13, color: AppTheme.inkMuted),
+            style: TextStyle(fontSize: 13, color: context.glucoreColors.inkMuted),
             textAlign: TextAlign.center,
           ),
         ],

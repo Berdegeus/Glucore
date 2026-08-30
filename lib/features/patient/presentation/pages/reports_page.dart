@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
@@ -169,7 +169,7 @@ class _TimeRangeChips extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: active ? AppTheme.brandBlue : AppTheme.surfaceCanvas,
+                color: active ? context.glucoreColors.brandBlue : context.glucoreColors.surfaceCanvas,
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Text(
@@ -177,7 +177,7 @@ class _TimeRangeChips extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: active ? Colors.white : AppTheme.inkMuted,
+                  color: active ? Colors.white : context.glucoreColors.inkMuted,
                 ),
               ),
             ),
@@ -200,18 +200,18 @@ class _GmiCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCanvas,
+        color: context.glucoreColors.surfaceCanvas,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'INDICADORES',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+              color: context.glucoreColors.inkMuted,
               letterSpacing: 0.8,
             ),
           ),
@@ -222,9 +222,9 @@ class _GmiCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Glicose média',
-                      style: TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                      style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
                     ),
                     const SizedBox(height: 4),
                     Text.rich(
@@ -234,13 +234,13 @@ class _GmiCard extends StatelessWidget {
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 32,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.ink,
+                            color: context.glucoreColors.ink,
                           ),
                         ),
-                        const TextSpan(
+                        TextSpan(
                           text: ' mg/dL',
                           style: TextStyle(
-                              fontSize: 12, color: AppTheme.inkMuted),
+                              fontSize: 12, color: context.glucoreColors.inkMuted),
                         ),
                       ]),
                     ),
@@ -252,10 +252,10 @@ class _GmiCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'GMI estimado',
                         style:
-                            TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                            TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -263,7 +263,7 @@ class _GmiCard extends StatelessWidget {
                         style: GoogleFonts.jetBrainsMono(
                           fontSize: 32,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.ink,
+                          color: context.glucoreColors.ink,
                         ),
                       ),
                     ],
@@ -274,7 +274,7 @@ class _GmiCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '$count leituras',
-            style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+            style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
           ),
         ],
       ),
@@ -291,18 +291,18 @@ class _TirSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCanvas,
+        color: context.glucoreColors.surfaceCanvas,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'TEMPO NO ALVO',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+              color: context.glucoreColors.inkMuted,
               letterSpacing: 0.8,
             ),
           ),
@@ -310,31 +310,31 @@ class _TirSection extends StatelessWidget {
           _TirBar(stats: stats),
           const SizedBox(height: 16),
           _ZoneLegendRow(
-            color: AppTheme.zoneUrgentLowBg,
+            color: context.glucoreColors.zoneUrgentLowBg,
             label: 'Baixo urgente',
             range: '< 54',
             pct: stats.urgentLowPct,
           ),
           _ZoneLegendRow(
-            color: AppTheme.zoneLowBg,
+            color: context.glucoreColors.zoneLowBg,
             label: 'Baixo',
             range: '54–70',
             pct: stats.lowPct,
           ),
           _ZoneLegendRow(
-            color: AppTheme.zoneTargetBg,
+            color: context.glucoreColors.zoneTargetBg,
             label: 'No alvo',
             range: '70–180',
             pct: stats.targetPct,
           ),
           _ZoneLegendRow(
-            color: AppTheme.zoneHighBg,
+            color: context.glucoreColors.zoneHighBg,
             label: 'Alto',
             range: '180–250',
             pct: stats.highPct,
           ),
           _ZoneLegendRow(
-            color: AppTheme.zoneUrgentHighBg,
+            color: context.glucoreColors.zoneUrgentHighBg,
             label: 'Alto urgente',
             range: '> 250',
             pct: stats.urgentHighPct,
@@ -352,11 +352,11 @@ class _TirBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final segments = [
-      (AppTheme.zoneUrgentLowBg, stats.urgentLowPct),
-      (AppTheme.zoneLowBg, stats.lowPct),
-      (AppTheme.zoneTargetBg, stats.targetPct),
-      (AppTheme.zoneHighBg, stats.highPct),
-      (AppTheme.zoneUrgentHighBg, stats.urgentHighPct),
+      (context.glucoreColors.zoneUrgentLowBg, stats.urgentLowPct),
+      (context.glucoreColors.zoneLowBg, stats.lowPct),
+      (context.glucoreColors.zoneTargetBg, stats.targetPct),
+      (context.glucoreColors.zoneHighBg, stats.highPct),
+      (context.glucoreColors.zoneUrgentHighBg, stats.urgentHighPct),
     ];
 
     return ClipRRect(
@@ -404,12 +404,12 @@ class _ZoneLegendRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 13, color: AppTheme.ink),
+              style: TextStyle(fontSize: 13, color: context.glucoreColors.ink),
             ),
           ),
           Text(
             range,
-            style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+            style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
           ),
           const SizedBox(width: 12),
           SizedBox(
@@ -417,10 +417,10 @@ class _ZoneLegendRow extends StatelessWidget {
             child: Text(
               '${pct.toStringAsFixed(0)}%',
               textAlign: TextAlign.end,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.ink,
+                color: context.glucoreColors.ink,
               ),
             ),
           ),
@@ -435,20 +435,20 @@ class _EmptyReports extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
         padding: EdgeInsets.only(top: 60),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bar_chart_rounded, size: 48, color: AppTheme.inkMuted),
+            Icon(Icons.bar_chart_rounded, size: 48, color: context.glucoreColors.inkMuted),
             SizedBox(height: 12),
             Text(
               'Sem leituras no período',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.inkMuted,
+                color: context.glucoreColors.inkMuted,
               ),
             ),
           ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../../domain/entities/patient_entities.dart';
 
 enum GlucoseZone { urgentLow, low, target, high, urgentHigh }
@@ -15,28 +15,28 @@ GlucoseZone glucoseZoneOf(double value, int lowThreshold, int highThreshold) {
 }
 
 extension GlucoseZoneX on GlucoseZone {
-  Color get bg => switch (this) {
-        GlucoseZone.urgentLow => AppTheme.zoneUrgentLowBg,
-        GlucoseZone.low => AppTheme.zoneLowBg,
-        GlucoseZone.target => AppTheme.zoneTargetBg,
-        GlucoseZone.high => AppTheme.zoneHighBg,
-        GlucoseZone.urgentHigh => AppTheme.zoneUrgentHighBg,
+  Color bg(BuildContext context) => switch (this) {
+        GlucoseZone.urgentLow => context.glucoreColors.zoneUrgentLowBg,
+        GlucoseZone.low => context.glucoreColors.zoneLowBg,
+        GlucoseZone.target => context.glucoreColors.zoneTargetBg,
+        GlucoseZone.high => context.glucoreColors.zoneHighBg,
+        GlucoseZone.urgentHigh => context.glucoreColors.zoneUrgentHighBg,
       };
 
-  Color get soft => switch (this) {
-        GlucoseZone.urgentLow => AppTheme.zoneUrgentLowSoft,
-        GlucoseZone.low => AppTheme.zoneLowSoft,
-        GlucoseZone.target => AppTheme.zoneTargetSoft,
-        GlucoseZone.high => AppTheme.zoneHighSoft,
-        GlucoseZone.urgentHigh => AppTheme.zoneUrgentHighSoft,
+  Color soft(BuildContext context) => switch (this) {
+        GlucoseZone.urgentLow => context.glucoreColors.zoneUrgentLowSoft,
+        GlucoseZone.low => context.glucoreColors.zoneLowSoft,
+        GlucoseZone.target => context.glucoreColors.zoneTargetSoft,
+        GlucoseZone.high => context.glucoreColors.zoneHighSoft,
+        GlucoseZone.urgentHigh => context.glucoreColors.zoneUrgentHighSoft,
       };
 
-  Color get ink => switch (this) {
-        GlucoseZone.urgentLow => AppTheme.zoneUrgentLowInk,
-        GlucoseZone.low => AppTheme.zoneLowInk,
-        GlucoseZone.target => AppTheme.zoneTargetInk,
-        GlucoseZone.high => AppTheme.zoneHighInk,
-        GlucoseZone.urgentHigh => AppTheme.zoneUrgentHighInk,
+  Color ink(BuildContext context) => switch (this) {
+        GlucoseZone.urgentLow => context.glucoreColors.zoneUrgentLowInk,
+        GlucoseZone.low => context.glucoreColors.zoneLowInk,
+        GlucoseZone.target => context.glucoreColors.zoneTargetInk,
+        GlucoseZone.high => context.glucoreColors.zoneHighInk,
+        GlucoseZone.urgentHigh => context.glucoreColors.zoneUrgentHighInk,
       };
 
   String get label => switch (this) {
@@ -47,10 +47,10 @@ extension GlucoseZoneX on GlucoseZone {
         GlucoseZone.urgentHigh => 'Alto urgente',
       };
 
-  Color get chartLine => switch (this) {
-        GlucoseZone.target => AppTheme.zoneTargetBg,
-        GlucoseZone.low || GlucoseZone.urgentLow => AppTheme.zoneLowBg,
-        GlucoseZone.high || GlucoseZone.urgentHigh => AppTheme.zoneHighBg,
+  Color chartLine(BuildContext context) => switch (this) {
+        GlucoseZone.target => context.glucoreColors.zoneTargetBg,
+        GlucoseZone.low || GlucoseZone.urgentLow => context.glucoreColors.zoneLowBg,
+        GlucoseZone.high || GlucoseZone.urgentHigh => context.glucoreColors.zoneHighBg,
       };
 }
 
@@ -77,7 +77,7 @@ class GlucoreStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = zone.bg;
+    final bg = zone.bg(context);
 
     return Container(
       width: double.infinity,
@@ -248,13 +248,13 @@ class GlucoreZoneBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: zone.soft,
+        color: zone.soft(context),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(
         zone.label,
         style: TextStyle(
-          color: zone.ink,
+          color: zone.ink(context),
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -348,17 +348,17 @@ class GlucoreSectionCard extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, bottom: 8),
             child: Text(
               title!.toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.inkMuted,
+                color: context.glucoreColors.inkMuted,
                 letterSpacing: 0.8,
               ),
             ),
           ),
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.surfaceCanvas,
+            color: context.glucoreColors.surfaceCanvas,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -391,7 +391,7 @@ class _RowWidget extends StatelessWidget {
           children: [
             Text(
               row.label,
-              style: const TextStyle(fontSize: 14, color: AppTheme.inkMuted),
+              style: TextStyle(fontSize: 14, color: context.glucoreColors.inkMuted),
             ),
             const Spacer(),
             Text(
@@ -399,12 +399,12 @@ class _RowWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: row.valueColor ?? AppTheme.ink,
+                color: row.valueColor ?? context.glucoreColors.ink,
               ),
             ),
             if (row.onTap != null) ...[
               const SizedBox(width: 4),
-              const Icon(Icons.chevron_right, size: 18, color: AppTheme.inkMuted),
+              Icon(Icons.chevron_right, size: 18, color: context.glucoreColors.inkMuted),
             ],
           ],
         ),
@@ -436,16 +436,16 @@ class GlucoreStatChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCanvas,
+          color: context.glucoreColors.surfaceCanvas,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppTheme.inkMuted,
+                color: context.glucoreColors.inkMuted,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -458,15 +458,15 @@ class GlucoreStatChip extends StatelessWidget {
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: color ?? AppTheme.ink,
+                      color: color ?? context.glucoreColors.ink,
                     ),
                   ),
                   if (unit != null)
                     TextSpan(
                       text: ' $unit',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.inkMuted,
+                        color: context.glucoreColors.inkMuted,
                       ),
                     ),
                 ],
