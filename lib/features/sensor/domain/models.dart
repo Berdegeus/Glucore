@@ -41,26 +41,22 @@ class SensorFailure {
 
 class SensorSession {
   final String sensorId;
-  final String? transmitterId;
   final DateTime createdAt;
   final SensorBrand brand;
 
   SensorSession({
     required this.sensorId,
-    this.transmitterId,
     DateTime? createdAt,
     this.brand = SensorBrand.sibionics,
   }) : createdAt = createdAt ?? DateTime.now();
 
   SensorSession copyWith({
     String? sensorId,
-    String? transmitterId,
     DateTime? createdAt,
     SensorBrand? brand,
   }) {
     return SensorSession(
       sensorId: sensorId ?? this.sensorId,
-      transmitterId: transmitterId ?? this.transmitterId,
       createdAt: createdAt ?? this.createdAt,
       brand: brand ?? this.brand,
     );

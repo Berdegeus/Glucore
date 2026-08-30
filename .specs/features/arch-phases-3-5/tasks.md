@@ -923,14 +923,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Método removido de plataforma, repositório, contrato de domínio e cubit
-- [ ] Estados de sessão ligados a transmissor removidos do enum
-- [ ] Testes existentes atualizados e verdes
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Método removido de plataforma, repositório, contrato de domínio e cubit
+- [x] Estados de sessão ligados a transmissor removidos do enum — em Dart o estado de sessão ligado ao transmissor é o campo `transmitterId` de `SensorSession`/`SensorSessionSnapshot`; `SensorConnectionStatus` nunca teve valor de transmissor. `AWAITING_TRANSMITTER`/`TRANSMITTER_ASSIGNED` são do enum Kotlin `SessionStatus` e saem no T31
+- [x] Testes existentes atualizados e verdes — três dublês de `SensorRepository` perderam o `override` órfão de `submitTransmitter`; nenhuma asserção mudou
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (340 testes, 3 novos)
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `refactor(sensor)!: drop the unused transmitter flow from the app`
+**Status**: ✅ Complete
+
+**Nota**: a chave l10n `sensorFailureInvalidTransmitterBarcode` saiu dos dois `.arb` com `flutter gen-l10n` rodado — era o texto do erro de `validateTransmitterBarcode`, que o T31 apaga, e não tinha chamador. `test/features/sensor/dead_code_pruning_test.dart` varre `lib/` e falha se qualquer menção a transmissor voltar; a varredura foi confirmada por mutação.
 
 ---
 

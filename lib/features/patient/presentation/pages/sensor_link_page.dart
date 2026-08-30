@@ -163,10 +163,6 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
                       .bodyMedium
                       ?.copyWith(fontFamily: 'monospace'),
                 ),
-                if (state.session!.transmitterId != null) ...[
-                  const SizedBox(height: 4),
-                  Text('Transmissor: ${state.session!.transmitterId}'),
-                ],
                 if (state.status == SensorConnectionStatus.syncingHistory) ...[
                   const SizedBox(height: 8),
                   Text(

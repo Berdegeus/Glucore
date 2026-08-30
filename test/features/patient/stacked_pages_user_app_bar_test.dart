@@ -293,9 +293,6 @@ class _FakeSensorRepository implements SensorRepository {
       null;
 
   @override
-  Future<void> submitTransmitter(String transmitterBarcode) async {}
-
-  @override
   Future<void> startMonitoring() async {}
 
   @override

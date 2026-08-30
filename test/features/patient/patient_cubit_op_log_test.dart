@@ -256,9 +256,6 @@ class _FakeSensorRepository implements SensorRepository {
   }) =>
       throw UnimplementedError();
   @override
-  Future<void> submitTransmitter(String transmitterBarcode) =>
-      throw UnimplementedError();
-  @override
   Future<void> startMonitoring() => throw UnimplementedError();
   @override
   Future<void> stopMonitoring() => throw UnimplementedError();
