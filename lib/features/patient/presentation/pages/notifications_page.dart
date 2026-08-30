@@ -68,7 +68,7 @@ class _AlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext ctx) {
-    final color = item.type.color();
+    final color = item.type.color(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),

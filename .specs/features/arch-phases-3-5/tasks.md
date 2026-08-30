@@ -866,13 +866,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Nenhuma referência estática de superfície ou texto restante fora da definição da paleta
-- [ ] Teste de widget cobre login e onboarding no tema escuro
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Nenhuma referência estática de superfície ou texto restante fora da definição da paleta — sobram `AppTheme.light()`, `AppTheme.dark()` e `AppTheme.monoStyle`, que são montagem de tema e fábrica de fonte; um teste varre `lib/` e falha se qualquer constante de cor voltar
+- [x] Teste de widget cobre login e onboarding no tema escuro — mais splash (fundo de marca) e as cores de alerta de `localized_values.dart`
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (337 testes, 8 novos)
 
 **Tests**: widget
 **Gate**: full
 **Commit**: `refactor(auth): resolve screen colors from the active theme`
+**Status**: ✅ Complete
+
+**Nota**: `AppAlertType.color()` passou a receber `BuildContext`; o único chamador é `notifications_page.dart:71`.
 
 ---
 

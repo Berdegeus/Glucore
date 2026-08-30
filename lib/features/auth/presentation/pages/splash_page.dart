@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key, required this.onFinish});
@@ -31,7 +31,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.brandBlue,
+      backgroundColor: context.glucoreColors.brandBlue,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

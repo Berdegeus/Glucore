@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../core/theme/app_theme.dart';
+import '../core/theme/glucore_colors.dart';
 import '../features/auth/presentation/cubit/auth_state.dart';
 import '../features/patient/domain/entities/patient_entities.dart';
 import '../features/sensor/domain/models.dart';
@@ -75,16 +75,17 @@ extension AppAlertTypeLocalization on AppAlertType {
     }
   }
 
-  Color color() {
+  Color color(BuildContext context) {
+    final colors = context.glucoreColors;
     switch (this) {
       case AppAlertType.glucoseLow:
-        return AppTheme.warningLow;
+        return colors.warningLow;
       case AppAlertType.glucoseHigh:
-        return AppTheme.warningHigh;
+        return colors.warningHigh;
       case AppAlertType.sensorReconnected:
-        return AppTheme.brandPrimary;
+        return colors.brandPrimary;
       case AppAlertType.syncFailure:
-        return AppTheme.zoneLowBg;
+        return colors.zoneLowBg;
     }
   }
 }
