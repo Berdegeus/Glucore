@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:glucore/core/theme/app_theme.dart';
 import 'package:glucore/core/theme/theme_cubit.dart';
 import 'package:glucore/core/theme/theme_preference_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -85,6 +87,78 @@ void main() {
 
       expect(cubit.state, ThemeMode.system);
       await cubit.close();
+    });
+
+    testWidgets('while on system the app follows the platform brightness '
+        '(THEME-03)', (tester) async {
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      final cubit = ThemeCubit();
+      addTearDown(cubit.close);
+
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      late BuildContext captured;
+      await tester.pumpWidget(
+        BlocProvider<ThemeCubit>.value(
+          value: cubit,
+          child: BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, mode) => MaterialApp(
+              theme: AppTheme.light(),
+              darkTheme: AppTheme.dark(),
+              themeMode: mode,
+              home: Builder(
+                builder: (innerContext) {
+                  captured = innerContext;
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(cubit.state, ThemeMode.system);
+      expect(Theme.of(captured).brightness, Brightness.dark);
+
+      // O SO muda com o app aberto: o tema acompanha, sem tocar na preferência.
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+      await tester.pumpAndSettle();
+
+      expect(Theme.of(captured).brightness, Brightness.light);
+      expect(cubit.state, ThemeMode.system);
+    });
+
+    testWidgets('an explicit dark choice overrides a light platform '
+        '(THEME-01)', (tester) async {
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+      final cubit = ThemeCubit();
+      addTearDown(cubit.close);
+
+      late BuildContext captured;
+      await tester.pumpWidget(
+        BlocProvider<ThemeCubit>.value(
+          value: cubit,
+          child: BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, mode) => MaterialApp(
+              theme: AppTheme.light(),
+              darkTheme: AppTheme.dark(),
+              themeMode: mode,
+              home: Builder(
+                builder: (innerContext) {
+                  captured = innerContext;
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(Theme.of(captured).brightness, Brightness.light);
+
+      await cubit.setMode(ThemeMode.dark);
+      await tester.pumpAndSettle();
+
+      expect(Theme.of(captured).brightness, Brightness.dark);
     });
 
     test('switching back to system clears the explicit choice', () async {

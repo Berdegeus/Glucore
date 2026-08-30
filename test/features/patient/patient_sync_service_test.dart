@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +30,22 @@ class _FakeRemote implements PatientRemoteApi {
 
   /// Erro lançado por [failOnCall]; por padrão, falha de rede recuperável.
   Object failure = Exception('network down');
+
+  /// `'verbo:entidade:id'` que fica pendurado até [releaseHeldCall] completar.
+  /// Permite escrever no banco local com um push genuinamente em voo (SYNC-07).
+  String? holdOnCall;
+  final heldCallReached = Completer<void>();
+  final _release = Completer<void>();
+
+  void releaseHeldCall() {
+    if (!_release.isCompleted) _release.complete();
+  }
+
+  Future<void> _maybeHold(String call) async {
+    if (call != holdOnCall) return;
+    if (!heldCallReached.isCompleted) heldCallReached.complete();
+    await _release.future;
+  }
 
   void _maybeFail() {
     if (failuresRemaining > 0) {
@@ -80,6 +98,7 @@ class _FakeRemote implements PatientRemoteApi {
   @override
   Future<void> upsertCarb(CarbEntry entry) async {
     _record('upsert:carbs:${entry.id}');
+    await _maybeHold('upsert:carbs:${entry.id}');
     carbRows[entry.id] = entry;
   }
 
@@ -206,6 +225,39 @@ void main() {
 
     expect(remote.itemCalls, ['upsert:carbs:${entry.id}']);
     expect(await local.pendingOps(), isEmpty);
+  });
+
+  group('SYNC-07: escrita durante um push em voo', () {
+    test('a edição feita durante o push continua pendente depois dele',
+        () async {
+      final first = carb('Café');
+      await local.upsertCarb(first);
+
+      // Segura a chamada remota da primeira op: o push fica genuinamente em
+      // voo enquanto o teste escreve no banco local.
+      remote.holdOnCall = 'upsert:carbs:${first.id}';
+      final push = service.pushNow();
+      await remote.heldCallReached.future;
+
+      // Usuário edita durante o push. A op nova entra na fila com seq maior.
+      final second = carb('Jantar');
+      await local.upsertCarb(second);
+
+      remote.releaseHeldCall();
+      expect(await push, isTrue);
+
+      // A op que entrou durante o push NÃO foi levada junto nem apagada: ela
+      // sobrevive ao término do push e continua na fila.
+      final pending = await local.pendingOps();
+      expect(pending, hasLength(1));
+      expect(pending.single.entityId, second.id);
+      expect(remote.itemCalls, ['upsert:carbs:${first.id}']);
+
+      // E o push seguinte a entrega.
+      expect(await service.pushNow(), isTrue);
+      expect(remote.carbRows[second.id]!.description, 'Jantar');
+      expect(await local.pendingOps(), isEmpty);
+    });
   });
 
   group('SYNC-02/SYNC-09: ordem e baixa da fila', () {
