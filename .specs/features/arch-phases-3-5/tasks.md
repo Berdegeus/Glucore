@@ -894,14 +894,17 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] Interface `AuthDataSource` no arquivo `auth_datasource.dart`
-- [ ] Imports e DI ajustados; nenhuma referência ao nome antigo
-- [ ] Suíte existente verde sem asserção alterada
-- [ ] Gate: `flutter analyze && flutter test --no-pub` verde
+- [x] Interface `AuthDataSource` no arquivo `auth_datasource.dart`
+- [x] Imports e DI ajustados; nenhuma referência ao nome antigo — busca por `AuthLocalDataSource` e `auth_local_datasource` em `lib/` e `test/` não retorna nada
+- [x] Suíte existente verde sem asserção alterada — nenhum arquivo em `test/` foi tocado
+- [x] Gate: `flutter analyze && flutter test --no-pub` verde (337 testes, 0 novos)
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `refactor(auth): rename the auth datasource to match what it does`
+**Status**: ✅ Complete
+
+**Nota**: o campo `localDataSource` de `AuthRepositoryImpl` carregava o mesmo nome enganoso e virou `dataSource`. Construtor posicional, então nenhum chamador mudou.
 
 ---
 

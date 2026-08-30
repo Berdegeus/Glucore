@@ -7,7 +7,7 @@ import 'core/session/session_expiry_notifier.dart';
 import 'core/theme/theme_cubit.dart';
 import 'core/theme/theme_preference_store.dart';
 import 'features/auth/data/datasources/account_service.dart';
-import 'features/auth/data/datasources/auth_local_datasource.dart';
+import 'features/auth/data/datasources/auth_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/get_auth_status_usecase.dart';
@@ -47,7 +47,7 @@ Future<void> initDependencies() async {
   );
   sl.registerLazySingleton<AccountService>(() => AccountService(dio));
 
-  sl.registerLazySingleton<AuthLocalDataSource>(
+  sl.registerLazySingleton<AuthDataSource>(
     () => RemoteAuthDataSource(dio, tokenStore),
   );
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));

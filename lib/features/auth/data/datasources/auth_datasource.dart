@@ -4,7 +4,7 @@ import 'package:glucore/core/utils/date_input.dart';
 import '../../../../core/api/auth_token_store.dart';
 import '../../domain/repositories/auth_repository.dart' show AuthSessionStatus;
 
-abstract class AuthLocalDataSource {
+abstract class AuthDataSource {
   Future<bool> login({required String email, required String password});
   Future<bool> register({
     required String fullName,
@@ -20,7 +20,7 @@ abstract class AuthLocalDataSource {
   Future<AuthSessionStatus> isLoggedIn();
 }
 
-class RemoteAuthDataSource implements AuthLocalDataSource {
+class RemoteAuthDataSource implements AuthDataSource {
   const RemoteAuthDataSource(this._dio, this._tokenStore);
 
   final Dio _dio;
