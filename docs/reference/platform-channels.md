@@ -6,9 +6,8 @@
 
 | Método | Args | Retorno | Observações |
 |---|---|---|---|
-| `restoreSession` | — | `{sensorId, transmitterId, connected}` ou `null` | |
-| `registerSensor` | `{barcode: String}` | `{sensorId, transmitterId, connected}` | síncrono: snapshot no sucesso, `PlatformException("NATIVE_ERROR")` na falha; o evento (`idle` com `session`, ou `error`) continua sendo emitido como complemento |
-| `submitTransmitter` | `{transmitterBarcode: String}` | `null` | só persiste no SQLite local; nunca chega ao nativo |
+| `restoreSession` | — | `{sensorId, connected, brand}` ou `null` | |
+| `registerSensor` | `{barcode: String, brand: String}` | `{sensorId, connected, brand}` | síncrono: snapshot no sucesso, `PlatformException("NATIVE_ERROR")` na falha; o evento (`idle` com `session`, ou `error`) continua sendo emitido como complemento |
 | `startMonitoring` | — | `null` | dispara scan BLE; progresso via eventos |
 | `stopMonitoring` | — | `null` | emite `disconnected` |
 | `clearSession` | — | `null` | stopMonitoring + limpa SQLite; emite `idle` |
@@ -23,13 +22,14 @@ Todo evento é um `Map` com este shape (chaves sempre presentes ou null):
 
 ```jsonc
 {
-  "status": "idle|scanning|connecting|connected|syncingHistory|readingAvailable|disconnected|error",
+  "status": "idle|scanning|connecting|pairing|connected|syncingHistory|warmingUp|readingAvailable|disconnected|error",
   "connected": true,                       // bool
-  "session":  { "sensorId": "...", "transmitterId": null },   // ou null
+  "session":  { "sensorId": "...", "brand": "sibionics" },   // ou null
+  "brand":    "sibionics|accuchek|libre2",
   "sync":     { "receivedCount": 12, "latestTimestampMs": 1750000000000 },  // só em syncingHistory
   "historyReading": { "value": 104.3, "timestampMs": ..., "rate": 0.021, "alarmCode": 0 }, // só em syncingHistory
   "reading":  { "value": 104.3, "timestampMs": ..., "rate": 0.021, "alarmCode": 0 },       // só em readingAvailable
-  "warmup":   { "elapsedMs": ..., "totalMs": ... },   // definido no contrato, NUNCA emitido hoje
+  "warmup":   null,                                   // sempre null: nenhum emissor preenche esta chave
   "failure":  { "message": "..." }                    // só em error
 }
 ```
@@ -37,7 +37,8 @@ Todo evento é um `Map` com este shape (chaves sempre presentes ou null):
 Notas de parsing (lado Dart, `SensorPlatformEvent.fromMap` em `sensor_platform.dart`):
 - `status` desconhecido → `SensorConnectionStatus.idle` (silencioso).
 - `value`/`rate` são `double` (mg/dL, mg/dL/min); `timestampMs` epoch ms.
-- O status `warmingUp` existe no enum Dart e no mock, mas o Android real nunca o emite.
+- O status `warmingUp` existe no enum Dart e **é** emitido, mas só pelo caminho NFC do Libre 2 (`LibreNfcHandler`, junto do campo `nfc`). O caminho BLE nunca o emite.
+- A chave `warmup` sobrou como `null` em todos os emissores. O `WarmupPayload` que a preencheria foi removido do Kotlin: era contrato fantasma, nunca produzido. O parser Dart ainda lê a chave, então reintroduzir progresso de warmup é acrescentar o payload de um lado só.
 
 ## Sequências típicas de eventos
 

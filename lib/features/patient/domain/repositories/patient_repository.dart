@@ -21,8 +21,23 @@ abstract class PatientRepository {
   /// foram apagados e o chamador precisa limpar também a sessão do sensor.
   Future<bool> ensureOwner();
 
+  /// Caminho de coleção das leituras, vivo e em uso (SYNC-10): leitura é
+  /// append-only, nunca editada pelo paciente, então não entra no op-log.
   Future<void> saveReadings(List<GlucoseReadingItem> readings);
 
+  /// Escritas de coleção do diário. **Sem chamador em `lib/` desde a Fase 4**,
+  /// mantidas de propósito — não são código morto:
+  ///
+  /// - São a metade cliente dos endpoints em lote (`POST /carbs`, `/insulin`,
+  ///   `/alerts`), que continuam vivos e marcados deprecated nesta release
+  ///   como caminho de rollback do item 4.2 do plano. Removê-las no mesmo
+  ///   release que migrou o cliente para o caminho por item deixaria o
+  ///   rollback sem cliente.
+  /// - `LocalPatientDataSource.save*` é também como os testes semeiam uma
+  ///   coleção inteira sem passar pelo op-log.
+  ///
+  /// Saem junto com os endpoints em lote, quando eles forem removidos. Para
+  /// mutação do diário use as escritas por entrada abaixo.
   Future<void> saveAlerts(List<AppAlertItem> alerts);
 
   Future<void> saveCarbs(List<CarbEntry> carbs);

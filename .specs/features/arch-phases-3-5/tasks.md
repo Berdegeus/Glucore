@@ -1009,14 +1009,20 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] `platform-channels.md` sem `submitTransmitter` e sem `warmup` no caminho BLE
-- [ ] `data-models.md` descreve `id`, `pending_ops` e o novo significado de `synced`
-- [ ] `backend/README.md` cobre os endpoints de alerts e a paginação, com exemplos reais
-- [ ] Gate: leitura conferida contra o código, sem afirmação não verificada
+- [x] `platform-channels.md` sem `submitTransmitter` e sem `warmup` no caminho BLE — a lista de `status` também foi corrigida (faltavam `pairing` e `warmingUp`, ambos emitidos) e a nota que dizia que `warmingUp` só existia "no mock" saiu: o mock não existe, e o Libre 2 emite o status de verdade pelo NFC
+- [x] `data-models.md` descreve `id`, `pending_ops` e o novo significado de `synced`
+- [x] `backend/README.md` cobre os endpoints de alerts e a paginação, com exemplos reais — seção "Paginação" nova com a faixa, o default, o cursor exclusivo e os dois corpos de 400
+- [x] Gate: leitura conferida contra o código, sem afirmação não verificada
+- [x] Gate de build completo verde (340 Flutter, 146 backend, `tsc` limpo)
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs: update the channel, data-model and API contracts`
+**Status**: ✅ Complete
+
+**Decisão registrada — `saveCarbs`/`saveInsulin`/`saveAlerts` e `mark*Synced` do diário**: ficam, com dartdoc explicando por quê. Estão sem chamador em `lib/` desde a Fase 4, mas não são código morto: (1) são a metade cliente dos `POST` em lote, que a própria spec mantém vivos e deprecated nesta release como caminho de rollback do item 4.2 — removê-las no mesmo release que migrou o cliente deixaria o rollback sem cliente; (2) IDENT-07 continua sendo requisito ativo e o casamento por `id` do `mark*Synced` é exatamente o que ele especifica, com esses testes como única evidência; (3) `LocalPatientDataSource.save*` é como os testes semeiam uma coleção inteira. Saem junto com os endpoints em lote, não antes.
+
+**Correção durante a redação**: a primeira versão do `data-models.md` afirmava que a reconciliação do diário apaga as linhas `synced = 1`. É falso — `replaceDiary` apaga toda linha cujo `id` não está em `pending_ops`; o corte por `synced = 1` é só o das leituras. Conferido em `patient_local_datasource.dart:472,480-502` e corrigido antes do commit.
 
 ---
 

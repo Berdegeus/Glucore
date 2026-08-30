@@ -442,6 +442,16 @@ class LocalPatientDataSource implements PatientDataSource {
       _markSyncedByKey('readings', 'timestamp_ms',
           readings.map((r) => r.timestamp.millisecondsSinceEpoch));
 
+  /// Marcação por `id` das três coleções do diário (IDENT-07).
+  ///
+  /// **Sem chamador em `lib/` desde a Fase 4**, mantidas de propósito: são o
+  /// par de `saveCarbs`/`saveInsulin`/`saveAlerts` no caminho de coleção, que
+  /// segue vivo como rollback enquanto os endpoints em lote existirem. Casam
+  /// por `id` e não por horário justamente porque mudar o horário de uma
+  /// entrada não muda a identidade dela — a regra que o op-log herdou.
+  ///
+  /// Enquanto o diário viaja pelo op-log, quem responde "falta enviar" é
+  /// `pendingOps`, não a flag `synced` destas tabelas.
   Future<void> markAlertsSynced(Iterable<AppAlertItem> alerts) =>
       _markSyncedByKey('alerts', 'id', alerts.map((a) => a.id));
 

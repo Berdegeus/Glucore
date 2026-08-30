@@ -238,12 +238,22 @@ Corpo com no máximo 288 itens; itens além disso são descartados. A chave é `
 
 Bearer + papel `PATIENT`.
 
-### `GET /carbs` — últimas 100 entradas
+### `GET /carbs` — página de entradas, mais recentes primeiro
+
+Aceita `before` e `limit` (ver **Paginação**). Sem parâmetros, devolve as 100 mais recentes.
 
 ```json
 [
   { "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "grams": 45, "description": "almoço", "timeMs": 1751800000000 }
 ]
+```
+
+Percorrendo o histórico inteiro, uma página por vez:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$API/carbs?limit=200"
+# a próxima página começa no timeMs da última entrada devolvida
+curl -H "Authorization: Bearer $TOKEN" "$API/carbs?limit=200&before=1751800000000"
 ```
 
 ### `POST /carbs/item` — cria uma entrada
@@ -290,7 +300,9 @@ Apaga todas as entradas do paciente e recria a lista enviada (máximo 100). Mant
 
 Bearer + papel `PATIENT`. Mesma estrutura de `/carbs`, com `units`, `type` e `dayOfWeek`.
 
-### `GET /insulin` — últimas 100 entradas
+### `GET /insulin` — página de entradas, mais recentes primeiro
+
+Aceita `before` e `limit` (ver **Paginação**). Sem parâmetros, devolve as 100 mais recentes.
 
 ```json
 [
@@ -338,22 +350,50 @@ Erros `400`: `units must be a number`, `type must be a non-empty string`, `timeM
 
 Bearer + papel `PATIENT`.
 
-### `GET /alerts` — últimos 100 alertas
+### `GET /alerts` — página de alertas, mais recentes primeiro
 
-O tipo é traduzido para o vocabulário do app (`glucoseLow`, `glucoseHigh`, `sensorReconnected`, `syncFailure`):
+Aceita `before` e `limit` como `/carbs` e `/insulin` (ver **Paginação**). Sem parâmetros, devolve os 100 mais recentes. O tipo é traduzido para o vocabulário do app (`glucoseLow`, `glucoseHigh`, `sensorReconnected`, `syncFailure`):
 
 ```json
 [
-  { "type": "glucoseLow", "timestampMs": 1751800000000 }
+  { "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f", "type": "glucoseLow", "timestampMs": 1751800000000 }
 ]
 ```
 
-### `POST /alerts` — substituição em lote
+### `POST /alerts/item` — cria um alerta
 
-Apaga os alertas do paciente e grava a lista enviada (máximo 100). Aceita tanto o vocabulário do app quanto os nomes do enum do banco (`HYPO_RISK`, `HYPER_RISK`, `SENSOR_RECONNECTED`, `SYNC_FAILURE`, `FAST_DROP`, `FAST_RISE`); tipo desconhecido vira `SYNC_FAILURE`.
+`id` é opcional e, quando enviado, precisa ser UUID.
 
 ```json
-{ "alerts": [ { "type": "glucoseHigh", "timestampMs": 1751800000000 } ] }
+{ "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f", "type": "glucoseHigh", "timestampMs": 1751800000000 }
+```
+
+`201`:
+
+```json
+{ "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f" }
+```
+
+Erros: `400 type must be a non-empty string`, `400 timestampMs must be a number (epoch ms)`, `400 id must be a UUID`. Um `type` fora do vocabulário conhecido **não** é rejeitado: vira `SYNC_FAILURE`, como já fazia o endpoint em lote.
+
+### `PUT /alerts/item/:id` — atualiza um alerta
+
+```json
+{ "type": "glucoseLow", "timestampMs": 1751803600000 }
+```
+
+`204` sem corpo. Erros: `400 id must be a UUID`, `400` de campo, `404 not found` (inclusive quando o alerta é de outro paciente).
+
+### `DELETE /alerts/item/:id` — remove um alerta
+
+`204` sem corpo. Erros: `400 id must be a UUID`, `404 not found`.
+
+### `POST /alerts` — substituição em lote (**deprecated**)
+
+Apaga os alertas do paciente e grava a lista enviada (máximo 100). Mantido só para compatibilidade com o app antigo; use as rotas `/item`. Preserva o `id` enviado pelo cliente. Aceita tanto o vocabulário do app quanto os nomes do enum do banco (`HYPO_RISK`, `HYPER_RISK`, `SENSOR_RECONNECTED`, `SYNC_FAILURE`, `FAST_DROP`, `FAST_RISE`); tipo desconhecido vira `SYNC_FAILURE`.
+
+```json
+{ "alerts": [ { "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f", "type": "glucoseHigh", "timestampMs": 1751800000000 } ] }
 ```
 
 `204` sem corpo. Erro: `400 alerts must be array`.
@@ -387,6 +427,27 @@ Sem configuração salva, responde o padrão 80/180:
 Operações relevantes (login, registro, recuperação e troca de senha, alteração de perfil, escrita e remoção de dados clínicos) gravam uma linha em `AuditLog` com usuário, entidade, ação, id da entidade, IP e user agent. A gravação é best-effort: falha nela é logada e **não** aborta a operação de negócio — perder a trilha é menos grave que perder um registro de insulina do paciente.
 
 A trilha nunca guarda senha, hash, token de redefinição nem valores de campo; em alteração de perfil registra apenas os **nomes** dos campos alterados.
+
+## Paginação
+
+`GET /carbs`, `GET /insulin` e `GET /alerts` compartilham o mesmo contrato de query string.
+
+| Parâmetro | Tipo | Default | Regra |
+| --------- | ---- | ------- | ----- |
+| `limit` | inteiro | `100` | entre 1 e 500 |
+| `before` | inteiro (epoch ms) | ausente | limite superior **exclusivo**; ausente significa "a partir da mais recente" |
+
+As entradas voltam em ordem decrescente de horário. Uma chamada sem nenhum dos dois preserva o comportamento anterior — as 100 mais recentes —, então o app em campo continua funcionando enquanto o cliente novo é distribuído.
+
+Para virar a página, use o horário da última entrada recebida como `before` da chamada seguinte. Como `before` é exclusivo, nenhuma entrada aparece em duas páginas; um `before` anterior à entrada mais antiga devolve `200` com lista vazia.
+
+Fora da faixa, a resposta é `400` com `error` e `code`:
+
+```json
+{ "error": "limit must be an integer between 1 and 500", "code": "INVALID_PAGINATION" }
+```
+
+`before` não inteiro ou negativo responde `{ "error": "before must be an epoch in milliseconds", "code": "INVALID_PAGINATION" }`.
 
 ## Índices da paginação
 
