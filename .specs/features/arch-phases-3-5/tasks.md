@@ -981,13 +981,16 @@ T29 → T30 → T31 → T32 → T33 → T34
 
 **Done when**:
 
-- [ ] As três funções JNI e suas declarações Kotlin não existem mais
-- [ ] Build nativo continua ligando `libg.so` sem símbolo faltando
-- [ ] Gate de build completo verde
+- [x] As três funções JNI e suas declarações Kotlin não existem mais
+- [x] Build nativo continua ligando `libg.so` sem símbolo faltando — `:app:assembleDebug` verde e `llvm-nm -D` na `libglucore-sibionics-bridge.so` reconstruída lista exatamente quatro símbolos (`init`, `getLastError`, `registerSensor`, `restoreActiveSensor`), um para cada `external fun` que sobrou e nenhum a mais
+- [x] Gate de build completo verde (340 Flutter, 146 backend, 34 Kotlin, `assembleDebug` verde)
 
 **Tests**: none
 **Gate**: build
 **Commit**: `refactor(native): drop the unmapped bridge stubs`
+**Status**: ✅ Complete
+
+**Nota**: a tabela de símbolos é evidência mais forte que a compilação: prova que os stubs saíram do binário e que nenhum `external fun` ficou sem contraparte nativa — exatamente o `UnsatisfiedLinkError` que esta remoção poderia causar. As classes stub `tk.glucodata` e o `JNI_OnLoad` não foram tocados.
 
 ---
 
