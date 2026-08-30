@@ -60,13 +60,22 @@
 
 ## Handoff
 
-**Feature ativa**: `arch-phases-3-5` (Fases 3, 4 e 5 do `docs/ARCHITECTURE_FIX_PLAN.md`)
-**Fase**: Execute concluído — **34 de 34 tarefas**. Falta só o Verificador, que é o passo de fechamento da feature.
-**Branch**: `feat/arch-phases-3-5`, criada do HEAD de `feat/arch-phases-0-2-gaps` (que segue 15 commits à frente da `main`). Nada foi enviado ao remoto; `git push` continua exigindo autorização explícita.
-**Concluído**: as sete fases. Fase 1 (identidade UUID no app, SQLite v3 com migração e backfill), Fase 2 (`/carbs` e `/insulin` em camadas + paginação), Fase 3 (alerts unitários, índices verificados, cobertura), Fase 4 (op-log `pending_ops`, drenagem ordenada idempotente, repositório por item sem truncamento, cubit por entrada), Fase 5 (`domain/` no patient: entidades, contrato, doze casos de uso, cubit atrás deles), Fase 6 (tema claro/escuro em `ThemeExtension`, preferência persistida, cores por contexto em todo o app) e Fase 7 (rename do auth, poda do transmissor em Dart e Kotlin, `WarmupPayload` e stubs nativos removidos, documentos de contrato e plano atualizados).
-**Gates na entrega**: 340 testes Flutter com `flutter analyze` limpo, 146 de backend com `tsc --noEmit` limpo, 34 de Kotlin, e `:app:assembleDebug` verde com o C++ religado.
-**Próximo passo**: rodar o **Verificador** (sub-agente novo, autor ≠ verificador) sobre a feature inteira: checagem ancorada na spec com evidência `file:line` por AC, sensor de discriminação por mutação, e `validation.md` escrito em `.specs/features/arch-phases-3-5/`. Depois disso, a tabela de rastreabilidade da spec passa de `Implementing` para `Verified` e `validate_state.py` deve sair com código 0.
-**Decisões registradas**: `AD-009` (op-log de operações unitárias idempotentes; replace-all restrito a coleções append-only) está gravado na seção Decisions acima.
-**Pendências conhecidas, fora do escopo desta feature**: validação em device físico arm64 com sensor real (sem hardware neste ambiente); remoção dos `POST` de coleção deprecated e, junto com eles, das escritas de coleção do diário no cliente (`saveCarbs`/`saveInsulin`/`saveAlerts` e `mark*Synced`), hoje mantidas de propósito como caminho de rollback e documentadas como tal; P28 segue parcial no caminho de coleção; `docs/reference/platform-channels.md` não documenta os métodos NFC do Libre 2 nem o campo `nfc` do evento — lacuna anterior a esta feature.
-**Sem trabalho não commitado desta feature**: a árvore está limpa fora dos arquivos alheios listados abaixo.
+**Feature ativa**: `arch-phases-3-5` (Fases 3, 4 e 5 do `docs/ARCHITECTURE_FIX_PLAN.md`) — **concluída e verificada**.
+**Fase**: Execute + verificação independente concluídos. 34 de 34 tarefas, mais um commit de fechamento de lacunas de evidência.
+**Branch**: `feat/arch-phases-3-5`, criada do HEAD de `feat/arch-phases-0-2-gaps` (que segue 15 commits à frente da `main`). **Nada foi enviado ao remoto**; `git push` e a abertura de PR continuam exigindo autorização explícita do usuário.
+**Veredito**: **PASS** — `.specs/features/arch-phases-3-5/validation.md`, faixa `037a8bc..94a2afb`, 143 arquivos, +10442/−1794. 44 de 47 ACs com evidência `file:line` direta; 11 mutações injetadas em worktree isolado, 11 mortas, 0 sobreviventes. `validate_state.py arch-phases-3-5` sai com código 0.
+**Gates na entrega**: 343 testes Flutter com `flutter analyze` limpo, 146 de backend com `tsc --noEmit` limpo, 34 de Kotlin, e `:app:assembleDebug` verde com o C++ religado.
+**Fechado após a verificação** (`e50c2c9`): as duas ACs que o Verificador registrou sem evidência própria ganharam teste — SYNC-07 (escrita durante push em voo continua pendente; o dublê remoto agora segura uma chamada aberta, e o mutante que drena além da fronteira do snapshot morre só nesse teste) e THEME-03 (o app segue a luminosidade da plataforma, inclusive quando o SO muda com o app aberto).
+**Decisões registradas**: `AD-009` (op-log de operações unitárias idempotentes; replace-all restrito a coleções append-only) está na seção Decisions acima.
+
+**Achados registrados, sem ação — valem uma decisão futura:**
+- O gate Android engana: `./gradlew :app:testDebugUnitTest` volta `BUILD SUCCESSFUL` com a task `UP-TO-DATE` e **zero testes executados**. Só `--rerun-tasks` produz os 34 de verdade. Quem ler o primeiro verde está lendo nada — vale registrar isso em `docs/guides/qa-process.md`.
+- `AppTheme` mantém 27 constantes `Color` que nenhum código de `lib/` usa; o único consumidor é `glucore_colors_test.dart`, como âncora de fidelidade da migração de tema.
+- PLAN-04 pede doc de contrato atualizado **no mesmo commit** da mudança; os docs vieram num commit final (`edeebb0`). Conteúdo correto, cadência divergente.
+- `sensor_link_page.dart:437` usa `Colors.grey.shade600` direto (fora do THEME-05 como escrito, mas lê errado no escuro); `GlucoseZoneX.label` devolve português hardcoded, furando o l10n.
+- `docs/reference/platform-channels.md` não documenta os métodos NFC do Libre 2 nem o campo `nfc` do evento — lacuna anterior a esta feature, e o `CLAUDE.md` diz que esse doc vence em conflito.
+
+**Pendências conhecidas, fora do escopo desta feature**: validação em device físico arm64 com sensor real (sem hardware neste ambiente); remoção dos `POST` de coleção deprecated e, junto com eles, das escritas de coleção do diário no cliente (`saveCarbs`/`saveInsulin`/`saveAlerts` e `mark*Synced`), hoje mantidas de propósito como caminho de rollback e documentadas como tal; P28 segue parcial no caminho de coleção.
+**Próximo passo**: decisão do usuário — abrir PR (exige autorização para `git push`) ou seguir para outra frente.
+**Sem trabalho não commitado desta feature**: a árvore está limpa fora dos arquivos alheios.
 **Arquivos sujos preexistentes, alheios a este trabalho**: `.claude/settings.local.json`, `CHANGELOG.md`, alterações em `.specs/features/checklist-tcc-compliance/`, a deleção de `TCC I - Checklist - Avaliacao.md` e os diretórios não rastreados `.agents/`, `.cursor/`, `.windsurf/`.
