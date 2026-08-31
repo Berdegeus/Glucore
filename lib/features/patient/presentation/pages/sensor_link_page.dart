@@ -41,11 +41,12 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
       // only applies to Sibionics barcodes.
       builder: (_) => _ScannerSheet(normalizeGs1: !_isAccuChek),
     );
-    if (result != null && result.isNotEmpty) {
+    if (result != null && result.isNotEmpty && mounted) {
       setState(() {
         _barcodeController.text = result;
         _tutorialStep = 2;
       });
+      context.read<SensorCubit>().registerSensor(result, brand: widget.brand);
     }
   }
 
