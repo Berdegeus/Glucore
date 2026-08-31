@@ -2,9 +2,27 @@
 
 > Quando usar: mudanças em API, schema, autenticação ou sincronização app↔servidor.
 
+## Layout do workspace
+
+`backend/` é um workspace npm (`packages/*`, `services/*`), não mais uma pasta `src/` única:
+
+```
+backend/
+  packages/shared/src/         # errors/ http/ util/ audit/ — sem dependência de @prisma/client
+  services/glucose-service/    # o serviço de hoje; todas as rotas abaixo vivem aqui
+    prisma/schema.prisma
+    src/{index,app,container}.ts
+    src/modules/<nome>/        # routes · controller · service · repository · schema · mapper
+    src/{middleware,lib,routes}/
+```
+
+A extração de `auth-service` e do gateway ainda não aconteceu — ver [ARCHITECTURE_FIX_PLAN.md](../ARCHITECTURE_FIX_PLAN.md) e a issue de microserviços. Enquanto isso, `glucose-service` responde por tudo, inclusive `/auth`.
+
 ## Stack e boot
 
-`backend/src/index.ts`: Express na porta `PORT` (default **3001**), `cors()` aberto, `morgan('dev')`, JSON body. Handler global de erro → 500. Prisma client singleton em `src/lib/prisma.ts`. Env: `DATABASE_URL`, `JWT_SECRET` (fallback inseguro `'dev-secret'`), SMTP para reset de senha.
+`services/glucose-service/src/index.ts` só lê o ambiente e sobe o listener; quem monta o Express é `buildApp()` em `src/app.ts` — é essa separação que deixa o supertest exercitar o pipeline real em processo, sem porta. `cors()` (restrito quando `CORS_ORIGIN` está setado), `express.json()`, `morgan('dev')` só fora de teste, `prismaErrorHandler` e, por último, um handler genérico → 500. Prisma client singleton em `src/lib/prisma.ts`; wiring das dependências em `src/container.ts`.
+
+Env: `DATABASE_URL`, `JWT_SECRET`, `PORT` (default **3001**), `CORS_ORIGIN`, SMTP para reset de senha. **`JWT_SECRET` não tem fallback**: `loadEnv()`/`getJwtSecret()` (`src/lib/env.ts`) lançam `MissingEnvError` e o bootstrap traduz isso em exit 1 — um servidor mal configurado se recusa a subir em vez de assinar token com segredo conhecido.
 
 ## Rotas implementadas (estado real)
 
@@ -33,39 +51,41 @@ Contrato de payloads exato: ver [reference/data-models.md](../reference/data-mod
 
 Toda resposta de erro do backend traz `{ "error": "<mensagem>", "code": "<CODE>" }`. O app decide sempre pelo `code`, nunca pelo status sozinho — é o que separa "token inválido" (deve deslogar) de "senha atual incorreta" (não deve), ambos `401`.
 
-`prismaErrorHandler` (`backend/src/middleware/prismaError.ts`), registrado em `index.ts` antes do handler genérico, traduz exceções do Prisma e erros com contrato próprio (`status`/`code` no objeto, como `WeakPasswordError`) nesta tabela:
+`prismaErrorHandler` (`.../src/middleware/prismaError.ts`), registrado em `app.ts` antes do handler genérico, é uma **Chain of Responsibility**: `createErrorHandler([prismaClassifier, appErrorClassifier, httpContractClassifier])`, com o comportamento em `packages/shared/src/errors/errorHandler.ts` e a ordem decidida no serviço. Traduz exceções do Prisma, os `AppError` da camada de serviço e erros estrangeiros que já carregam `status`/`code` (como `WeakPasswordError`, `MissingEnvError`) nesta tabela:
+
+Nota de contrato: **`code` é opcional no corpo**. As rotas respondem em duas formas — `{error, code}` onde existe código legível por máquina, e `{error}` puro onde nunca existiu. Padronizar tudo em `{error, code}` é mudança de contrato, não limpeza.
 
 | Situação | Status | `code` | Onde nasce |
 |---|---|---|---|
-| Token ausente/inválido/expirado | 401 | `TOKEN_INVALID` | `verifyJwt` (`backend/src/middleware/auth.ts:13,22`) |
-| Papel não autorizado | 403 | `FORBIDDEN_ROLE` | `requireRole` (`backend/src/middleware/auth.ts:69`) |
-| Senha atual incorreta (`PUT /auth/profile`) | 401 | `INVALID_CURRENT_PASSWORD` | `backend/src/routes/auth.ts:435` |
-| Senha fraca | 400 | `WEAK_PASSWORD` | `assertStrongPassword` (`backend/src/lib/passwordPolicy.ts:50`) → `prismaErrorHandler` |
-| E-mail já cadastrado | 409 | `EMAIL_TAKEN` | `backend/src/routes/auth.ts:207,471` |
-| Constraint única violada (Prisma `P2002`) | 409 | `DUPLICATE_RECORD` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:54-60`) |
-| FK inexistente (`P2003`) | 409 | `RELATED_RECORD_MISSING` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:61-67`) |
-| Registro não encontrado (`P2025`) | 404 | `RECORD_NOT_FOUND` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:68-74`) |
-| Banco indisponível (`P1001`/`P1002`/erro de inicialização) | 503 | `DATABASE_UNAVAILABLE` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:75-85`) |
-| Não classificado | 500 | `INTERNAL` | `prismaErrorHandler` (`backend/src/middleware/prismaError.ts:31-35`), sem stack quando `NODE_ENV=production` |
+| Token ausente/inválido/expirado | 401 | `TOKEN_INVALID` | `verifyJwt` (`backend/services/glucose-service/src/middleware/auth.ts:13,22`) |
+| Papel não autorizado | 403 | `FORBIDDEN_ROLE` | `requireRole` (`backend/services/glucose-service/src/middleware/auth.ts:69`) |
+| Senha atual incorreta (`PUT /auth/profile`) | 401 | `INVALID_CURRENT_PASSWORD` | `backend/services/glucose-service/src/routes/auth.ts:374` |
+| Senha fraca | 400 | `WEAK_PASSWORD` | `assertStrongPassword` (`backend/services/glucose-service/src/lib/passwordPolicy.ts`) → `httpContractClassifier` |
+| E-mail já cadastrado | 409 | `EMAIL_TAKEN` | `backend/services/glucose-service/src/routes/auth.ts:146,410` |
+| Constraint única violada (Prisma `P2002`) | 409 | `DUPLICATE_RECORD` | `prismaClassifier` (`backend/services/glucose-service/src/middleware/prismaClassifier.ts:33`) |
+| FK inexistente (`P2003`) | 409 | `RELATED_RECORD_MISSING` | `prismaClassifier` (`backend/services/glucose-service/src/middleware/prismaClassifier.ts:40`) |
+| Registro não encontrado (`P2025`) | 404 | `RECORD_NOT_FOUND` | `prismaClassifier` (`backend/services/glucose-service/src/middleware/prismaClassifier.ts:47`) |
+| Banco indisponível (`P1001`/`P1002`/erro de inicialização) | 503 | `DATABASE_UNAVAILABLE` | `prismaClassifier` (`backend/services/glucose-service/src/middleware/prismaClassifier.ts:21-23,53,62`) |
+| Não classificado | 500 | `INTERNAL` | `prismaClassifier` (`backend/services/glucose-service/src/middleware/prismaClassifier.ts:17`), sem stack quando `NODE_ENV=production` |
 
 O app lê `code` em `AuthCubit._mapErrorCode` (`lib/features/auth/presentation/cubit/auth_cubit.dart:173-183`) e no interceptor de sessão `ApiClient`/`SessionExpiryNotifier` (`lib/core/session/session_expiry_notifier.dart`, `lib/core/api/api_client.dart`): só `TOKEN_INVALID` apaga o token e sinaliza logout; `INVALID_CURRENT_PASSWORD` mantém a sessão e mostra o erro na tela atual.
 
 ## Autorização por papel (`requireRole`)
 
-`requireRole(...roles)` (`backend/src/middleware/auth.ts:49-76`) resolve `user.role` no banco a cada requisição (não confia em claim do JWT — rebaixar um usuário vale imediatamente) e responde 403 `FORBIDDEN_ROLE` quando o papel não está na lista permitida. Aplicado, sempre depois de `verifyJwt`, em `router.use(requireRole('PATIENT'))` nas cinco rotas de dados do paciente: `backend/src/routes/readings.ts:11`, `carbs.ts:11`, `insulin.ts:11`, `alerts.ts:12`, `settings.ts:11`.
+`requireRole(...roles)` (`backend/services/glucose-service/src/middleware/auth.ts:49`) resolve `user.role` no banco a cada requisição (não confia em claim do JWT — rebaixar um usuário vale imediatamente) e responde 403 `FORBIDDEN_ROLE` quando o papel não está na lista permitida. Aplicado, sempre depois de `verifyJwt`, em `router.use(requireRole('PATIENT'))` nos cinco módulos de dados do paciente, todos na linha 11 do respectivo `<nome>.routes.ts`: `backend/services/glucose-service/src/modules/{readings,carbs,insulin,alerts,settings}/*.routes.ts`.
 
 ## Trilha de auditoria (`AuditLog`)
 
-`recordAudit` (`backend/src/lib/audit.ts:70-92`) grava em `AuditLog` (`backend/prisma/schema.prisma`, modelo `AuditLog`) o `userId`, a entidade, a ação, `entityId`, `metadata` sanitizado, `ipAddress` e `userAgent`. É best-effort: nunca lança para o chamador — uma falha de auditoria não pode derrubar a gravação de um registro de insulina — e nunca persiste senha, hash ou token: `sanitizeMetadata` (`backend/src/lib/audit.ts:56-68`) remove qualquer chave cujo nome combine com `/password|token/i`, em qualquer nível de aninhamento.
+`recordAudit` grava em `AuditLog` (`backend/services/glucose-service/prisma/schema.prisma`, modelo `AuditLog`) o `userId`, a entidade, a ação, `entityId`, `metadata` sanitizado, `ipAddress` e `userAgent`. O comportamento vive em `backend/packages/shared/src/audit/audit.ts:86`, que recebe o `AuditClient` por parâmetro para não depender de um `PrismaClient` específico; `backend/services/glucose-service/src/lib/audit.ts:17` amarra a esse serviço, mantendo a assinatura no ponto de chamada. É best-effort: nunca lança para o chamador — uma falha de auditoria não pode derrubar a gravação de um registro de insulina — e nunca persiste senha, hash ou token: `sanitizeMetadata` (`backend/packages/shared/src/audit/audit.ts:72`) remove qualquer chave cujo nome combine com `/password|token/i`, em qualquer nível de aninhamento.
 
-Chamado no caminho de sucesso de cadastro, login, esqueci-senha, redefinição de senha e atualização de perfil (`backend/src/routes/auth.ts`), e nas escritas de `/carbs`, `/insulin`, `/alerts` e `/settings/alerts` (um registro por requisição, ação `REPLACE`/`CREATE`/`UPDATE`/`DELETE` conforme a rota).
+Chamado no caminho de sucesso de cadastro, login, esqueci-senha, redefinição de senha e atualização de perfil (`backend/services/glucose-service/src/routes/auth.ts`), e nas escritas de `/carbs`, `/insulin`, `/alerts` e `/settings/alerts` (um registro por requisição, ação `REPLACE`/`CREATE`/`UPDATE`/`DELETE` conforme a rota).
 
-**Aplicar a migração:** a tabela é criada pela migração `backend/prisma/migrations/20260816120000_add_audit_log/`, escrita à mão porque o ambiente de desenvolvimento desta iteração não tinha banco acessível para `prisma migrate dev`. Para aplicar:
+**Aplicar a migração:** a tabela é criada pela migração `backend/services/glucose-service/prisma/migrations/20260816120000_add_audit_log/`, escrita à mão porque o ambiente de desenvolvimento desta iteração não tinha banco acessível para `prisma migrate dev`. Para aplicar:
 
 ```bash
 cd backend
-npx prisma migrate deploy   # aplica as migrações pendentes, incluindo add_audit_log
-npx prisma generate         # já rodado neste repo; rode de novo se o client ficar desatualizado
+npm run migrate:deploy      # aplica as migrações pendentes, incluindo add_audit_log
+npm run -w @glucore/glucose-service exec -- prisma generate
 ```
 
 Se a migração ainda não estiver aplicada em algum ambiente, as rotas de negócio continuam funcionando normalmente: `recordAudit` engole a exceção e registra `console.error`, sem afetar a resposta ao usuário.
@@ -121,27 +141,35 @@ curl -X DELETE http://localhost:3001/carbs/item/$ID -H "Authorization: Bearer $T
 
 ```bash
 cd backend
-npm install
-npx prisma migrate dev        # aplica migrações + gera client
-npm run dev                   # ts-node-dev --respawn src/index.ts
+npm install                   # instala o workspace inteiro
+npm run build                 # tsc -b dos dois projetos + typecheck de tests/
+npm test                      # vitest; precisa de Postgres com o banco glucore_test
+npm run migrate:dev           # delega ao glucose-service
+npm run dev                   # idem — ts-node-dev no glucose-service
 ```
 
 App físico → backend na máquina: `flutter run --dart-define=API_URL=http://<ip-da-maquina>:3001`.
 
 ## Arquivos-chave
 
+Tudo abaixo é relativo a `backend/`.
+
 | Arquivo | Papel |
 |---|---|
-| `backend/prisma/schema.prisma` | Schema completo (inclui tabelas futuras) |
-| `backend/src/routes/auth.ts` | Registro/login/perfil/reset (523 linhas, maior rota) |
-| `backend/src/routes/{readings,carbs,insulin,alerts,settings}.ts` | CRUD de dados |
-| `backend/src/middleware/auth.ts` | `verifyJwt` |
-| `backend/src/middleware/asyncHandler.ts` | Wrapper de erro async |
-| `backend/src/lib/patient.ts` | `ensurePatient` (upsert) |
+| `services/glucose-service/prisma/schema.prisma` | Schema completo (inclui tabelas futuras) |
+| `services/glucose-service/src/app.ts` | `buildApp()` — monta o Express, sem porta |
+| `services/glucose-service/src/container.ts` | Composition root: instancia repositórios e serviços |
+| `services/glucose-service/src/modules/<nome>/` | CRUD de dados em camadas (`routes · controller · service · repository · schema · mapper`) |
+| `services/glucose-service/src/routes/auth.ts` | Registro/login/perfil/reset (537 linhas — **única rota ainda não modularizada**) |
+| `services/glucose-service/src/middleware/auth.ts` | `verifyJwt`, `requireRole` |
+| `services/glucose-service/src/middleware/prismaClassifier.ts` | Traduz erro do Prisma em `{status, code}` |
+| `services/glucose-service/src/lib/patient.ts` | `ensurePatient` (upsert) |
+| `packages/shared/src/errors/` | `AppError`, subclasses HTTP, `createErrorHandler(classifiers)` |
+| `packages/shared/src/http/asyncHandler.ts` | Wrapper de erro async |
 
 ## Armadilhas
 
-- Migração `add_day_of_week_to_insulin_event` pode não estar aplicada no banco local — rodar `prisma migrate dev` antes de testar insulina.
-- `JWT_SECRET` sem env cai em `'dev-secret'` — nunca subir assim (§P11).
-- Enum `AlertType` do DB ≠ enum `AppAlertType` do app; o mapeamento vive só em `routes/alerts.ts` (FAST_DROP/FAST_RISE viram `syncFailure` na volta — lossy).
+- Migração `add_day_of_week_to_insulin_event` pode não estar aplicada no banco local — rodar `npm run migrate:dev` antes de testar insulina.
+- `JWT_SECRET` sem env **não** tem fallback: `loadEnv()` lança `MissingEnvError` e o processo sai 1. (A antiga queda em `'dev-secret'` do §P11 não existe mais.)
+- Enum `AlertType` do DB ≠ enum `AppAlertType` do app; o mapeamento (padrão Adapter) vive em `services/glucose-service/src/modules/alerts/alerts.mapper.ts` (FAST_DROP/FAST_RISE viram `syncFailure` na volta — lossy, e travado por teste de caracterização de propósito).
 - `GlucoseReading` tem unique `[patientId, recordedAt]` — dois posts com mesmo timestamp sobrescrevem, não duplicam.

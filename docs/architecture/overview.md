@@ -81,7 +81,8 @@ Remota (não mais local-only): `RemoteAuthDataSource` → `POST /auth/login|regi
 | `android/.../GlucoreApp.kt` | Application; dona do `SensorCore` |
 | `android/.../SensorCore.kt` | Agregado application-scoped da pilha do sensor |
 | `android/.../CgmForegroundService.kt` | Foreground service + notificação persistente |
-| `backend/src/index.ts` | Express, montagem das rotas |
+| `backend/services/glucose-service/src/app.ts` | `buildApp()` — Express e montagem das rotas |
+| `backend/services/glucose-service/src/container.ts` | Composition root do serviço |
 
 ## Armadilhas
 

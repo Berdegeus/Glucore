@@ -16,19 +16,17 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 **✅ Resolvido (2026-07-07):** offline-first implementado — `LocalPatientDataSource` (sqflite, `glucore_patient.db`, flag `synced` por linha) é a fonte primária (`patient_local_datasource.dart:17`); `PatientSyncService` faz push com debounce/retry e reagenda quando a conectividade volta (`patient_sync_service.dart:18`); `PatientRepository.refreshFromRemote()` reconcilia preservando pendências (`patient_repository.dart:58-71`). Problemas residuais na sincronização: ver P27 e P28.
 
 ### ⚪ P2 — Sincronização replace-all (deleteMany + createMany)
-**Local:** `backend/src/routes/carbs.ts:145-170`, `insulin.ts:179-180`, `alerts.ts:74-75`; cliente em `patient_sync_service.dart:90-117` (POST da coleção inteira)
+**Local:** `backend/services/glucose-service/src/modules/carbs/carbs.repository.ts`, `insulin/insulin.repository.ts`, `alerts/alerts.repository.ts`; cliente em `patient_sync_service.dart:90-117` (POST da coleção inteira)
 **Descrição:** adicionar/editar/apagar 1 item apaga **todas** as linhas do paciente e recria a coleção; máximo 100 itens (excedente silenciosamente truncado).
 **Impacto:** perda de dados em concorrência (dois devices = last-writer-wins da coleção inteira); histórico >100 entradas destruído.
 
-**✅ Resolvido (2026-08-29).** A Solução proposta foi implementada nos quatro pontos, registrada como `AD-009` no `.specs/STATE.md`:
+**✅ Resolvido (2026-08-30).** A Solução proposta foi implementada nos quatro pontos, registrada como `AD-009` no `.specs/STATE.md`:
 1. Op-log local `pending_ops(seq, entity, entity_id, op, payload_json, created_at)`; cada escrita de diário grava a linha e enfileira a op **na mesma transação**.
 2. `PatientSyncService` drena a fila em ordem de `seq` e para na primeira falha recuperável, preservando a op e as posteriores. `upsert` é `PUT` com fallback para `POST` no 404, o que torna o reenvio idempotente; `DELETE` que responde 404 conta como sucesso. Op confirmada sai da fila.
 3. O replace-all ficou restrito a leituras de glicose e thresholds — append-only, nunca editados por item.
-4. Alerts ganhou os endpoints unitários que faltavam (`POST /alerts/item`, `PUT`/`DELETE /alerts/item/:id`), e as três listagens ganharam paginação `before`/`limit`, então o truncamento em 100 acabou. Os `POST` de coleção seguem vivos e deprecated como caminho de rollback.
+4. Carbs e insulin já tinham `POST/PUT/DELETE /item`; alerts ganhou os endpoints unitários que faltavam (`POST /alerts/item`, `PUT`/`DELETE /alerts/item/:id`, `id` no DTO) na reconciliação com a reestruturação do backend em `backend/services/glucose-service/` (workspace npm, PR #31). As três listagens ganharam paginação `before`/`limit`, então o truncamento em 100 acabou. Os `POST` de coleção seguem vivos e deprecated como caminho de rollback.
 
 Residual assumido: o conflito "mesmo item editado em dois aparelhos" continua last-writer-wins **por item**, não por coleção. O ponto 4 da proposta previa desempate por `updated_at` no backend; não foi implementado e não era necessário para fechar a perda de dados.
-
-**Histórico — 🟡 Parcial (2026-07-07):** o backend ganhou endpoints por item (`POST /carbs/item`, `PUT/DELETE /carbs/item/:id` — o batch está marcado deprecated em `carbs.ts:145`) e o replace-all agora preserva ids enviados pelo cliente, **mas o app continua usando exclusivamente o replace-all em lote** (`patient_remote_datasource.dart:73-86`). O risco multi-device permanece integral. Agravante novo: o replace-all não é atômico — ver P27.
 **Solução proposta:** migrar o app para a API por item, em cima do P4 (UUID no cliente):
 1. Trocar a flag `synced` por coluna de coleção por um **op-log local**: tabela `pending_ops(id, entity, entity_id, op ∈ {upsert, delete}, payload_json, created_at)`. Cada `addCarbEntry`/`edit*`/`delete*` grava a linha do dado **e** enfileira uma op.
 2. `PatientSyncService._pushPending` passa a drenar o op-log em ordem: `upsert` → `POST /carbs/item` ou `PUT /carbs/item/:id`; `delete` → `DELETE /carbs/item/:id`. Op confirmada (2xx) é removida da fila; falha mantém e re-tenta. Idempotência garantida pelo UUID.
@@ -86,7 +84,7 @@ Residual assumido: o conflito "mesmo item editado em dois aparelhos" continua la
 
 ### 🟡 P11 — Segurança do backend: segredo default, CORS aberto, sem rate-limit
 
-**🟡 Parcial (2026-07-07):** `JWT_SECRET` agora é obrigatório com fail-fast no boot (`backend/src/lib/env.ts:1-11`) e o CORS é restringível por `CORS_ORIGIN` (`index.ts:17-21`) — mas sem a env cai em `cors()` aberto. Rate-limit em `/auth/login`/forgot-password continua ausente.
+**🟡 Parcial (2026-08-26):** `JWT_SECRET` é obrigatório com fail-fast no boot — `loadEnv()`/`getJwtSecret()` lançam `MissingEnvError` e o bootstrap sai 1 (`backend/services/glucose-service/src/lib/env.ts:24-30,42`); o CORS é restringível por `CORS_ORIGIN` (`backend/services/glucose-service/src/app.ts:39`, `backend/services/glucose-service/src/lib/env.ts:59-62`) — mas sem a env cai em `cors()` aberto. Rate-limit **existe** desde então (`backend/services/glucose-service/src/routes/auth.ts:47-63`): 10 req/15 min por IP em login, forgot-password e reset-password; 20/15 min em register; desligado sob `NODE_ENV=test`. Resta só o item 2 abaixo (CORS obrigatório em produção).
 **Solução proposta:**
 1. `express-rate-limit` escopado nas rotas de auth: ex. login 10 req/15 min por IP, register 5/15 min, forgot-password 3/h; resposta 429 com `Retry-After`. Montar só em `/auth`, não global (o sync do app é legitimamente chatty).
 2. CORS: em `NODE_ENV=production`, exigir `CORS_ORIGIN` no mesmo estilo fail-fast do `env.ts` (sem env → `process.exit(1)`); manter fallback aberto apenas em dev.
@@ -245,12 +243,12 @@ _enqueue(sensorCubit.state);
 Cada evento só começa quando o anterior terminou (incluindo os awaits de `repository.load()`/`saveReadings`), então `previousStatus` e as listas lidas no início da invocação são sempre o resultado da invocação anterior — elimina duplicação de alertas de reconexão e persistência fora de ordem. Complementos: (a) o estado inicial entra pela mesma fila (remove o caso "processado duas vezes" por caminhos diferentes); (b) manter os `emit` síncronos no começo do handler para a UI não atrasar atrás de I/O; (c) teste com rajada de 50 `historyReading` + `readingAvailable` verificando lista final e um único `saveReadings`.
 
 ### 🟠 P27 — Contratos de sync inconsistentes: replace-all não atômico e "limpar leituras" que ressuscita
-**Local:** `backend/src/routes/carbs.ts:158-159`, `alerts.ts:74-75`, `insulin.ts:179-180` (deleteMany + createMany **fora de transação**); `readings.ts:32-75` (POST é upsert-merge, sem delete); `patient_cubit.dart:106-111` (`clearReadings` salva lista vazia)
+**Local:** `backend/services/glucose-service/src/modules/carbs/carbs.repository.ts:58-59`, `alerts/alerts.repository.ts:25-26`, `insulin/insulin.repository.ts:62-63` (deleteMany + createMany **fora de transação**); `readings/readings.repository.ts` (POST é upsert-merge, sem delete); `patient_cubit.dart:106-111` (`clearReadings` salva lista vazia)
 **Descrição:** (a) As coleções carb/insulin/alert são substituídas com dois statements não transacionais — falha entre o delete e o create apaga a coleção do paciente no servidor. (b) Readings têm semântica oposta: o POST só faz upsert; o app assume replace-all (`saveReadings(const [])` para limpar), então limpar leituras nunca chega ao servidor e o próximo `refreshFromRemote` **restaura tudo** localmente. O endpoint `DELETE /readings` existe mas o app nunca o chama.
 **Impacto:** perda de coleção inteira numa falha no meio do replace; função "limpar leituras" (debug panel) inefetiva e confusa — dados voltam sozinhos.
 **Solução proposta:**
-1. **Atomicidade:** embrulhar cada replace-all em transação interativa — `prisma.$transaction(async (tx) => { await tx.carbEvent.deleteMany(...); await tx.carbEvent.createMany(...); })` — em `carbs.ts`, `insulin.ts` e `alerts.ts`. Mudança de três linhas por rota; some quando o P2 aposentar o batch.
-2. **Semântica de readings:** declarar readings **append-only** no contrato (`docs/reference/backend.md`): o POST-upsert atual está correto para sync; "limpar" é operação explícita e separada. `PatientCubit.clearReadings` passa a chamar um novo `RemotePatientDataSource.deleteReadings()` (`DELETE /readings`, rota já existente) antes de zerar o local — ou, mais simples, restringir o clear ao modo mock/debug e removê-lo do caminho real (a feature só existe no debug panel).
+1. **Atomicidade:** embrulhar cada replace-all em transação interativa — `prisma.$transaction(async (tx) => { await tx.carbEvent.deleteMany(...); await tx.carbEvent.createMany(...); })` — nos três `*.repository.ts` correspondentes. Mudança de três linhas por repositório; some quando o P2 aposentar o batch.
+2. **Semântica de readings:** declarar readings **append-only** no contrato (`docs/architecture/backend.md`): o POST-upsert atual está correto para sync; "limpar" é operação explícita e separada. `PatientCubit.clearReadings` passa a chamar um novo `RemotePatientDataSource.deleteReadings()` (`DELETE /readings`, rota já existente) antes de zerar o local — ou, mais simples, restringir o clear ao modo mock/debug e removê-lo do caminho real (a feature só existe no debug panel).
 3. Teste de contrato no backend: replace-all com payload que viola constraint no meio → coleção original intacta.
 
 ### 🟡 P28 — Race no mark-synced: edição durante o push perde a flag de pendência

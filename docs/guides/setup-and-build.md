@@ -18,10 +18,14 @@ cd android && ./gradlew app:assembleDebug
 
 ```bash
 cd backend
-npm install
-cp .env.example .env   # se existir; senão criar com DATABASE_URL, JWT_SECRET, SMTP_*
-npx prisma migrate dev
+npm install            # workspace npm: packages/shared + services/glucose-service
+cp services/glucose-service/.env.example services/glucose-service/.env   # DATABASE_URL, JWT_SECRET, SMTP_*
+npm run migrate:dev
 npm run dev            # porta 3001
+
+# para rodar a suíte: precisa de um segundo banco (glucore_test)
+cp services/glucose-service/.env.test.example services/glucose-service/.env.test
+npm run build && npm test
 ```
 
 ## l10n

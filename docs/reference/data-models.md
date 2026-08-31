@@ -45,7 +45,7 @@ Mesma superfície de carbs: `GET /insulin?before=&limit=`, `POST /insulin/item`,
 | `type AppAlertType {glucoseLow,glucoseHigh,sensorReconnected,syncFailure}` | `type` | `alertType AlertType` (enum DB: HYPO_RISK, HYPER_RISK, SENSOR_RECONNECTED, SYNC_FAILURE, FAST_DROP, FAST_RISE) |
 | `timestamp DateTime` | `timestampMs` | `triggeredAt DateTime` |
 
-Mapeamento app↔DB em `backend/src/repositories/alertRepository.ts`; FAST_DROP/FAST_RISE não têm equivalente no app (viram `syncFailure` no GET). Superfície igual à de carbs: `GET /alerts?before=&limit=`, `POST /alerts/item`, `PUT`/`DELETE /alerts/item/:id`, mais o `POST /alerts` de coleção deprecated — que passou a preservar o `id` enviado pelo cliente, em vez de descartá-lo.
+Mapeamento app↔DB (padrão Adapter) em `backend/services/glucose-service/src/modules/alerts/alerts.mapper.ts`; FAST_DROP/FAST_RISE não têm equivalente no app (viram `syncFailure` no GET — lossy na volta, e travado por teste de caracterização de propósito). Superfície igual à de carbs: `GET /alerts?before=&limit=`, `POST /alerts/item`, `PUT`/`DELETE /alerts/item/:id`, mais o `POST /alerts` de coleção deprecated — que passou a preservar o `id` enviado pelo cliente, em vez de descartá-lo.
 
 ## AlertSettingsModel
 
@@ -103,9 +103,10 @@ Nas três tabelas do diário a flag sobrevive só como marca de origem do dado (
 | `lib/features/patient/data/datasources/patient_remote_datasource.dart` | Mappers Dart↔JSON (fonte do contrato do app) |
 | `lib/features/patient/data/datasources/patient_local_datasource.dart` | Tabelas sqflite locais (`glucore_patient.db` v3, mesmas colunas + `id` + flag `synced`) |
 | `lib/features/patient/data/sync/pending_op.dart` | Modelo da operação enfileirada (`entity`, `op`, `payload_json`) |
-| `backend/src/repositories/*.ts` | Mappers JSON↔Prisma das rotas em camadas (carbs, insulin, alerts) |
-| `backend/src/routes/*.ts` | Fiação; contrato das rotas ainda não migradas (auth, readings, settings) |
-| `backend/prisma/schema.prisma` | Colunas e tipos |
+| `backend/services/glucose-service/src/modules/*/*.mapper.ts` | Mappers JSON↔Prisma (fonte do contrato do servidor) |
+| `backend/services/glucose-service/src/modules/*/*.schema.ts` | Validação e parse do body de entrada |
+| `backend/services/glucose-service/src/modules/*/*.routes.ts` | Fiação das rotas por módulo |
+| `backend/services/glucose-service/prisma/schema.prisma` | Colunas e tipos |
 
 ## Armadilhas
 

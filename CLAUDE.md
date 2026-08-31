@@ -12,6 +12,8 @@ Glucore is an Android-first Flutter MVP for CGM sensors: Sibionics, Accu-Chek Sm
 
 **Docs:** detailed docs live in `docs/` (index: `docs/README.md`; multi-brand sensor stack: `docs/reference/multi-sensor-architecture.md`; QA gates and PR checklist: `docs/guides/qa-process.md`; architecture review & known issues: `docs/ARCHITECTURE_REVIEW.md`; fix plan: `docs/ARCHITECTURE_FIX_PLAN.md`). Domain skills in `.claude/skills/`. When CLAUDE.md and `docs/` conflict, `docs/` wins.
 
+**CI/review reference:** `.github/workflows/ci.yml` (GitHub Actions) is the source of truth for whether a PR is ready — not a local run by the author. It gates `flutter analyze`/`flutter test`, the Kotlin JVM unit tests, and the backend typecheck/test on every PR and push to `main`/`dev`. Full APK build/deploy stays out of CI until the vendor `.so` distribution problem is solved (`docs/ARCHITECTURE_FIX_PLAN.md`, item 2.4).
+
 This file holds stable invariants (native constraints, commands, layer map). Anything that changes sprint to sprint — data flow detail, screen inventory, feature status — belongs in `docs/`, not here.
 
 ## Commands
@@ -23,7 +25,8 @@ flutter run
 flutter build apk --debug
 flutter gen-l10n          # regenerate after editing .arb files
 cd android && ./gradlew app:assembleDebug
-cd backend && npm install && npx prisma migrate dev && npm run dev   # backend on :3001
+cd backend && npm install && npm run migrate:dev && npm run dev      # backend on :3001
+cd backend && npm run build && npm test                              # tsc -b + vitest (needs Postgres)
 ```
 
 ## Architecture
@@ -54,7 +57,7 @@ DI in `lib/injection_container.dart` — calls `sl.reset()` before registering t
 
 ### Backend
 
-Node/Express + Prisma/PostgreSQL in `backend/`, port 3001. Routes: `/auth`, `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`. Auth via JWT Bearer. Flutter connects via `--dart-define=API_URL=http://<ip>:3001` (default `http://localhost:3001` in `lib/core/api/api_client.dart`).
+Node/Express + Prisma/PostgreSQL, port 3001. `backend/` is an npm workspace: `packages/shared` (errors, asyncHandler, audit — no `@prisma/client` dependency) and `services/glucose-service`, which serves every route today. Inside the service, each domain sits in `src/modules/<name>/` as `routes · controller · service · repository · schema · mapper`, wired in `src/container.ts`; `src/routes/auth.ts` is the one route not yet modularized. Routes: `/auth`, `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`. Auth via JWT Bearer. Flutter connects via `--dart-define=API_URL=http://<ip>:3001` (default `http://localhost:3001` in `lib/core/api/api_client.dart`).
 
 ### Debug panel / mock sensor
 
@@ -140,7 +143,8 @@ Juggluco declares three more (`strGlucose`, `nums.item`, `NightPost`) that this 
 | `android/.../SensorSessionManager.kt` | SQLite session cache |
 | `android/app/src/main/java/tk/glucodata/Natives.java` | Direct JNI declarations |
 | `android/app/src/main/cpp/CMakeLists.txt` | C++17 build, links vendor `.so` |
-| `backend/src/index.ts` | Express app |
+| `backend/services/glucose-service/src/app.ts` | `buildApp()` — assembles Express, binds no port |
+| `backend/services/glucose-service/src/container.ts` | Composition root |
 
 `Juggluco/` — reference copy of open-source Juggluco. **Not in this working tree** (never committed); if you clone it locally for reference, do not modify it and do not index the whole repo.
 

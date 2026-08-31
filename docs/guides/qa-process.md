@@ -6,14 +6,14 @@ O princípio é um só: **quem escreveu não é quem aprova**, e nenhuma afirma�
 
 ## Gates automatizados
 
-Todo gate roda localmente antes do commit. Não há CI hoje (ver [ARCHITECTURE_FIX_PLAN.md](../ARCHITECTURE_FIX_PLAN.md), item 2.4, para o motivo e a condição de retomada), então a disciplina de rodar é do autor e a conferência é do revisor.
+Desde 2026-08-24, os gates de análise/teste rodam em **GitHub Actions** (`.github/workflows/ci.yml`) a cada PR e push em `main`/`dev` — é a referência que vale para saber se um PR está verde, não a execução local do autor. Falta só o artefato de build/deploy (bloqueado — ver [ARCHITECTURE_FIX_PLAN.md](../ARCHITECTURE_FIX_PLAN.md), item 2.4, para o motivo e a condição de retomada). Até lá, rode os gates localmente antes de abrir o PR (mesmos comandos abaixo) para não gastar ciclo do CI com erro óbvio.
 
 | Gate | Comando | Quando roda |
 |---|---|---|
 | Análise estática Dart | `flutter analyze` | Toda mudança em `lib/` ou `test/` |
 | Testes Flutter | `flutter test --no-pub` | Toda mudança em `lib/` ou `test/` |
 | Testes Kotlin (JVM) | `cd android && ./gradlew :app:testDebugUnitTest` | Toda mudança em `android/` |
-| Tipagem do backend | `cd backend && npx tsc --noEmit` | Toda mudança em `backend/` |
+| Build/tipagem do backend | `cd backend && npm run build` | Toda mudança em `backend/` |
 | Testes do backend | `cd backend && npm test` | Toda mudança em `backend/` |
 
 Ao fim de uma fase de trabalho, os cinco rodam juntos, mesmo que a mudança tenha tocado só uma camada — é o que pega regressão cruzada (um rename em Kotlin que quebra o contrato lido pelo Dart, por exemplo).
@@ -22,7 +22,9 @@ Notas de ambiente:
 
 - `./gradlew` precisa de um JDK. Sem `JAVA_HOME` no PATH, use o JBR do Android Studio: `JAVA_HOME="C:/Program Files/Android/Android Studio/jbr" ./gradlew :app:testDebugUnitTest`.
 - Não use `--offline` no Gradle: o cache local não tem todos os artefatos do Flutter e o build falha por motivo que não é o seu código.
-- `npm test` usa o runner nativo do Node e **não** precisa de banco.
+- **`npx tsc --noEmit` no backend não vale como checagem.** O workspace compila com `composite: true`, que `--noEmit` rejeita; e sem `tsconfig.json` na raiz de `backend/`, um `npx tsc` puro não acha projeto nenhum, imprime o texto de ajuda e **sai 0** — um erro de tipo passaria batido. Use `npm run build` (`tsc -b` dos dois projetos + typecheck de `tests/`).
+- **`npm test` no backend precisa de Postgres.** A suíte é Vitest e as rotas rodam contra banco real (`glucore_test`), de propósito: elas afirmam garantias do próprio schema (o upsert por `[patientId, recordedAt]`, os cascades) que um Prisma mockado não verificaria. A URL sai de `backend/services/glucose-service/.env.test` (untracked, copiar de `.env.test.example`).
+- **Não rodar duas suítes do backend ao mesmo tempo** — dois runners contra o mesmo banco dão `TRUNCATE` concorrente e travam em deadlock.
 
 ### O que é testável e onde
 
@@ -41,7 +43,7 @@ Marcado pelo revisor, não pelo autor:
 - [ ] Os gates da camada tocada rodaram e estão verdes, com a saída colada no PR
 - [ ] A contagem de testes não caiu; nenhum teste foi apagado, pulado ou teve asserção enfraquecida
 - [ ] **Mudou camada ou fluxo? Atualizou `CLAUDE.md` e/ou `docs/`** — este item existe porque o P6 (documentação divergindo do código) já reincidiu duas vezes; é o único mecanismo que impede a terceira
-- [ ] Mudou `backend/prisma/schema.prisma`? A migration versionada está no **mesmo PR**
+- [ ] Mudou um `backend/services/*/prisma/schema.prisma`? A migration versionada está no **mesmo PR**
 - [ ] Mudou contrato (platform channel, rota da API, modelo de dados)? O doc correspondente em `docs/reference/` foi atualizado no mesmo PR
 - [ ] O commit segue [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) e descreve o que foi feito, não o que se pretendia
 - [ ] Nada de "while I'm here": mudanças fora do escopo declarado voltam para o autor

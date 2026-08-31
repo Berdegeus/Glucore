@@ -3,6 +3,74 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 o projeto segue versionamento semântico (ver [docs/guides/versioning-and-branches.md](docs/guides/versioning-and-branches.md)).
 
+## [Unreleased] — backend-microservices, Fases 0–2 (branch `refactor/backend-microservices`, PR #31)
+
+Trabalho preparatório para o split em microserviços (issue #30): rede de segurança, workspace
+npm e camadas — tudo **antes** de qualquer fronteira de rede. Nenhuma resposta do servidor
+mudou; o contrato HTTP é idêntico ao de `main`. Plano completo em `docs/ARCHITECTURE_FIX_PLAN.md`
+e na issue #30.
+
+### Added
+- **Workspace npm** em `backend/`: `packages/*` + `services/*`, com `tsconfig.base.json`
+  (`composite: true`) e project references. `npm run build` = `tsc -b` dos dois projetos mais
+  o typecheck de `tests/`.
+- **`packages/shared`**: `errors/` (`AppError` abstrata, cinco subclasses HTTP e
+  `createErrorHandler(classifiers)`), `http/asyncHandler`, `util/{optionalText,uuid}` e
+  `audit/audit` — sem depender de `@prisma/client`, que é o que permite reusá-lo nos serviços
+  que ainda não existem.
+- **Seis módulos em camadas** em `services/glucose-service/src/modules/<nome>/`
+  (`readings`, `carbs`, `insulin`, `alerts`, `settings`, `patient`), cada um com
+  `routes · controller · service · repository · schema · mapper`, e `src/container.ts` como
+  composition root.
+- **225 testes de caracterização** contra Postgres real, escritos **antes** da refatoração para
+  servirem de oráculo, mais 87 de unidade contra fakes tipados. Total: 312 testes, 97,16% de
+  statements, com thresholds que reprovam o job de CI numa queda.
+- `services/glucose-service/tsconfig.test.json`, para que `tests/` também seja typechecked — o
+  projeto de build emite com `rootDir: src` e deixava os fakes tipados sem garantia nenhuma.
+
+### Changed
+- **Suíte migrada de `node:test` para Vitest 3.2.7** com coverage v8; `tsResolve.mjs` removido.
+- **`buildApp()`** separado do bootstrap (`src/app.ts` monta o Express, `src/index.ts` só lê o
+  ambiente e liga a porta), o que deixa o supertest exercitar o pipeline real em processo.
+- **`lib/env.ts` lança `MissingEnvError`** em vez de chamar `process.exit(1)`. `process.exit`
+  era alcançável por qualquer módulo que importasse esse arquivo: sob um test runner, derrubava
+  o worker inteiro sem falha reportada e sem saída.
+- **Contrato de erro vira Chain of Responsibility**:
+  `createErrorHandler([prismaClassifier, appErrorClassifier, httpContractClassifier])`, com o
+  comportamento no pacote shared e a ordem decidida pelo serviço.
+- **CI**: o job de backend roda `npm run build` no lugar de `npx tsc --noEmit`. Sem
+  `tsconfig.json` na raiz de `backend/`, `npx tsc` não acha projeto nenhum, imprime o texto de
+  ajuda e **sai 0** — um erro de tipo passava batido. `--noEmit` não era alternativa: é
+  incompatível com `composite: true`.
+- **Documentação realinhada** ao layout novo em 9 arquivos, incluindo três afirmações que
+  estavam factualmente erradas: o fallback `'dev-secret'` do `JWT_SECRET` (não existe mais), a
+  ausência de rate-limit nas rotas de auth (existe desde agosto) e a alegação de que
+  `npm test` no backend não precisa de banco (precisa — é Vitest contra Postgres real).
+
+### Fixed
+- `packages/shared` importava tipos de `express` sem declarar a dependência, compilando só por
+  hoisting do `node_modules` da raiz. Sem efeito em runtime (os imports são type-only), mas
+  quebraria no `npm ci --omit=dev` dos Dockerfiles.
+
+### Known gaps
+- **`PUT /auth/profile` continua monolítica**, por decisão: escreve `User`, `Patient` e
+  `AuthCredential` numa `$transaction` só, e parti-la agora mudaria a atomicidade sem que
+  houvesse para onde mover as pernas. Resolve-se na extração do auth-service.
+- **Três comportamentos travados por teste de propósito**, porque os testes de caracterização
+  registram o comportamento atual (bugs incluídos): `FAST_DROP`/`FAST_RISE` voltam como
+  `syncFailure`; `PUT /settings/alerts` aceita faixa invertida; o replace-all descarta id
+  não-UUID em vez de rejeitar o lote. Mudar qualquer um é decisão de produto — muda o teste e o
+  código no mesmo commit.
+- **Job Kotlin do CI vermelho** desde 25/08, independente deste trabalho (`main` falha igual):
+  `subosito/flutter-action@v2` roda `channel: stable` sem versão pinada, o stable passou a
+  exigir Gradle ≥ 8.14.0 e o wrapper está em 8.12.
+
+### Notes
+- Fases 3–8 (auth-service, gateway, token interno, Consul, `docker-compose.yml`, dashboard, CD)
+  não começaram.
+- A suíte do backend precisa de Postgres com o banco `glucore_test`; a URL sai de
+  `backend/services/glucose-service/.env.test` (untracked, copiar de `.env.test.example`).
+
 ## [Unreleased] — checklist-tcc-compliance (branch `feat/tcc-checklist-compliance`)
 
 Fecha 16 das 27 lacunas apontadas pela auditoria do checklist da banca de 2026-08-03

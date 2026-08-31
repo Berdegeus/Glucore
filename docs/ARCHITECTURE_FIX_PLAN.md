@@ -18,6 +18,8 @@ Data: 2026-07-05 · Branch base sugerida: uma branch por fase a partir de `main`
 | 5 | P13, P12(restante) | Mock via DI + poda final | ~½ dia | — | — |
 
 > **Estado em 2026-08-20:** Fases 0, 1 e 2 **concluídas**. Duas exceções, ambas explícitas: o item 2.4 (CI/CD, rubrica 39) foi **cortado do escopo** com motivo técnico registrado na seção 2.4, e as verificações em **device físico** das Fases 1 e 2 seguem pendentes por exigirem hardware arm64 com sensor real. Rastro da entrega: `.specs/features/arch-phases-0-2-gaps/`.
+>
+> **Atualização 2026-08-24:** o item 2.4 deixou de ser corte total — os estágios analyze/test/lint (que não dependem do `.so` vendor) foram retomados via GitHub Actions; só o artefato de build/deploy segue bloqueado. Ver seção 2.4.
 
 > **Estado em 2026-08-29:** Fases 3, 4 e 5 **concluídas** — o plano inteiro está entregue. Uma exceção explícita: o item **5.1 (P13, mock atrás da abstração) foi retirado do plano**, não implementado; o alvo dele havia sido revertido em `f91adea` e não existe mais na árvore. Os itens 3.1 e 3.2 já estavam entregues desde 2026-07-07; 3.3, 3.4, 3.5, 4.1, 4.2, 4.3 e 5.2 saíram nesta iteração. A verificação em device físico segue pendente pelo mesmo motivo das fases anteriores. Rastro da entrega: `.specs/features/arch-phases-3-5/`; a decisão do op-log está registrada como `AD-009` em `.specs/STATE.md`.
 
@@ -33,9 +35,9 @@ Corrigir as 5 afirmações desatualizadas (persistência, auth, SQLite, decode d
 
 ### 0.2 · P11 — Segurança mínima do backend
 Security — written plainly:
-- `backend/src/middleware/auth.ts` e `routes/auth.ts`: remove the `?? 'dev-secret'` fallback; read `JWT_SECRET` once at boot and `process.exit(1)` with a clear message if it is missing.
+- `backend/services/glucose-service/src/middleware/auth.ts` e `routes/auth.ts`: remove the `?? 'dev-secret'` fallback; read `JWT_SECRET` once at boot and `process.exit(1)` with a clear message if it is missing. ✅ feito — `lib/env.ts` lança `MissingEnvError` e `index.ts` traduz em exit 1.
 - Add `express-rate-limit` on `/auth/login`, `/auth/forgot-password`, `/auth/reset-password` (e.g., 10 req / 15 min per IP).
-- `index.ts`: `cors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true })` — permissive in dev, restrictable in prod.
+- `backend/services/glucose-service/src/app.ts`: `cors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true })` — permissive in dev, restrictable in prod.
 **Aceite:** boot sem `JWT_SECRET` falha; 429 após exceder limite; app continua funcionando em dev.
 
 ### 0.3 · P3 quick-fix — Debounce de persistência no history sync
@@ -52,7 +54,7 @@ Deletar: `lib/features/auth/presentation/pages/home_page.dart`; `parseJsonResult
 **Aceite:** um único ponto de mapeamento; comportamento idêntico (testar mock + real).
 
 ### 0.6 · Rubrica 26 — README + doc de rotas do backend — ✅ **Feito (2026-08-20)**
-`backend/README.md`: sumário de todos os serviços (`/auth`, `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`) com descrição, exemplo real de payload de request/response, e passo a passo de setup (`npm install`, `npx prisma migrate dev`, `npm run dev`).
+`backend/README.md`: sumário de todos os serviços (`/auth`, `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`) com descrição, exemplo real de payload de request/response, e passo a passo de setup (`npm install`, `npm run migrate:dev`, `npm run dev`).
 **Aceite:** todo endpoint documentado com exemplo real; README cobre instalação e env vars. → `backend/README.md`, 24/24 handlers.
 
 ### 0.7 · Rubrica 42 — Documentar a arquitetura multissensor já implementada — ✅ **Feito (2026-08-20)**
@@ -126,10 +128,10 @@ Passos:
 `SessionDbHelper.onUpgrade`: trocar DROP por `ALTER TABLE` incremental por versão (padrão `when (oldVersion) { ... }`).
 **Aceite:** upgrade simulado de DB_VERSION preserva a sessão registrada.
 
-### 2.4 · Rubrica 39 — CI/CD (build + test + deploy) — ⛔ **Fora de escopo (2026-08-20)**
-Retirado por decisão do usuário, com motivo técnico: os `.so` proprietários (`libg.so`, bibliotecas Abbott) são gitignored (`.gitignore:58`) e não estão no repositório, então **nenhum runner limpo consegue produzir um APK funcional** — o job de artefato de build da rubrica não teria como existir de forma honesta, e o `./gradlew` do projeto depende desses binários para o link nativo.
-**Condição para retomar:** um caminho autorizado de distribuição dos `.so` para o CI (secret/artifact store privado com licença que permita, ou runner self-hosted com os binários já provisionados). Com isso, a pipeline planejada era: em PR, `flutter analyze && flutter test`, `./gradlew :app:testDebugUnitTest`, `npx tsc --noEmit && npm test`; no merge para `main`, artefato de build.
-**Enquanto isso:** os mesmos gates rodam localmente e são item obrigatório da revisão de PR — ver [guides/qa-process.md](guides/qa-process.md).
+### 2.4 · Rubrica 39 — CI/CD (build + test + deploy) — ⚠️ **Parcial (2026-08-24)**
+Retirado do escopo o artefato de build/deploy, por decisão do usuário, com motivo técnico: os `.so` proprietários (`libg.so`, bibliotecas Abbott) são gitignored (`.gitignore:58`) e não estão no repositório, então **nenhum runner limpo consegue produzir um APK funcional** — o job de artefato de build da rubrica não teria como existir de forma honesta, e o `./gradlew` do projeto depende desses binários para o link nativo.
+**Já retomado (2026-08-24):** os três estágios que não dependem do `.so` — `flutter analyze && flutter test`, `./gradlew :app:testDebugUnitTest`, `npm run build && npm run test:coverage` — rodam automatizados em `.github/workflows/ci.yml`, disparados em PR e push para `main`/`dev`. Essa é agora a referência de review: um PR só é considerado pronto com o CI verde.
+**Condição para retomar o resto (build + deploy):** um caminho autorizado de distribuição dos `.so` para o CI (secret/artifact store privado com licença que permita, ou runner self-hosted com os binários já provisionados).
 
 **Verificação da fase:** ⬜ **pendente de device físico** — teste manual de background (tela desligada 30 min, app swipado), `adb shell dumpsys activity services` mostrando o service, e registro de sensor com app recém-aberto. O código de 2.1–2.3 está entregue e verificado por leitura/teste; o que falta é exclusivamente a regressão em hardware arm64 com sensor real.
 
@@ -247,7 +249,7 @@ Reintroduzir um sensor falso volta a ser uma decisão de projeto, não um copy-p
 3. Nada de rewrite do caminho vendor/JNI — as fases só movem propriedade e adicionam camadas em volta do trio BLE existente.
 4. Fases 1–2 exigem device arm64 físico com sensor para verificação final; fases 3–5 verificáveis com mock.
 5. Ao concluir cada P, marcar como resolvido no [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) (não apagar — histórico).
-6. **Rubrica 27:** toda mudança de schema Prisma (qualquer fase que toque `backend/prisma/`) inclui a migration versionada no mesmo PR — já é a prática atual, aqui só formalizada.
+6. **Rubrica 27:** toda mudança de schema Prisma (qualquer fase que toque `backend/services/*/prisma/`) inclui a migration versionada no mesmo PR — já é a prática atual, aqui só formalizada.
 
 ## Fora do plano (registrado, sem ação)
 - HAL multiplataforma completo + Pigeon (Seção B do review): fazer **depois** da Fase 2 — o `SensorCore` da Fase 2 já é o embrião do HAL; Pigeon vira candidato natural quando o contrato estabilizar.
@@ -255,7 +257,7 @@ Reintroduzir um sensor falso volta a ser uma decisão de projeto, não um copy-p
 
 ## Reserva de rubrica — só se sobrar tempo (registrado, sem compromisso)
 Itens opcionais da rubrica marcados como reserva na aba `Rubricas` (coluna L = "Reserva"). Não fazem parte do escopo comprometido; ficam aqui só para o caso de sobrar tempo depois das fases acima — ver [tcc-rubric-evolution-plan.md](tcc-rubric-evolution-plan.md) para o racional completo.
-- **39** (CI/CD) — passou de comprometido para bloqueado: sem os `.so` proprietários no repositório, não há artefato de build reproduzível em runner limpo (ver 2.4).
+- **39** (CI/CD) — só o artefato de build/deploy segue reservado/bloqueado: sem os `.so` proprietários no repositório, não há build reproduzível em runner limpo (ver 2.4). Analyze/test/lint já rodam em CI, fora da reserva.
 - **22** (BDD/UML/diagramas de requisitos) — documentação extra, sem tocar código.
 - **32** (cloud services), **40** (IaC) — fora do escopo deste plano (não há infra cloud hoje).
 - **34** (cobertura de testes frontend 75%+) — se entrar, encaixa como extensão da Fase 3 (`flutter test` já roda ali).
