@@ -48,18 +48,31 @@ export function loadEnv(): Env {
     throw new MissingEnvError('PORT', `Expected a TCP port, got "${process.env.PORT}".`);
   }
 
+  // Restrict CORS to the origins listed in CORS_ORIGIN (comma-separated).
+  // When unset, stay permissive for local development.
+  const corsOrigins =
+    process.env.CORS_ORIGIN?.split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0) ?? [];
+
+  // The permissive fallback above is fine on a laptop, but silent in
+  // production it means every origin is allowed with nothing in the log
+  // pointing at why.
+  if (process.env.NODE_ENV === 'production' && corsOrigins.length === 0) {
+    throw new MissingEnvError(
+      'CORS_ORIGIN',
+      'Set a comma-separated list of allowed origins before starting the server in ' +
+        'production. An empty CORS_ORIGIN in production means every origin is allowed, silently.',
+    );
+  }
+
   return {
     jwtSecret: required(
       'JWT_SECRET',
       'Set it in backend/.env (e.g. JWT_SECRET=$(openssl rand -hex 32)) before starting the server.',
     ),
     port,
-    // Restrict CORS to the origins listed in CORS_ORIGIN (comma-separated).
-    // When unset, stay permissive for local development.
-    corsOrigins:
-      process.env.CORS_ORIGIN?.split(',')
-        .map((origin) => origin.trim())
-        .filter((origin) => origin.length > 0) ?? [],
+    corsOrigins,
   };
 }
 

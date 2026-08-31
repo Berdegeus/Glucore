@@ -79,6 +79,29 @@ function readBcryptRounds(): number {
 }
 
 /**
+ * Restricts CORS to the origins listed in CORS_ORIGIN (comma-separated). When
+ * unset, stays permissive for local development — but in production that
+ * permissive fallback means every origin is allowed with nothing in the log
+ * pointing at why, so it becomes a hard failure there instead.
+ */
+function readCorsOrigins(): string[] {
+  const corsOrigins =
+    process.env.CORS_ORIGIN?.split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0) ?? [];
+
+  if (process.env.NODE_ENV === 'production' && corsOrigins.length === 0) {
+    throw new MissingEnvError(
+      'CORS_ORIGIN',
+      'Set a comma-separated list of allowed origins before starting the server in ' +
+        'production. An empty CORS_ORIGIN in production means every origin is allowed, silently.',
+    );
+  }
+
+  return corsOrigins;
+}
+
+/**
  * SMTP is all-or-nothing on purpose. A half-filled configuration — a host with
  * no credentials — used to fail at send time and get swallowed by the caller's
  * catch, which then logged the reset token as if nothing were wrong. Treating
@@ -105,12 +128,7 @@ export function loadEnv(): Env {
   return {
     jwtSecret: required('JWT_SECRET', JWT_SECRET_HINT),
     port: readPort(),
-    // Restrict CORS to the origins listed in CORS_ORIGIN (comma-separated).
-    // When unset, stay permissive for local development.
-    corsOrigins:
-      process.env.CORS_ORIGIN?.split(',')
-        .map((origin) => origin.trim())
-        .filter((origin) => origin.length > 0) ?? [],
+    corsOrigins: readCorsOrigins(),
     bcryptRounds: readBcryptRounds(),
     smtp: readSmtp(),
   };
