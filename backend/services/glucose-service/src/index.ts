@@ -1,7 +1,20 @@
 import 'dotenv/config';
+import { deregisterService, registerService } from '@glucore/shared';
+
 import { buildApp } from './app';
 import { loadEnv } from './lib/env';
 import { prisma } from './lib/prisma';
+
+const SERVICE_NAME = 'glucose';
+
+/**
+ * Only set in the compose/Consul stack (phase 5). Local `npm run dev` leaves
+ * it unset, so the gateway keeps resolving this service via
+ * `EnvServiceRegistry` and nothing here runs.
+ */
+function consulUrl(): string | undefined {
+  return process.env.CONSUL_HTTP_ADDR?.trim() || undefined;
+}
 
 /**
  * Process bootstrap. Everything that assembles the application lives in
@@ -16,6 +29,21 @@ function main(): void {
 
   const server = app.listen(env.port, () => {
     console.log(`Glucore backend running on :${env.port}`);
+
+    const consul = consulUrl();
+    if (consul) {
+      registerService({
+        consulUrl: consul,
+        serviceName: SERVICE_NAME,
+        address: process.env.SERVICE_HOST?.trim() || 'localhost',
+        port: env.port,
+        healthPath: '/health/ready',
+      })
+        .then(() => console.log(`[consul] registered as "${SERVICE_NAME}"`))
+        .catch((error: unknown) =>
+          console.error(`[consul] registration failed: ${String(error)}`),
+        );
+    }
   });
 
   /**
@@ -29,6 +57,9 @@ function main(): void {
       process.exit(1);
     }, 10_000);
     forceExit.unref();
+
+    const consul = consulUrl();
+    if (consul) await deregisterService(consul, SERVICE_NAME);
 
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await prisma.$disconnect();

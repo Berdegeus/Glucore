@@ -17,6 +17,13 @@ export {
 } from './auth/requireInternalAuth';
 export { type ServiceRegistry } from './discovery/ServiceRegistry';
 export { EnvServiceRegistry } from './discovery/EnvServiceRegistry';
+export { ConsulServiceRegistry } from './discovery/ConsulServiceRegistry';
+export {
+  registerService,
+  deregisterService,
+  serviceInstanceId,
+  type RegisterServiceOptions,
+} from './discovery/registerService';
 export { asyncHandler } from './http/asyncHandler';
 export { optionalText } from './util/optionalText';
 export { isUuid, optionalUuid, requireUuid } from './util/uuid';

@@ -33,6 +33,9 @@ export interface Env {
   corsOrigins: string[];
   authServiceUrl: string;
   glucoseServiceUrl: string;
+  /** "consul" resolves auth/glucose via Consul; anything else uses the fixed URLs above. */
+  serviceDiscovery: string;
+  consulUrl: string;
 }
 
 const JWT_SECRET_HINT =
@@ -95,6 +98,8 @@ export function loadEnv(): Env {
     corsOrigins: readCorsOrigins(),
     authServiceUrl: readServiceUrl('AUTH_SERVICE_URL', 'http://localhost:3002'),
     glucoseServiceUrl: readServiceUrl('GLUCOSE_SERVICE_URL', 'http://localhost:3001'),
+    serviceDiscovery: process.env.SERVICE_DISCOVERY?.trim() || 'env',
+    consulUrl: readServiceUrl('CONSUL_HTTP_ADDR', 'http://localhost:8500'),
   };
 }
 
