@@ -58,15 +58,29 @@
 
 ---
 
+### AD-010 — `feat/arch-phases-3-5` adotou a estrutura de microsserviços do `main` remoto, descartando o backend em camadas construído nas Fases 2–3
+**Data**: 2026-08-30
+**Contexto**: Depois da Fase 7, `origin/main` (não fetchado até então — o `main` local estava 38 commits atrasado) já tinha absorvido `refactor/backend-microservices` (PR #31, mergeado 2026-08-27): `backend/src/` inteiro migrado para um workspace npm (`packages/shared` + `services/glucose-service/src/modules/<nome>/{routes,controller,service,repository,schema,mapper}`), suíte trocada de `node:test` para Vitest com Postgres real, e CRUD por item já implementado para carbs e insulin — só faltando paginação e o CRUD por item de alerts (que ainda era só replace-all, sem `id` no DTO). O trabalho das Fases 2–3 desta feature (T6–T13) tinha construído a mesma camada de item+validação, só que em cima da estrutura antiga (`backend/src/{repositories,services,controllers}/`), agora redundante.
+**Decisão**: Decisão explícita do usuário: merge de `origin/main` nesta branch (não rebase), descartando por completo os arquivos de T6–T13 (`backend/src/repositories/`, `backend/src/services/`, `backend/src/controllers/` e seus testes) em favor do que já existia no `main`. Em cima da estrutura herdada, esta branch acrescentou só o que faltava: `parsePageQuery` compartilhado (`packages/shared/src/util/pageQuery.ts`) com paginação `before`/`limit` em carbs, insulin e alerts; e o CRUD por item completo de alerts (schema, mapper com `id`, repository, service, controller, rotas), replicando o padrão já estabelecido pelos outros dois módulos.
+**Consequência**: Backend final tem 357 testes (era 312 no `main`, +45), cobertura 97%+ statements sobre o limiar de 90% já configurado. Um bug de portabilidade Windows pré-existente no `main` foi corrigido no caminho (`globalSetup.ts`: `execFileSync('npx', ...)` sem `shell: true` lança `EINVAL` no Windows por causa da correção de segurança CVE-2024-27980 para `.cmd`/`.bat` — commit `b458ac4`). `.env`/`.env.test` locais criados em `backend/services/glucose-service/` (gitignorados) e o banco `glucore_test` provisionado à mão nesta máquina — não documentado em nenhum guia de setup, só registrado aqui. **Perda**: na resolução de um stash mal-sucedido durante a reconciliação, `.agents/`, `.cursor/`, `.windsurf/` (cópias espelhadas do skill `tlc-spec-driven` para outras ferramentas, prováveis de regenerar sozinhas) e `docs/backend-features-a-portar.patch` (conteúdo desconhecido, não recuperável via `git fsck`) foram apagados sem backup — comunicado ao usuário na hora, sem confirmação de que o `.patch` fazia falta.
+
+---
+
 ## Handoff
 
-**Feature ativa**: `arch-phases-3-5` (Fases 3, 4 e 5 do `docs/ARCHITECTURE_FIX_PLAN.md`) — **concluída e verificada**.
-**Fase**: Execute + verificação independente concluídos. 34 de 34 tarefas, mais um commit de fechamento de lacunas de evidência.
-**Branch**: `feat/arch-phases-3-5`, criada do HEAD de `feat/arch-phases-0-2-gaps` (que segue 15 commits à frente da `main`). **Nada foi enviado ao remoto**; `git push` e a abertura de PR continuam exigindo autorização explícita do usuário.
-**Veredito**: **PASS** — `.specs/features/arch-phases-3-5/validation.md`, faixa `037a8bc..94a2afb`, 143 arquivos, +10442/−1794. 44 de 47 ACs com evidência `file:line` direta; 11 mutações injetadas em worktree isolado, 11 mortas, 0 sobreviventes. `validate_state.py arch-phases-3-5` sai com código 0.
-**Gates na entrega**: 343 testes Flutter com `flutter analyze` limpo, 146 de backend com `tsc --noEmit` limpo, 34 de Kotlin, e `:app:assembleDebug` verde com o C++ religado.
-**Fechado após a verificação** (`e50c2c9`): as duas ACs que o Verificador registrou sem evidência própria ganharam teste — SYNC-07 (escrita durante push em voo continua pendente; o dublê remoto agora segura uma chamada aberta, e o mutante que drena além da fronteira do snapshot morre só nesse teste) e THEME-03 (o app segue a luminosidade da plataforma, inclusive quando o SO muda com o app aberto).
-**Decisões registradas**: `AD-009` (op-log de operações unitárias idempotentes; replace-all restrito a coleções append-only) está na seção Decisions acima.
+**Feature ativa**: `arch-phases-3-5` (Fases 3, 4 e 5 do `docs/ARCHITECTURE_FIX_PLAN.md`) — **concluída, verificada, e reconciliada com o `origin/main`**.
+**Fase**: Execute + verificação independente concluídos (34/34 tarefas). Depois disso, dois bugs reportados pelo usuário no app real foram corrigidos (logout não redirecionava; senha errada não mostrava mensagem), e a branch foi mesclada com `origin/main` — ver `AD-010`.
+**Branch**: `feat/arch-phases-3-5`. **Nada foi enviado ao remoto**; `git push` e a abertura de PR continuam exigindo autorização explícita do usuário.
+**Veredito do Verificador**: **PASS**, mas anterior ao merge — `.specs/features/arch-phases-3-5/validation.md` cobre a faixa `037a8bc..94a2afb`, antes do `origin/main` entrar. Os números de teste desse relatório (146 backend) estão desatualizados; o estado real pós-merge é o da linha "Gates depois do merge" abaixo. Não houve nova rodada de verificação sobre o resultado da reconciliação.
+**Decisões registradas**: `AD-009` (op-log) e `AD-010` (adoção da estrutura de microsserviços do `main`, descarte do backend em camadas das Fases 2–3) — ambas na seção Decisions acima.
+
+**Dois bugs de produção corrigidos após o PASS, direto no app rodando no celular do usuário:**
+- `9693563` — logout não redirecionava para a tela de login (`SettingsPage` fica numa rota empilhada sobre `AuthGate`; faltava `Navigator.popUntil` antes do `logout()`, no mesmo padrão de `_handleSessionExpired`).
+- `3860bb8` — senha errada não mostrava mensagem de erro (`AuthGate` trocava para spinner de tela cheia durante `AuthStatus.loading`, inclusive durante login, destruindo o estado da `LoginPage` antes da mensagem de falha chegar). Ambos com teste de regressão que falha sem o fix (confirmado revertendo cada um).
+
+**Gates depois do merge com `origin/main`** (commits `dcfbee1`..`8d5e8f9`): 345 testes Flutter, `flutter analyze` limpo, **357 testes de backend** (Vitest + Postgres real, era 312 no `main`), cobertura 97%+ statements sobre o limiar de 90%. Não rodei Kotlin nem `:app:assembleDebug` de novo depois do merge — nada em `android/` mudou nele.
+
+**O que a reconciliação com o `main` trouxe e o que esta branch acrescentou** (detalhe em `AD-010`): o `main` já tinha o backend inteiro reestruturado em workspace npm (`backend/services/glucose-service/src/modules/`) com CRUD por item em carbs e insulin. Esta branch descartou seu próprio backend em camadas (T6–T13, estrutura antiga) e acrescentou, em cima da estrutura do `main`: paginação `before`/`limit` (compartilhada via `packages/shared/src/util/pageQuery.ts`) nas três listagens, e o CRUD por item completo de alerts (que no `main` ainda era só replace-all, sem `id` no DTO).
 
 **Achados registrados, sem ação — valem uma decisão futura:**
 - O gate Android engana: `./gradlew :app:testDebugUnitTest` volta `BUILD SUCCESSFUL` com a task `UP-TO-DATE` e **zero testes executados**. Só `--rerun-tasks` produz os 34 de verdade. Quem ler o primeiro verde está lendo nada — vale registrar isso em `docs/guides/qa-process.md`.
@@ -74,8 +88,10 @@
 - PLAN-04 pede doc de contrato atualizado **no mesmo commit** da mudança; os docs vieram num commit final (`edeebb0`). Conteúdo correto, cadência divergente.
 - `sensor_link_page.dart:437` usa `Colors.grey.shade600` direto (fora do THEME-05 como escrito, mas lê errado no escuro); `GlucoseZoneX.label` devolve português hardcoded, furando o l10n.
 - `docs/reference/platform-channels.md` não documenta os métodos NFC do Libre 2 nem o campo `nfc` do evento — lacuna anterior a esta feature, e o `CLAUDE.md` diz que esse doc vence em conflito.
+- **`docs/backend-features-a-portar.patch` foi perdido** durante a reconciliação (ver `AD-010`) — conteúdo desconhecido, não recuperado. Se fizer falta, não há como restaurar por git.
+- `.agents/`, `.cursor/`, `.windsurf/` (cópias do skill `tlc-spec-driven`) também foram apagados no mesmo incidente; prováveis de regenerar sozinhos na próxima sincronização de skills, mas não confirmado.
 
 **Pendências conhecidas, fora do escopo desta feature**: validação em device físico arm64 com sensor real (sem hardware neste ambiente); remoção dos `POST` de coleção deprecated e, junto com eles, das escritas de coleção do diário no cliente (`saveCarbs`/`saveInsulin`/`saveAlerts` e `mark*Synced`), hoje mantidas de propósito como caminho de rollback e documentadas como tal; P28 segue parcial no caminho de coleção.
-**Próximo passo**: decisão do usuário — abrir PR (exige autorização para `git push`) ou seguir para outra frente.
+**Próximo passo**: decisão do usuário — abrir PR (exige autorização para `git push`) ou seguir para outra frente. Considerar uma nova rodada do Verificador sobre o `dcfbee1..8d5e8f9` antes do PR, já que a rodada anterior não cobre o merge.
 **Sem trabalho não commitado desta feature**: a árvore está limpa fora dos arquivos alheios.
-**Arquivos sujos preexistentes, alheios a este trabalho**: `.claude/settings.local.json`, `CHANGELOG.md`, alterações em `.specs/features/checklist-tcc-compliance/`, a deleção de `TCC I - Checklist - Avaliacao.md` e os diretórios não rastreados `.agents/`, `.cursor/`, `.windsurf/`.
+**Arquivos sujos preexistentes, alheios a este trabalho**: `.claude/settings.local.json`, `CHANGELOG.md`, alterações em `.specs/features/checklist-tcc-compliance/`, a deleção de `TCC I - Checklist - Avaliacao.md`.
