@@ -2,6 +2,13 @@ export { asyncHandler } from './http/asyncHandler';
 export { optionalText } from './util/optionalText';
 export { isUuid, optionalUuid, requireUuid } from './util/uuid';
 export {
+  parsePageQuery,
+  DEFAULT_PAGE_LIMIT,
+  MAX_PAGE_LIMIT,
+  INVALID_PAGINATION,
+  type PageQuery,
+} from './util/pageQuery';
+export {
   auditRequestContext,
   recordAudit,
   sanitizeMetadata,
