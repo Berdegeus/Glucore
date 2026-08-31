@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
@@ -18,7 +19,7 @@ class DiaryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Diário')),
+      appBar: UserAppBar(title: Text(context.l10n.diaryLabel)),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           final groups = _buildDayGroups(context, state);
@@ -44,6 +45,7 @@ class DiaryPage extends StatelessWidget {
   /// hand whole days to a column without ever separating a header from its
   /// own entries.
   List<_DayGroup> _buildDayGroups(BuildContext context, PatientState state) {
+    final l10n = context.l10n;
     final items = <_DiaryItem>[];
 
     for (final c in state.carbs) {
@@ -51,8 +53,8 @@ class DiaryPage extends StatelessWidget {
         time: c.time,
         icon: Icons.restaurant_rounded,
         color: context.glucoreColors.zoneTargetBg,
-        title: c.description.isEmpty ? 'Refeição' : c.description,
-        detail: '${c.grams} g carb',
+        title: c.description.isEmpty ? l10n.mealDefaultLabel : c.description,
+        detail: l10n.monitoringCarbPopupTitle(c.grams),
         onTap: () => Navigator.of(context).push(
           buildPatientScopedRoute(context, CarbEditPage(entry: c)),
         ),
@@ -63,8 +65,11 @@ class DiaryPage extends StatelessWidget {
         time: ins.time,
         icon: Icons.vaccines_outlined,
         color: context.glucoreColors.brandBlue,
-        title: _insulinLabel(ins.type),
-        detail: '${ins.units.toStringAsFixed(1)} UI · ${ins.dayOfWeek}',
+        title: _insulinLabel(l10n, ins.type),
+        detail: l10n.diaryInsulinDetailLabel(
+          ins.units.toStringAsFixed(1),
+          ins.dayOfWeek,
+        ),
         onTap: () => Navigator.of(context).push(
           buildPatientScopedRoute(context, InsulinEditPage(entry: ins)),
         ),
@@ -79,7 +84,7 @@ class DiaryPage extends StatelessWidget {
     for (final item in items) {
       final dayKey = DateFormat('yyyy-MM-dd').format(item.time);
       if (dayKey != lastDay) {
-        groups.add(_DayGroup(label: _dayLabel(item.time)));
+        groups.add(_DayGroup(label: _dayLabel(l10n, item.time)));
         lastDay = dayKey;
       }
       groups.last.items.add(item);
@@ -88,18 +93,18 @@ class DiaryPage extends StatelessWidget {
     return groups;
   }
 
-  String _insulinLabel(InsulinType type) => switch (type) {
-        InsulinType.bolus => 'Insulina bolus',
-        InsulinType.basal => 'Insulina basal',
-        InsulinType.correction => 'Correção',
+  String _insulinLabel(AppLocalizations l10n, InsulinType type) => switch (type) {
+        InsulinType.bolus => l10n.diaryInsulinBolusTitle,
+        InsulinType.basal => l10n.diaryInsulinBasalTitle,
+        InsulinType.correction => l10n.insulinTypeCorrection,
       };
 
-  String _dayLabel(DateTime dt) {
+  String _dayLabel(AppLocalizations l10n, DateTime dt) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(dt.year, dt.month, dt.day);
-    if (d == today) return 'Hoje';
-    if (d == today.subtract(const Duration(days: 1))) return 'Ontem';
+    if (d == today) return l10n.dateGroupTodayLabel;
+    if (d == today.subtract(const Duration(days: 1))) return l10n.dateGroupYesterdayLabel;
     return DateFormat('EEEE, d MMM', 'pt_BR').format(dt);
   }
 }
@@ -295,7 +300,7 @@ class _EmptyDiary extends StatelessWidget {
           Icon(Icons.book_outlined, size: 48, color: Colors.grey.shade400),
           const SizedBox(height: 12),
           Text(
-            'Nenhuma observação ainda',
+            context.l10n.diaryEmptyStateTitle,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -304,7 +309,7 @@ class _EmptyDiary extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Use o botão + para registrar refeições e insulina',
+            context.l10n.diaryEmptyStateMessage,
             style: TextStyle(fontSize: 13, color: context.glucoreColors.inkMuted),
             textAlign: TextAlign.center,
           ),

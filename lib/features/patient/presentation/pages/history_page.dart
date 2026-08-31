@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
@@ -17,7 +18,7 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Histórico')),
+      appBar: UserAppBar(title: Text(context.l10n.historyTitle)),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           if (state.readings.isEmpty) {
@@ -28,7 +29,7 @@ class HistoryPage extends StatelessWidget {
                   Icon(Icons.show_chart, size: 48, color: context.glucoreColors.inkMuted),
                   SizedBox(height: 12),
                   Text(
-                    'Sem leituras registradas',
+                    context.l10n.historyNoReadingsMessage,
                     style: TextStyle(fontSize: 15, color: context.glucoreColors.inkMuted),
                   ),
                 ],
@@ -82,6 +83,7 @@ class _DayRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final sorted = [...readings]
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
@@ -96,7 +98,7 @@ class _DayRow extends StatelessWidget {
     final tir = (inTarget / sorted.length * 100).round();
 
     final zone = glucoseZoneOf(avg, settings.lowThreshold, settings.highThreshold);
-    final dayLabel = _formatDay(dayKey);
+    final dayLabel = _formatDay(l10n, dayKey);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -138,7 +140,7 @@ class _DayRow extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'TIR $tir%',
+                l10n.historyTirLabel(tir),
                 style: TextStyle(fontSize: 11, color: context.glucoreColors.inkMuted),
               ),
             ],
@@ -148,13 +150,13 @@ class _DayRow extends StatelessWidget {
     );
   }
 
-  String _formatDay(String key) {
+  String _formatDay(AppLocalizations l10n, String key) {
     final dt = DateTime.parse(key);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(dt.year, dt.month, dt.day);
-    if (d == today) return 'Hoje';
-    if (d == today.subtract(const Duration(days: 1))) return 'Ontem';
+    if (d == today) return l10n.dateGroupTodayLabel;
+    if (d == today.subtract(const Duration(days: 1))) return l10n.dateGroupYesterdayLabel;
     return DateFormat('d MMM', 'pt_BR').format(dt);
   }
 }

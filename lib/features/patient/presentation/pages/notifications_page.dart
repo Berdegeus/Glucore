@@ -17,7 +17,7 @@ class NotificationsPage extends StatelessWidget {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Notificações')),
+      appBar: UserAppBar(title: Text(l10n.notificationsPageTitle)),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           if (state.alerts.isEmpty) {
@@ -29,7 +29,7 @@ class NotificationsPage extends StatelessWidget {
                       size: 48, color: Colors.grey.shade400),
                   const SizedBox(height: 12),
                   Text(
-                    'Sem notificações',
+                    l10n.notificationsEmptyStateTitle,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

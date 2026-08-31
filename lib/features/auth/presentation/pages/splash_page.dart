@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key, required this.onFinish});
@@ -61,7 +62,7 @@ class _SplashPageState extends State<SplashPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Monitoramento contínuo de glicose',
+              context.l10n.splashTaglineText,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.75),
                 fontSize: 13,

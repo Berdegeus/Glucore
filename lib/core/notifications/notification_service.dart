@@ -2,6 +2,8 @@ import 'dart:developer';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../l10n/l10n.dart';
+
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -9,42 +11,51 @@ class NotificationService {
   final _plugin = FlutterLocalNotificationsPlugin();
 
   static const _sensorChannelId = 'sensor_status';
-  static const _sensorChannelName = 'Status do Sensor';
 
   Future<void> init() async {
+    final l10n = currentAppLocalizations();
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     await _plugin.initialize(settings: const InitializationSettings(android: android));
     await _plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(
-          const AndroidNotificationChannel(
+          AndroidNotificationChannel(
             _sensorChannelId,
-            _sensorChannelName,
-            description: 'Alertas de conexão do sensor CGM',
+            l10n.monitoringSensorDisconnectedTitle,
+            description: l10n.notificationSensorChannelDescription,
             importance: Importance.high,
           ),
         );
     log('NotificationService initialized', name: 'Notifications');
   }
 
-  Future<void> showSensorDisconnected() => _show(
-        id: 1,
-        title: 'Sensor desconectado',
-        body: 'O sensor CGM perdeu a conexão. Toque para reconectar.',
-      );
+  Future<void> showSensorDisconnected() {
+    final l10n = currentAppLocalizations();
+    return _show(
+      id: 1,
+      title: l10n.monitoringSensorDisconnectedTitle,
+      body: l10n.notificationSensorDisconnectedBody,
+    );
+  }
 
-  Future<void> showGlucoseLow(double value) => _show(
-        id: 2,
-        title: 'Glicose baixa: ${value.toStringAsFixed(0)} mg/dL',
-        body: 'Atenção: valor abaixo do limite configurado.',
-      );
+  Future<void> showGlucoseLow(double value) {
+    final l10n = currentAppLocalizations();
+    return _show(
+      id: 2,
+      title: l10n.notificationGlucoseLowTitle(value.toStringAsFixed(0)),
+      body: l10n.notificationGlucoseLowBody,
+    );
+  }
 
-  Future<void> showGlucoseHigh(double value) => _show(
-        id: 3,
-        title: 'Glicose alta: ${value.toStringAsFixed(0)} mg/dL',
-        body: 'Atenção: valor acima do limite configurado.',
-      );
+  Future<void> showGlucoseHigh(double value) {
+    final l10n = currentAppLocalizations();
+    return _show(
+      id: 3,
+      title: l10n.notificationGlucoseHighTitle(value.toStringAsFixed(0)),
+      body: l10n.notificationGlucoseHighBody,
+    );
+  }
 
   Future<void> _show({
     required int id,
@@ -56,10 +67,10 @@ class NotificationService {
         id: id,
         title: title,
         body: body,
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _sensorChannelId,
-            _sensorChannelName,
+            currentAppLocalizations().monitoringSensorDisconnectedTitle,
             importance: Importance.high,
             priority: Priority.high,
           ),

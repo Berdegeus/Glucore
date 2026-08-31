@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../cubit/patient_cubit.dart';
 import '../pages/add_observation_sheet.dart';
 import '../pages/diary_page.dart';
@@ -28,6 +29,7 @@ class _PatientShellPageState extends State<PatientShellPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       extendBody: true,
       body: IndexedStack(index: _currentIndex, children: _pages),
@@ -49,26 +51,26 @@ class _PatientShellPageState extends State<PatientShellPage> {
           children: [
             _TabItem(
               icon: Icons.monitor_heart_outlined,
-              label: 'Monitor',
+              label: l10n.shellMonitorTabLabel,
               active: _currentIndex == 0,
               onTap: () => setState(() => _currentIndex = 0),
             ),
             _TabItem(
               icon: Icons.book_outlined,
-              label: 'Diário',
+              label: l10n.diaryLabel,
               active: _currentIndex == 1,
               onTap: () => setState(() => _currentIndex = 1),
             ),
             const Expanded(child: SizedBox()),
             _TabItem(
               icon: Icons.bar_chart_rounded,
-              label: 'Relatórios',
+              label: l10n.reportsLabel,
               active: _currentIndex == 2,
               onTap: () => setState(() => _currentIndex = 2),
             ),
             _TabItem(
               icon: Icons.person_outline,
-              label: 'Perfil',
+              label: l10n.profileTitle,
               active: _currentIndex == 3,
               onTap: () => setState(() => _currentIndex = 3),
             ),

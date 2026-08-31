@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../sensor/domain/models.dart';
 import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
@@ -12,19 +13,20 @@ class SensorChoicePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Escolher sensor')),
+      appBar: UserAppBar(title: Text(l10n.sensorChoicePageTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Selecione a marca do seu sensor CGM',
+            l10n.sensorChoiceSelectBrandMessage,
             style: TextStyle(fontSize: 14, color: context.glucoreColors.inkMuted),
           ),
           const SizedBox(height: 20),
           _BrandCard(
             name: 'Sibionics',
-            description: 'Sensor implantável de 14 dias',
+            description: l10n.sensorChoiceSibionicsDescription,
             icon: Icons.sensors,
             color: context.glucoreColors.brandBlue,
             enabled: true,
@@ -39,7 +41,7 @@ class SensorChoicePage extends StatelessWidget {
           const SizedBox(height: 12),
           _BrandCard(
             name: 'Accu-Chek SmartGuide',
-            description: 'Roche — sensor de 15 dias, pareamento com PIN',
+            description: l10n.sensorChoiceAccuChekDescription,
             icon: Icons.sensors_rounded,
             color: const Color(0xFF0B5ED7),
             enabled: true,
@@ -54,7 +56,7 @@ class SensorChoicePage extends StatelessWidget {
           const SizedBox(height: 12),
           _BrandCard(
             name: 'FreeStyle Libre 2',
-            description: 'Abbott — ativação por NFC + streaming Bluetooth',
+            description: l10n.sensorChoiceLibreDescription,
             icon: Icons.nfc_rounded,
             color: const Color(0xFF007AFF),
             enabled: true,
@@ -69,7 +71,7 @@ class SensorChoicePage extends StatelessWidget {
           const SizedBox(height: 12),
           _BrandCard(
             name: 'Dexcom',
-            description: 'Em breve',
+            description: l10n.settingsComingSoonRowValue,
             icon: Icons.bluetooth_disabled,
             color: context.glucoreColors.inkMuted,
             enabled: false,

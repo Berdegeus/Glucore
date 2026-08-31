@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
@@ -25,7 +26,7 @@ class _ReportsPageState extends State<ReportsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Relatórios')),
+      appBar: UserAppBar(title: Text(context.l10n.reportsLabel)),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           final cutoff = DateTime.now().subtract(Duration(days: _rangeDays));
@@ -197,6 +198,7 @@ class _GmiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -207,7 +209,7 @@ class _GmiCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'INDICADORES',
+            l10n.reportsIndicatorsSectionTitle,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -223,7 +225,7 @@ class _GmiCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Glicose média',
+                      l10n.reportsAverageGlucoseLabel,
                       style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
                     ),
                     const SizedBox(height: 4),
@@ -253,7 +255,7 @@ class _GmiCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'GMI estimado',
+                        l10n.reportsGmiEstimateLabel,
                         style:
                             TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
                       ),
@@ -273,7 +275,7 @@ class _GmiCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '$count leituras',
+            l10n.profileReadingsCountValue(count),
             style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
           ),
         ],
@@ -288,6 +290,7 @@ class _TirSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -298,7 +301,7 @@ class _TirSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'TEMPO NO ALVO',
+            l10n.reportsTimeInTargetSectionTitle,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -311,31 +314,31 @@ class _TirSection extends StatelessWidget {
           const SizedBox(height: 16),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneUrgentLowBg,
-            label: 'Baixo urgente',
+            label: l10n.zoneLabelUrgentLow,
             range: '< 54',
             pct: stats.urgentLowPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneLowBg,
-            label: 'Baixo',
+            label: l10n.reportsZoneLegendLowLabel,
             range: '54–70',
             pct: stats.lowPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneTargetBg,
-            label: 'No alvo',
+            label: l10n.zoneLabelTarget,
             range: '70–180',
             pct: stats.targetPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneHighBg,
-            label: 'Alto',
+            label: l10n.reportsZoneLegendHighLabel,
             range: '180–250',
             pct: stats.highPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneUrgentHighBg,
-            label: 'Alto urgente',
+            label: l10n.zoneLabelUrgentHigh,
             range: '> 250',
             pct: stats.urgentHighPct,
           ),
@@ -444,7 +447,7 @@ class _EmptyReports extends StatelessWidget {
             Icon(Icons.bar_chart_rounded, size: 48, color: context.glucoreColors.inkMuted),
             SizedBox(height: 12),
             Text(
-              'Sem leituras no período',
+              context.l10n.reportsNoReadingsMessage,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

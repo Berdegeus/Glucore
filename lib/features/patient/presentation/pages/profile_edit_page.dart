@@ -238,7 +238,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               l10n.profileBirthDateLabel,
                               required: false,
                             ),
-                            hintText: 'dd/mm/aaaa',
+                            hintText: l10n.genericDateFormatHint,
                           ),
                           validator: _validateBirthDate,
                         ),

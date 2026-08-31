@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/entities/patient_entities.dart';
 
 enum GlucoseZone { urgentLow, low, target, high, urgentHigh }
@@ -39,12 +40,12 @@ extension GlucoseZoneX on GlucoseZone {
         GlucoseZone.urgentHigh => context.glucoreColors.zoneUrgentHighInk,
       };
 
-  String get label => switch (this) {
-        GlucoseZone.urgentLow => 'Baixo urgente',
-        GlucoseZone.low => 'Abaixo do alvo',
-        GlucoseZone.target => 'No alvo',
-        GlucoseZone.high => 'Acima do alvo',
-        GlucoseZone.urgentHigh => 'Alto urgente',
+  String label(BuildContext context) => switch (this) {
+        GlucoseZone.urgentLow => context.l10n.zoneLabelUrgentLow,
+        GlucoseZone.low => context.l10n.glucoseZoneLabelLow,
+        GlucoseZone.target => context.l10n.zoneLabelTarget,
+        GlucoseZone.high => context.l10n.glucoseZoneLabelHigh,
+        GlucoseZone.urgentHigh => context.l10n.zoneLabelUrgentHigh,
       };
 
   Color chartLine(BuildContext context) => switch (this) {
@@ -134,11 +135,11 @@ class GlucoreStatusCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _ZonePill(label: zone.label),
+              _ZonePill(label: zone.label(context)),
               const Spacer(),
               if (updatedAt != null)
                 Text(
-                  _timeAgo(updatedAt!),
+                  _timeAgo(context, updatedAt!),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.75),
                     fontSize: 12,
@@ -167,12 +168,13 @@ class GlucoreStatusCard extends StatelessWidget {
         GlucoseTrend.stable => Icons.trending_flat_rounded,
       };
 
-  static String _timeAgo(DateTime dt) {
+  static String _timeAgo(BuildContext context, DateTime dt) {
+    final l10n = context.l10n;
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 2) return 'Agora';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min atrás';
-    if (diff.inHours < 24) return '${diff.inHours}h atrás';
-    return '${diff.inDays}d atrás';
+    if (diff.inMinutes < 2) return l10n.relativeTimeNowLabel;
+    if (diff.inMinutes < 60) return l10n.relativeTimeMinutesAgoLabel(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.relativeTimeHoursAgoLabel(diff.inHours);
+    return l10n.relativeTimeDaysAgoLabel(diff.inDays);
   }
 }
 
@@ -252,7 +254,7 @@ class GlucoreZoneBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(
-        zone.label,
+        zone.label(context),
         style: TextStyle(
           color: zone.ink(context),
           fontSize: 11,

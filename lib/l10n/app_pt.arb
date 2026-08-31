@@ -414,5 +414,134 @@
   "authNetworkError": "Sem conexão. Verifique sua rede.",
   "authSessionExpiredWarning": "Sua sessão expirou. Entre novamente.",
   "authServiceUnavailableError": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
-  "authServerError": "Erro no servidor. Tente novamente."
+  "authServerError": "Erro no servidor. Tente novamente.",
+  "splashTaglineText": "Monitoramento contínuo de glicose",
+  "genericDateFormatHint": "dd/mm/aaaa",
+  "notificationSensorChannelDescription": "Alertas de conexão do sensor CGM",
+  "notificationSensorDisconnectedBody": "O sensor CGM perdeu a conexão. Toque para reconectar.",
+  "notificationGlucoseLowTitle": "Glicose baixa: {value} mg/dL",
+  "@notificationGlucoseLowTitle": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "notificationGlucoseLowBody": "Atenção: valor abaixo do limite configurado.",
+  "notificationGlucoseHighTitle": "Glicose alta: {value} mg/dL",
+  "@notificationGlucoseHighTitle": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "notificationGlucoseHighBody": "Atenção: valor acima do limite configurado.",
+  "addObservationTitle": "Adicionar observação",
+  "addObservationExerciseLabel": "Exercício",
+  "addObservationExerciseComingSoonMessage": "Exercício — em breve",
+  "addObservationNoteLabel": "Nota livre",
+  "addObservationNoteComingSoonMessage": "Nota livre — em breve",
+  "mealDefaultLabel": "Refeição",
+  "diaryLabel": "Diário",
+  "diaryInsulinBolusTitle": "Insulina bolus",
+  "diaryInsulinBasalTitle": "Insulina basal",
+  "diaryInsulinDetailLabel": "{units} UI · {dayOfWeek}",
+  "@diaryInsulinDetailLabel": {
+    "placeholders": {
+      "units": {},
+      "dayOfWeek": {}
+    }
+  },
+  "diaryEmptyStateTitle": "Nenhuma observação ainda",
+  "diaryEmptyStateMessage": "Use o botão + para registrar refeições e insulina",
+  "dateGroupTodayLabel": "Hoje",
+  "dateGroupYesterdayLabel": "Ontem",
+  "historyNoReadingsMessage": "Sem leituras registradas",
+  "historyTirLabel": "TIR {tir}%",
+  "@historyTirLabel": {
+    "placeholders": {
+      "tir": {}
+    }
+  },
+  "libreNfcPageTitle": "Libre 2 — Parear sensor",
+  "libreNfcLibraryInstalledMessage": "Biblioteca instalada com sucesso",
+  "libreNfcStepLibraryTitle": "1. Biblioteca da Abbott",
+  "libreNfcLibraryInstalledDescription": "Biblioteca instalada. O aparelho consegue decodificar sensores Libre 2.",
+  "libreNfcLibraryNotInstalledDescription": "O Libre 2 exige a biblioteca de algoritmos do app LibreLink. Selecione o arquivo APK do LibreLink (arm64) para extraí-la.",
+  "libreNfcInstallingButton": "Instalando…",
+  "libreNfcSelectApkButton": "Selecionar APK do LibreLink",
+  "libreNfcStepReadTitle": "2. Leitura NFC",
+  "libreNfcScanningDescription": "Aproxime a parte de trás do telefone do sensor e aguarde a vibração.",
+  "libreNfcIdleDescription": "Toque em iniciar e aproxime o telefone do sensor Libre 2 para ativar e habilitar o streaming Bluetooth.",
+  "libreNfcResultActivated": "Sensor ativado! Aguarde ~60 minutos de aquecimento e aproxime o telefone novamente.",
+  "libreNfcResultWarmup": "Sensor em aquecimento. Aguarde o fim do período de 60 minutos.",
+  "libreNfcResultReady": "Sensor vinculado! Inicie o monitoramento abaixo.",
+  "libreNfcResultEnded": "Este sensor chegou ao fim da vida útil. Use um sensor novo.",
+  "libreNfcResultNeedsLibrary": "Instale a biblioteca da Abbott (passo 1) antes de escanear.",
+  "libreNfcResultUnsupportedLibre3": "Sensor Libre 3 detectado — apenas Libre 2 é suportado.",
+  "libreNfcResultUnsupportedUsGen2": "Sensor Libre 2 US (gen2) não é suportado nesta versão.",
+  "libreNfcResultReadError": "Falha na leitura NFC. Mantenha o telefone parado sobre o sensor e tente de novo.",
+  "libreNfcResultError": "Falha ao processar o sensor. Tente novamente.",
+  "libreNfcStopReadingButton": "Parar leitura",
+  "libreNfcStartReadingButton": "Iniciar leitura NFC",
+  "libreNfcStepSessionTitle": "3. Sensor vinculado",
+  "notificationsPageTitle": "Notificações",
+  "notificationsEmptyStateTitle": "Sem notificações",
+  "reportsLabel": "Relatórios",
+  "reportsIndicatorsSectionTitle": "INDICADORES",
+  "reportsAverageGlucoseLabel": "Glicose média",
+  "reportsGmiEstimateLabel": "GMI estimado",
+  "reportsTimeInTargetSectionTitle": "TEMPO NO ALVO",
+  "reportsZoneLegendLowLabel": "Baixo",
+  "reportsZoneLegendHighLabel": "Alto",
+  "reportsNoReadingsMessage": "Sem leituras no período",
+  "zoneLabelUrgentLow": "Baixo urgente",
+  "zoneLabelTarget": "No alvo",
+  "zoneLabelUrgentHigh": "Alto urgente",
+  "glucoseZoneLabelLow": "Abaixo do alvo",
+  "glucoseZoneLabelHigh": "Acima do alvo",
+  "sensorChoicePageTitle": "Escolher sensor",
+  "sensorChoiceSelectBrandMessage": "Selecione a marca do seu sensor CGM",
+  "sensorChoiceSibionicsDescription": "Sensor implantável de 14 dias",
+  "sensorChoiceAccuChekDescription": "Roche — sensor de 15 dias, pareamento com PIN",
+  "sensorChoiceLibreDescription": "Abbott — ativação por NFC + streaming Bluetooth",
+  "sensorLinkContinueButton": "Continuar",
+  "sensorLinkScanBoxCodeButton": "Escanear código da caixa",
+  "sensorLinkOrPasteManuallyLabel": "ou cole manualmente:",
+  "sensorLinkBarcodeFieldLabel": "Código do sensor",
+  "sensorLinkAccuChekBarcodeHint": "Código da tampa (46 caracteres)",
+  "sensorLinkAccuChekWaitingMessage": "Aguardando conexão. Confirme o pareamento quando o Android pedir o PIN.",
+  "sensorLinkBluetoothWaitingMessage": "Aguardando conexão Bluetooth…",
+  "sensorLinkSessionActiveTitle": "Sensor vinculado",
+  "sensorLinkPairingSubtitle": "Confirme o pareamento no diálogo do sistema e digite o PIN do sensor.",
+  "sensorLinkStepRemoveSensorTitle": "Retire o sensor da caixa",
+  "sensorLinkStepRemoveSensorSubtitle": "Mantenha o código de barras acessível.",
+  "sensorLinkStepScanBoxTitle": "Escaneie o código da caixa",
+  "sensorLinkStepScanBoxSubtitle": "Aponte a câmera para o código data matrix na caixa do sensor.",
+  "sensorLinkStepWaitBluetoothTitle": "Aguarde a conexão Bluetooth",
+  "sensorLinkStepWaitBluetoothSubtitle": "O sensor será detectado e vinculado automaticamente.",
+  "sensorLinkStepApplySensorTitle": "Aplique o sensor e guarde a tampa",
+  "sensorLinkStepApplySensorSubtitle": "O código data matrix fica na tampa azul do aplicador.",
+  "sensorLinkStepScanCapTitle": "Escaneie o código da tampa",
+  "sensorLinkStepScanCapSubtitle": "Aponte a câmera para o código data matrix na tampa azul.",
+  "sensorLinkStepPinTitle": "Pareie quando o Android pedir o PIN",
+  "sensorLinkStepPinSubtitle": "Digite o PIN do sensor no diálogo de pareamento do sistema.",
+  "shellMonitorTabLabel": "Monitor",
+  "relativeTimeNowLabel": "Agora",
+  "relativeTimeMinutesAgoLabel": "{minutes} min atrás",
+  "@relativeTimeMinutesAgoLabel": {
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "relativeTimeHoursAgoLabel": "{hours}h atrás",
+  "@relativeTimeHoursAgoLabel": {
+    "placeholders": {
+      "hours": {}
+    }
+  },
+  "relativeTimeDaysAgoLabel": "{days}d atrás",
+  "@relativeTimeDaysAgoLabel": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "glucoseChartWaitingMessage": "Aguardando leituras..."
 }

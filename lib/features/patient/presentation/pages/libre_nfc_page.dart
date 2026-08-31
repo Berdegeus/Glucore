@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/glucore_messenger.dart';
@@ -54,7 +55,8 @@ class _LibreNFCPageState extends State<LibreNFCPage> {
     if (ok) {
       await _refreshLibraryStatus();
       if (mounted) {
-        GlucoreMessenger.success(context, 'Biblioteca instalada com sucesso');
+        GlucoreMessenger.success(
+            context, context.l10n.libreNfcLibraryInstalledMessage);
       }
     }
   }
@@ -75,7 +77,7 @@ class _LibreNFCPageState extends State<LibreNFCPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Libre 2 — Parear sensor')),
+      appBar: AppBar(title: Text(context.l10n.libreNfcPageTitle)),
       body: BlocConsumer<SensorCubit, SensorUiState>(
         listenWhen: (prev, next) => prev.nfcInfo != next.nfcInfo,
         listener: (context, state) {
@@ -139,6 +141,7 @@ class _LibraryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final installed = status?.installed ?? false;
     return Card(
       child: Padding(
@@ -154,7 +157,7 @@ class _LibraryCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '1. Biblioteca da Abbott',
+                  l10n.libreNfcStepLibraryTitle,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -162,9 +165,8 @@ class _LibraryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               installed
-                  ? 'Biblioteca instalada. O aparelho consegue decodificar sensores Libre 2.'
-                  : 'O Libre 2 exige a biblioteca de algoritmos do app LibreLink. '
-                      'Selecione o arquivo APK do LibreLink (arm64) para extraí-la.',
+                  ? l10n.libreNfcLibraryInstalledDescription
+                  : l10n.libreNfcLibraryNotInstalledDescription,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             if (!installed) ...[
@@ -179,7 +181,9 @@ class _LibraryCard extends StatelessWidget {
                       )
                     : const Icon(Icons.file_open_outlined),
                 label: Text(
-                  installing ? 'Instalando…' : 'Selecionar APK do LibreLink',
+                  installing
+                      ? l10n.libreNfcInstallingButton
+                      : l10n.libreNfcSelectApkButton,
                 ),
               ),
             ],
@@ -203,28 +207,23 @@ class _NfcCard extends StatelessWidget {
   final SensorNfcInfo? nfcInfo;
   final VoidCallback onToggleScan;
 
-  String? get _resultText => switch (nfcInfo?.result) {
-        'activated' =>
-          'Sensor ativado! Aguarde ~60 minutos de aquecimento e aproxime o telefone novamente.',
-        'warmup' =>
-          'Sensor em aquecimento. Aguarde o fim do período de 60 minutos.',
-        'ready' || 'streaming' =>
-          'Sensor vinculado! Inicie o monitoramento abaixo.',
-        'ended' => 'Este sensor chegou ao fim da vida útil. Use um sensor novo.',
-        'needsLibrary' =>
-          'Instale a biblioteca da Abbott (passo 1) antes de escanear.',
-        'unsupportedLibre3' =>
-          'Sensor Libre 3 detectado — apenas Libre 2 é suportado.',
-        'unsupportedUsGen2' =>
-          'Sensor Libre 2 US (gen2) não é suportado nesta versão.',
-        'readError' =>
-          'Falha na leitura NFC. Mantenha o telefone parado sobre o sensor e tente de novo.',
-        'error' => 'Falha ao processar o sensor. Tente novamente.',
+  String? _resultText(AppLocalizations l10n) => switch (nfcInfo?.result) {
+        'activated' => l10n.libreNfcResultActivated,
+        'warmup' => l10n.libreNfcResultWarmup,
+        'ready' || 'streaming' => l10n.libreNfcResultReady,
+        'ended' => l10n.libreNfcResultEnded,
+        'needsLibrary' => l10n.libreNfcResultNeedsLibrary,
+        'unsupportedLibre3' => l10n.libreNfcResultUnsupportedLibre3,
+        'unsupportedUsGen2' => l10n.libreNfcResultUnsupportedUsGen2,
+        'readError' => l10n.libreNfcResultReadError,
+        'error' => l10n.libreNfcResultError,
         _ => null,
       };
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final resultText = _resultText(l10n);
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Card(
@@ -241,7 +240,7 @@ class _NfcCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '2. Leitura NFC',
+                    l10n.libreNfcStepReadTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ],
@@ -249,15 +248,14 @@ class _NfcCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 scanning
-                    ? 'Aproxime a parte de trás do telefone do sensor e aguarde a vibração.'
-                    : 'Toque em iniciar e aproxime o telefone do sensor Libre 2 '
-                        'para ativar e habilitar o streaming Bluetooth.',
+                    ? l10n.libreNfcScanningDescription
+                    : l10n.libreNfcIdleDescription,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
-              if (_resultText != null) ...[
+              if (resultText != null) ...[
                 const SizedBox(height: 10),
                 Text(
-                  _resultText!,
+                  resultText,
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
@@ -269,7 +267,9 @@ class _NfcCard extends StatelessWidget {
                 onPressed: enabled ? onToggleScan : null,
                 icon: Icon(scanning ? Icons.stop : Icons.nfc_rounded),
                 label: Text(
-                  scanning ? 'Parar leitura' : 'Iniciar leitura NFC',
+                  scanning
+                      ? l10n.libreNfcStopReadingButton
+                      : l10n.libreNfcStartReadingButton,
                 ),
               ),
             ],
@@ -287,6 +287,7 @@ class _SessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final monitoring = state.status == SensorConnectionStatus.scanning ||
         state.status == SensorConnectionStatus.connecting ||
         state.status == SensorConnectionStatus.connected ||
@@ -298,7 +299,7 @@ class _SessionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '3. Sensor vinculado',
+              l10n.libreNfcStepSessionTitle,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
@@ -325,14 +326,14 @@ class _SessionCard extends StatelessWidget {
                 onPressed: () =>
                     context.read<SensorCubit>().startMonitoring(),
                 icon: const Icon(Icons.bluetooth_searching),
-                label: const Text('Iniciar monitoramento'),
+                label: Text(l10n.sensorPageStartMonitoringButton),
               )
             else
               OutlinedButton.icon(
                 onPressed: () =>
                     context.read<SensorCubit>().stopMonitoring(),
                 icon: const Icon(Icons.bluetooth_disabled),
-                label: const Text('Parar monitoramento'),
+                label: Text(l10n.sensorPageStopMonitoringButton),
               ),
           ],
         ),

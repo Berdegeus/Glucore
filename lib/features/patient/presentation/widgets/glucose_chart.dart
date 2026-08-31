@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/entities/patient_entities.dart';
 
 class GlucoseChart extends StatelessWidget {
@@ -46,7 +47,7 @@ class GlucoseChart extends StatelessWidget {
         height: 180,
         child: Center(
           child: Text(
-            'Aguardando leituras...',
+            context.l10n.glucoseChartWaitingMessage,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey,
                 ),
