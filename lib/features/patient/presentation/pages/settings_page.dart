@@ -111,7 +111,13 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              // Settings (and this dialog) sit on pushed routes above
+              // AuthGate's route. Swapping AuthCubit's state only changes
+              // what AuthGate renders underneath — without popping back to
+              // it, the user stays stuck on this screen instead of seeing
+              // the login page. Same pattern as `_handleSessionExpired` in
+              // app.dart.
+              Navigator.of(context).popUntil((route) => route.isFirst);
               context.read<AuthCubit>().logout();
             },
             style: TextButton.styleFrom(foregroundColor: context.glucoreColors.zoneLowBg),
