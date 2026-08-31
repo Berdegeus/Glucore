@@ -14,6 +14,7 @@ export function createSessionsRouter(
 
   router.post('/login', strictLimiter, asyncHandler(controller.login));
   router.get('/status', verifyJwt, controller.status);
+  router.post('/refresh', verifyJwt, asyncHandler(controller.refresh));
 
   return router;
 }

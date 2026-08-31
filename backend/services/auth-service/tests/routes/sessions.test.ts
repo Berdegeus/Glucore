@@ -111,6 +111,57 @@ describe('POST /auth/login', () => {
   });
 });
 
+describe('POST /auth/refresh', () => {
+  it('answers 401 without a token', async () => {
+    expect((await request(app).post('/auth/refresh')).status).toBe(401);
+  });
+
+  it('mints a fresh token for a PATIENT regardless of session state', async () => {
+    const res = await request(app)
+      .post('/auth/refresh')
+      .set({ Authorization: `Bearer ${user.token}` });
+    expect(res.status).toBe(200);
+    expect(verifyAccessToken(res.body.token as string, TEST_JWT_SECRET)).toEqual({
+      sub: user.userId,
+      role: 'PATIENT',
+    });
+  });
+
+  it('refreshes a HEALTH_PROFESSIONAL with no revoked session', async () => {
+    const staff = await prisma.user.create({
+      data: {
+        email: `staff.${Date.now()}@example.com`,
+        fullName: 'Profissional',
+        role: 'HEALTH_PROFESSIONAL',
+        authCredential: { create: { passwordHash: 'irrelevant' } },
+        authSessions: { create: { expiresAt: new Date(Date.now() + 3_600_000), isRevoked: false } },
+      },
+    });
+    const token = signAccessToken({ sub: staff.id, role: 'HEALTH_PROFESSIONAL' }, TEST_JWT_SECRET);
+
+    const res = await request(app).post('/auth/refresh').set({ Authorization: `Bearer ${token}` });
+    expect(res.status).toBe(200);
+    expect(typeof res.body.token).toBe('string');
+  });
+
+  it('answers 401 TOKEN_INVALID for a HEALTH_PROFESSIONAL with a revoked session', async () => {
+    const staff = await prisma.user.create({
+      data: {
+        email: `revoked.${Date.now()}@example.com`,
+        fullName: 'Profissional Revogado',
+        role: 'HEALTH_PROFESSIONAL',
+        authCredential: { create: { passwordHash: 'irrelevant' } },
+        authSessions: { create: { expiresAt: new Date(Date.now() + 3_600_000), isRevoked: true } },
+      },
+    });
+    const token = signAccessToken({ sub: staff.id, role: 'HEALTH_PROFESSIONAL' }, TEST_JWT_SECRET);
+
+    const res = await request(app).post('/auth/refresh').set({ Authorization: `Bearer ${token}` });
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Session revoked', code: 'TOKEN_INVALID' });
+  });
+});
+
 describe('GET /auth/status', () => {
   it('reports the authenticated user', async () => {
     const res = await request(app).get('/auth/status').set({ Authorization: `Bearer ${user.token}` });

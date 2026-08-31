@@ -11,6 +11,12 @@ export interface SessionRepository {
   /** Stamps the login and opens a session in one transaction. */
   recordLogin(userId: string, userAgent: string | null, expiresAt: Date): Promise<void>;
   open(userId: string, userAgent: string | null, expiresAt: Date): Promise<void>;
+  /**
+   * Whether the user's most recent session has been revoked. `false` when the
+   * user has no session at all — there is nothing to revoke yet, so refresh
+   * is not the thing that should reject that case.
+   */
+  isRevoked(userId: string): Promise<boolean>;
 }
 
 export class PrismaSessionRepository implements SessionRepository {
@@ -34,5 +40,14 @@ export class PrismaSessionRepository implements SessionRepository {
 
   async open(userId: string, userAgent: string | null, expiresAt: Date): Promise<void> {
     await this.prisma.authSession.create({ data: { userId, expiresAt, userAgent } });
+  }
+
+  async isRevoked(userId: string): Promise<boolean> {
+    const latest = await this.prisma.authSession.findFirst({
+      where: { userId },
+      orderBy: { issuedAt: 'desc' },
+      select: { isRevoked: true },
+    });
+    return latest?.isRevoked ?? false;
   }
 }

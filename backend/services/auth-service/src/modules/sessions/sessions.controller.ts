@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import { auditRequestContext, type AuthRequest } from '@glucore/shared';
+import { auditRequestContext, type AuthRequest, type UserRoleName } from '@glucore/shared';
 
 import type { SessionsService } from './sessions.service';
 import { parseLogin } from './sessions.schema';
@@ -18,5 +18,9 @@ export class SessionsController {
    */
   status = (req: AuthRequest, res: Response): void => {
     res.json({ loggedIn: true, userId: req.userId });
+  };
+
+  refresh = async (req: AuthRequest, res: Response): Promise<void> => {
+    res.json(await this.service.refresh(req.userId as string, req.userRole as UserRoleName));
   };
 }

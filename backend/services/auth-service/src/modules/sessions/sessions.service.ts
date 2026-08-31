@@ -61,6 +61,22 @@ export class SessionsService {
   }
 
   /**
+   * Mints a fresh token for an already-authenticated caller.
+   *
+   * PATIENT never checks `isRevoked` — there is no revocation path for it and
+   * the mobile app is expected to stay signed in for months regardless. The
+   * web roles do: their whole trade for a one-hour token is that a revoked
+   * session stops working within the hour instead of the token's full
+   * lifetime, and refresh is the only place that trade gets enforced.
+   */
+  async refresh(userId: string, role: UserRoleName): Promise<{ token: string }> {
+    if (role !== 'PATIENT' && (await this.sessions.isRevoked(userId))) {
+      throw new UnauthorizedError('Session revoked', 'TOKEN_INVALID');
+    }
+    return { token: signAccessToken({ sub: userId, role }, getJwtSecret()) };
+  }
+
+  /**
    * The session row expires with the token it was issued alongside, so a
    * shorter-lived web token does not leave a month-long row behind.
    */
