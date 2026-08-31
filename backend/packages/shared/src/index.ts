@@ -1,3 +1,11 @@
+export {
+  isUserRoleName,
+  USER_ROLE_NAMES,
+  type AccessTokenClaims,
+  type UserRoleName,
+} from './auth/claims';
+export { accessTokenTtlSeconds, signAccessToken, verifyAccessToken } from './auth/jwt';
+export { createVerifyJwt, requireRole, type AuthRequest } from './auth/middleware';
 export { asyncHandler } from './http/asyncHandler';
 export { optionalText } from './util/optionalText';
 export { isUuid, optionalUuid, requireUuid } from './util/uuid';
