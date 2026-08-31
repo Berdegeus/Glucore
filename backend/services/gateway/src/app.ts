@@ -17,6 +17,7 @@ import { createMeRouter } from './modules/me/me.routes';
 import { RegisterController } from './modules/register/register.controller';
 import { createRegisterRouter } from './modules/register/register.routes';
 import { createProxyRoute } from './routes/routingTable';
+import { registerLimiter, strictAuthLimiter } from './middleware/rateLimiters';
 import { upstreamClassifier } from './middleware/upstreamClassifier';
 
 export interface BuildAppOptions {
@@ -65,8 +66,17 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   // /api/v1/auth/register falls through to the proxy below unchanged.
   app.use(
     '/api/v1/auth/register',
-    createRegisterRouter(new RegisterController(container.registerSaga)),
+    createRegisterRouter(new RegisterController(container.registerSaga), registerLimiter()),
   );
+
+  // Rate limiting lives here now (phase 4.4), not in auth-service: `req.ip`
+  // downstream is the gateway's own address, so a limiter there would count
+  // all traffic as one client. Mounted on the specific paths before the
+  // generic proxy below, which still forwards the request afterwards.
+  const strict = strictAuthLimiter();
+  app.use('/api/v1/auth/login', strict);
+  app.use('/api/v1/auth/forgot-password', strict);
+  app.use('/api/v1/auth/reset-password', strict);
 
   // Public: login/forgot-password/reset-password/refresh/status/profile have
   // no internal-token concern — they hit the same public /auth/* routes as

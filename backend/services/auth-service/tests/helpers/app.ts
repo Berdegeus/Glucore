@@ -32,20 +32,16 @@ export interface TestApp {
 }
 
 /**
- * Builds the app the way production does, except for two injected decisions:
- * a recording mailer, and rate limiting off.
- *
- * Rate limiting has to be off because supertest drives every request from the
- * same loopback address — a shared per-IP counter would exhaust itself a few
- * cases in and turn the rest of the suite into 429s. It is off by construction
- * here rather than by the application asking whether NODE_ENV is 'test'.
+ * Builds the app the way production does, except for one injected decision:
+ * a recording mailer. Rate limiting lives in the gateway now (phase 4.4), not
+ * in this service, so there is nothing left here to turn off for the suite.
  *
  * The bcrypt work factor comes from BCRYPT_ROUNDS, which vitest.config.ts sets
- * to 4 for the same reason: a realistic factor costs ~300 ms per password and
- * would dominate the run.
+ * to 4 for the same reason a limiter would have needed disabling: a realistic
+ * factor costs ~300 ms per password and would dominate the run.
  */
 export function buildTestApp(): TestApp {
   const mailer = new RecordingMailer();
-  const app = buildApp({ container: createContainer(loadEnv(), { mailer, rateLimiting: false }) });
+  const app = buildApp({ container: createContainer(loadEnv(), { mailer }) });
   return { app, mailer };
 }

@@ -1,17 +1,14 @@
 import { Router } from 'express';
-import type { RateLimitRequestHandler } from 'express-rate-limit';
 import { asyncHandler } from '@glucore/shared';
 
 import type { PasswordController } from './password.controller';
 
-export function createPasswordRouter(
-  controller: PasswordController,
-  strictLimiter: RateLimitRequestHandler,
-): Router {
+/** Rate limiting moved to the gateway (phase 4.4) — the counter is per-client there. */
+export function createPasswordRouter(controller: PasswordController): Router {
   const router = Router();
 
-  router.post('/forgot-password', strictLimiter, asyncHandler(controller.forgotPassword));
-  router.post('/reset-password', strictLimiter, asyncHandler(controller.resetPassword));
+  router.post('/forgot-password', asyncHandler(controller.forgotPassword));
+  router.post('/reset-password', asyncHandler(controller.resetPassword));
 
   return router;
 }
