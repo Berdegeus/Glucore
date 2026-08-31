@@ -1,0 +1,13 @@
+{
+  // Typechecks the test suite, which the build project cannot: it emits with
+  // `composite: true` and a rootDir of src/, so tests/ is outside it.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -7,16 +7,17 @@
     "services/*"
   ],
   "scripts": {
-    "build": "tsc -b packages/shared services/glucose-service services/auth-service && npm run typecheck:tests",
+    "build": "tsc -b packages/shared services/glucose-service services/auth-service services/gateway && npm run typecheck:tests",
     "dev": "npm run dev -w @glucore/glucose-service",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "migrate:dev": "npm run migrate:dev -w @glucore/glucose-service && npm run migrate:dev -w @glucore/auth-service",
     "migrate:deploy": "npm run migrate:deploy -w @glucore/glucose-service && npm run migrate:deploy -w @glucore/auth-service",
-    "typecheck:tests": "tsc -p services/glucose-service/tsconfig.test.json && tsc -p services/auth-service/tsconfig.test.json",
+    "typecheck:tests": "tsc -p services/glucose-service/tsconfig.test.json && tsc -p services/auth-service/tsconfig.test.json && tsc -p services/gateway/tsconfig.test.json",
     "dev:glucose": "npm run dev -w @glucore/glucose-service",
-    "dev:auth": "npm run dev -w @glucore/auth-service"
+    "dev:auth": "npm run dev -w @glucore/auth-service",
+    "dev:gateway": "npm run dev -w @glucore/gateway"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
