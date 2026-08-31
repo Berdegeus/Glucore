@@ -1,4 +1,4 @@
-import { type PrismaClient } from '../../lib/prisma';
+import { Prisma, type PrismaClient } from '../../lib/prisma';
 
 import type { AccountSource } from './accounts.mapper';
 
@@ -39,6 +39,8 @@ export interface AccountRepository {
     account: UpdateAccountData,
     passwordHash: string | undefined,
   ): Promise<void>;
+  /** Idempotent: deleting an id that no longer exists is a success, not a 404. */
+  delete(id: string): Promise<void>;
 }
 
 const ACCOUNT_FIELDS = {
@@ -121,5 +123,20 @@ export class PrismaAccountRepository implements AccountRepository {
     }
 
     if (operations.length > 0) await this.prisma.$transaction(operations);
+  }
+
+  /**
+   * Backs both the saga's compensation and `DELETE /account`. Both callers
+   * may retry after a partial failure, so a second delete against an id that
+   * is already gone must not surface as an error — `AuditLog.userId` survives
+   * via `ON DELETE SET NULL`, already set up in the schema.
+   */
+  async delete(id: string): Promise<void> {
+    try {
+      await this.prisma.user.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') return;
+      throw error;
+    }
   }
 }

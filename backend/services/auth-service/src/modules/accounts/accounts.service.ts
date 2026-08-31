@@ -134,6 +134,14 @@ export class AccountsService {
     });
   }
 
+  /**
+   * Used by the gateway's registration saga (compensation) and by
+   * `DELETE /account`. Idempotent by construction — see the repository.
+   */
+  async deleteAccount(userId: string): Promise<void> {
+    await this.accounts.delete(userId);
+  }
+
   private async assertCurrentPassword(
     storedHash: string | null,
     supplied: string | undefined,

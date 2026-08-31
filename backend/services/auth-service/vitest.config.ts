@@ -2,7 +2,12 @@ import path from 'node:path';
 
 import { defineConfig } from 'vitest/config';
 
-import { TEST_BCRYPT_ROUNDS, TEST_DATABASE_URL, TEST_JWT_SECRET } from './tests/helpers/testEnv';
+import {
+  TEST_BCRYPT_ROUNDS,
+  TEST_DATABASE_URL,
+  TEST_INTERNAL_JWT_SECRET,
+  TEST_JWT_SECRET,
+} from './tests/helpers/testEnv';
 
 /**
  * Project-level config for auth-service.
@@ -31,6 +36,7 @@ export default defineConfig({
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
       JWT_SECRET: TEST_JWT_SECRET,
+      INTERNAL_JWT_SECRET: TEST_INTERNAL_JWT_SECRET,
       BCRYPT_ROUNDS: String(TEST_BCRYPT_ROUNDS),
       // No SMTP host: the container builds the console mailer, so the reset
       // flow is deterministic and never reaches out to a relay.

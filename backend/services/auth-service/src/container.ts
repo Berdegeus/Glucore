@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit';
+import { createRequireInternalAuth } from '@glucore/shared';
 
 import { loadEnv, type Env } from './lib/env';
 import { createMailer, type Mailer } from './lib/mailer';
@@ -9,6 +10,8 @@ import { AccountsController } from './modules/accounts/accounts.controller';
 import { PrismaAccountRepository } from './modules/accounts/accounts.repository';
 import { createAccountsRouter } from './modules/accounts/accounts.routes';
 import { AccountsService } from './modules/accounts/accounts.service';
+import { InternalAccountsController } from './modules/internal/internal.controller';
+import { createInternalAccountsRouter } from './modules/internal/internal.routes';
 import { PasswordController } from './modules/password/password.controller';
 import { PrismaPasswordRepository } from './modules/password/password.repository';
 import { createPasswordRouter } from './modules/password/password.routes';
@@ -34,6 +37,7 @@ import { SessionsService } from './modules/sessions/sessions.service';
  */
 export interface Container {
   authRouter: Router;
+  internalRouter: Router;
 }
 
 export interface ContainerOverrides {
@@ -91,5 +95,11 @@ export function createContainer(env: Env = loadEnv(), overrides: ContainerOverri
   authRouter.use(createSessionsRouter(new SessionsController(sessions), strict));
   authRouter.use(createPasswordRouter(new PasswordController(passwords), strict));
 
-  return { authRouter };
+  const requireInternalAuth: RequestHandler = createRequireInternalAuth(() => env.internalJwtSecret);
+  const internalRouter = createInternalAccountsRouter(
+    new InternalAccountsController(accounts),
+    requireInternalAuth,
+  );
+
+  return { authRouter, internalRouter };
 }

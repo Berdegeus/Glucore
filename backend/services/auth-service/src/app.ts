@@ -44,6 +44,7 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   if (requestLogging) app.use(morgan('dev'));
 
   app.use('/auth', container.authRouter);
+  app.use('/internal', container.internalRouter);
 
   // Classifies known failures into `{ error, code }`; the handler below is the
   // last-resort net for anything it delegates (response already started).

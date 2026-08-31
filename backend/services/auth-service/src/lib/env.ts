@@ -24,6 +24,10 @@ const JWT_SECRET_HINT =
   'Set it in services/auth-service/.env (e.g. JWT_SECRET=$(openssl rand -hex 32)) before starting the server. ' +
   'It must be the same secret glucose-service verifies with, or every token this service mints is rejected there.';
 
+const INTERNAL_JWT_SECRET_HINT =
+  'Set it in services/auth-service/.env (e.g. INTERNAL_JWT_SECRET=$(openssl rand -hex 32)) before starting the ' +
+  'server. It must be distinct from JWT_SECRET and shared with the gateway, which is the only thing that mints it.';
+
 function required(name: string, hint: string): string {
   const value = process.env[name];
   if (!value || value.trim().length === 0) {
@@ -41,6 +45,7 @@ export interface SmtpConfig {
 
 export interface Env {
   jwtSecret: string;
+  internalJwtSecret: string;
   port: number;
   corsOrigins: string[];
   bcryptRounds: number;
@@ -127,6 +132,7 @@ function readSmtp(): SmtpConfig | null {
 export function loadEnv(): Env {
   return {
     jwtSecret: required('JWT_SECRET', JWT_SECRET_HINT),
+    internalJwtSecret: required('INTERNAL_JWT_SECRET', INTERNAL_JWT_SECRET_HINT),
     port: readPort(),
     corsOrigins: readCorsOrigins(),
     bcryptRounds: readBcryptRounds(),
@@ -141,4 +147,9 @@ export function loadEnv(): Env {
  */
 export function getJwtSecret(): string {
   return required('JWT_SECRET', JWT_SECRET_HINT);
+}
+
+/** Resolved on first use, same reasoning as `getJwtSecret`. */
+export function getInternalJwtSecret(): string {
+  return required('INTERNAL_JWT_SECRET', INTERNAL_JWT_SECRET_HINT);
 }

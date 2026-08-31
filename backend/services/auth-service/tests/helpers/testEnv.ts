@@ -25,5 +25,10 @@ export const TEST_DATABASE_URL =
 // cross-service request failing with 401.
 export const TEST_JWT_SECRET = 'test-secret-for-integration-tests';
 
+// Distinct from TEST_JWT_SECRET, mirroring the production split. Shared with
+// glucose-service's suite so a gateway-signed internal token in a test can
+// verify against either service.
+export const TEST_INTERNAL_JWT_SECRET = 'test-internal-secret-for-integration-tests';
+
 /** Cheapest work factor bcrypt accepts. See lib/passwordHasher.ts. */
 export const TEST_BCRYPT_ROUNDS = 4;
