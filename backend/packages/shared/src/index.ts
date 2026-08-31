@@ -42,3 +42,4 @@ export {
   type ErrorClassifier,
   type ErrorContract,
 } from './errors/errorHandler';
+export { createHealthRouter, type HealthCheckable } from './health/healthRouter';

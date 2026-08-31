@@ -1,9 +1,11 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import { createHealthRouter, type HealthCheckable } from '@glucore/shared';
 
 import { createContainer, type Container } from './container';
 import { prismaErrorHandler } from './middleware/prismaError';
+import { prisma as defaultPrisma } from './lib/prisma';
 
 export interface BuildAppOptions {
   /** Allowed CORS origins. Empty means "permissive", for local development. */
@@ -16,6 +18,8 @@ export interface BuildAppOptions {
    * passes in-memory repositories or a cheaper password hasher.
    */
   container?: Container;
+  /** Backs `/health/ready`. Defaults to the production Prisma singleton. */
+  prisma?: HealthCheckable;
 }
 
 /**
@@ -23,9 +27,17 @@ export interface BuildAppOptions {
  * drive the real routing and middleware stack in-process.
  */
 export function buildApp(options: BuildAppOptions = {}): Express {
-  const { corsOrigins = [], requestLogging = false, container = createContainer() } = options;
+  const {
+    corsOrigins = [],
+    requestLogging = false,
+    container = createContainer(),
+    prisma = defaultPrisma,
+  } = options;
 
   const app = express();
+  app.set('trust proxy', 1);
+
+  app.use('/health', createHealthRouter(prisma));
 
   app.use(corsOrigins.length > 0 ? cors({ origin: corsOrigins }) : cors());
   app.use(express.json());

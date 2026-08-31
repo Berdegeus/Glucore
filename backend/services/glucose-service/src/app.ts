@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import { createHealthRouter, type HealthCheckable } from '@glucore/shared';
 import { createAlertsRouter } from './modules/alerts/alerts.routes';
 import { createCarbsRouter } from './modules/carbs/carbs.routes';
 import { createInsulinRouter } from './modules/insulin/insulin.routes';
@@ -8,6 +9,7 @@ import { createReadingsRouter } from './modules/readings/readings.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
 import { prismaErrorHandler } from './middleware/prismaError';
 import { createContainer, type Container } from './container';
+import { prisma as defaultPrisma } from './lib/prisma';
 
 export interface BuildAppOptions {
   /** Allowed CORS origins. Empty means "permissive", for local development. */
@@ -20,6 +22,8 @@ export interface BuildAppOptions {
    * in-memory repositories.
    */
   container?: Container;
+  /** Backs `/health/ready`. Defaults to the production Prisma singleton. */
+  prisma?: HealthCheckable;
 }
 
 /**
@@ -31,9 +35,17 @@ export interface BuildAppOptions {
  * between parallel test files.
  */
 export function buildApp(options: BuildAppOptions = {}): Express {
-  const { corsOrigins = [], requestLogging = false, container = createContainer() } = options;
+  const {
+    corsOrigins = [],
+    requestLogging = false,
+    container = createContainer(),
+    prisma = defaultPrisma,
+  } = options;
 
   const app = express();
+  app.set('trust proxy', 1);
+
+  app.use('/health', createHealthRouter(prisma));
 
   app.use(corsOrigins.length > 0 ? cors({ origin: corsOrigins }) : cors());
   app.use(express.json());
