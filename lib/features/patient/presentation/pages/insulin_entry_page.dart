@@ -5,7 +5,7 @@ import 'package:glucore/l10n/localized_values.dart';
 import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
 
@@ -131,7 +131,7 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
                     return;
                   }
                   await context.read<PatientCubit>().addInsulinEntry(
-                    InsulinEntry(
+                    InsulinEntry.create(
                       units: double.parse(_unitsController.text),
                       type: _selectedType,
                       time: _selectedTime,

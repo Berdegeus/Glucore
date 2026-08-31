@@ -79,11 +79,18 @@ jobs:
           --health-retries 5
     env:
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/glucore_test?schema=public
+      TEST_AUTH_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/glucore_auth_test?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # A database per service, under test too. The service container creates
+      # only the one named in POSTGRES_DB; the second is created here. Pointing
+      # both suites at one database would let a fixture in either service mask a
+      # missing table in the other, which is precisely the coupling the split
+      # exists to remove.
+      - run: PGPASSWORD=postgres createdb -h localhost -U postgres glucore_auth_test
       - run: npm ci
       # `tsc -b` over the workspace projects, not `tsc --noEmit`: the monorepo
       # builds with project references (`composite: true`), which --noEmit rejects.

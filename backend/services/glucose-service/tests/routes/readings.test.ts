@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app';
-import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } from '../helpers/db';
+import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
 
 /**
  * Characterization tests for GET/POST/DELETE /readings.
@@ -15,7 +15,7 @@ import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } fr
  */
 
 let app: Express;
-let user: RegisteredUser;
+let user: SignedInPatient;
 
 beforeAll(() => {
   app = buildApp();
@@ -23,7 +23,7 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await truncateAll();
-  user = await registerUser(app);
+  user = await signedInPatient();
 });
 
 afterAll(async () => {
@@ -105,7 +105,7 @@ describe('GET /readings', () => {
   });
 
   it('never returns another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await prisma.glucoseReading.create({
       data: {
         patientId: other.userId,
@@ -200,7 +200,7 @@ describe('POST /readings', () => {
 
 describe('DELETE /readings', () => {
   it('removes only the caller readings', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await prisma.glucoseReading.createMany({
       data: [
         { patientId: user.userId, recordedAt: new Date('2026-08-20T10:00:00Z'), valueMgDl: 100 },

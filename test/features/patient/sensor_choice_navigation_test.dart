@@ -9,11 +9,13 @@ import 'package:glucore/core/api/auth_token_store.dart';
 import 'package:glucore/features/auth/data/datasources/account_service.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
-import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/domain/usecases/patient_usecases.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/libre_nfc_page.dart';
 import 'package:glucore/features/patient/presentation/pages/sensor_choice_page.dart';
 import 'package:glucore/features/patient/presentation/pages/sensor_link_page.dart';
@@ -105,7 +107,7 @@ class _FakeSensorCubit extends SensorCubit {
 
 class _FakePatientCubit extends PatientCubit {
   _FakePatientCubit._(PatientRepository repository)
-      : super(repository: repository);
+      : super(useCases: PatientUseCases.fromRepository(repository));
 
   factory _FakePatientCubit() {
     final local = LocalPatientDataSource();
@@ -116,7 +118,7 @@ class _FakePatientCubit extends PatientCubit {
       connectivityChanges: const Stream.empty(),
     );
     return _FakePatientCubit._(
-      PatientRepository(
+      PatientRepositoryImpl(
         local: local,
         remote: remote,
         syncService: sync,
@@ -137,9 +139,6 @@ class _FakeSensorRepository implements SensorRepository {
   Future<SensorSession?> registerSensor(String barcode,
           {SensorBrand brand = SensorBrand.sibionics}) async =>
       null;
-
-  @override
-  Future<void> submitTransmitter(String transmitterBarcode) async {}
 
   @override
   Future<void> startMonitoring() async {}
@@ -167,7 +166,7 @@ class _FakeSensorRepository implements SensorRepository {
   Future<void> stopNfcScan() async {}
 }
 
-class _FakePatientRemote implements PatientDataSource {
+class _FakePatientRemote implements PatientRemoteApi {
   @override
   Future<PatientSnapshot> load() async =>
       throw UnimplementedError('not used in this test');
@@ -186,6 +185,24 @@ class _FakePatientRemote implements PatientDataSource {
 
   @override
   Future<void> saveAlertSettings(AlertSettingsModel settings) async {}
+
+  @override
+  Future<void> upsertCarb(CarbEntry entry) async {}
+
+  @override
+  Future<void> deleteCarb(String id) async {}
+
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) async {}
+
+  @override
+  Future<void> deleteInsulin(String id) async {}
+
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) async {}
+
+  @override
+  Future<void> deleteAlert(String id) async {}
 }
 
 // `identityCubit.load()` is never called in this test — it only checks that

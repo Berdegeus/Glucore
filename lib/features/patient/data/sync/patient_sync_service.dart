@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../core/api/auth_token_store.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../datasources/patient_datasource.dart';
 import '../datasources/patient_local_datasource.dart';
+import 'pending_op.dart';
 
-/// Empurra as coleções pendentes do banco local para o backend.
+/// Empurra o que está pendente no banco local para o backend.
 ///
 /// - `schedulePush()`: debounce (~2 s) — várias escritas seguidas viram um
 ///   único push. Fire-and-forget; falha de rede é silenciosa (fica pendente).
@@ -14,12 +17,13 @@ import '../datasources/patient_local_datasource.dart';
 ///   retorna `false` se sobrou pendência após os retries.
 /// - Reagenda automaticamente quando a conectividade volta.
 ///
-/// O push usa as chamadas replace-all existentes do backend (coleção inteira);
-/// API unitária por item chega na Fase 4 (§P2/§P4).
+/// Dois caminhos convivem: as mutações de diário (carbs, insulin, alerts) saem
+/// como operações unitárias, drenadas do op-log em ordem de `seq`; leituras e
+/// thresholds continuam no replace-all de coleção com debounce (SYNC-10).
 class PatientSyncService {
   PatientSyncService({
     required LocalPatientDataSource local,
-    required PatientDataSource remote,
+    required PatientRemoteApi remote,
     AuthTokenStore? tokenStore,
     Stream<List<ConnectivityResult>>? connectivityChanges,
     Duration debounce = const Duration(seconds: 2),
@@ -43,10 +47,14 @@ class PatientSyncService {
   }
 
   final LocalPatientDataSource _local;
-  final PatientDataSource _remote;
+  final PatientRemoteApi _remote;
   final AuthTokenStore? _tokenStore;
   final Duration _debounce;
   final List<Duration> _retryDelays;
+
+  /// Quantas operações são lidas da fila por vez; a drenagem segue enquanto
+  /// vier lote cheio.
+  static const _opBatchSize = 100;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _debounceTimer;
@@ -82,6 +90,10 @@ class PatientSyncService {
       try {
         await _pushPending();
         return true;
+      } on PatientUnauthorizedException {
+        // Sessão recusada: repetir daria o mesmo 401. Para o push e deixa a
+        // fila intacta para quando a sessão voltar.
+        return false;
       } catch (_) {
         if (attempt < _retryDelays.length) {
           await Future<void>.delayed(_retryDelays[attempt]);
@@ -102,31 +114,90 @@ class PatientSyncService {
         return;
       }
     }
+    await _drainOps();
+
     final pending = await _local.pendingCollections();
-    if (pending.isEmpty) {
+    final pushesReadings = pending.contains(PatientCollection.readings);
+    final pushesSettings = pending.contains(PatientCollection.settings);
+    if (!pushesReadings && !pushesSettings) {
       return;
     }
     final snapshot = await _local.load();
 
-    if (pending.contains(PatientCollection.readings)) {
+    if (pushesReadings) {
       await _remote.saveReadings(snapshot.readings);
       await _local.markReadingsSynced(snapshot.readings);
     }
-    if (pending.contains(PatientCollection.alerts)) {
-      await _remote.saveAlerts(snapshot.alerts);
-      await _local.markAlertsSynced(snapshot.alerts);
-    }
-    if (pending.contains(PatientCollection.carbs)) {
-      await _remote.saveCarbs(snapshot.carbs);
-      await _local.markCarbsSynced(snapshot.carbs);
-    }
-    if (pending.contains(PatientCollection.insulin)) {
-      await _remote.saveInsulin(snapshot.insulin);
-      await _local.markInsulinSynced(snapshot.insulin);
-    }
-    if (pending.contains(PatientCollection.settings)) {
+    if (pushesSettings) {
       await _remote.saveAlertSettings(snapshot.alertSettings);
       await _local.markSettingsSynced();
     }
+  }
+
+  /// Drena o op-log em ordem de `seq`, parando na primeira falha recuperável.
+  ///
+  /// A operação só sai da fila depois de confirmada (SYNC-09); ao parar, ela e
+  /// todas as posteriores ficam onde estão, porque uma op posterior pode
+  /// depender da anterior — enviar fora de ordem gravaria estado errado
+  /// (SYNC-03/SYNC-04).
+  Future<void> _drainOps() async {
+    while (true) {
+      final ops = await _local.pendingOps(limit: _opBatchSize);
+      if (ops.isEmpty) {
+        return;
+      }
+      for (final op in ops) {
+        await _sendOp(op);
+        await _local.deleteOp(op.seq!);
+      }
+      if (ops.length < _opBatchSize) {
+        return;
+      }
+    }
+  }
+
+  /// Envia uma operação. Erro recuperável sobe (a fila é preservada); erro
+  /// definitivo — entidade desconhecida, verbo desconhecido ou payload
+  /// ilegível — é logado e a operação segue para o descarte (SYNC-05/SYNC-08).
+  Future<void> _sendOp(PendingOp op) async {
+    if (op.op == PendingOpKind.delete) {
+      switch (op.entity) {
+        case PendingOpEntity.carbs:
+          return _remote.deleteCarb(op.entityId);
+        case PendingOpEntity.insulin:
+          return _remote.deleteInsulin(op.entityId);
+        case PendingOpEntity.alerts:
+          return _remote.deleteAlert(op.entityId);
+        default:
+          return _discard(op, 'entidade desconhecida');
+      }
+    }
+
+    if (op.op != PendingOpKind.upsert) {
+      return _discard(op, 'operação desconhecida "${op.op}"');
+    }
+
+    final payload = op.decodePayload();
+    if (payload == null) {
+      return _discard(op, 'payload ilegível');
+    }
+
+    switch (op.entity) {
+      case PendingOpEntity.carbs:
+        return _remote.upsertCarb(CarbEntry.fromJson(payload));
+      case PendingOpEntity.insulin:
+        return _remote.upsertInsulin(InsulinEntry.fromJson(payload));
+      case PendingOpEntity.alerts:
+        return _remote.upsertAlert(AppAlertItem.fromJson(payload));
+      default:
+        return _discard(op, 'entidade desconhecida');
+    }
+  }
+
+  void _discard(PendingOp op, String reason) {
+    debugPrint(
+      'PatientSyncService: operação descartada — '
+      'entidade=${op.entity} id=${op.entityId} motivo=$reason',
+    );
   }
 }

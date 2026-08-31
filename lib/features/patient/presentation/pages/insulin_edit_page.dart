@@ -4,9 +4,9 @@ import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
 
@@ -68,7 +68,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
     final l10n = context.l10n;
     final navigator = Navigator.of(context);
     await context.read<PatientCubit>().editInsulinEntry(
-      InsulinEntry(
+      widget.entry.copyWith(
         units: double.parse(_unitsController.text),
         type: _selectedType,
         time: _selectedTime,
@@ -93,7 +93,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
             child: Text(l10n.genericCancelButton),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.zoneLowBg),
+            style: FilledButton.styleFrom(backgroundColor: context.glucoreColors.zoneLowBg),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l10n.entryDeleteConfirmButton),
           ),
@@ -188,7 +188,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
               const SizedBox(height: 8),
               OutlinedButton(
                 onPressed: _delete,
-                style: OutlinedButton.styleFrom(foregroundColor: AppTheme.zoneLowBg),
+                style: OutlinedButton.styleFrom(foregroundColor: context.glucoreColors.zoneLowBg),
                 child: Text(l10n.carbEditDeleteButton),
               ),
             ],

@@ -1,9 +1,13 @@
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite/sqflite.dart'
-    show ConflictAlgorithm, Database, DatabaseFactory;
+    show ConflictAlgorithm, Database, DatabaseExecutor, DatabaseFactory;
+import 'package:uuid/uuid.dart';
 
-import '../../presentation/models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
+import '../sync/pending_op.dart';
 import 'patient_datasource.dart';
+
+const _uuid = Uuid();
 
 /// Coleções persistidas localmente (uma tabela por coleção).
 enum PatientCollection { readings, alerts, carbs, insulin, settings }
@@ -12,15 +16,20 @@ enum PatientCollection { readings, alerts, carbs, insulin, settings }
 ///
 /// Banco `glucore_patient.db`, colunas espelhando docs/reference/data-models.md
 /// mais a flag `synced` (0 = pendente de push ao backend, 1 = já espelhado).
-/// Os `save*` do contrato gravam replace-all com `synced = 0`; o
-/// `PatientSyncService` consulta [pendingCollections] e limpa via `mark*Synced`.
+///
+/// **O que conta como pendente depende da coleção.** Leituras e thresholds
+/// continuam no replace-all: gravam com `synced = 0`, o `PatientSyncService`
+/// consulta [pendingCollections] e limpa via `mark*Synced`. Carboidratos,
+/// insulina e alertas passaram a viajar pelo op-log: a pendência é a linha em
+/// `pending_ops` ([pendingOps], [pendingEntityIds]), não a flag — que nessas
+/// três tabelas sobrevive só como marca de origem do dado.
 class LocalPatientDataSource implements PatientDataSource {
   LocalPatientDataSource({DatabaseFactory? databaseFactory, String? databasePath})
       : _factory = databaseFactory,
         _databasePath = databasePath;
 
   static const _dbName = 'glucore_patient.db';
-  static const _dbVersion = 2;
+  static const _dbVersion = 3;
 
   final DatabaseFactory? _factory;
   final String? _databasePath;
@@ -47,31 +56,12 @@ class LocalPatientDataSource implements PatientDataSource {
               synced INTEGER NOT NULL DEFAULT 0
             )
           ''');
-          await db.execute('''
-            CREATE TABLE alerts(
-              type TEXT NOT NULL,
-              timestamp_ms INTEGER NOT NULL,
-              synced INTEGER NOT NULL DEFAULT 0,
-              PRIMARY KEY(type, timestamp_ms)
-            )
-          ''');
-          await db.execute('''
-            CREATE TABLE carbs(
-              time_ms INTEGER PRIMARY KEY,
-              grams INTEGER NOT NULL,
-              description TEXT NOT NULL,
-              synced INTEGER NOT NULL DEFAULT 0
-            )
-          ''');
-          await db.execute('''
-            CREATE TABLE insulin(
-              time_ms INTEGER PRIMARY KEY,
-              units REAL NOT NULL,
-              type TEXT NOT NULL,
-              day_of_week TEXT NOT NULL,
-              synced INTEGER NOT NULL DEFAULT 0
-            )
-          ''');
+          await db.execute(_createAlertsTable);
+          await db.execute(_indexAlertsTime);
+          await db.execute(_createCarbsTable);
+          await db.execute(_indexCarbsTime);
+          await db.execute(_createInsulinTable);
+          await db.execute(_indexInsulinTime);
           await db.execute('''
             CREATE TABLE settings(
               id INTEGER PRIMARY KEY CHECK(id = 1),
@@ -81,15 +71,133 @@ class LocalPatientDataSource implements PatientDataSource {
             )
           ''');
           await _createMetaTable(db);
+          await db.execute(_createPendingOpsTable);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           // Additive only — never DROP patient data on upgrade.
           if (oldVersion < 2) {
             await _createMetaTable(db);
           }
+          if (oldVersion < 3) {
+            await _migrateDiaryToUuidKeys(db);
+          }
         },
       ),
     );
+  }
+
+  // ── schema das coleções do diário (v3) ────────────────────────────────────
+
+  static const _createAlertsTable = '''
+        CREATE TABLE alerts(
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          timestamp_ms INTEGER NOT NULL,
+          synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''';
+  static const _indexAlertsTime =
+      'CREATE INDEX idx_alerts_time ON alerts(timestamp_ms)';
+
+  static const _createCarbsTable = '''
+        CREATE TABLE carbs(
+          id TEXT PRIMARY KEY,
+          time_ms INTEGER NOT NULL,
+          grams INTEGER NOT NULL,
+          description TEXT NOT NULL,
+          synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''';
+  static const _indexCarbsTime =
+      'CREATE INDEX idx_carbs_time ON carbs(time_ms)';
+
+  static const _createInsulinTable = '''
+        CREATE TABLE insulin(
+          id TEXT PRIMARY KEY,
+          time_ms INTEGER NOT NULL,
+          units REAL NOT NULL,
+          type TEXT NOT NULL,
+          day_of_week TEXT NOT NULL,
+          synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''';
+  static const _indexInsulinTime =
+      'CREATE INDEX idx_insulin_time ON insulin(time_ms)';
+
+  /// Op-log do diário (SYNC-01/SYNC-02): `seq` dá a ordem total de drenagem,
+  /// independente do relógio do aparelho.
+  static const _createPendingOpsTable = '''
+        CREATE TABLE pending_ops(
+          seq INTEGER PRIMARY KEY AUTOINCREMENT,
+          entity TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          op TEXT NOT NULL,
+          payload_json TEXT,
+          created_at INTEGER NOT NULL
+        )
+      ''';
+
+  /// v2 → v3 (IDENT-05): cria o op-log e troca a PK das três coleções do
+  /// diário por `id TEXT`, gerando um UUID v4 por linha existente. Nenhuma
+  /// linha do paciente é descartada. O sqflite já executa `onUpgrade` dentro de
+  /// uma transação, então uma falha no meio desfaz tudo e o banco permanece na
+  /// v2.
+  static Future<void> _migrateDiaryToUuidKeys(Database db) async {
+    await db.execute(_createPendingOpsTable);
+    await _rebuildWithUuidKey(
+      db,
+      table: 'alerts',
+      createTable: _createAlertsTable,
+      carriedColumns: ['type', 'timestamp_ms', 'synced'],
+      createIndex: _indexAlertsTime,
+    );
+    await _rebuildWithUuidKey(
+      db,
+      table: 'carbs',
+      createTable: _createCarbsTable,
+      carriedColumns: ['time_ms', 'grams', 'description', 'synced'],
+      createIndex: _indexCarbsTime,
+    );
+    await _rebuildWithUuidKey(
+      db,
+      table: 'insulin',
+      createTable: _createInsulinTable,
+      carriedColumns: [
+        'time_ms',
+        'units',
+        'type',
+        'day_of_week',
+        'synced',
+      ],
+      createIndex: _indexInsulinTime,
+    );
+  }
+
+  static Future<void> _rebuildWithUuidKey(
+    Database db, {
+    required String table,
+    required String createTable,
+    required List<String> carriedColumns,
+    required String createIndex,
+  }) async {
+    final legacyRows = await db.query(table);
+
+    await db.execute(
+      createTable.replaceFirst('TABLE $table(', 'TABLE ${table}_new('),
+    );
+
+    final batch = db.batch();
+    for (final row in legacyRows) {
+      batch.insert('${table}_new', {
+        'id': _uuid.v4(),
+        for (final column in carriedColumns) column: row[column],
+      });
+    }
+    await batch.commit(noResult: true);
+
+    await db.execute('DROP TABLE $table');
+    await db.execute('ALTER TABLE ${table}_new RENAME TO $table');
+    await db.execute(createIndex);
   }
 
   /// Single-row table binding the local database to its owning user (P19).
@@ -129,6 +237,126 @@ class LocalPatientDataSource implements PatientDataSource {
       await txn.delete('carbs');
       await txn.delete('insulin');
       await txn.delete('settings');
+      // A fila vai junto: uma operação do dono anterior enviada sob o novo
+      // login gravaria o diário de um paciente na conta de outro (P19).
+      await txn.delete('pending_ops');
+    });
+  }
+
+  // ── op-log do diário (SYNC-01/SYNC-02) ────────────────────────────────────
+
+  /// Enfileira uma operação unitária. Escritas de diário chamam a variante
+  /// transacional (uma linha e sua operação nunca se separam).
+  Future<void> enqueueOp(PendingOp op) async {
+    final db = await _db;
+    await db.insert('pending_ops', op.toRow());
+  }
+
+  /// Operações pendentes em ordem crescente de `seq` — a ordem em que foram
+  /// criadas é a ordem em que precisam chegar ao backend (SYNC-02).
+  Future<List<PendingOp>> pendingOps({int limit = 200}) async {
+    final db = await _db;
+    final rows = await db.query(
+      'pending_ops',
+      orderBy: 'seq ASC',
+      limit: limit,
+    );
+    return rows.map(PendingOp.fromRow).toList();
+  }
+
+  /// Remove uma operação confirmada pelo backend (SYNC-09).
+  Future<void> deleteOp(int seq) async {
+    final db = await _db;
+    await db.delete('pending_ops', where: 'seq = ?', whereArgs: [seq]);
+  }
+
+  /// Ids de [entity] com pelo menos uma operação ainda na fila.
+  ///
+  /// A reconciliação com o servidor usa este conjunto para não sobrescrever uma
+  /// entrada que o backend ainda não viu (IDENT-07).
+  Future<Set<String>> pendingEntityIds(String entity) async =>
+      _pendingIdsIn(await _db, entity);
+
+  static Future<Set<String>> _pendingIdsIn(
+    DatabaseExecutor executor,
+    String entity,
+  ) async {
+    final rows = await executor.query(
+      'pending_ops',
+      columns: ['entity_id'],
+      where: 'entity = ?',
+      whereArgs: [entity],
+      distinct: true,
+    );
+    return rows.map((row) => row['entity_id']! as String).toSet();
+  }
+
+  // ── escritas unitárias do diário (SYNC-01/SYNC-07) ────────────────────────
+  //
+  // Linha e operação são gravadas na MESMA transação: uma linha sem a sua
+  // operação nunca chegaria ao backend, e uma operação sem a sua linha
+  // empurraria dado que o paciente não tem.
+
+  Future<void> upsertCarb(CarbEntry entry) => _writeWithOp(
+        table: 'carbs',
+        row: _carbToRow(entry, synced: 0),
+        op: PendingOp.upsert(
+          entity: PendingOpEntity.carbs,
+          entityId: entry.id,
+          payload: entry.toJson(),
+        ),
+      );
+
+  Future<void> deleteCarb(String id) =>
+      _deleteWithOp(table: 'carbs', entity: PendingOpEntity.carbs, id: id);
+
+  Future<void> upsertInsulin(InsulinEntry entry) => _writeWithOp(
+        table: 'insulin',
+        row: _insulinToRow(entry, synced: 0),
+        op: PendingOp.upsert(
+          entity: PendingOpEntity.insulin,
+          entityId: entry.id,
+          payload: entry.toJson(),
+        ),
+      );
+
+  Future<void> deleteInsulin(String id) =>
+      _deleteWithOp(table: 'insulin', entity: PendingOpEntity.insulin, id: id);
+
+  Future<void> upsertAlert(AppAlertItem alert) => _writeWithOp(
+        table: 'alerts',
+        row: _alertToRow(alert, synced: 0),
+        op: PendingOp.upsert(
+          entity: PendingOpEntity.alerts,
+          entityId: alert.id,
+          payload: alert.toJson(),
+        ),
+      );
+
+  Future<void> _writeWithOp({
+    required String table,
+    required Map<String, Object?> row,
+    required PendingOp op,
+  }) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.insert(table, row, conflictAlgorithm: ConflictAlgorithm.replace);
+      await txn.insert('pending_ops', op.toRow());
+    });
+  }
+
+  Future<void> _deleteWithOp({
+    required String table,
+    required String entity,
+    required String id,
+  }) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete(table, where: 'id = ?', whereArgs: [id]);
+      await txn.insert(
+        'pending_ops',
+        PendingOp.delete(entity: entity, entityId: id).toRow(),
+      );
     });
   }
 
@@ -214,36 +442,36 @@ class LocalPatientDataSource implements PatientDataSource {
       _markSyncedByKey('readings', 'timestamp_ms',
           readings.map((r) => r.timestamp.millisecondsSinceEpoch));
 
-  Future<void> markAlertsSynced(Iterable<AppAlertItem> alerts) async {
-    final db = await _db;
-    final batch = db.batch();
-    for (final alert in alerts) {
-      batch.update(
-        'alerts',
-        {'synced': 1},
-        where: 'type = ? AND timestamp_ms = ?',
-        whereArgs: [alert.type.name, alert.timestamp.millisecondsSinceEpoch],
-      );
-    }
-    await batch.commit(noResult: true);
-  }
+  /// Marcação por `id` das três coleções do diário (IDENT-07).
+  ///
+  /// **Sem chamador em `lib/` desde a Fase 4**, mantidas de propósito: são o
+  /// par de `saveCarbs`/`saveInsulin`/`saveAlerts` no caminho de coleção, que
+  /// segue vivo como rollback enquanto os endpoints em lote existirem. Casam
+  /// por `id` e não por horário justamente porque mudar o horário de uma
+  /// entrada não muda a identidade dela — a regra que o op-log herdou.
+  ///
+  /// Enquanto o diário viaja pelo op-log, quem responde "falta enviar" é
+  /// `pendingOps`, não a flag `synced` destas tabelas.
+  Future<void> markAlertsSynced(Iterable<AppAlertItem> alerts) =>
+      _markSyncedByKey('alerts', 'id', alerts.map((a) => a.id));
 
   Future<void> markCarbsSynced(Iterable<CarbEntry> carbs) =>
-      _markSyncedByKey(
-          'carbs', 'time_ms', carbs.map((c) => c.time.millisecondsSinceEpoch));
+      _markSyncedByKey('carbs', 'id', carbs.map((c) => c.id));
 
   Future<void> markInsulinSynced(Iterable<InsulinEntry> insulin) =>
-      _markSyncedByKey('insulin', 'time_ms',
-          insulin.map((i) => i.time.millisecondsSinceEpoch));
+      _markSyncedByKey('insulin', 'id', insulin.map((i) => i.id));
 
   Future<void> markSettingsSynced() async {
     final db = await _db;
     await db.update('settings', {'synced': 1});
   }
 
-  /// Persiste um snapshot vindo do servidor com `synced = 1`, preservando as
-  /// linhas locais ainda pendentes (`synced = 0`), que vencem o servidor até
-  /// serem empurradas.
+  /// Persiste um snapshot vindo do servidor com `synced = 1`, sem atropelar o
+  /// que ainda não subiu.
+  ///
+  /// Em leituras, a pendência é `synced = 0`. Nas três coleções do diário, é a
+  /// linha citada em `pending_ops`: a entrada com operação na fila sobrevive à
+  /// reconciliação e vence o servidor até ser empurrada (IDENT-07).
   Future<void> replaceWithServerSnapshot(PatientSnapshot snapshot) async {
     final db = await _db;
     await db.transaction((txn) async {
@@ -259,14 +487,39 @@ class LocalPatientDataSource implements PatientDataSource {
         await batch.commit(noResult: true);
       }
 
+      Future<void> replaceDiary(
+        String table,
+        String entity,
+        Iterable<Map<String, Object?>> rows,
+      ) async {
+        final pending = await _pendingIdsIn(txn, entity);
+        if (pending.isEmpty) {
+          await txn.delete(table);
+        } else {
+          final marks = List.filled(pending.length, '?').join(', ');
+          await txn.delete(
+            table,
+            where: 'id NOT IN ($marks)',
+            whereArgs: pending.toList(),
+          );
+        }
+        final batch = txn.batch();
+        for (final row in rows) {
+          // `ignore`: a linha pendente com o mesmo id não é sobrescrita pela
+          // versão do servidor, que ainda não viu a alteração local.
+          batch.insert(table, row, conflictAlgorithm: ConflictAlgorithm.ignore);
+        }
+        await batch.commit(noResult: true);
+      }
+
       await replace('readings',
           snapshot.readings.map((r) => _readingToRow(r, synced: 1)));
-      await replace(
-          'alerts', snapshot.alerts.map((a) => _alertToRow(a, synced: 1)));
-      await replace(
-          'carbs', snapshot.carbs.map((c) => _carbToRow(c, synced: 1)));
-      await replace(
-          'insulin', snapshot.insulin.map((i) => _insulinToRow(i, synced: 1)));
+      await replaceDiary('alerts', PendingOpEntity.alerts,
+          snapshot.alerts.map((a) => _alertToRow(a, synced: 1)));
+      await replaceDiary('carbs', PendingOpEntity.carbs,
+          snapshot.carbs.map((c) => _carbToRow(c, synced: 1)));
+      await replaceDiary('insulin', PendingOpEntity.insulin,
+          snapshot.insulin.map((i) => _insulinToRow(i, synced: 1)));
 
       final pendingSettings = await txn.query(
         'settings',
@@ -303,7 +556,7 @@ class LocalPatientDataSource implements PatientDataSource {
   Future<void> _markSyncedByKey(
     String table,
     String keyColumn,
-    Iterable<int> keys,
+    Iterable<Object> keys,
   ) async {
     final db = await _db;
     final batch = db.batch();
@@ -347,6 +600,7 @@ class LocalPatientDataSource implements PatientDataSource {
       };
 
   static AppAlertItem _rowToAlert(Map<String, Object?> r) => AppAlertItem(
+        id: r['id'] as String,
         type: AppAlertType.values.byName(r['type'] as String),
         timestamp:
             DateTime.fromMillisecondsSinceEpoch(r['timestamp_ms'] as int),
@@ -357,12 +611,14 @@ class LocalPatientDataSource implements PatientDataSource {
     required int synced,
   }) =>
       {
+        'id': a.id,
         'type': a.type.name,
         'timestamp_ms': a.timestamp.millisecondsSinceEpoch,
         'synced': synced,
       };
 
   static CarbEntry _rowToCarb(Map<String, Object?> r) => CarbEntry(
+        id: r['id'] as String,
         grams: r['grams'] as int,
         description: r['description'] as String,
         time: DateTime.fromMillisecondsSinceEpoch(r['time_ms'] as int),
@@ -373,6 +629,7 @@ class LocalPatientDataSource implements PatientDataSource {
     required int synced,
   }) =>
       {
+        'id': c.id,
         'time_ms': c.time.millisecondsSinceEpoch,
         'grams': c.grams,
         'description': c.description,
@@ -380,6 +637,7 @@ class LocalPatientDataSource implements PatientDataSource {
       };
 
   static InsulinEntry _rowToInsulin(Map<String, Object?> r) => InsulinEntry(
+        id: r['id'] as String,
         units: (r['units'] as num).toDouble(),
         type: InsulinType.values.byName(r['type'] as String),
         time: DateTime.fromMillisecondsSinceEpoch(r['time_ms'] as int),
@@ -391,6 +649,7 @@ class LocalPatientDataSource implements PatientDataSource {
     required int synced,
   }) =>
       {
+        'id': i.id,
         'time_ms': i.time.millisecondsSinceEpoch,
         'units': i.units,
         'type': i.type.name,

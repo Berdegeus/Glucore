@@ -2,8 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../models/patient_models.dart';
+import '../../../../core/theme/glucore_colors.dart';
+import '../../domain/entities/patient_entities.dart';
 
 class GlucoseChart extends StatelessWidget {
   const GlucoseChart({
@@ -60,11 +60,11 @@ class GlucoseChart extends StatelessWidget {
     Color lineColor;
     final last = points.last;
     if (last.value < lowThreshold) {
-      lineColor = AppTheme.zoneLowBg;
+      lineColor = context.glucoreColors.zoneLowBg;
     } else if (last.value > highThreshold) {
       lineColor = Colors.orange;
     } else {
-      lineColor = AppTheme.zoneTargetBg;
+      lineColor = context.glucoreColors.zoneTargetBg;
     }
 
     final spots = points.map((r) {
@@ -119,7 +119,7 @@ class GlucoseChart extends StatelessWidget {
               horizontalLines: [
                 HorizontalLine(
                   y: lowThreshold.toDouble(),
-                  color: AppTheme.zoneLowBg.withValues(alpha: 0.6),
+                  color: context.glucoreColors.zoneLowBg.withValues(alpha: 0.6),
                   strokeWidth: 1,
                   dashArray: [6, 4],
                 ),

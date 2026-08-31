@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/user_app_bar.dart';
 
 class NotificationsPage extends StatelessWidget {
@@ -28,12 +28,12 @@ class NotificationsPage extends StatelessWidget {
                   Icon(Icons.notifications_off_outlined,
                       size: 48, color: Colors.grey.shade400),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Sem notificações',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.inkMuted,
+                      color: context.glucoreColors.inkMuted,
                     ),
                   ),
                 ],
@@ -68,13 +68,13 @@ class _AlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext ctx) {
-    final color = item.type.color();
+    final color = item.type.color(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCanvas,
+        color: context.glucoreColors.surfaceCanvas,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -96,23 +96,23 @@ class _AlertTile extends StatelessWidget {
               children: [
                 Text(
                   item.type.title(l10n),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.ink,
+                    color: context.glucoreColors.ink,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   item.type.message(l10n),
-                  style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                  style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
                 ),
               ],
             ),
           ),
           Text(
             context.formatShortDateTime(item.timestamp),
-            style: const TextStyle(fontSize: 11, color: AppTheme.inkMuted),
+            style: TextStyle(fontSize: 11, color: context.glucoreColors.inkMuted),
           ),
         ],
       ),

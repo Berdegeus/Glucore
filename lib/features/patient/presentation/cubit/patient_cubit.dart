@@ -3,16 +3,19 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/notifications/notification_service.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
-import '../../data/repositories/patient_repository.dart';
-import '../../presentation/models/patient_models.dart';
+import '../../domain/repositories/patient_repository.dart';
+import '../../domain/usecases/patient_usecases.dart';
+import '../../domain/entities/patient_entities.dart';
 import 'patient_state.dart';
 
 class PatientCubit extends Cubit<PatientState> {
-  PatientCubit({required this.repository}) : super(const PatientState());
+  PatientCubit({required this.useCases}) : super(const PatientState());
 
-  final PatientRepository repository;
+  /// O cubit fala com o domínio, nunca com o repositório (DOMAIN-03).
+  final PatientUseCases useCases;
   StreamSubscription<SensorUiState>? _sensorSubscription;
 
   Future<void> initialize(SensorCubit sensorCubit) async {
@@ -20,13 +23,13 @@ class PatientCubit extends Cubit<PatientState> {
     // account is now signed in on this device, the local patient data was
     // wiped — also drop the sensor session so a previous patient's physical
     // sensor never streams into the new account.
-    final switchedAccount = await repository.ensureOwner();
+    final switchedAccount = await useCases.ensurePatientOwner(const NoParams());
     if (switchedAccount) {
       await sensorCubit.clearSession();
     }
 
     // Snapshot local — nunca depende de rede.
-    final snapshot = await repository.load();
+    final snapshot = await useCases.loadPatientData(const NoParams());
     emit(
       state.copyWith(
         readings: List<GlucoseReadingItem>.of(snapshot.readings, growable: false),
@@ -47,7 +50,7 @@ class PatientCubit extends Cubit<PatientState> {
   }
 
   Future<void> _refreshFromRemote() async {
-    final refreshed = await repository.refreshFromRemote();
+    final refreshed = await useCases.refreshPatientData(const NoParams());
     // refreshFromRemote já persistiu o snapshot do servidor localmente
     // (pendências locais preservadas) e devolveu o snapshot local resultante.
     if (refreshed == null || isClosed) {
@@ -64,62 +67,62 @@ class PatientCubit extends Cubit<PatientState> {
     );
   }
 
+  // As mutações de diário gravam a entrada afetada, não a coleção inteira: o
+  // estado local segue completo na memória, e só a entrada mexida viaja
+  // (SYNC-01).
+
   Future<void> addCarbEntry(CarbEntry entry) async {
     final updated = [entry, ...state.carbs]
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(carbs: updated));
-    await repository.saveCarbs(updated);
+    await useCases.addCarbEntry(entry);
   }
 
   Future<void> addInsulinEntry(InsulinEntry entry) async {
     final updated = [entry, ...state.insulin]
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(insulin: updated));
-    await repository.saveInsulin(updated);
+    await useCases.addInsulinEntry(entry);
   }
 
   Future<void> editCarbEntry(CarbEntry entry) async {
     final updated = state.carbs
-        .map((e) => e.time.millisecondsSinceEpoch == entry.time.millisecondsSinceEpoch ? entry : e)
+        .map((e) => e.id == entry.id ? entry : e)
         .toList()
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(carbs: updated));
-    await repository.saveCarbs(updated);
+    await useCases.editCarbEntry(entry);
   }
 
   Future<void> deleteCarbEntry(CarbEntry entry) async {
-    final updated = state.carbs
-        .where((e) => e.time.millisecondsSinceEpoch != entry.time.millisecondsSinceEpoch)
-        .toList();
+    final updated = state.carbs.where((e) => e.id != entry.id).toList();
     emit(state.copyWith(carbs: updated));
-    await repository.saveCarbs(updated);
+    await useCases.deleteCarbEntry(entry.id);
   }
 
   Future<void> editInsulinEntry(InsulinEntry entry) async {
     final updated = state.insulin
-        .map((e) => e.time.millisecondsSinceEpoch == entry.time.millisecondsSinceEpoch ? entry : e)
+        .map((e) => e.id == entry.id ? entry : e)
         .toList()
       ..sort((a, b) => b.time.compareTo(a.time));
     emit(state.copyWith(insulin: updated));
-    await repository.saveInsulin(updated);
+    await useCases.editInsulinEntry(entry);
   }
 
   Future<void> deleteInsulinEntry(InsulinEntry entry) async {
-    final updated = state.insulin
-        .where((e) => e.time.millisecondsSinceEpoch != entry.time.millisecondsSinceEpoch)
-        .toList();
+    final updated = state.insulin.where((e) => e.id != entry.id).toList();
     emit(state.copyWith(insulin: updated));
-    await repository.saveInsulin(updated);
+    await useCases.deleteInsulinEntry(entry.id);
   }
 
   Future<void> clearReadings() async {
     emit(state.copyWith(readings: const []));
-    await repository.saveReadings(const []);
+    await useCases.saveGlucoseReadings(const []);
   }
 
   Future<void> updateAlertSettings(AlertSettingsModel settings) async {
     emit(state.copyWith(alertSettings: settings));
-    await repository.saveAlertSettings(settings);
+    await useCases.updateAlertSettings(settings);
   }
 
   Future<void> _handleSensorState(SensorUiState sensorState) async {
@@ -127,7 +130,8 @@ class PatientCubit extends Cubit<PatientState> {
     var readings = state.readings;
     var alerts = state.alerts;
     var persistReadings = false;
-    var persistAlerts = false;
+    // Alertas nascidos neste evento: cada um é gravado por item (SYNC-01).
+    final newAlerts = <AppAlertItem>[];
 
     final previousStatus = state.sensorState.status;
 
@@ -151,48 +155,46 @@ class PatientCubit extends Cubit<PatientState> {
         persistReadings = true;
       }
 
-      final thresholdAlerts = _withThresholdAlerts(
+      final threshold = _thresholdAlertFor(
         currentReading: sensorState.reading!,
         alertSettings: nextState.alertSettings,
-        alerts: alerts,
       );
-      if (!_sameAlertList(alerts, thresholdAlerts)) {
-        alerts = thresholdAlerts;
-        nextState = nextState.copyWith(alerts: alerts);
-        persistAlerts = true;
+      if (threshold != null) {
+        final updatedAlerts = _prependAlert(alerts, threshold);
+        if (!identical(alerts, updatedAlerts)) {
+          alerts = updatedAlerts;
+          nextState = nextState.copyWith(alerts: alerts);
+          newAlerts.add(threshold);
+        }
       }
     }
 
     if (sensorState.status == SensorConnectionStatus.connected &&
         (previousStatus == SensorConnectionStatus.disconnected ||
             previousStatus == SensorConnectionStatus.error)) {
-      final updatedAlerts = _prependAlert(
-        alerts,
-        AppAlertItem(
-          type: AppAlertType.sensorReconnected,
-          timestamp: DateTime.now(),
-        ),
+      final reconnected = AppAlertItem.create(
+        type: AppAlertType.sensorReconnected,
+        timestamp: DateTime.now(),
       );
-      if (!_sameAlertList(alerts, updatedAlerts)) {
+      final updatedAlerts = _prependAlert(alerts, reconnected);
+      if (!identical(alerts, updatedAlerts)) {
         alerts = updatedAlerts;
         nextState = nextState.copyWith(alerts: alerts);
-        persistAlerts = true;
+        newAlerts.add(reconnected);
       }
     }
 
     if (sensorState.status == SensorConnectionStatus.error &&
         sensorState.failure != null) {
-      final updatedAlerts = _prependAlert(
-        alerts,
-        AppAlertItem(
-          type: AppAlertType.syncFailure,
-          timestamp: DateTime.now(),
-        ),
+      final failed = AppAlertItem.create(
+        type: AppAlertType.syncFailure,
+        timestamp: DateTime.now(),
       );
-      if (!_sameAlertList(alerts, updatedAlerts)) {
+      final updatedAlerts = _prependAlert(alerts, failed);
+      if (!identical(alerts, updatedAlerts)) {
         alerts = updatedAlerts;
         nextState = nextState.copyWith(alerts: alerts);
-        persistAlerts = true;
+        newAlerts.add(failed);
       }
     }
 
@@ -208,11 +210,12 @@ class PatientCubit extends Cubit<PatientState> {
 
     emit(nextState);
 
+    // Leituras seguem no caminho de coleção com debounce (SYNC-10).
     if (persistReadings) {
-      await repository.saveReadings(readings);
+      await useCases.saveGlucoseReadings(readings);
     }
-    if (persistAlerts) {
-      await repository.saveAlerts(alerts);
+    for (final alert in newAlerts) {
+      await useCases.addAlertEntry(alert);
     }
   }
 
@@ -241,25 +244,18 @@ class PatientCubit extends Cubit<PatientState> {
     return updated.take(PatientRepository.maxReadings).toList();
   }
 
-  List<AppAlertItem> _withThresholdAlerts({
+  AppAlertItem? _thresholdAlertFor({
     required GlucoseReading currentReading,
     required AlertSettingsModel alertSettings,
-    required List<AppAlertItem> alerts,
   }) {
-    var updated = alerts;
     final now = DateTime.now();
     if (currentReading.value <= alertSettings.lowThreshold) {
-      updated = _prependAlert(
-        updated,
-        AppAlertItem(type: AppAlertType.glucoseLow, timestamp: now),
-      );
-    } else if (currentReading.value >= alertSettings.highThreshold) {
-      updated = _prependAlert(
-        updated,
-        AppAlertItem(type: AppAlertType.glucoseHigh, timestamp: now),
-      );
+      return AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: now);
     }
-    return updated;
+    if (currentReading.value >= alertSettings.highThreshold) {
+      return AppAlertItem.create(type: AppAlertType.glucoseHigh, timestamp: now);
+    }
+    return null;
   }
 
   List<AppAlertItem> _prependAlert(
@@ -305,23 +301,6 @@ class PatientCubit extends Cubit<PatientState> {
       final a = left[i];
       final b = right[i];
       if (a.timestamp != b.timestamp || a.value != b.value || a.rate != b.rate) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool _sameAlertList(List<AppAlertItem> left, List<AppAlertItem> right) {
-    if (identical(left, right)) {
-      return true;
-    }
-    if (left.length != right.length) {
-      return false;
-    }
-    for (var i = 0; i < left.length; i++) {
-      final a = left[i];
-      final b = right[i];
-      if (a.type != b.type || a.timestamp != b.timestamp) {
         return false;
       }
     }

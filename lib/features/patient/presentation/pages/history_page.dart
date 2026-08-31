@@ -4,9 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
 
@@ -20,15 +21,15 @@ class HistoryPage extends StatelessWidget {
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           if (state.readings.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.show_chart, size: 48, color: AppTheme.inkMuted),
+                  Icon(Icons.show_chart, size: 48, color: context.glucoreColors.inkMuted),
                   SizedBox(height: 12),
                   Text(
                     'Sem leituras registradas',
-                    style: TextStyle(fontSize: 15, color: AppTheme.inkMuted),
+                    style: TextStyle(fontSize: 15, color: context.glucoreColors.inkMuted),
                   ),
                 ],
               ),
@@ -101,7 +102,7 @@ class _DayRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCanvas,
+        color: context.glucoreColors.surfaceCanvas,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -110,10 +111,10 @@ class _DayRow extends StatelessWidget {
             width: 72,
             child: Text(
               dayLabel,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.ink,
+                color: context.glucoreColors.ink,
               ),
             ),
           ),
@@ -132,13 +133,13 @@ class _DayRow extends StatelessWidget {
                 style: AppTheme.monoStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: zone.chartLine,
+                  color: zone.chartLine(context),
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 'TIR $tir%',
-                style: const TextStyle(fontSize: 11, color: AppTheme.inkMuted),
+                style: TextStyle(fontSize: 11, color: context.glucoreColors.inkMuted),
               ),
             ],
           ),
@@ -167,8 +168,8 @@ class _Sparkline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (readings.length < 2) {
-      return const Center(
-        child: Text('—', style: TextStyle(color: AppTheme.inkMuted)),
+      return Center(
+        child: Text('—', style: TextStyle(color: context.glucoreColors.inkMuted)),
       );
     }
 
@@ -198,12 +199,12 @@ class _Sparkline extends StatelessWidget {
             spots: spots,
             isCurved: true,
             curveSmoothness: 0.3,
-            color: lastZone.chartLine,
+            color: lastZone.chartLine(context),
             barWidth: 1.5,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: lastZone.chartLine.withValues(alpha: 0.08),
+              color: lastZone.chartLine(context).withValues(alpha: 0.08),
             ),
           ),
         ],

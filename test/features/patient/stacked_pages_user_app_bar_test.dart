@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/core/api/auth_token_store.dart';
+import 'package:glucore/core/theme/theme_cubit.dart';
 import 'package:glucore/features/auth/data/datasources/account_service.dart';
 import 'package:glucore/features/auth/domain/repositories/auth_repository.dart';
 import 'package:glucore/features/auth/domain/usecases/get_auth_status_usecase.dart';
@@ -13,11 +14,13 @@ import 'package:glucore/features/auth/domain/usecases/register_usecase.dart';
 import 'package:glucore/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
-import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/domain/usecases/patient_usecases.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/alert_settings_page.dart';
 import 'package:glucore/features/patient/presentation/pages/carb_edit_page.dart';
 import 'package:glucore/features/patient/presentation/pages/carb_entry_page.dart';
@@ -82,6 +85,7 @@ void main() {
           BlocProvider<UserIdentityCubit>.value(value: identity),
           BlocProvider<PatientCubit>.value(value: patientCubit),
           BlocProvider<SensorCubit>.value(value: sensorCubit),
+          BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -114,10 +118,10 @@ void main() {
     'SensorLinkPage': const SensorLinkPage(),
     'ProfileEditPage': const ProfileEditPage(),
     'CarbEditPage': CarbEditPage(
-      entry: CarbEntry(grams: 30, description: 'x', time: DateTime(2026, 1, 1)),
+      entry: CarbEntry.create(grams: 30, description: 'x', time: DateTime(2026, 1, 1)),
     ),
     'InsulinEditPage': InsulinEditPage(
-      entry: InsulinEntry(
+      entry: InsulinEntry.create(
         units: 4,
         type: InsulinType.bolus,
         time: DateTime(2026, 1, 1),
@@ -129,13 +133,22 @@ void main() {
   };
 
   for (final entry in pages.entries) {
-    testWidgets(
-        '${entry.key} shows the logged-in user and the logout menu',
+    // The identity chip and its "Sair da conta" menu were removed from the
+    // header by product decision (2026-08-24); logout lives only in Settings.
+    testWidgets('${entry.key} keeps the header free of account actions',
         (tester) async {
       await pumpStacked(tester, entry.value);
 
-      expect(find.text('Ana Silva'), findsOneWidget);
-      expect(find.byType(PopupMenuButton<String>), findsOneWidget);
+      expect(find.byType(PopupMenuButton<String>), findsNothing);
+      // Scoped to the AppBar on purpose: SettingsPage still offers logout in
+      // its BODY, which is where it now lives.
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Sair da conta'),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('${entry.key} keeps a working back button', (tester) async {
@@ -200,7 +213,7 @@ class _FakeAuthRepository implements AuthRepository {
 // PatientState, mirroring sensor_choice_navigation_test.dart's fake.
 class _FakePatientCubit extends PatientCubit {
   _FakePatientCubit._(PatientRepository repository)
-      : super(repository: repository);
+      : super(useCases: PatientUseCases.fromRepository(repository));
 
   factory _FakePatientCubit() {
     final local = LocalPatientDataSource();
@@ -211,7 +224,7 @@ class _FakePatientCubit extends PatientCubit {
       connectivityChanges: const Stream.empty(),
     );
     return _FakePatientCubit._(
-      PatientRepository(
+      PatientRepositoryImpl(
         local: local,
         remote: remote,
         syncService: sync,
@@ -224,7 +237,7 @@ class _FakePatientCubit extends PatientCubit {
   Future<void> initialize(SensorCubit sensorCubit) async {}
 }
 
-class _FakePatientRemote implements PatientDataSource {
+class _FakePatientRemote implements PatientRemoteApi {
   @override
   Future<PatientSnapshot> load() async =>
       throw UnimplementedError('not used in this test');
@@ -243,6 +256,24 @@ class _FakePatientRemote implements PatientDataSource {
 
   @override
   Future<void> saveAlertSettings(AlertSettingsModel settings) async {}
+
+  @override
+  Future<void> upsertCarb(CarbEntry entry) async {}
+
+  @override
+  Future<void> deleteCarb(String id) async {}
+
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) async {}
+
+  @override
+  Future<void> deleteInsulin(String id) async {}
+
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) async {}
+
+  @override
+  Future<void> deleteAlert(String id) async {}
 }
 
 class _FakeSensorCubit extends SensorCubit {
@@ -260,9 +291,6 @@ class _FakeSensorRepository implements SensorRepository {
   Future<SensorSession?> registerSensor(String barcode,
           {SensorBrand brand = SensorBrand.sibionics}) async =>
       null;
-
-  @override
-  Future<void> submitTransmitter(String transmitterBarcode) async {}
 
   @override
   Future<void> startMonitoring() async {}

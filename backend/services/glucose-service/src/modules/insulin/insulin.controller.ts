@@ -14,7 +14,7 @@ export class InsulinController {
   constructor(private readonly service: InsulinService) {}
 
   list = async (req: AuthRequest, res: Response): Promise<void> => {
-    res.json(await this.service.listForUser(req.userId!));
+    res.json(await this.service.listForUser(req.userId!, req.query));
   };
 
   create = async (req: AuthRequest, res: Response): Promise<void> => {

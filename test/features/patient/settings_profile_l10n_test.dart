@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/core/api/auth_token_store.dart';
+import 'package:glucore/core/theme/theme_cubit.dart';
 import 'package:glucore/features/auth/data/datasources/account_service.dart';
 import 'package:glucore/features/auth/domain/repositories/auth_repository.dart';
 import 'package:glucore/features/auth/domain/usecases/get_auth_status_usecase.dart';
@@ -15,12 +16,14 @@ import 'package:glucore/features/auth/domain/usecases/register_usecase.dart';
 import 'package:glucore/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
-import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/domain/usecases/patient_usecases.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_state.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/profile_page.dart';
 import 'package:glucore/features/patient/presentation/pages/settings_page.dart';
 import 'package:glucore/features/sensor/domain/models.dart';
@@ -65,6 +68,7 @@ void main() {
         providers: [
           BlocProvider<AuthCubit>.value(value: authCubit),
           BlocProvider<UserIdentityCubit>.value(value: identity),
+          BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -141,7 +145,9 @@ void main() {
 
       final logoutButton =
           find.widgetWithText(OutlinedButton, l10n.settingsLogoutTile);
-      await tester.ensureVisible(logoutButton);
+      // The list grew past one viewport; scroll the button into the build
+      // window before touching it. No assertion below changed.
+      await tester.scrollUntilVisible(logoutButton, 200);
       await tester.pumpAndSettle();
       await tester.tap(logoutButton);
       await tester.pump();
@@ -153,6 +159,32 @@ void main() {
       await tester.pump();
 
       expect(authRepo.logoutCalls, 0);
+    },
+  );
+
+  // Moved here from user_app_bar_test.dart on 2026-08-24: the header's
+  // identity/logout chip was removed, so Settings is the only place that can
+  // end a session and the confirm path must be covered where it lives.
+  testWidgets(
+    'SettingsPage logout confirmation calls AuthCubit.logout()',
+    (tester) async {
+      await pumpSettings(tester);
+
+      final logoutButton =
+          find.widgetWithText(OutlinedButton, l10n.settingsLogoutTile);
+      // The list grew past one viewport; scroll the button into the build
+      // window before touching it. No assertion below changed.
+      await tester.scrollUntilVisible(logoutButton, 200);
+      await tester.pumpAndSettle();
+      await tester.tap(logoutButton);
+      await tester.pump();
+
+      // The dialog repeats the tile label on its confirm action; the last
+      // match is the one inside the dialog.
+      await tester.tap(find.text(l10n.settingsLogoutTile).last);
+      await tester.pumpAndSettle();
+
+      expect(authRepo.logoutCalls, 1);
     },
   );
 
@@ -321,7 +353,7 @@ class _FakeAuthRepository implements AuthRepository {
 /// mirroring the fake in `shell_tabs_user_app_bar_test.dart`.
 class _FakePatientCubit extends PatientCubit {
   _FakePatientCubit._(PatientRepository repository)
-      : super(repository: repository);
+      : super(useCases: PatientUseCases.fromRepository(repository));
 
   factory _FakePatientCubit() {
     final local = LocalPatientDataSource();
@@ -332,7 +364,7 @@ class _FakePatientCubit extends PatientCubit {
       connectivityChanges: const Stream.empty(),
     );
     return _FakePatientCubit._(
-      PatientRepository(
+      PatientRepositoryImpl(
         local: local,
         remote: remote,
         syncService: sync,
@@ -347,7 +379,7 @@ class _FakePatientCubit extends PatientCubit {
   void setState(PatientState state) => emit(state);
 }
 
-class _FakePatientRemote implements PatientDataSource {
+class _FakePatientRemote implements PatientRemoteApi {
   @override
   Future<PatientSnapshot> load() async =>
       throw UnimplementedError('not used in this test');
@@ -366,4 +398,22 @@ class _FakePatientRemote implements PatientDataSource {
 
   @override
   Future<void> saveAlertSettings(AlertSettingsModel settings) async {}
+
+  @override
+  Future<void> upsertCarb(CarbEntry entry) async {}
+
+  @override
+  Future<void> deleteCarb(String id) async {}
+
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) async {}
+
+  @override
+  Future<void> deleteInsulin(String id) async {}
+
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) async {}
+
+  @override
+  Future<void> deleteAlert(String id) async {}
 }

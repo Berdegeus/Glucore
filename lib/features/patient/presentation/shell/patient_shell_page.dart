@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
 import '../pages/add_observation_sheet.dart';
 import '../pages/diary_page.dart';
@@ -33,7 +33,7 @@ class _PatientShellPageState extends State<PatientShellPage> {
       body: IndexedStack(index: _currentIndex, children: _pages),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddObservation(context),
-        backgroundColor: AppTheme.brandBlue,
+        backgroundColor: context.glucoreColors.brandBlue,
         foregroundColor: Colors.white,
         elevation: 6,
         child: const Icon(Icons.add, size: 28),
@@ -42,7 +42,7 @@ class _PatientShellPageState extends State<PatientShellPage> {
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 6,
-        color: AppTheme.surfaceCanvas,
+        color: context.glucoreColors.surfaceCanvas,
         height: 60,
         padding: EdgeInsets.zero,
         child: Row(
@@ -107,7 +107,7 @@ class _TabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppTheme.brandBlue : AppTheme.inkMuted;
+    final color = active ? context.glucoreColors.brandBlue : context.glucoreColors.inkMuted;
     return Expanded(
       child: InkWell(
         onTap: onTap,

@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app';
-import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } from '../helpers/db';
+import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
 
 /**
  * Characterization tests for /insulin. Same intent as readings.test.ts.
@@ -14,7 +14,7 @@ import { disconnect, prisma, registerUser, truncateAll, type RegisteredUser } fr
  */
 
 let app: Express;
-let user: RegisteredUser;
+let user: SignedInPatient;
 
 beforeAll(() => {
   app = buildApp();
@@ -22,7 +22,7 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await truncateAll();
-  user = await registerUser(app);
+  user = await signedInPatient();
 });
 
 afterAll(async () => {
@@ -90,9 +90,51 @@ describe('GET /insulin', () => {
   });
 
   it('never returns another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await seedInsulin(other.userId);
     expect((await request(app).get('/insulin').set(auth())).body).toEqual([]);
+  });
+});
+
+describe('GET /insulin pagination', () => {
+  it('walks the whole history page by page without repeating or skipping', async () => {
+    const total = 250;
+    const base = Date.UTC(2026, 7, 1);
+    await prisma.insulinEvent.createMany({
+      data: Array.from({ length: total }, (_, i) => ({
+        patientId: user.userId,
+        doseUnits: 1,
+        insulinType: 'bolus',
+        eventAt: new Date(base + i * 60_000),
+        dayOfWeek: '',
+      })),
+    });
+
+    const collected: string[] = [];
+    let before: number | undefined;
+    for (let page = 0; page < 10 && collected.length < total; page++) {
+      const query = before === undefined ? { limit: 40 } : { before, limit: 40 };
+      const res = await request(app).get('/insulin').query(query).set(auth());
+      expect(res.status).toBe(200);
+      if (res.body.length === 0) break;
+      for (const entry of res.body) collected.push(entry.id);
+      before = res.body[res.body.length - 1].timeMs;
+    }
+
+    expect(collected).toHaveLength(total);
+    expect(new Set(collected).size).toBe(total);
+  });
+
+  it('rejects a limit above the maximum with INVALID_PAGINATION', async () => {
+    const res = await request(app).get('/insulin').query({ limit: 501 }).set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_PAGINATION');
+  });
+
+  it('rejects a non-numeric before with INVALID_PAGINATION', async () => {
+    const res = await request(app).get('/insulin').query({ before: 'yesterday' }).set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_PAGINATION');
   });
 });
 
@@ -169,7 +211,7 @@ describe('PUT /insulin/item/:id', () => {
   });
 
   it('answers 404 for another patient entry, and leaves it untouched', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     const row = await seedInsulin(other.userId);
 
     expect((await request(app).put(`/insulin/item/${row.id}`).set(auth()).send(patch)).status).toBe(
@@ -196,7 +238,7 @@ describe('DELETE /insulin/item/:id', () => {
   });
 
   it('answers 404 for another patient entry, and leaves it in place', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     const row = await seedInsulin(other.userId);
 
     expect((await request(app).delete(`/insulin/item/${row.id}`).set(auth())).status).toBe(404);
@@ -242,7 +284,7 @@ describe('POST /insulin (deprecated replace-all)', () => {
   });
 
   it('does not touch another patient rows', async () => {
-    const other = await registerUser(app);
+    const other = await signedInPatient();
     await seedInsulin(other.userId);
 
     await request(app).post('/insulin').set(auth()).send({ insulin: [] });

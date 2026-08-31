@@ -3,6 +3,73 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 o projeto segue versionamento semântico (ver [docs/guides/versioning-and-branches.md](docs/guides/versioning-and-branches.md)).
 
+## [Unreleased] — auth-service extraído, Fase 3 (branch `refactor/auth-service`)
+
+A fronteira deixa de ser de pastas e passa a ser de **banco**: identidade sai do serviço clínico e
+vira `auth-service`, com schema, migrations e banco próprios. É o passo mais arriscado do plano de
+microserviços (issue #30), porque a migration é destrutiva e porque desfaz um `ON DELETE CASCADE`.
+
+### Added
+- **`services/auth-service`** (:3002, banco `glucore_auth`) com `User`, `AuthCredential`,
+  `PasswordResetToken`, `AuthSession` e a sua própria `AuditLog` — esta **mantendo** a FK
+  `userId → User.id ON DELETE SET NULL`, já que as duas tabelas ficam no mesmo banco.
+- Três módulos em camadas — `accounts`, `sessions`, `password` — divididos por **o que cada um
+  escreve**, não por forma de URL. É por isso que `/register` e `/login` acabam em módulos
+  diferentes apesar de vizinhos no path.
+- **`packages/shared/src/auth/`**: `claims`, `jwt` (assinatura e verificação) e o middleware
+  `verifyJwt`/`requireRole`, agora compartilhado pelos dois serviços.
+- **Duas Strategies**, que fecham o padrão para o critério de padrões de projeto:
+  `BcryptPasswordHasher` (o custo é argumento de construtor) e `Mailer` (`SmtpMailer` ou
+  `ConsoleMailer`, escolhido por configuração).
+- 25 testes novos no `auth-service` mais os portados: **337 no total**, 95,88% de statements.
+
+### Changed
+- **O papel passa a viajar na claim do JWT** (`{sub, role}`) em vez de ser lido do banco a cada
+  requisição. A decisão anterior existia para que rebaixar um usuário valesse na hora; ela deixou de
+  pagar quando a identidade foi para trás de uma fronteira de rede, porque a consulta viraria um
+  round-trip por request — inclusive no sync de leituras, a rota de maior volume — para proteger um
+  caso que quase não existe (o app só tem contas `PATIENT`). Os perfis web saem ganhando: token de
+  1 h com revogação, contra 30 dias sem revogação nenhuma.
+- **Um token sem `role` é rejeitado, não assumido como paciente.** Todo token emitido antes desta
+  versão tem essa forma. Assumir `PATIENT` rebaixaria uma conta privilegiada em silêncio; assumir
+  qualquer outra coisa daria acesso por token malformado.
+- `toProfileDto` compunha conta e paciente num payload só e não cabia mais em um serviço: virou
+  `toAccountDto` no `auth-service` e `toPatientDto` no `glucose-service`. O gateway recompõe.
+- Os fixtures das cinco suítes de rota do `glucose-service` deixaram de registrar via
+  `POST /auth/register` — rota que aquele serviço não serve mais — e passaram a semear o `Patient` e
+  assinar o token. **Nenhuma asserção dos 225 testes de caracterização mudou.**
+- O job de backend no CI cria um segundo banco (`glucore_auth_test`): um banco por serviço, também
+  no teste.
+
+### Fixed
+- `prismaClassifier` do `auth-service` importava `Prisma` de `'@prisma/client'` — o client que o
+  `glucose-service` gera, não o dele. São classes diferentes, então todo `instanceof` era falso e
+  todo `P2002` teria virado 500 em produção. Pego pelo teste de unidade na primeira execução.
+
+### Removed
+- `services/glucose-service/src/routes/auth.ts` (537 linhas), `lib/passwordPolicy.ts` e os models de
+  identidade do schema clínico, pela migration `split_identity_out`.
+
+### Known gaps
+- **O cadastro perde a fatia de paciente.** `birthDate`, `weightKg` e `targetRange` enviados no
+  register não têm destino; o `Patient` nasce com os defaults 80/180 na primeira requisição de
+  dados. A saga de registro no gateway recupera isso.
+- **`GET/PUT /auth/profile` respondem só a fatia de conta.**
+- **Não há endereço único**: cadastro e login em :3002, resto em :3001. Sem gateway, o app Flutter
+  não funciona ponta a ponta — está fora de escopo por decisão até a Fase 4.
+- **Órfãos passaram a ser possíveis.** Sem o cascade `User → Patient`, apagar uma conta deixa a
+  cadeia clínica para trás. `DELETE /account` cross-service deixa de ser opcional.
+
+### Notes
+- Verificado com os dois serviços de pé: um token emitido em :3002 contra `glucore_auth_dev` é
+  aceito em :3001 contra `glucore_dev`, o `ensurePatient` cria o paciente a partir dele e uma
+  escrita de carboidrato passa. Os dois ids batem entre bancos, sem FK entre eles.
+- A migration destrutiva foi conferida contra o banco de desenvolvimento, não presumida: 627
+  leituras, 5 pacientes, 3 carboidratos, 10 aplicações de insulina e 4 alertas antes e depois.
+- **`npm test` tem que rodar da raiz de `backend/`.** De dentro de um serviço o Vitest perde
+  `fileParallelism: false`/`maxWorkers: 1`, que são opções de raiz, e as suítes truncam o mesmo
+  banco em paralelo.
+
 ## [Unreleased] — backend-microservices, Fases 0–2 (branch `refactor/backend-microservices`, PR #31)
 
 Trabalho preparatório para o split em microserviços (issue #30): rede de segurança, workspace

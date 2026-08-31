@@ -1,12 +1,18 @@
-import { isUuid, NotFoundError, type AuditContext, type RecordAudit } from '@glucore/shared';
+import {
+  isUuid,
+  NotFoundError,
+  parsePageQuery,
+  type AuditContext,
+  type RecordAudit,
+} from '@glucore/shared';
 
 import type { IPatientRepository } from '../patient/patient.repository';
 import { toInsulinDto, type InsulinDto } from './insulin.mapper';
 import type { IInsulinRepository, InsulinCreate } from './insulin.repository';
 import type { InsulinInput } from './insulin.schema';
 
-/** The diary shows a rolling window, not the whole history. */
-const DIARY_PAGE = 100;
+/** Cap kept from the pre-pagination batch endpoint; the /item path has none. */
+const BATCH_LIMIT = 100;
 
 export class InsulinService {
   constructor(
@@ -15,9 +21,14 @@ export class InsulinService {
     private readonly recordAudit: RecordAudit,
   ) {}
 
-  async listForUser(userId: string): Promise<InsulinDto[]> {
+  /** No `before`/`limit` keeps the pre-pagination shape: the 100 most recent. */
+  async listForUser(
+    userId: string,
+    query: { before?: unknown; limit?: unknown } = {},
+  ): Promise<InsulinDto[]> {
+    const page = parsePageQuery(query);
     const patientId = await this.patients.ensure(userId);
-    const rows = await this.insulin.listRecent(patientId, DIARY_PAGE);
+    const rows = await this.insulin.listPage(patientId, page);
     return rows.map(toInsulinDto);
   }
 
@@ -77,7 +88,7 @@ export class InsulinService {
     const patientId = await this.patients.ensure(userId);
     await this.insulin.replaceAll(
       patientId,
-      entries.slice(0, DIARY_PAGE).map((entry) => ({
+      entries.slice(0, BATCH_LIMIT).map((entry) => ({
         ...entry,
         id: isUuid(entry.id) ? entry.id : undefined,
       })),

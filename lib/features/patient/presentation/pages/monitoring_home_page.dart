@@ -4,11 +4,11 @@ import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../../../sensor/domain/models.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/glucose_chart.dart';
 import '../widgets/patient_widgets.dart';
@@ -37,7 +37,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
         value: context.read<PatientCubit>(),
         child: _EntryPopupSheet(
           icon: Icons.restaurant_rounded,
-          iconColor: AppTheme.zoneTargetBg,
+          iconColor: context.glucoreColors.zoneTargetBg,
           title: l10n.monitoringCarbPopupTitle(entry.grams),
           subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
           onEdit: () {
@@ -61,7 +61,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
                   ),
                   FilledButton(
                     style:
-                        FilledButton.styleFrom(backgroundColor: AppTheme.zoneLowBg),
+                        FilledButton.styleFrom(backgroundColor: context.glucoreColors.zoneLowBg),
                     onPressed: () => Navigator.pop(ctx, true),
                     child: Text(l10n.entryDeleteConfirmButton),
                   ),
@@ -88,7 +88,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
         value: context.read<PatientCubit>(),
         child: _EntryPopupSheet(
           icon: Icons.vaccines_outlined,
-          iconColor: AppTheme.brandBlue,
+          iconColor: context.glucoreColors.brandBlue,
           title: l10n.monitoringInsulinPopupTitle(
             entry.units.toStringAsFixed(1),
             entry.type.label(l10n),
@@ -115,7 +115,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
                   ),
                   FilledButton(
                     style:
-                        FilledButton.styleFrom(backgroundColor: AppTheme.zoneLowBg),
+                        FilledButton.styleFrom(backgroundColor: context.glucoreColors.zoneLowBg),
                     onPressed: () => Navigator.pop(ctx, true),
                     child: Text(l10n.entryDeleteConfirmButton),
                   ),
@@ -135,14 +135,14 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      backgroundColor: AppTheme.surfaceElevated,
+      backgroundColor: context.glucoreColors.surfaceElevated,
       appBar: UserAppBar(
-        title: const Text(
+        title: Text(
           'glucore',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
-            color: AppTheme.brandBlue,
+            color: context.glucoreColors.brandBlue,
             letterSpacing: -0.5,
           ),
         ),
@@ -259,15 +259,15 @@ class _EntryPopupSheet extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.ink,
+                      color: context.glucoreColors.ink,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 13, color: AppTheme.inkMuted),
+                    style: TextStyle(fontSize: 13, color: context.glucoreColors.inkMuted),
                   ),
                 ],
               ),
@@ -288,7 +288,7 @@ class _EntryPopupSheet extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onDelete,
                   style:
-                      OutlinedButton.styleFrom(foregroundColor: AppTheme.zoneLowBg),
+                      OutlinedButton.styleFrom(foregroundColor: context.glucoreColors.zoneLowBg),
                   icon: const Icon(Icons.delete_outline, size: 18),
                   label: Text(l10n.entryDeleteConfirmButton),
                 ),
@@ -321,43 +321,43 @@ class _NoSensorCard extends StatelessWidget {
           Icons.search_rounded,
           l10n.monitoringNoSensorScanningTitle,
           l10n.monitoringNoSensorScanningSubtitle,
-          AppTheme.brandBlue,
+          context.glucoreColors.brandBlue,
         ),
       SensorConnectionStatus.connecting => (
           Icons.bluetooth_connected,
           l10n.monitoringNoSensorConnectingTitle,
           l10n.monitoringNoSensorConnectingSubtitle,
-          AppTheme.brandBlue,
+          context.glucoreColors.brandBlue,
         ),
       SensorConnectionStatus.pairing => (
           Icons.password,
           l10n.monitoringNoSensorPairingTitle,
           l10n.monitoringNoSensorPairingSubtitle,
-          AppTheme.brandBlue,
+          context.glucoreColors.brandBlue,
         ),
       SensorConnectionStatus.syncingHistory => (
           Icons.sync_rounded,
           l10n.monitoringNoSensorSyncingTitle,
           l10n.monitoringNoSensorSyncingSubtitle,
-          AppTheme.brandBlue,
+          context.glucoreColors.brandBlue,
         ),
       SensorConnectionStatus.warmingUp => (
           Icons.hourglass_bottom_rounded,
           l10n.monitoringNoSensorWarmingTitle,
           l10n.monitoringNoSensorWarmingSubtitle,
-          AppTheme.brandAmber,
+          context.glucoreColors.brandAmber,
         ),
       SensorConnectionStatus.error => (
           Icons.error_outline_rounded,
           l10n.monitoringNoSensorErrorTitle,
           l10n.monitoringNoSensorErrorSubtitle,
-          AppTheme.zoneLowBg,
+          context.glucoreColors.zoneLowBg,
         ),
       _ => (
           Icons.sensors_off_rounded,
           l10n.monitoringNoSensorDefaultTitle,
           l10n.monitoringNoSensorDefaultSubtitle,
-          AppTheme.inkMuted,
+          context.glucoreColors.inkMuted,
         ),
     };
 
@@ -388,7 +388,7 @@ class _NoSensorCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 13, color: AppTheme.inkMuted),
+                  style: TextStyle(fontSize: 13, color: context.glucoreColors.inkMuted),
                 ),
               ],
             ),
@@ -414,7 +414,7 @@ class _ChartCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCanvas,
+        color: context.glucoreColors.surfaceCanvas,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -424,10 +424,10 @@ class _ChartCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Text(
               context.l10n.monitoringChartSectionTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.inkMuted,
+                color: context.glucoreColors.inkMuted,
               ),
             ),
           ),
@@ -476,7 +476,7 @@ class _StatsRow extends StatelessWidget {
           label: l10n.monitoringTimeInTargetLabel,
           value: '$tirPct',
           unit: '%',
-          color: tirPct >= 70 ? AppTheme.zoneTargetBg : AppTheme.zoneHighBg,
+          color: tirPct >= 70 ? context.glucoreColors.zoneTargetBg : context.glucoreColors.zoneHighBg,
         ),
         const SizedBox(width: 8),
         GlucoreStatChip(
@@ -511,12 +511,12 @@ class _SensorStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCanvas,
+        color: context.glucoreColors.surfaceCanvas,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const Icon(Icons.sensors, size: 18, color: AppTheme.inkMuted),
+          Icon(Icons.sensors, size: 18, color: context.glucoreColors.inkMuted),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -526,7 +526,7 @@ class _SensorStrip extends StatelessWidget {
                     ? session.sensorId.substring(0, 8)
                     : session.sensorId,
               ),
-              style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+              style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
             ),
           ),
         ],

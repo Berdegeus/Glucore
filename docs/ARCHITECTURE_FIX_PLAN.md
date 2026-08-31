@@ -21,6 +21,8 @@ Data: 2026-07-05 · Branch base sugerida: uma branch por fase a partir de `main`
 >
 > **Atualização 2026-08-24:** o item 2.4 deixou de ser corte total — os estágios analyze/test/lint (que não dependem do `.so` vendor) foram retomados via GitHub Actions; só o artefato de build/deploy segue bloqueado. Ver seção 2.4.
 
+> **Estado em 2026-08-29:** Fases 3, 4 e 5 **concluídas** — o plano inteiro está entregue. Uma exceção explícita: o item **5.1 (P13, mock atrás da abstração) foi retirado do plano**, não implementado; o alvo dele havia sido revertido em `f91adea` e não existe mais na árvore. Os itens 3.1 e 3.2 já estavam entregues desde 2026-07-07; 3.3, 3.4, 3.5, 4.1, 4.2, 4.3 e 5.2 saíram nesta iteração. A verificação em device físico segue pendente pelo mesmo motivo das fases anteriores. Rastro da entrega: `.specs/features/arch-phases-3-5/`; a decisão do op-log está registrada como `AD-009` em `.specs/STATE.md`.
+
 Racional da ordem dos críticos: **P8/P9 antes de P7** — colocar BLE instável num ForegroundService 24/7 só amplia os bugs de fila/threading. **P1 antes de P2/P4** — offline-first muda quem é a fonte de verdade; redesenhar a API antes disso geraria retrabalho.
 
 ---
@@ -153,20 +155,22 @@ PatientCubit → PatientRepository
 ### 3.2 · P3 definitivo — **✅ Implementado (2026-07-06)**
 Com 3.1, cada leitura BLE grava local (barato, sem rede no caminho); o sync job empurra as coleções pendentes (`synced = 0`) com debounce — o quick-fix 0.3 (batch único no `readingAvailable`) foi mantido, agora persistindo no sqflite. Push ainda usa o replace-all do backend; envio unitário/delta chega com a Fase 4.
 
-### 3.3 · P5 — Renames verdadeiros — **✅ Parcial (2026-07-06)**
+### 3.3 · P5 — Renames verdadeiros — **✅ Feito (2026-08-29)**
 Junto com a introdução do datasource local real (evita churn duplo):
 - ✅ `PatientLocalDataSource` (interface) → `PatientDataSource` (+ `PatientLocalSnapshot` → `PatientSnapshot`), em `patient_datasource.dart`; arquivo `patient_local_datasource.dart` → `patient_remote_datasource.dart` (classe remota) + `patient_local_datasource.dart` (sqflite, agora com nome honesto).
 - ✅ `PatientLocalRepository` → `PatientRepository` (`patient_repository.dart`).
-- ⬜ `AuthLocalDataSource` → `AuthDataSource` (pendente — fora do escopo do PR da Fase 3).
+- ✅ `AuthLocalDataSource` → `AuthDataSource`, arquivo `auth_local_datasource.dart` → `auth_datasource.dart` (2026-08-29). O campo `localDataSource` de `AuthRepositoryImpl` carregava a mesma mentira e virou `dataSource`. Sem mudança de comportamento.
 **Aceite da fase:** modo avião → registrar carbo/insulina, receber leituras mock → tudo visível e persistido; religar rede → backend converge (verificar linhas no Postgres); app reiniciado offline mostra dados.
 
-### 3.4 · Rubrica 37 — Camada `domain/` no feature `patient`
+### 3.4 · Rubrica 37 — Camada `domain/` no feature `patient` — **✅ Feito (2026-08-29)**
 `auth` e `sensor` já têm `domain/`; `patient` não. Aproveitando a reorganização 3.1/3.3 (que já separa `PatientRepository`/`PatientDataSource`), extrair entidades e casos de uso para `lib/features/patient/domain/`, no mesmo padrão dos outros dois features.
 **Aceite:** `PatientCubit` passa a depender de casos de uso do `domain/`, não direto do repository.
+**Entregue:** entidades em `domain/entities/` atrás do barrel `patient_entities.dart` (o `presentation/models/` foi removido, sem re-export de compatibilidade); contrato `PatientRepository` em `domain/repositories/` com `PatientRepositoryImpl` em `data/`; doze casos de uso em `domain/usecases/`. O cubit recebe `PatientUseCases`, um agregado dos doze, e não referencia mais o repositório. Guardas estruturais em `test/features/patient/domain_layering_test.dart`.
 
-### 3.5 · Rubrica 35 (parcial) — Dark mode / light mode
+### 3.5 · Rubrica 35 (parcial) — Dark mode / light mode — **✅ Feito (2026-08-29)**
 Escopo restrito ao item (a) do critério (temas claro/escuro); customização salva por tela e otimização de desktop ficam de reserva. `ThemeMode` + `AppTheme.light()`/`AppTheme.dark()`, toggle nas configurações, preferência persistida (mesmo mecanismo do `onboarding_done`).
 **Aceite:** app alterna tema em tempo real; preferência sobrevive a restart.
+**Entregue:** paleta numa `ThemeExtension` (`GlucoreColors`) com instância clara e escura, `ThemeCubit` + `SharedPreferences` na chave `theme_mode` (default `system`), e seletor de três opções nas configurações. Os matizes das faixas clínicas são idênticos nos dois temas — cor de faixa é sinal, não decoração; só variantes suaves, tintas e superfícies foram recalculadas. As 167 referências estáticas de cor migraram para lookup por contexto, e um teste varre `lib/` e falha se qualquer constante de cor voltar.
 
 **Verificação:** testes de unidade do sync service (fila, retry, reconciliação); cenário avião manual; `flutter test`; alternar tema e reabrir o app mantém a escolha.
 
@@ -174,12 +178,14 @@ Escopo restrito ao item (a) do critério (temas claro/escuro); customização sa
 
 ## Fase 4 — Identidade + API por item (2–3 dias)
 
-### 4.1 · P4 — UUID em toda entrada
+### 4.1 · P4 — UUID em toda entrada — **✅ Feito (2026-08-29)**
 - `CarbEntry`/`InsulinEntry`/`AppAlertItem` ganham `id String` (uuid v4 gerado no app na criação; pacote `uuid`).
 - Drift/JSON/mappers incluem `id`; edit/delete no `PatientCubit` casam por `id` (fim do match por timestamp).
 - Entradas legadas: no primeiro load, itens sem `id` recebem um (migração drift).
 
-### 4.2 · P2 — Endpoints por item
+**Entregue.** Duas correções de rota em relação ao texto acima: a persistência local é **sqflite**, não drift, e o banco foi para a **v3** (a v2 já tinha sido gasta pela tabela de meta). A migração v2 → v3 recria as três tabelas do diário com `id TEXT PRIMARY KEY` mais índice de horário, gerando um UUID por linha existente dentro da transação do `onUpgrade` — falha no meio deixa o banco na v2 sem perder diário. Entrada que chega do servidor sem `id` ou com `id` fora do formato UUID ganha um id local em vez de ser descartada.
+
+### 4.2 · P2 — Endpoints por item — **✅ Feito (2026-08-29)**
 Backend (Prisma já tem `id` uuid — aceitar id gerado pelo cliente):
 ```
 POST   /carbs/item        { id, grams, description, timeMs }   → 201
@@ -193,12 +199,20 @@ GET    inalterado (agora inclui id)
 - Limite de 100 itens deixa de truncar dados: GET pagina (`?before=timeMs&limit=100`); histórico completo preservado no banco.
 **Aceite:** editar 1 entrada gera 1 PUT; IDs estáveis entre saves (verificar no Postgres); duas entradas no mesmo minuto são editáveis independentemente; dois devices simultâneos não se apagam.
 
-### 4.3 · Rubrica 25, 28, 33 — Qualidade dos novos endpoints
+**Entregue.** Alerts ganhou os três verbos unitários que faltavam; carbs e insulin já os tinham. O cliente passou a uma fila local `pending_ops(seq, entity, entity_id, op, payload_json, created_at)`, drenada em ordem de `seq`, gravada na mesma transação da linha do diário. O `upsert` é `PUT` com fallback para `POST` no 404 — reenvio idempotente sem o app precisar saber se o servidor já viu a entrada — e `DELETE` que responde 404 conta como sucesso. A drenagem para na primeira falha recuperável preservando a op e as posteriores, porque uma op posterior pode depender da anterior; 401 interrompe o push e preserva a fila. Op com entidade desconhecida ou payload ilegível é descartada com log, sem travar a fila. Paginação `before`/`limit` (1..500, default 100) nas três listagens, e o corte de 100 entradas do cliente saiu. Decisão registrada como `AD-009` no `.specs/STATE.md`.
+
+Como previsto, os `POST` de coleção continuam vivos e marcados deprecated nesta release como caminho de rollback. Removê-los — junto do `deleteMany` — é trabalho do release seguinte; saem com eles as escritas de coleção do diário no cliente (`saveCarbs`/`saveInsulin`/`saveAlerts` e os `mark*Synced` correspondentes), hoje mantidas de propósito e documentadas como tal no contrato do repositório.
+
+### 4.3 · Rubrica 25, 28, 33 — Qualidade dos novos endpoints — **✅ Feito (2026-08-29)**
 Ao construir os endpoints de 4.2:
 - Estruturar em camadas (route → controller → service → repository Prisma) em vez de handlers direto na rota — só nas rotas novas, sem refatorar o resto do backend (rubrica 33).
 - Índice Prisma (`@@index`) na coluna usada por `?before=timeMs`, pra paginação não degradar (rubrica 28).
 - Cobrir os endpoints novos com testes supertest (create/update/delete/paginação/2-devices), mirando 75%+ de cobertura no backend (rubrica 25).
 **Aceite:** rotas novas seguem a estrutura em camadas; migration inclui o índice; `npm test` cobre os cenários acima.
+
+**Entregue.** Carbs, insulin e alerts em `route → controller → service → repository`, com o client Prisma injetado no repository e nenhum acesso direto no handler; auth, readings e settings ficaram como estavam, como o plano manda. A suíte do backend foi de 43 para 146 testes (`node:test` + supertest sobre um duplo Prisma em memória que filtra, ordena e pagina de verdade), e os doze módulos novos fecharam em **100,00% de linhas** — acima dos 75% da rubrica.
+
+Sobre o índice: a verificação não encontrou nenhum faltando. `CarbEvent` e `InsulinEvent` já tinham `@@index([patientId, eventAt])` e `AlertEvent` já tinha `@@index([patientId, triggeredAt])`, os três criados pela migration `20260517172000_domain_model_alignment`, e um índice composto `(patientId, coluna de horário)` atende as três partes da consulta de paginação de uma vez. **Nenhuma migration nova foi criada**: inventar índice redundante para cumprir rubrica seria teatro. A verificação está registrada em `backend/README.md`, com o nome do índice que atende cada consulta.
 
 **Verificação:** testes de rota (supertest ou curl scriptado); cenário 2 clientes; migração de dados legados testada com dump real; `npm test` sem falhas.
 
@@ -206,19 +220,25 @@ Ao construir os endpoints de 4.2:
 
 ## Fase 5 — Mock via DI + poda final (~½ dia)
 
-### 5.1 · P13 — Mock atrás da abstração
-`injection_container.dart`: em debug, registrar `SensorRepository` trocável (`sl.unregister + register` via helper `swapSensorRepository(useMock:)` chamado pelo DebugPanel). `SensorCubit` perde o import de `mock_sensor_repository.dart` e os métodos `activateMock/deactivateMock` viram troca de repositório + re-`initialize`.
-**Aceite:** cubit sem referência a implementação concreta; DebugPanel funciona igual.
+### 5.1 · P13 — Mock atrás da abstração — ⛔ **Retirado do plano (2026-08-29)**
 
-### 5.2 · P12 restante — Decisões de produto documentadas
-| Item | Decisão proposta |
-|---|---|
-| Fluxo `submitTransmitter` (canal→SQLite, sem UI, sem nativo) | **Remover** da pilha inteira (Sibionics GS1 não usa transmissor separado) |
-| Payload `warmup` nunca emitido | Remover do contrato Kotlin; manter `warmingUp` no enum Dart (sensor tem warmup real; implementável depois) |
-| Stubs C++ `saveMatchedDevice`/`getInitialWrite`/`handleNotification` | Remover (C++ + `external fun` Kotlin) |
-| `LibreNFCPage` placeholder | Desabilitar card como o Dexcom ("em breve") até existir CoreNFC/nfc_manager real |
-| Tabelas Prisma aspiracionais | **Manter** (custo zero; documentadas em backend.md) |
-**Aceite:** `flutter analyze` + build Android limpos; contrato em `platform-channels.md` atualizado.
+**Não foi implementado, e não deve ser.** O item perdeu a base: `MockSensorRepository` e `DebugPanel` foram revertidos em **`f91adea`** e não existem em `lib/`. Não há mock furando camada nenhuma, porque não há mock — o `SensorCubit` fala só com `SensorRepository`. Zero código foi escrito para este item; ele sai por decisão explícita do usuário, registrada nas Assumptions da spec `arch-phases-3-5` e no `ARCHITECTURE_REVIEW.md`, onde P13 está marcado como resolvido-por-remoção com o diagnóstico original preservado.
+
+Reintroduzir um sensor falso volta a ser uma decisão de projeto, não um copy-paste do texto abaixo. O desenho original fica registrado como referência caso essa decisão seja tomada:
+
+> `injection_container.dart`: em debug, registrar `SensorRepository` trocável (`sl.unregister + register` via helper `swapSensorRepository(useMock:)` chamado pelo DebugPanel). `SensorCubit` perde o import de `mock_sensor_repository.dart` e os métodos `activateMock/deactivateMock` viram troca de repositório + re-`initialize`.
+> **Aceite:** cubit sem referência a implementação concreta; DebugPanel funciona igual.
+
+### 5.2 · P12 restante — Decisões de produto documentadas — **✅ Feito (2026-08-29)**
+| Item | Decisão proposta | Estado |
+|---|---|---|
+| Fluxo `submitTransmitter` (canal→SQLite, sem UI, sem nativo) | **Remover** da pilha inteira (Sibionics GS1 não usa transmissor separado) | ✅ Removido de Dart e Kotlin: canal, cubit, repositório, contrato de domínio, plataforma, `SibionicsBarcode.validateTransmitterBarcode`, campo `transmitterId` dos mapas e estados `AWAITING_TRANSMITTER`/`TRANSMITTER_ASSIGNED`. A coluna `transmitter_id` ficou no SQLite, sem escrita e comentada — derrubá-la custaria migração por causa de código que não roda |
+| Payload `warmup` nunca emitido | Remover do contrato Kotlin; manter `warmingUp` no enum Dart (sensor tem warmup real; implementável depois) | ✅ `WarmupPayload` apagado. A chave `warmup` do evento segue no shape, sempre `null` nos seis emissores, e o `warmingUp` do Libre 2 por NFC continua sendo emitido de verdade |
+| Stubs C++ `saveMatchedDevice`/`getInitialWrite`/`handleNotification` | Remover (C++ + `external fun` Kotlin) | ✅ Removidos dos dois lados. `llvm-nm` na biblioteca reconstruída lista exatamente os quatro símbolos JNI restantes, um por `external fun` — nenhum `external fun` ficou sem contraparte nativa |
+| `LibreNFCPage` placeholder | Desabilitar card como o Dexcom ("em breve") até existir CoreNFC/nfc_manager real | ✅ Resolvido antes deste plano: o fluxo NFC do Libre 2 e a biblioteca Abbott foram implementados, então não há placeholder a desabilitar |
+| Tabelas Prisma aspiracionais | **Manter** (custo zero; documentadas em backend.md) | ✅ Mantidas, dez modelos anotados com `/// roadmap`; nenhuma remoção |
+
+**Aceite:** `flutter analyze` + build Android limpos; contrato em `platform-channels.md` atualizado. **Atendido:** `flutter analyze` limpo, `:app:assembleDebug` verde com o C++ religado, 340 testes Flutter, 146 de backend e 34 de Kotlin passando; `platform-channels.md`, `data-models.md` e `backend/README.md` atualizados contra o código.
 
 ---
 

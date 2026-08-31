@@ -98,26 +98,6 @@ class SensorCubit extends Cubit<SensorUiState> {
     }
   }
 
-  Future<void> submitTransmitter(String transmitterBarcode) async {
-    try {
-      await repository.submitTransmitter(transmitterBarcode);
-      if (state.session != null) {
-        emit(
-          state.copyWith(
-            session: state.session!.copyWith(transmitterId: transmitterBarcode),
-          ),
-        );
-      }
-    } catch (e) {
-      emit(
-        state.copyWith(
-          status: SensorConnectionStatus.error,
-          failure: SensorFailure(e.toString()),
-        ),
-      );
-    }
-  }
-
   Future<void> startMonitoring() async {
     if (state.status == SensorConnectionStatus.scanning ||
         state.status == SensorConnectionStatus.connecting ||

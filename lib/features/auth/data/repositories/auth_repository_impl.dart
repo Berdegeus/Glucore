@@ -1,14 +1,14 @@
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_local_datasource.dart';
+import '../datasources/auth_datasource.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  const AuthRepositoryImpl(this.localDataSource);
+  const AuthRepositoryImpl(this.dataSource);
 
-  final AuthLocalDataSource localDataSource;
+  final AuthDataSource dataSource;
 
   @override
   Future<bool> login({required String email, required String password}) {
-    return localDataSource.login(email: email, password: password);
+    return dataSource.login(email: email, password: password);
   }
 
   @override
@@ -22,7 +22,7 @@ class AuthRepositoryImpl implements AuthRepository {
     int? targetRangeMin,
     int? targetRangeMax,
   }) {
-    return localDataSource.register(
+    return dataSource.register(
       fullName: fullName,
       email: email,
       password: password,
@@ -36,11 +36,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> logout() {
-    return localDataSource.logout();
+    return dataSource.logout();
   }
 
   @override
   Future<AuthSessionStatus> isLoggedIn() {
-    return localDataSource.isLoggedIn();
+    return dataSource.isLoggedIn();
   }
 }

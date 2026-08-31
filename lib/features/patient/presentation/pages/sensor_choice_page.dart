@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../../../sensor/domain/models.dart';
 import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
@@ -17,16 +17,16 @@ class SensorChoicePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
+          Text(
             'Selecione a marca do seu sensor CGM',
-            style: TextStyle(fontSize: 14, color: AppTheme.inkMuted),
+            style: TextStyle(fontSize: 14, color: context.glucoreColors.inkMuted),
           ),
           const SizedBox(height: 20),
           _BrandCard(
             name: 'Sibionics',
             description: 'Sensor implantável de 14 dias',
             icon: Icons.sensors,
-            color: AppTheme.brandBlue,
+            color: context.glucoreColors.brandBlue,
             enabled: true,
             onTap: () => Navigator.of(context).push(
               buildPatientScopedRoute(
@@ -71,7 +71,7 @@ class SensorChoicePage extends StatelessWidget {
             name: 'Dexcom',
             description: 'Em breve',
             icon: Icons.bluetooth_disabled,
-            color: AppTheme.inkMuted,
+            color: context.glucoreColors.inkMuted,
             enabled: false,
             onTap: null,
           ),
@@ -107,7 +107,7 @@ class _BrandCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceCanvas,
+            color: context.glucoreColors.surfaceCanvas,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: enabled ? color.withValues(alpha: 0.3) : Colors.transparent,
@@ -131,25 +131,25 @@ class _BrandCard extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.ink,
+                        color: context.glucoreColors.ink,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       description,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppTheme.inkMuted,
+                        color: context.glucoreColors.inkMuted,
                       ),
                     ),
                   ],
                 ),
               ),
               if (enabled)
-                const Icon(Icons.chevron_right, color: AppTheme.inkMuted),
+                Icon(Icons.chevron_right, color: context.glucoreColors.inkMuted),
             ],
           ),
         ),
