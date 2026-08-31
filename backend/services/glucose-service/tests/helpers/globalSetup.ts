@@ -32,6 +32,9 @@ export default function setup(): void {
       cwd: SERVICE_ROOT,
       env: { ...process.env, DATABASE_URL: databaseUrl },
       stdio: 'pipe',
+      // Windows resolves `npx` as `npx.cmd`; execFileSync only finds it through
+      // a shell. POSIX runs `npx` directly either way, so this is a no-op there.
+      shell: true,
     });
   } catch (error) {
     const detail =
