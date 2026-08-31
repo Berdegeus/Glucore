@@ -89,3 +89,16 @@ export function getJwtSecret(): string {
     'Set it in backend/.env (e.g. JWT_SECRET=$(openssl rand -hex 32)) before starting the server.',
   );
 }
+
+/**
+ * Signs/verifies the internal token the gateway sends on every proxied
+ * request. Same resolve-on-first-use reasoning as `getJwtSecret`, and
+ * distinct from it so a leaked user token can never be replayed as internal.
+ */
+export function getInternalJwtSecret(): string {
+  return required(
+    'INTERNAL_JWT_SECRET',
+    'Set it in backend/.env (e.g. INTERNAL_JWT_SECRET=$(openssl rand -hex 32)) before starting the server. ' +
+      'It must be shared with the gateway and auth-service, which are the only things that mint or verify it.',
+  );
+}

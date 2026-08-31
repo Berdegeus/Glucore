@@ -1,6 +1,8 @@
-import { recordAudit as recordAuditWith, type AuditEntry } from '@glucore/shared';
+import { createRequireInternalAuth, recordAudit as recordAuditWith, type AuditEntry } from '@glucore/shared';
 import type { PrismaClient } from '@prisma/client';
+import type { Router } from 'express';
 
+import { getInternalJwtSecret } from './lib/env';
 import { prisma as defaultPrisma } from './lib/prisma';
 import { AlertsController } from './modules/alerts/alerts.controller';
 import { PrismaAlertRepository } from './modules/alerts/alerts.repository';
@@ -11,7 +13,10 @@ import { CarbsService } from './modules/carbs/carbs.service';
 import { InsulinController } from './modules/insulin/insulin.controller';
 import { PrismaInsulinRepository } from './modules/insulin/insulin.repository';
 import { InsulinService } from './modules/insulin/insulin.service';
+import { PatientController } from './modules/patient/patient.controller';
+import { createInternalPatientRouter } from './modules/patient/patient.routes';
 import { PrismaPatientRepository } from './modules/patient/patient.repository';
+import { PatientService } from './modules/patient/patient.service';
 import { ReadingsController } from './modules/readings/readings.controller';
 import { PrismaReadingRepository } from './modules/readings/readings.repository';
 import { SettingsController } from './modules/settings/settings.controller';
@@ -31,6 +36,7 @@ export interface Container {
   insulin: InsulinController;
   alerts: AlertsController;
   settings: SettingsController;
+  internalPatientRouter: Router;
 }
 
 /**
@@ -62,6 +68,10 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
     ),
     settings: new SettingsController(
       new SettingsService(new PrismaSettingsRepository(prisma), patients, recordAudit),
+    ),
+    internalPatientRouter: createInternalPatientRouter(
+      new PatientController(new PatientService(patients, recordAudit)),
+      createRequireInternalAuth(getInternalJwtSecret),
     ),
   };
 }
