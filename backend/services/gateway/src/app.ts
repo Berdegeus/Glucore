@@ -9,8 +9,15 @@ import {
   type HealthCheckable,
 } from '@glucore/shared';
 
+import { AccountController } from './modules/account/account.controller';
+import { createAccountRouter } from './modules/account/account.routes';
 import { createContainer, type Container } from './container';
+import { MeController } from './modules/me/me.controller';
+import { createMeRouter } from './modules/me/me.routes';
+import { RegisterController } from './modules/register/register.controller';
+import { createRegisterRouter } from './modules/register/register.routes';
 import { createProxyRoute } from './routes/routingTable';
+import { upstreamClassifier } from './middleware/upstreamClassifier';
 
 export interface BuildAppOptions {
   /** Allowed CORS origins. Empty means "permissive", for local development. */
@@ -21,7 +28,7 @@ export interface BuildAppOptions {
   container?: Container;
 }
 
-const errorHandler = createErrorHandler([appErrorClassifier, httpContractClassifier]);
+const errorHandler = createErrorHandler([upstreamClassifier, appErrorClassifier, httpContractClassifier]);
 
 /** No database here, so "ready" only ever proves the process itself is up. */
 const noopHealthCheck: HealthCheckable = {
@@ -38,9 +45,9 @@ const noopHealthCheck: HealthCheckable = {
  * under `/api/v1/{auth,readings,carbs,insulin,alerts,settings}` is a pure
  * proxy, and a global body parser would consume the request stream before
  * `http-proxy-middleware` can forward it — silently sending an empty body
- * downstream on every POST. Phase 4.3's composition routes (`/me`,
- * `/account`, the registration saga) mount their own `express.json()`
- * locally, scoped to just those routers.
+ * downstream on every POST. The three composition routers below
+ * (`/api/v1/auth/register`, `/api/v1/me`, `/api/v1/account`) each mount their
+ * own `express.json()`, scoped to just that router.
  */
 export function buildApp(options: BuildAppOptions = {}): Express {
   const { corsOrigins = [], requestLogging = false, container = createContainer() } = options;
@@ -53,11 +60,28 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use(corsOrigins.length > 0 ? cors({ origin: corsOrigins }) : cors());
   if (requestLogging) app.use(morgan('dev'));
 
-  // Public: register/login/forgot-password/reset-password/refresh have no
-  // Bearer token yet, or (refresh) verify it themselves downstream. The
-  // gateway's own `authenticate` is not on this path at all — auth-service is
-  // the authority on every /auth/* response.
+  // Composition, mounted before the generic auth proxy: a router only
+  // handles the methods it declares (POST '/' here), so anything else under
+  // /api/v1/auth/register falls through to the proxy below unchanged.
+  app.use(
+    '/api/v1/auth/register',
+    createRegisterRouter(new RegisterController(container.registerSaga)),
+  );
+
+  // Public: login/forgot-password/reset-password/refresh/status/profile have
+  // no internal-token concern — they hit the same public /auth/* routes as
+  // before, authenticated by the end-user JWT alone. auth-service remains the
+  // sole authority on every one of those responses.
   app.use('/api/v1/auth', createProxyRoute('auth', 'auth', container.registry));
+
+  app.use(
+    '/api/v1/me',
+    createMeRouter(new MeController(container.authClient, container.glucoseClient), container.authenticate),
+  );
+  app.use(
+    '/api/v1/account',
+    createAccountRouter(new AccountController(container.authClient, container.glucoseClient), container.authenticate),
+  );
 
   for (const prefix of ['readings', 'carbs', 'insulin', 'alerts', 'settings']) {
     app.use(

@@ -5,9 +5,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EnvServiceRegistry, signAccessToken } from '@glucore/shared';
 
 import { buildApp } from '../../src/app';
+import { AuthClient } from '../../src/clients/authClient';
+import { GlucoseClient } from '../../src/clients/glucoseClient';
 import { createAuthenticate } from '../../src/middleware/authenticate';
+import { RegisterSaga } from '../../src/modules/register/register.saga';
 import { startFakeDownstream, type FakeDownstream } from '../helpers/fakeDownstream';
-import { TEST_JWT_SECRET } from '../helpers/testEnv';
+import { TEST_INTERNAL_JWT_SECRET, TEST_JWT_SECRET } from '../helpers/testEnv';
 
 /**
  * The gateway's first real moment of truth: does a request to `/api/v1/<x>`
@@ -23,10 +26,15 @@ beforeAll(async () => {
   glucoseFake = await startFakeDownstream();
 
   const registry = new EnvServiceRegistry({ auth: authFake.url, glucose: glucoseFake.url });
+  const authClient = new AuthClient(registry, TEST_INTERNAL_JWT_SECRET);
+  const glucoseClient = new GlucoseClient(registry, TEST_INTERNAL_JWT_SECRET);
   app = buildApp({
     container: {
       authenticate: createAuthenticate(() => TEST_JWT_SECRET),
       registry,
+      authClient,
+      glucoseClient,
+      registerSaga: new RegisterSaga(authClient, glucoseClient),
     },
   });
 });

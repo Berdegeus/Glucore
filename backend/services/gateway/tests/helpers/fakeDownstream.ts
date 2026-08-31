@@ -14,8 +14,12 @@ export interface FakeDownstream {
  * glucose-service. `http-proxy-middleware` opens a real TCP connection to its
  * target, so nothing short of an actual listening server can play that role —
  * an in-memory Express app driven only by supertest cannot.
+ *
+ * `configure` runs before the catch-all echo route, so a test can register
+ * specific routes (a 409, a failure, a recorded call) and fall back to the
+ * echo for everything else.
  */
-export async function startFakeDownstream(): Promise<FakeDownstream> {
+export async function startFakeDownstream(configure?: (app: Express) => void): Promise<FakeDownstream> {
   const app = express();
   app.use(express.json());
 
@@ -24,6 +28,8 @@ export async function startFakeDownstream(): Promise<FakeDownstream> {
     requests.push({ method: req.method, path: req.path, body: req.body, headers: req.headers });
     next();
   });
+
+  configure?.(app);
 
   app.all('*', (req, res) => {
     res.status(200).json({ echoedPath: req.path, echoedBody: req.body });
