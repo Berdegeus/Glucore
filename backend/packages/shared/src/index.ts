@@ -6,6 +6,17 @@ export {
 } from './auth/claims';
 export { accessTokenTtlSeconds, signAccessToken, verifyAccessToken } from './auth/jwt';
 export { createVerifyJwt, requireRole, type AuthRequest } from './auth/middleware';
+export {
+  signInternalToken,
+  verifyInternalToken,
+  type InternalTokenClaims,
+} from './auth/internalToken';
+export {
+  createRequireInternalAuth,
+  type InternalAuthRequest,
+} from './auth/requireInternalAuth';
+export { type ServiceRegistry } from './discovery/ServiceRegistry';
+export { EnvServiceRegistry } from './discovery/EnvServiceRegistry';
 export { asyncHandler } from './http/asyncHandler';
 export { optionalText } from './util/optionalText';
 export { isUuid, optionalUuid, requireUuid } from './util/uuid';
