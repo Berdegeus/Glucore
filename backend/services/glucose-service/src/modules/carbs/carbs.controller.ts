@@ -9,7 +9,7 @@ export class CarbsController {
   constructor(private readonly service: CarbsService) {}
 
   list = async (req: AuthRequest, res: Response): Promise<void> => {
-    res.json(await this.service.listForUser(req.userId!));
+    res.json(await this.service.listForUser(req.userId!, req.query));
   };
 
   create = async (req: AuthRequest, res: Response): Promise<void> => {

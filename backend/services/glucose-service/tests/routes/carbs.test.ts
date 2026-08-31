@@ -102,6 +102,63 @@ describe('GET /carbs', () => {
   });
 });
 
+describe('GET /carbs pagination', () => {
+  it('walks the whole history page by page without repeating or skipping', async () => {
+    const total = 250;
+    const base = Date.UTC(2026, 7, 1);
+    await prisma.carbEvent.createMany({
+      data: Array.from({ length: total }, (_, i) => ({
+        patientId: user.userId,
+        carbsGrams: 10,
+        description: `m${i}`,
+        eventAt: new Date(base + i * 60_000),
+      })),
+    });
+
+    const collected: string[] = [];
+    let before: number | undefined;
+    for (let page = 0; page < 10 && collected.length < total; page++) {
+      const query = before === undefined ? { limit: 40 } : { before, limit: 40 };
+      const res = await request(app).get('/carbs').query(query).set(auth());
+      expect(res.status).toBe(200);
+      if (res.body.length === 0) break;
+      for (const entry of res.body) collected.push(entry.id);
+      before = res.body[res.body.length - 1].timeMs;
+    }
+
+    expect(collected).toHaveLength(total);
+    expect(new Set(collected).size).toBe(total);
+  });
+
+  it('rejects a limit above the maximum with INVALID_PAGINATION', async () => {
+    const res = await request(app).get('/carbs').query({ limit: 501 }).set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_PAGINATION');
+  });
+
+  it('rejects a non-numeric before with INVALID_PAGINATION', async () => {
+    const res = await request(app).get('/carbs').query({ before: 'yesterday' }).set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_PAGINATION');
+  });
+
+  it('without params keeps returning the 100 most recent, newest first', async () => {
+    const base = Date.UTC(2026, 7, 1);
+    await prisma.carbEvent.createMany({
+      data: Array.from({ length: 120 }, (_, i) => ({
+        patientId: user.userId,
+        carbsGrams: 10,
+        description: `m${i}`,
+        eventAt: new Date(base + i * 60_000),
+      })),
+    });
+
+    const res = await request(app).get('/carbs').set(auth());
+    expect(res.body).toHaveLength(100);
+    expect(res.body[0].description).toBe('m119');
+  });
+});
+
 describe('POST /carbs/item', () => {
   const valid = { grams: 45, description: 'almoço', timeMs: Date.UTC(2026, 7, 20, 12) };
 

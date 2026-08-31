@@ -1,3 +1,4 @@
+import type { PageQuery } from '@glucore/shared';
 import type { InsulinEvent, PrismaClient } from '@prisma/client';
 
 import type { InsulinInput } from './insulin.schema';
@@ -5,7 +6,8 @@ import type { InsulinInput } from './insulin.schema';
 export type InsulinCreate = InsulinInput & { id?: string };
 
 export interface IInsulinRepository {
-  listRecent(patientId: string, limit: number): Promise<InsulinEvent[]>;
+  /** Newest first, strictly older than `query.before`, at most `query.limit` rows. */
+  listPage(patientId: string, query: PageQuery): Promise<InsulinEvent[]>;
   create(patientId: string, entry: InsulinCreate): Promise<InsulinEvent>;
   /** Scoped by patient, so an id belonging to someone else updates nothing. */
   update(patientId: string, id: string, entry: InsulinInput): Promise<number>;
@@ -19,9 +21,12 @@ const dayOfWeek = (value: string | undefined): string => value ?? '';
 export class PrismaInsulinRepository implements IInsulinRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  listRecent(patientId: string, limit: number): Promise<InsulinEvent[]> {
+  listPage(patientId: string, { before, limit }: PageQuery): Promise<InsulinEvent[]> {
     return this.prisma.insulinEvent.findMany({
-      where: { patientId },
+      where: {
+        patientId,
+        ...(before === undefined ? {} : { eventAt: { lt: new Date(before) } }),
+      },
       orderBy: { eventAt: 'desc' },
       take: limit,
     });

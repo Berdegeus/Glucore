@@ -7,9 +7,9 @@
  */
 
 import type { AlertEvent, AlertType, CarbEvent, GlucoseReading, InsulinEvent } from '@prisma/client';
-import type { AuditEntry } from '@glucore/shared';
+import type { AuditEntry, PageQuery } from '@glucore/shared';
 
-import type { IAlertRepository, AlertRow } from '../../src/modules/alerts/alerts.repository';
+import type { AlertCreate, IAlertRepository } from '../../src/modules/alerts/alerts.repository';
 import type { CarbCreate, ICarbRepository } from '../../src/modules/carbs/carbs.repository';
 import type {
   IInsulinRepository,
@@ -68,8 +68,12 @@ export class FakeCarbRepository implements ICarbRepository {
   /** Number of rows the next update or delete should claim to have touched. */
   affected = 1;
 
-  async listRecent(patientId: string, limit: number): Promise<CarbEvent[]> {
-    return this.rows.filter((row) => row.patientId === patientId).slice(0, limit);
+  async listPage(patientId: string, { before, limit }: PageQuery): Promise<CarbEvent[]> {
+    return this.rows
+      .filter((row) => row.patientId === patientId)
+      .filter((row) => before === undefined || row.eventAt.getTime() < before)
+      .sort((a, b) => b.eventAt.getTime() - a.eventAt.getTime())
+      .slice(0, limit);
   }
 
   async create(patientId: string, entry: CarbCreate): Promise<CarbEvent> {
@@ -102,8 +106,12 @@ export class FakeInsulinRepository implements IInsulinRepository {
   lastReplace: readonly InsulinCreate[] = [];
   affected = 1;
 
-  async listRecent(patientId: string, limit: number): Promise<InsulinEvent[]> {
-    return this.rows.filter((row) => row.patientId === patientId).slice(0, limit);
+  async listPage(patientId: string, { before, limit }: PageQuery): Promise<InsulinEvent[]> {
+    return this.rows
+      .filter((row) => row.patientId === patientId)
+      .filter((row) => before === undefined || row.eventAt.getTime() < before)
+      .sort((a, b) => b.eventAt.getTime() - a.eventAt.getTime())
+      .slice(0, limit);
   }
 
   async create(patientId: string, entry: InsulinCreate): Promise<InsulinEvent> {
@@ -135,13 +143,33 @@ export class FakeInsulinRepository implements IInsulinRepository {
 
 export class FakeAlertRepository implements IAlertRepository {
   rows: AlertEvent[] = [];
-  lastReplace: readonly AlertRow[] = [];
+  lastReplace: readonly AlertCreate[] = [];
+  affected = 1;
 
-  async listRecent(patientId: string, limit: number): Promise<AlertEvent[]> {
-    return this.rows.filter((row) => row.patientId === patientId).slice(0, limit);
+  async listPage(patientId: string, { before, limit }: PageQuery): Promise<AlertEvent[]> {
+    return this.rows
+      .filter((row) => row.patientId === patientId)
+      .filter((row) => before === undefined || row.triggeredAt.getTime() < before)
+      .sort((a, b) => b.triggeredAt.getTime() - a.triggeredAt.getTime())
+      .slice(0, limit);
   }
 
-  async replaceAll(_patientId: string, alerts: readonly AlertRow[]): Promise<void> {
+  async create(patientId: string, entry: AlertCreate): Promise<AlertEvent> {
+    const row = alertRow(patientId, entry.alertType, entry.triggeredAt);
+    if (entry.id) row.id = entry.id;
+    this.rows.push(row);
+    return row;
+  }
+
+  async update(): Promise<number> {
+    return this.affected;
+  }
+
+  async delete(): Promise<number> {
+    return this.affected;
+  }
+
+  async replaceAll(_patientId: string, alerts: readonly AlertCreate[]): Promise<void> {
     this.lastReplace = alerts;
   }
 }

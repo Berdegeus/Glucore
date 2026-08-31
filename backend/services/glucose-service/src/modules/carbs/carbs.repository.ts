@@ -1,3 +1,4 @@
+import type { PageQuery } from '@glucore/shared';
 import type { CarbEvent, PrismaClient } from '@prisma/client';
 
 import type { CarbInput } from './carbs.schema';
@@ -6,7 +7,8 @@ import type { CarbInput } from './carbs.schema';
 export type CarbCreate = CarbInput & { id?: string };
 
 export interface ICarbRepository {
-  listRecent(patientId: string, limit: number): Promise<CarbEvent[]>;
+  /** Newest first, strictly older than `query.before`, at most `query.limit` rows. */
+  listPage(patientId: string, query: PageQuery): Promise<CarbEvent[]>;
   create(patientId: string, entry: CarbCreate): Promise<CarbEvent>;
   /** Scoped by patient, so an id belonging to someone else updates nothing. */
   update(patientId: string, id: string, entry: CarbInput): Promise<number>;
@@ -17,9 +19,12 @@ export interface ICarbRepository {
 export class PrismaCarbRepository implements ICarbRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  listRecent(patientId: string, limit: number): Promise<CarbEvent[]> {
+  listPage(patientId: string, { before, limit }: PageQuery): Promise<CarbEvent[]> {
     return this.prisma.carbEvent.findMany({
-      where: { patientId },
+      where: {
+        patientId,
+        ...(before === undefined ? {} : { eventAt: { lt: new Date(before) } }),
+      },
       orderBy: { eventAt: 'desc' },
       take: limit,
     });

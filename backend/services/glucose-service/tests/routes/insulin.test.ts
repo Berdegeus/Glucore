@@ -96,6 +96,48 @@ describe('GET /insulin', () => {
   });
 });
 
+describe('GET /insulin pagination', () => {
+  it('walks the whole history page by page without repeating or skipping', async () => {
+    const total = 250;
+    const base = Date.UTC(2026, 7, 1);
+    await prisma.insulinEvent.createMany({
+      data: Array.from({ length: total }, (_, i) => ({
+        patientId: user.userId,
+        doseUnits: 1,
+        insulinType: 'bolus',
+        eventAt: new Date(base + i * 60_000),
+        dayOfWeek: '',
+      })),
+    });
+
+    const collected: string[] = [];
+    let before: number | undefined;
+    for (let page = 0; page < 10 && collected.length < total; page++) {
+      const query = before === undefined ? { limit: 40 } : { before, limit: 40 };
+      const res = await request(app).get('/insulin').query(query).set(auth());
+      expect(res.status).toBe(200);
+      if (res.body.length === 0) break;
+      for (const entry of res.body) collected.push(entry.id);
+      before = res.body[res.body.length - 1].timeMs;
+    }
+
+    expect(collected).toHaveLength(total);
+    expect(new Set(collected).size).toBe(total);
+  });
+
+  it('rejects a limit above the maximum with INVALID_PAGINATION', async () => {
+    const res = await request(app).get('/insulin').query({ limit: 501 }).set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_PAGINATION');
+  });
+
+  it('rejects a non-numeric before with INVALID_PAGINATION', async () => {
+    const res = await request(app).get('/insulin').query({ before: 'yesterday' }).set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_PAGINATION');
+  });
+});
+
 describe('POST /insulin/item', () => {
   const valid = { units: 6, type: 'bolus', timeMs: Date.UTC(2026, 7, 20, 12), dayOfWeek: 'MONDAY' };
 
