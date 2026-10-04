@@ -507,15 +507,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] `OPTIONS` com origem listada: `204`, `Access-Control-Allow-Origin` igual à origem e `authorization` em `Access-Control-Allow-Headers`
-- [ ] Origem fora da lista não recebe `Access-Control-Allow-Origin`
-- [ ] Lista com duas origens separadas por vírgula funciona
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] `OPTIONS` com origem listada: `204`, `Access-Control-Allow-Origin` igual à origem e `authorization` em `Access-Control-Allow-Headers`
+- [x] Origem fora da lista não recebe `Access-Control-Allow-Origin`
+- [x] Lista com duas origens separadas por vírgula funciona
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `test(gateway): cover CORS preflight for the web origin`
+**Status**: ✅ Done
 
 ---
 

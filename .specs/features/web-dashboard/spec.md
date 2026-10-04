@@ -543,7 +543,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-04 | P1: Publicação na Vercel | - | Pending |
 | DEP-05 | P1: Publicação na Vercel | - | Pending |
 | DEP-06 | P1: Publicação na Vercel | - | Pending |
-| DEP-07 | P1: Publicação na Vercel | - | Pending |
+| DEP-07 | P1: Publicação na Vercel | T9 | Implementing |
 | API-01 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-02 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-03 | P2: Ajustes de backend para os gráficos novos | - | Pending |
