@@ -46,6 +46,9 @@ jobs:
           # (A1.Flex), troque por linux/arm64 ou publique as duas.
           platforms: linux/amd64
           push: true
+          # Liga o pacote ao repositório: o GHCR passa a herdar a visibilidade
+          # dele (público) e o pull na VM dispensa login.
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ghcr.io/berdegeus/glucore-${{ matrix.image }}:latest
             ghcr.io/berdegeus/glucore-${{ matrix.image }}:${{ github.event.workflow_run.head_sha || github.sha }}
