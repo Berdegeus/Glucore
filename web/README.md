@@ -36,6 +36,7 @@ Pinned exactly in `package.json` and `package-lock.json`. Node 22.13+ (CI runs N
 | Library | Version | Note |
 | ------- | ------- | ---- |
 | react, react-dom | 19.3.0 | |
+| @dnd-kit/core, @dnd-kit/sortable | 6.3.1, 10.0.0 | peers accept React 19; the spike `sortable.smoke.test.tsx` reorders with the keyboard sensor, so Pragmatic Drag and Drop was not needed |
 | vite | 8.3.2 | |
 | @vitejs/plugin-react | 6.1.1 | |
 | typescript | 6.0.3 | 7.x is out, but `typescript-eslint` 8 accepts `<6.1.0` |

@@ -729,14 +729,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de fumaça `src/features/dashboard-layout/presentation/sortable.smoke.test.tsx` renderiza um `SortableContext` com sensor de teclado e reordena 3 itens
-- [ ] Se a instalação falhar por peer dependency: trocar por Pragmatic Drag and Drop, registrar a decisão em `web/README.md` e manter o mesmo teste
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/sortable.smoke.test.tsx`
-- [ ] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de fumaça `src/features/dashboard-layout/presentation/sortable.smoke.test.tsx` renderiza um `SortableContext` com sensor de teclado e reordena 3 itens
+- [x] Se a instalação falhar por peer dependency: trocar por Pragmatic Drag and Drop, registrar a decisão em `web/README.md` e manter o mesmo teste
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/sortable.smoke.test.tsx`
+- [x] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `chore(web): add drag-and-drop dependency`
+**Status**: ✅ Done
 
 ---
 
