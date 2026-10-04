@@ -1244,13 +1244,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: `401` mostra "E-mail ou senha incorretos" e mantém o e-mail; `429` mostra "Muitas tentativas. Tente novamente em alguns minutos."; aviso de sessão expirada aparece; envio desabilitado durante a requisição; axe sem violações
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/presentation/loginPage.test.tsx`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: `401` mostra "E-mail ou senha incorretos" e mantém o e-mail; `429` mostra "Muitas tentativas. Tente novamente em alguns minutos."; aviso de sessão expirada aparece; envio desabilitado durante a requisição; axe sem violações
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/presentation/loginPage.test.tsx`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the login page`
+**Status**: ✅ Done
 
 ---
 

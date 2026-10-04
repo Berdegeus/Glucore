@@ -461,14 +461,14 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 <!-- TRACE:BEGIN -->
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| ACC-01 | P1: Login único e acesso por papel | T29, T30, T33, T34 | Implementing |
+| ACC-01 | P1: Login único e acesso por papel | T29, T30, T33, T34, T43 | Implementing |
 | ACC-02 | P1: Login único e acesso por papel | T18, T42 | Implementing |
 | ACC-03 | P1: Login único e acesso por papel | T42 | Implementing |
 | ACC-04 | P1: Login único e acesso por papel | T30, T42 | Implementing |
 | ACC-05 | P1: Login único e acesso por papel | T17, T23, T39, T40 | Implementing |
 | ACC-06 | P1: Login único e acesso por papel | - | Pending |
-| ACC-07 | P1: Login único e acesso por papel | T23, T29 | Implementing |
-| ACC-08 | P1: Login único e acesso por papel | T23, T225 | Implementing |
+| ACC-07 | P1: Login único e acesso por papel | T23, T29, T43 | Implementing |
+| ACC-08 | P1: Login único e acesso por papel | T23, T225, T43 | Implementing |
 | ACC-09 | P1: Login único e acesso por papel | T21, T24, T41 | Implementing |
 | ACC-10 | P1: Login único e acesso por papel | T25, T28, T32, T33 | Implementing |
 | ACC-11 | P1: Login único e acesso por papel | T31, T41 | Implementing |
@@ -513,7 +513,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | RSP-03 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-04 | P1: Responsivo, acessível e com tema | T36 | Implementing |
 | RSP-05 | P1: Responsivo, acessível e com tema | - | Pending |
-| RSP-06 | P1: Responsivo, acessível e com tema | T39 | Implementing |
+| RSP-06 | P1: Responsivo, acessível e com tema | T39, T43 | Implementing |
 | RSP-07 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-08 | P1: Responsivo, acessível e com tema | T36 | Implementing |
 | RSP-09 | P1: Responsivo, acessível e com tema | T26, T37 | Implementing |

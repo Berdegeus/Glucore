@@ -34,7 +34,7 @@ function Where() {
 }
 
 function guarded(role: Role, name: string, path: string) {
-  return <Route path={path} element={<RequireRole role={role}><Page name={name} /></RequireRole>} />;
+  return <Route path={path} element={<RequireRole requiredRole={role}><Page name={name} /></RequireRole>} />;
 }
 
 function renderApp(route: string, services = makeAuthServices().services) {

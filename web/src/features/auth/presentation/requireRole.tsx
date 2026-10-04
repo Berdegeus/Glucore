@@ -37,13 +37,13 @@ export function resolvePostLoginPath(next: string | null | undefined, role: Role
 }
 
 /**
- * Renders `children` only for a signed-in person with `role`. Anyone else is
+ * Renders `children` only for a signed-in person with `requiredRole`. Anyone else is
  * redirected before a single child mounts: an anonymous visitor to the login,
  * remembering where they were going (ACC-04), and someone of another role to
  * their own dashboard (ACC-03). The server still answers `403 FORBIDDEN_ROLE`
  * to a call made with the wrong token; this guard only spares the screen.
  */
-export function RequireRole({ role, children }: { role: Role; children: ReactNode }) {
+export function RequireRole({ requiredRole, children }: { requiredRole: Role; children: ReactNode }) {
   const { state, retryRestore } = useAuth();
   const location = useLocation();
 
@@ -55,7 +55,7 @@ export function RequireRole({ role, children }: { role: Role; children: ReactNod
     case 'anonymous':
       return <Navigate to={loginPathFor(location)} replace />;
     case 'authenticated':
-      return state.session.account.role === role ? (
+      return state.session.account.role === requiredRole ? (
         children
       ) : (
         <Navigate to={homePathFor(state.session.account.role)} replace />
