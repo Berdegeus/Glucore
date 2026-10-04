@@ -17,12 +17,12 @@ O backend (gateway + auth-service + glucose-service + Postgres) roda em **uma VM
 | Segredos | `deploy/.env.prod` na VM (`chmod 600`), gerados na própria VM; nunca no git |
 | Backup | `pg_dump` das duas bases, criptografado (AES-256), todo dia às 3h, retenção de 14 dias, **só na própria VM** |
 
-Verificado em 2026-10-04: HTTPS com certificado Let's Encrypt; 3000/3001/3002/5432 fechadas por fora; ciclo registro → `/me` → `POST/GET /readings` → `/dashboard/summary` → login → `DELETE /account` passou em produção; restauração de um backup em banco descartável (18 tabelas, 9 migrations).
+Verificado em 2026-10-04: HTTPS com certificado Let's Encrypt; 3000/3001/3002/5432 fechadas por fora; ciclo registro → `/me` → `POST/GET /readings` → `/dashboard/summary` → login → `DELETE /account` passou em produção; restauração de um backup em banco descartável (18 tabelas, 9 migrations). Depois do merge do PR #35: `publish-images` rodou na `main` e os 3 pacotes do GHCR estão públicos; `update.sh` foi executado na VM com as imagens do GHCR (pull e recriação em ~3 min, 3 serviços saudáveis); `POST /readings` com 501 leituras responde 400; backfill de sensor real (1.040 leituras, 11,5 dias) chegou inteiro ao servidor.
 
 ## Como uma mudança chega à produção
 
 ```
-PR ─► CI (ci.yml) ─► merge na main ─► publish-images.yml ─► GHCR ─► VM: update.sh (cron, 5 min)
+PR ─► CI (ci.yml) ─► merge na main ─► publish-images.yml ─► GHCR ─► VM: update.sh (cron diário às 23:59 de Brasília, ou à mão por SSH)
 ```
 
 - `publish-images.yml` só roda depois que o `CI` passou na `main` (ou por `workflow_dispatch`, com o arquivo já na `main`). Builda as 3 imagens em `linux/amd64` e publica `ghcr.io/berdegeus/glucore-{auth,glucose,gateway}` com as tags `latest` e o SHA do commit. As imagens são **públicas** (o label `org.opencontainers.image.source` liga o pacote ao repositório); não contêm segredo.
@@ -56,11 +56,10 @@ docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod log
 
 ## O que falta (acompanhado na issue de deploy)
 
-1. Mergear `feat/app-to-gateway` + `ci/deploy-oracle` na `main` e conferir o primeiro `publish-images` (pacotes públicos).
-2. Testar `update.sh` na VM com imagens do GHCR e só então instalar o cron (`*/5 * * * *`). Hoje as imagens na VM vieram de um build local.
+1. **Aviso de falha do deploy automático.** O cron (`59 2 * * *` UTC = 23:59 de Brasília, log em `~/glucore-update.log` na VM) atualiza a produção sozinho com o que estiver na `main` com CI verde, e ninguém é avisado se falhar. Decidir a frequência e como ser avisado (depende do SMTP, item 4).
 3. **Backup fora da VM** (Object Storage grátis de 20 GB ou outra cópia). Guardar a `BACKUP_PASSPHRASE` fora da VM.
 4. **SMTP**: sem ele, "esqueci minha senha" imprime o token no log da VM.
 5. Domínio próprio no lugar do DuckDNS (troca `API_HOST`, `CORS_ORIGIN` e o `API_URL` do app).
 6. `helmet` no gateway; Dockerfiles multi-stage (imagens de ~190 MB comprimidas, ~720 MB na VM).
 7. Ambientes dev/test e migrations como job separado, para subir o tier da rubrica #39.
-8. Gerar o APK de release apontando para a URL de produção e validar a sincronização no celular.
+8. Gerar o APK de **release** apontando para a URL de produção. A sincronização contra a produção já foi validada com o APK de debug em 2026-10-04 (o `API_URL` padrão do app é a URL de produção).
