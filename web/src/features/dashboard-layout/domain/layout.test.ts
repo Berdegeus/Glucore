@@ -8,17 +8,8 @@ import {
   resizeWidget,
   type DashboardLayout,
   type LayoutErrorReason,
-  type WidgetDefinition,
-  type WidgetSize,
 } from './layout';
-
-function definition(id: string, overrides: Partial<WidgetDefinition> = {}): WidgetDefinition {
-  return { id, titleKey: `widget.${id}`, roles: ['PATIENT'], sizes: ['S', 'M', 'L'], defaultSize: 'M', ...overrides };
-}
-
-function layoutOf(...ids: string[]): DashboardLayout {
-  return { widgets: ids.map((id) => ({ id, size: 'S' as WidgetSize })) };
-}
+import { layoutOf as layoutOfItems, layoutOfIds as layoutOf, widgetDefinition as definition } from '../../../test/layoutFakes';
 
 const idsOf = (layout: DashboardLayout) => layout.widgets.map((item) => item.id);
 
@@ -96,12 +87,7 @@ describe('moveWidget (LAY-04, LAY-05)', () => {
   });
 
   it('keeps the size of the moved widget', () => {
-    const layout: DashboardLayout = {
-      widgets: [
-        { id: 'a', size: 'L' },
-        { id: 'b', size: 'S' },
-      ],
-    };
+    const layout = layoutOfItems({ id: 'a', size: 'L' }, { id: 'b', size: 'S' });
 
     expect(moveWidget(layout, 'a', 1).widgets[1]).toEqual({ id: 'a', size: 'L' });
   });
