@@ -1117,13 +1117,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: `1234,5`, `70,0 %`, `142 mg/dL`, data `05/08/2026`, hora no fuso `America/Sao_Paulo`, valor nulo vira `—`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/format.test.ts`
-- [ ] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: `1234,5`, `70,0 %`, `142 mg/dL`, data `05/08/2026`, hora no fuso `America/Sao_Paulo`, valor nulo vira `—`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/format.test.ts`
+- [x] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add pt-BR formatters`
+**Status**: ✅ Done
 
 ---
 
