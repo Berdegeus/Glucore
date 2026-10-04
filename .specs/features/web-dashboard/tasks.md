@@ -5041,14 +5041,15 @@ Achados da execução que viraram tarefa. Cada uma depende só de tarefas já co
 
 **Done when**:
 
-- [ ] Teste de integração: uma resposta cross-origin de origem listada traz `Access-Control-Expose-Headers` contendo `Retry-After` e `X-Degraded` (também com `CORS_ORIGIN` vazio, modo permissivo)
-- [ ] Origem não listada continua sem `Access-Control-Allow-Origin`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de integração: uma resposta cross-origin de origem listada traz `Access-Control-Expose-Headers` contendo `Retry-After` e `X-Degraded` (também com `CORS_ORIGIN` vazio, modo permissivo)
+- [x] Origem não listada continua sem `Access-Control-Allow-Origin`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `fix(gateway): expose Retry-After and X-Degraded through CORS`
+**Status**: ✅ Done
 
 ---
 

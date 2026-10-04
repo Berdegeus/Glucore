@@ -468,7 +468,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-05 | P1: Login único e acesso por papel | T17, T23 | Implementing |
 | ACC-06 | P1: Login único e acesso por papel | - | Pending |
 | ACC-07 | P1: Login único e acesso por papel | T23, T29 | Implementing |
-| ACC-08 | P1: Login único e acesso por papel | T23 | Implementing |
+| ACC-08 | P1: Login único e acesso por papel | T23, T225 | Implementing |
 | ACC-09 | P1: Login único e acesso por papel | T21, T24 | Implementing |
 | ACC-10 | P1: Login único e acesso por papel | T25, T28, T32, T33 | Implementing |
 | ACC-11 | P1: Login único e acesso por papel | T31 | Implementing |
@@ -543,7 +543,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-04 | P1: Publicação na Vercel | T10 | Implementing |
 | DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
 | DEP-06 | P1: Publicação na Vercel | - | Pending |
-| DEP-07 | P1: Publicação na Vercel | T9 | Implementing |
+| DEP-07 | P1: Publicação na Vercel | T9, T225 | Implementing |
 | API-01 | P2: Ajustes de backend para os gráficos novos | T26 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-03 | P2: Ajustes de backend para os gráficos novos | - | Pending |

@@ -23,12 +23,8 @@ const LOCAL_DEV = 'http://localhost:5173';
 
 let app: Express;
 
-beforeEach(() => {
-  vi.stubEnv('JWT_SECRET', TEST_JWT_SECRET);
-  vi.stubEnv('INTERNAL_JWT_SECRET', TEST_INTERNAL_JWT_SECRET);
-  // Two origins, comma-separated with a space, the way the VM's .env lists them.
-  vi.stubEnv('CORS_ORIGIN', `${VERCEL}, ${LOCAL_DEV}`);
-
+/** The gateway with CORS set to `corsOrigins`; an empty list is the permissive mode. */
+function buildTestApp(corsOrigins: string[]): Express {
   // Preflights are answered by the CORS middleware; no request reaches a
   // service, so the registry can point at addresses nothing listens on.
   const registry = new EnvServiceRegistry({
@@ -37,8 +33,8 @@ beforeEach(() => {
   });
   const authClient = new AuthClient(registry, TEST_INTERNAL_JWT_SECRET);
   const glucoseClient = new GlucoseClient(registry, TEST_INTERNAL_JWT_SECRET);
-  app = buildApp({
-    corsOrigins: loadEnv().corsOrigins,
+  return buildApp({
+    corsOrigins,
     container: {
       authenticate: createAuthenticate(() => TEST_JWT_SECRET),
       registry,
@@ -47,6 +43,15 @@ beforeEach(() => {
       registerSaga: new RegisterSaga(authClient, glucoseClient),
     },
   });
+}
+
+beforeEach(() => {
+  vi.stubEnv('JWT_SECRET', TEST_JWT_SECRET);
+  vi.stubEnv('INTERNAL_JWT_SECRET', TEST_INTERNAL_JWT_SECRET);
+  // Two origins, comma-separated with a space, the way the VM's .env lists them.
+  vi.stubEnv('CORS_ORIGIN', `${VERCEL}, ${LOCAL_DEV}`);
+
+  app = buildTestApp(loadEnv().corsOrigins);
 });
 
 afterEach(() => {
@@ -96,4 +101,43 @@ describe('CORS preflight', () => {
       expect(res.headers['access-control-allow-origin']).toBeUndefined();
     },
   );
+});
+
+/**
+ * ACC-08, PRO-15: the browser only lets the web read `Retry-After` and
+ * `X-Degraded` when the response names them in `Access-Control-Expose-Headers`.
+ * `GET /api/v1/me` without a token answers 401 from the gateway itself, which
+ * is enough to observe the CORS headers of a real (non-preflight) response.
+ */
+describe('CORS exposed response headers', () => {
+  const crossOriginGet = (target: Express, origin: string) =>
+    request(target).get('/api/v1/me').set('Origin', origin);
+
+  const exposedHeaders = (header: string | undefined) =>
+    (header ?? '').split(',').map((name) => name.trim().toLowerCase());
+
+  it.each([VERCEL, LOCAL_DEV])('exposes Retry-After and X-Degraded to the listed origin %s', async (origin) => {
+    const res = await crossOriginGet(app, origin);
+
+    expect(res.status).toBe(401);
+    expect(res.headers['access-control-allow-origin']).toBe(origin);
+    expect(exposedHeaders(res.headers['access-control-expose-headers'])).toEqual(
+      expect.arrayContaining(['retry-after', 'x-degraded']),
+    );
+  });
+
+  it('exposes them in the permissive mode, when CORS_ORIGIN is empty', async () => {
+    const res = await crossOriginGet(buildTestApp([]), 'https://any.example.com');
+
+    expect(res.headers['access-control-allow-origin']).toBe('*');
+    expect(exposedHeaders(res.headers['access-control-expose-headers'])).toEqual(
+      expect.arrayContaining(['retry-after', 'x-degraded']),
+    );
+  });
+
+  it('still gives an unlisted origin no Access-Control-Allow-Origin', async () => {
+    const res = await crossOriginGet(app, 'https://evil.example.com');
+
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
 });

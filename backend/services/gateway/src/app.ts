@@ -73,7 +73,11 @@ export function buildApp(options: BuildAppOptions = {}): Express {
 
   app.use('/health', createHealthRouter(noopHealthCheck));
 
-  app.use(corsOrigins.length > 0 ? cors({ origin: corsOrigins }) : cors());
+  // The browser hides every response header outside the safelist from the web's
+  // scripts. `Retry-After` (429 wait) and `X-Degraded` (partial composition) are
+  // read by the dashboard, so they are exposed explicitly (ACC-08, PRO-15).
+  const corsOptions = { exposedHeaders: ['Retry-After', 'X-Degraded'] };
+  app.use(cors(corsOrigins.length > 0 ? { ...corsOptions, origin: corsOrigins } : corsOptions));
   if (requestLogging) app.use(morgan('dev'));
 
   // Composition, mounted before the generic auth proxy: a router only
