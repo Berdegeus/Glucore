@@ -1,8 +1,10 @@
 package com.berdegeus.glucore
 
 import android.content.Context
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
 import android.util.Log
 import io.flutter.plugin.common.EventChannel
 import tk.glucodata.Natives
@@ -28,7 +30,7 @@ class SensorCore(context: Context) {
 
     private val sessionManager = SensorSessionManager(appContext)
     private val nativeBridgeAdapter = SibionicsNativeBridgeAdapter(appContext)
-    private val platform = SensorPlatformImpl(sessionManager, nativeBridgeAdapter)
+    private val platform = SensorPlatformImpl(sessionManager, nativeBridgeAdapter, appContext.filesDir)
 
     // One BLE manager per brand, created on first use; all share the event
     // funnel. SensorPlatformImpl enforces that only one is active at a time.
@@ -47,6 +49,23 @@ class SensorCore(context: Context) {
             }
         }
 
+    /**
+     * Relaunches the app in a fresh process (so libg.so reloads from disk).
+     * The launch is queued before the old process is killed.
+     */
+    private fun restartApp() {
+        val launch = appContext.packageManager.getLaunchIntentForPackage(appContext.packageName)
+        if (launch == null) {
+            Log.w("SensorCore", "No launch intent; native wipe will apply on the next start")
+            return
+        }
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        mainHandler.postDelayed({
+            appContext.startActivity(launch)
+            Process.killProcess(Process.myPid())
+        }, RESTART_DELAY_MS)
+    }
+
     /** Last event dispatched, replayed when a new EventChannel listener attaches. */
     @Volatile
     var lastEvent: Map<String, Any?>? = null
@@ -64,7 +83,13 @@ class SensorCore(context: Context) {
     }
 
     init {
+        // Must run before anything touches libg.so: it keeps the sensor store in
+        // memory, so the files can only be removed in a fresh process.
+        if (NativeSensorState.applyPendingWipe(appContext.filesDir)) {
+            Log.i("SensorCore", "Native sensor store wiped on start")
+        }
         platform.eventDispatcher = ::dispatchEvent
+        platform.restartApp = ::restartApp
         platform.setBleManagerProvider(::bleManagerFor)
         platform.initializeNativeBridge()
         // Bind the Abbott algorithm library if it was installed previously;
@@ -160,5 +185,9 @@ class SensorCore(context: Context) {
         } else {
             mainHandler.post { sink.success(replay) }
         }
+    }
+
+    private companion object {
+        const val RESTART_DELAY_MS = 300L
     }
 }

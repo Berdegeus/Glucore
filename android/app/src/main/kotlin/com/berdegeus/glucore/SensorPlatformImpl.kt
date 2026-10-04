@@ -9,7 +9,8 @@ data class FailurePayload(val message: String)
 
 class SensorPlatformImpl(
     private val sessionManager: SensorSessionManager,
-    private val nativeBridgeAdapter: SibionicsNativeBridgeAdapter
+    private val nativeBridgeAdapter: SibionicsNativeBridgeAdapter,
+    private val nativeFilesDir: java.io.File
 ) {
     private var eventSink: io.flutter.plugin.common.EventChannel.EventSink? = null
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -26,6 +27,9 @@ class SensorPlatformImpl(
      * event before forwarding it via [deliverEventToSink].
      */
     var eventDispatcher: ((Map<String, Any?>) -> Unit)? = null
+
+    /** Restarts the app process; set by SensorCore (needs a Context). */
+    var restartApp: (() -> Unit)? = null
 
     fun setBleManagerProvider(provider: (SensorBrand) -> BrandBleManager?) {
         bleManagerProvider = provider
@@ -223,8 +227,18 @@ class SensorPlatformImpl(
 
     fun clearSession() {
         stopMonitoring()
+        // Unpairing also has to make the library forget the sensor (history
+        // cursor, saved BLE address), or a re-pair — or another account on the
+        // same phone — gets no backlog. The library can't be wiped while loaded,
+        // so the wipe is deferred to the next process start and the app restarts.
+        val wipeScheduled = NativeSensorState.markWipePending(nativeFilesDir)
         sessionManager.clearSession()
             .onSuccess { emitEvent(status = "idle") }
+        if (wipeScheduled) {
+            restartApp?.invoke()
+        } else {
+            android.util.Log.w("SensorPlatformImpl", "Could not schedule the native sensor wipe")
+        }
     }
 
     fun setEventSink(sink: io.flutter.plugin.common.EventChannel.EventSink?) {

@@ -18,6 +18,13 @@ class PatientCubit extends Cubit<PatientState> {
   final PatientUseCases useCases;
   StreamSubscription<SensorUiState>? _sensorSubscription;
 
+  /// O sensor avança o cursor do backlog a cada item entregue e não o reenvia;
+  /// por isso o backlog é gravado aos poucos, não só quando a leitura atual
+  /// chega. Sem isso, fechar o app ou trocar de conta no meio do sync perdia
+  /// o histórico de vez.
+  static const historyPersistDebounce = Duration(seconds: 2);
+  Timer? _historyPersistTimer;
+
   Future<void> initialize(SensorCubit sensorCubit) async {
     // P19: bind the local database to the logged-in user. If a DIFFERENT
     // account is now signed in on this device, the local patient data was
@@ -141,8 +148,8 @@ class PatientCubit extends Cubit<PatientState> {
       if (!_sameReadingList(readings, updatedReadings)) {
         readings = updatedReadings;
         nextState = nextState.copyWith(readings: readings);
-        // History backlog is persisted in a single batch when the current
-        // reading arrives (readingAvailable), not once per history reading.
+        // Persisted in debounced batches, not once per history reading.
+        _scheduleHistoryPersist();
       }
     }
 
@@ -217,6 +224,13 @@ class PatientCubit extends Cubit<PatientState> {
     for (final alert in newAlerts) {
       await useCases.addAlertEntry(alert);
     }
+  }
+
+  void _scheduleHistoryPersist() {
+    _historyPersistTimer ??= Timer(historyPersistDebounce, () {
+      _historyPersistTimer = null;
+      unawaited(useCases.saveGlucoseReadings(state.readings));
+    });
   }
 
   List<GlucoseReadingItem> _upsertReading(
@@ -309,6 +323,11 @@ class PatientCubit extends Cubit<PatientState> {
 
   @override
   Future<void> close() async {
+    if (_historyPersistTimer != null) {
+      _historyPersistTimer!.cancel();
+      _historyPersistTimer = null;
+      await useCases.saveGlucoseReadings(state.readings);
+    }
     await _sensorSubscription?.cancel();
     return super.close();
   }
