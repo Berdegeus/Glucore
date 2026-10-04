@@ -52,7 +52,7 @@ void main() {
 
   void buildWith(Map<String, Object?> bodies, {Map<String, int> statuses = const {}}) {
     adapter = _StubAdapter(bodies, statuses: statuses);
-    final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3001'))
+    final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000/api/v1'))
       ..httpClientAdapter = adapter;
     remote = RemotePatientDataSource(dio);
   }

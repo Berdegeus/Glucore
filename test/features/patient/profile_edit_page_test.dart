@@ -216,7 +216,7 @@ void main() {
   testWidgets('a failed save is reported through GlucoreMessenger.error',
       (tester) async {
     account.updateFailure = DioException(
-      requestOptions: RequestOptions(path: '/auth/profile'),
+      requestOptions: RequestOptions(path: '/me'),
       type: DioExceptionType.connectionError,
     );
 

@@ -50,6 +50,12 @@ class AccountProfile {
   }
 }
 
+/// Account and profile calls, all through the gateway (`/api/v1`).
+///
+/// The profile lives behind `/me`, which the gateway composes from the account
+/// (auth-service) and the patient (glucose-service); `/auth/profile` would
+/// return only the account half. `PUT /me` carries name, phone, health fields,
+/// e-mail change and password change in the same body shape.
 class AccountService {
   const AccountService(this._dio);
 
@@ -77,7 +83,7 @@ class AccountService {
   }
 
   Future<AccountProfile> fetchProfile() async {
-    final response = await _dio.get<Map<String, dynamic>>('/auth/profile');
+    final response = await _dio.get<Map<String, dynamic>>('/me');
     return AccountProfile.fromJson(response.data ?? const {});
   }
 
@@ -91,7 +97,7 @@ class AccountService {
     String? phone,
   }) async {
     await _dio.put<void>(
-      '/auth/profile',
+      '/me',
       data: {
         'fullName': fullName,
         'birthDate': birthDate == null ? null : formatIsoDateOnly(birthDate),
@@ -109,7 +115,7 @@ class AccountService {
     required String newEmail,
   }) async {
     await _dio.put<void>(
-      '/auth/profile',
+      '/me',
       data: {'currentPassword': currentPassword, 'newEmail': newEmail},
     );
   }
@@ -119,8 +125,15 @@ class AccountService {
     required String newPassword,
   }) async {
     await _dio.put<void>(
-      '/auth/profile',
+      '/me',
       data: {'currentPassword': currentPassword, 'newPassword': newPassword},
     );
+  }
+
+  /// `DELETE /account`: the gateway removes the patient and the account (both
+  /// services). There is no screen for it yet; the method exists so the whole
+  /// gateway contract the app can reach is covered and tested.
+  Future<void> deleteAccount() async {
+    await _dio.delete<void>('/account');
   }
 }
