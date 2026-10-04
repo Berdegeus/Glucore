@@ -477,7 +477,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-02 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-03 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-04 | P1: Arquitetura limpa verificável (rubrica 37) | T17, T18 | Implementing |
-| ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
+| ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | T20 | Implementing |
 | ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
