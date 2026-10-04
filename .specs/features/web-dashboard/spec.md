@@ -506,8 +506,8 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-12 | P1: Layout customizável por widgets | T4, T6, T7 | Implementing |
 | LAY-13 | P1: Layout customizável por widgets | - | Pending |
 | LAY-14 | P1: Layout customizável por widgets | T3, T5 | Implementing |
-| LAY-15 | P1: Layout customizável por widgets | - | Pending |
-| LAY-16 | P1: Layout customizável por widgets | T39 | Implementing |
+| LAY-15 | P1: Layout customizável por widgets | T53 | Implementing |
+| LAY-16 | P1: Layout customizável por widgets | T39, T53 | Implementing |
 | RSP-01 | P1: Responsivo, acessível e com tema | T52 | Implementing |
 | RSP-02 | P1: Responsivo, acessível e com tema | T52 | Implementing |
 | RSP-03 | P1: Responsivo, acessível e com tema | T45 | Implementing |

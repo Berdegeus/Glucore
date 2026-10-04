@@ -1459,13 +1459,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: um widget que lança mostra erro só nele e os vizinhos continuam; carregando mostra esqueleto; vazio mostra a causa
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/widgetShell.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: um widget que lança mostra erro só nele e os vizinhos continuam; carregando mostra esqueleto; vazio mostra a causa
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/widgetShell.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the widget shell`
+**Status**: ✅ Done
 
 ---
 
