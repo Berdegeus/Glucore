@@ -461,7 +461,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 <!-- TRACE:BEGIN -->
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| ACC-01 | P1: Login único e acesso por papel | T29, T30, T33 | Implementing |
+| ACC-01 | P1: Login único e acesso por papel | T29, T30, T33, T34 | Implementing |
 | ACC-02 | P1: Login único e acesso por papel | T18 | Implementing |
 | ACC-03 | P1: Login único e acesso por papel | - | Pending |
 | ACC-04 | P1: Login único e acesso por papel | T30 | Implementing |
@@ -478,7 +478,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-03 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-04 | P1: Arquitetura limpa verificável (rubrica 37) | T17, T18, T28 | Implementing |
 | ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | T20, T28 | Implementing |
-| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33 | Implementing |
+| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34 | Implementing |
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33 | Implementing |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |

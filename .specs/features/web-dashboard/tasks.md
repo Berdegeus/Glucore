@@ -1050,13 +1050,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: resposta de paciente, de profissional e de admin viram `Account` com o papel certo; papel desconhecido vira `unknown`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/infrastructure/httpAccountRepository.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: resposta de paciente, de profissional e de admin viram `Account` com o papel certo; papel desconhecido vira `unknown`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/infrastructure/httpAccountRepository.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(web): add the HTTP account repository`
+**Status**: ✅ Done
 
 ---
 
