@@ -483,7 +483,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
 | ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | T49, T52 | Implementing |
-| ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13, T57, T58 | Implementing |
+| ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13, T57, T58, T59 | Implementing |
 | ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | T10, T11 | Implementing |
 | ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | T15, T16 | Implementing |
 | ARQ-14 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
@@ -528,7 +528,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-07 | P1: Dashboard do paciente com os dados do app | T58 | Implementing |
 | PAC-08 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-09 | P1: Dashboard do paciente com os dados do app | T58 | Implementing |
-| PAC-10 | P1: Dashboard do paciente com os dados do app | - | Pending |
+| PAC-10 | P1: Dashboard do paciente com os dados do app | T59 | Implementing |
 | PAC-11 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-12 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-13 | P1: Dashboard do paciente com os dados do app | - | Pending |
@@ -585,7 +585,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-07 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-08 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-09 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-10 | P2: Dashboard do profissional de saúde | - | Pending |
+| PRO-10 | P2: Dashboard do profissional de saúde | T59 | Implementing |
 | PRO-11 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-12 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-13 | P2: Dashboard do profissional de saúde | - | Pending |
