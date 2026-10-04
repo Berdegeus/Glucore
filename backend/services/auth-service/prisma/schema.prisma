@@ -59,6 +59,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   authSessions        AuthSession[]
   auditLogs           AuditLog[]
+  dashboardLayout     DashboardLayout?
 }
 
 model AuthCredential {
@@ -92,6 +93,16 @@ model AuthSession {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRevoked])
+}
+
+// The web dashboard layout, one row per user: `[{ "id": "kpi-tir", "size": "M" }]`.
+// Lives with User rather than in glucose because every role has one, and the
+// cascade is what deletes it together with the account.
+model DashboardLayout {
+  userId    String   @id @db.Uuid
+  widgets   Json
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // One audit table per service. This one records LOGIN, REGISTER,

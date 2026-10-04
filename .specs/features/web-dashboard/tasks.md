@@ -373,14 +373,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Migration em `prisma/migrations/` gerada com `prisma migrate dev --create-only` e aplicada no banco de teste
-- [ ] Relação `User.dashboardLayout` com `onDelete: Cascade`
-- [ ] Pré-requisito: `auth-service/.env.test` aponta para `glucore_auth_test` (ver Pré-requisitos)
-- [ ] Gate `build` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Migration em `prisma/migrations/` gerada com `prisma migrate dev --create-only` e aplicada no banco de teste
+- [x] Relação `User.dashboardLayout` com `onDelete: Cascade`
+- [x] Pré-requisito: `auth-service/.env.test` aponta para `glucore_auth_test` (ver Pré-requisitos)
+- [x] Gate `build` passa: `cd backend && npm run build && npm run test:coverage`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(auth-service): add the DashboardLayout table`
+**Status**: ✅ Done
 
 ---
 
