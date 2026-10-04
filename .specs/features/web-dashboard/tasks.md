@@ -1159,13 +1159,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com axe sem violações; botão de tentar de novo acionável por teclado
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/ui/states.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com axe sem violações; botão de tentar de novo acionável por teclado
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/ui/states.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add shared UI states`
+**Status**: ✅ Done
 
 ---
 

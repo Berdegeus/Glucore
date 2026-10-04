@@ -465,7 +465,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-02 | P1: Login único e acesso por papel | T18 | Implementing |
 | ACC-03 | P1: Login único e acesso por papel | - | Pending |
 | ACC-04 | P1: Login único e acesso por papel | T30 | Implementing |
-| ACC-05 | P1: Login único e acesso por papel | T17, T23 | Implementing |
+| ACC-05 | P1: Login único e acesso por papel | T17, T23, T39 | Implementing |
 | ACC-06 | P1: Login único e acesso por papel | - | Pending |
 | ACC-07 | P1: Login único e acesso por papel | T23, T29 | Implementing |
 | ACC-08 | P1: Login único e acesso por papel | T23, T225 | Implementing |
@@ -507,13 +507,13 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-13 | P1: Layout customizável por widgets | - | Pending |
 | LAY-14 | P1: Layout customizável por widgets | T3, T5 | Implementing |
 | LAY-15 | P1: Layout customizável por widgets | - | Pending |
-| LAY-16 | P1: Layout customizável por widgets | - | Pending |
+| LAY-16 | P1: Layout customizável por widgets | T39 | Implementing |
 | RSP-01 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-02 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-03 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-04 | P1: Responsivo, acessível e com tema | T36 | Implementing |
 | RSP-05 | P1: Responsivo, acessível e com tema | - | Pending |
-| RSP-06 | P1: Responsivo, acessível e com tema | - | Pending |
+| RSP-06 | P1: Responsivo, acessível e com tema | T39 | Implementing |
 | RSP-07 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-08 | P1: Responsivo, acessível e com tema | T36 | Implementing |
 | RSP-09 | P1: Responsivo, acessível e com tema | T26, T37 | Implementing |

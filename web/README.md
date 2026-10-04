@@ -57,5 +57,6 @@ Pinned exactly in `package.json` and `package-lock.json`. Node 22.13+ (CI runs N
 | @testing-library/react | 16.3.3 | |
 | @testing-library/dom | 10.4.2 | |
 | @testing-library/jest-dom | 7.0.1 | |
+| @testing-library/user-event | 14.6.7 | keyboard and pointer interaction in component tests; peers `@testing-library/dom >=7.21.4` |
 | msw | 3.0.2 | unhandled requests fail the test (`onUnhandledFrame: 'error'`) |
 | vitest-axe, axe-core | 0.1.0, 4.13.0 | matcher types re-declared in `src/test/vitest-axe.d.ts` |
