@@ -517,7 +517,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | RSP-07 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-08 | P1: Responsivo, acessível e com tema | T36 | Implementing |
 | RSP-09 | P1: Responsivo, acessível e com tema | T26, T37 | Implementing |
-| RSP-10 | P1: Responsivo, acessível e com tema | T36 | Implementing |
+| RSP-10 | P1: Responsivo, acessível e com tema | T36, T38 | Implementing |
 | RSP-11 | P1: Responsivo, acessível e com tema | - | Pending |
 | PAC-01 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-02 | P1: Dashboard do paciente com os dados do app | - | Pending |
