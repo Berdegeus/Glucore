@@ -1,0 +1,606 @@
+openapi: 3.0.3
+info:
+  title: Glucore API
+  version: 1.1.0
+  description: |
+    API pública do Glucore, servida pelo gateway sob `/api/v1`. É o único endereço que o app usa.
+    O gateway valida o JWT e encaminha para o auth-service (identidade) ou o glucose-service
+    (dado clínico), e compõe `/me`, `/account` e o registro.
+
+    Autenticação: `Authorization: Bearer <token>`, obtido em `/auth/login` ou `/auth/register`.
+    Erros seguem `{ "error": "mensagem", "code": "CODIGO_OPCIONAL" }`.
+servers:
+  - url: https://glucore.duckdns.org/api/v1
+    description: Produção
+  - url: http://localhost:3000/api/v1
+    description: Desenvolvimento local
+tags:
+  - name: Auth
+    description: Cadastro, login e recuperação de senha
+  - name: Perfil
+    description: Conta e dados do paciente
+  - name: Leituras
+    description: Glicemia do sensor
+  - name: Diário
+    description: Carboidratos, insulina e alertas
+  - name: Configurações
+    description: Limiares de alerta
+  - name: Dashboard
+    description: Métricas agregadas do período
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Cria conta e paciente
+      description: Saga no gateway. Cria a conta no auth-service e o paciente no glucose-service, e compensa apagando a conta se a segunda etapa falhar.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterInput' }
+            example:
+              fullName: Maria Souza
+              email: maria@exemplo.com
+              password: Senha123!
+              phone: (11) 98888-7777
+              birthDate: '1990-04-23'
+              diabetesType: TYPE_1
+              weightKg: 68.5
+              targetRangeMin: 80
+              targetRangeMax: 180
+      responses:
+        '201': { $ref: '#/components/responses/Token' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { description: E-mail já cadastrado (`EMAIL_TAKEN`), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Autentica com e-mail e senha
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginInput' }
+            example: { email: maria@exemplo.com, password: Senha123! }
+      responses:
+        '200': { $ref: '#/components/responses/Token' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { description: Credenciais inválidas (a resposta é a mesma para e-mail inexistente e senha errada), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /auth/status:
+    get:
+      tags: [Auth]
+      summary: Valida o token
+      responses:
+        '200':
+          description: Token válido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  loggedIn: { type: boolean }
+                  userId: { type: string, format: uuid }
+              example: { loggedIn: true, userId: 6f2a1c34-9e4b-4c21-8b77-2f0a5d6e1b90 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Envia o token de redefinição de senha
+      description: A resposta é idêntica para e-mail cadastrado ou não, para impedir a enumeração de contas.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+            example: { email: maria@exemplo.com }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Redefine a senha com o token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string, format: uuid }
+                password: { type: string, format: password }
+            example: { token: 0f6a4d51-2c8e-4c0f-9a3b-71d2e8c4a915, password: OutraSenha456! }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { description: Token inválido, expirado ou já usado, ou senha fraca, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /me:
+    get:
+      tags: [Perfil]
+      summary: Conta e paciente compostos
+      description: Se a perna do paciente falhar, devolve os padrões 80/180 e o cabeçalho `X-Degraded`.
+      responses:
+        '200':
+          description: Perfil completo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Perfil]
+      summary: Atualiza perfil, e-mail ou senha
+      description: Todos os campos são opcionais. Trocar `newEmail` ou `newPassword` exige `currentPassword`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileUpdate' }
+            example: { currentPassword: Senha123!, fullName: Maria S. Souza, targetRangeMin: 90, targetRangeMax: 170 }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: E-mail já em uso, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /account:
+    delete:
+      tags: [Perfil]
+      summary: Apaga a conta e os dados do paciente
+      description: Orquestra as duas pernas, paciente e conta. É a forma de cumprir o direito de exclusão (LGPD).
+      responses:
+        '204': { description: Conta apagada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /readings:
+    get:
+      tags: [Leituras]
+      summary: Últimas 288 leituras
+      description: Ordenadas da mais recente para a mais antiga (24 h a cada 5 min).
+      responses:
+        '200':
+          description: Lista de leituras
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Reading' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Leituras]
+      summary: Grava leituras (upsert por horário)
+      description: Reenviar a mesma leitura atualiza em vez de duplicar, então o push do app é seguro de repetir.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [readings]
+              properties:
+                readings:
+                  type: array
+                  maxItems: 500
+                  items: { $ref: '#/components/schemas/Reading' }
+            example:
+              readings:
+                - { value: 104, timestampMs: 1751800200000, trend: steady, rate: 0.021, alarmCode: 0 }
+      responses:
+        '204': { description: Gravado }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Leituras]
+      summary: Apaga todas as leituras do paciente
+      responses:
+        '204': { description: Apagadas }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /carbs:
+    get:
+      tags: [Diário]
+      summary: Lista carboidratos, mais recentes primeiro
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Before' }
+      responses:
+        '200':
+          description: Página de entradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Carb' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /carbs/item:
+    post:
+      tags: [Diário]
+      summary: Cria uma entrada de carboidrato
+      description: O `id` é opcional, mas quando enviado deve ser UUID. O app o gera para ter identidade estável antes de sincronizar.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Carb' }
+            example: { id: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d, grams: 45, description: almoço, timeMs: 1751800000000 }
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /carbs/item/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    put:
+      tags: [Diário]
+      summary: Atualiza uma entrada de carboidrato
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Carb' }
+            example: { grams: 60, description: jantar, timeMs: 1751803600000 }
+      responses:
+        '204': { description: Atualizada }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Diário]
+      summary: Remove uma entrada de carboidrato
+      responses:
+        '204': { description: Removida }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /insulin:
+    get:
+      tags: [Diário]
+      summary: Lista insulina, mais recentes primeiro
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Before' }
+      responses:
+        '200':
+          description: Página de entradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Insulin' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /insulin/item:
+    post:
+      tags: [Diário]
+      summary: Cria uma entrada de insulina
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Insulin' }
+            example: { id: b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e, units: 6, type: bolus, timeMs: 1751800000000, dayOfWeek: MONDAY }
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /insulin/item/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    put:
+      tags: [Diário]
+      summary: Atualiza uma entrada de insulina
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Insulin' }
+            example: { units: 8, type: basal, timeMs: 1751803600000, dayOfWeek: TUESDAY }
+      responses:
+        '204': { description: Atualizada }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Diário]
+      summary: Remove uma entrada de insulina
+      responses:
+        '204': { description: Removida }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /alerts:
+    get:
+      tags: [Diário]
+      summary: Lista alertas, mais recentes primeiro
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Before' }
+      responses:
+        '200':
+          description: Página de alertas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Alert' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /alerts/item:
+    post:
+      tags: [Diário]
+      summary: Cria um alerta
+      description: Um `type` fora do vocabulário conhecido não é rejeitado, vira `syncFailure`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Alert' }
+            example: { id: c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f, type: glucoseHigh, timestampMs: 1751800000000 }
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /alerts/item/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    put:
+      tags: [Diário]
+      summary: Atualiza um alerta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Alert' }
+            example: { type: glucoseLow, timestampMs: 1751803600000 }
+      responses:
+        '204': { description: Atualizado }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Diário]
+      summary: Remove um alerta
+      responses:
+        '204': { description: Removido }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /settings/alerts:
+    get:
+      tags: [Configurações]
+      summary: Limiares de alerta
+      description: Sem configuração salva, responde o padrão 80/180.
+      responses:
+        '200':
+          description: Limiares
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AlertThresholds' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Configurações]
+      summary: Grava os limiares de alerta
+      description: O limiar baixo deve ser menor que o alto.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AlertThresholds' }
+            example: { lowThreshold: 75, highThreshold: 190 }
+      responses:
+        '204': { description: Gravado }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Métricas do período
+      description: |
+        Agregações por dia, média móvel de 7 dias, tempo no alvo, GMI, coeficiente de variação,
+        insulina e alertas por tipo e episódios de hipo/hiperglicemia. Intervalo máximo de 90 dias.
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date }, description: Início (YYYY-MM-DD, inclusivo). Padrão, 14 dias atrás. }
+        - { name: to, in: query, schema: { type: string, format: date }, description: Fim (YYYY-MM-DD, inclusivo). Padrão, hoje em UTC. }
+        - { name: bucket, in: query, schema: { type: string, enum: [day], default: day }, description: Só `day` está implementado. }
+      responses:
+        '200':
+          description: Resumo do período
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardSummary' }
+        '400': { description: Faixa inválida (`INVALID_DASHBOARD_RANGE`), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+      description: Tamanho da página.
+    Before:
+      name: before
+      in: query
+      schema: { type: integer, format: int64 }
+      description: Limite superior exclusivo, em epoch ms. Use o horário da última entrada recebida para virar a página.
+  responses:
+    Token:
+      description: Token JWT
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token: { type: string }
+          example: { token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... }
+    Message:
+      description: Mensagem de confirmação
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+          example: { message: Profile updated. }
+    Created:
+      description: Criado
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+    BadRequest:
+      description: Dados inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Token ausente, inválido ou expirado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Não encontrado, inclusive quando pertence a outro paciente
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooManyRequests:
+      description: Limite de requisições excedido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        code: { type: string }
+      example: { error: Invalid input, code: VALIDATION_ERROR }
+    RegisterInput:
+      type: object
+      required: [fullName, email, password]
+      properties:
+        fullName: { type: string, minLength: 3 }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        phone: { type: string }
+        birthDate: { type: string, description: 'YYYY-MM-DD ou DD/MM/YYYY' }
+        diabetesType: { type: string, example: TYPE_1 }
+        weightKg: { type: number, exclusiveMinimum: true, minimum: 0 }
+        targetRangeMin: { type: integer, default: 80 }
+        targetRangeMax: { type: integer, default: 180 }
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    Profile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        phone: { type: string, nullable: true }
+        status: { type: string, example: ACTIVE }
+        role: { type: string, enum: [PATIENT, HEALTH_PROFESSIONAL, ADMINISTRATOR] }
+        createdAt: { type: string, format: date-time }
+        patient:
+          type: object
+          properties:
+            birthDate: { type: string, nullable: true }
+            diabetesType: { type: string, nullable: true }
+            weightKg: { type: number, nullable: true }
+            targetRangeMin: { type: integer }
+            targetRangeMax: { type: integer }
+      example:
+        id: 6f2a1c34-9e4b-4c21-8b77-2f0a5d6e1b90
+        email: maria@exemplo.com
+        fullName: Maria Souza
+        phone: (11) 98888-7777
+        status: ACTIVE
+        role: PATIENT
+        createdAt: '2026-05-03T19:08:32.000Z'
+        patient: { birthDate: '1990-04-23', diabetesType: TYPE_1, weightKg: 68.5, targetRangeMin: 80, targetRangeMax: 180 }
+    ProfileUpdate:
+      type: object
+      properties:
+        currentPassword: { type: string, format: password }
+        newPassword: { type: string, format: password }
+        newEmail: { type: string, format: email }
+        fullName: { type: string }
+        phone: { type: string }
+        weightKg: { type: number }
+        targetRangeMin: { type: integer }
+        targetRangeMax: { type: integer }
+    Reading:
+      type: object
+      required: [value, timestampMs]
+      properties:
+        value: { type: number, description: Glicose em mg/dL }
+        timestampMs: { type: integer, format: int64 }
+        trend: { type: string, example: steady }
+        rate: { type: number }
+        alarmCode: { type: integer }
+      example: { value: 104, timestampMs: 1751800200000, trend: steady, rate: 0.021, alarmCode: 0 }
+    Carb:
+      type: object
+      required: [grams, description, timeMs]
+      properties:
+        id: { type: string, format: uuid }
+        grams: { type: number }
+        description: { type: string }
+        timeMs: { type: integer, format: int64 }
+    Insulin:
+      type: object
+      required: [units, type, timeMs, dayOfWeek]
+      properties:
+        id: { type: string, format: uuid }
+        units: { type: number }
+        type: { type: string, example: bolus }
+        timeMs: { type: integer, format: int64 }
+        dayOfWeek: { type: string, example: MONDAY }
+    Alert:
+      type: object
+      required: [type, timestampMs]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [glucoseLow, glucoseHigh, sensorReconnected, syncFailure] }
+        timestampMs: { type: integer, format: int64 }
+    AlertThresholds:
+      type: object
+      required: [lowThreshold, highThreshold]
+      properties:
+        lowThreshold: { type: integer }
+        highThreshold: { type: integer }
+    DashboardSummary:
+      type: object
+      properties:
+        totals: { type: object, description: Contagens de leituras, carboidratos, insulina e alertas. }
+        timeInRangePercent: { type: number }
+        gmiPercent: { type: number }
+        coefficientOfVariationPercent: { type: number }
+        byDay: { type: array, items: { type: object }, description: Média, mínimo, máximo, tempo no alvo e média móvel de 7 dias por dia. }
+        insulinByType: { type: array, items: { type: object } }
+        alertsByType: { type: array, items: { type: object } }
+        excursions: { type: array, items: { type: object }, description: Episódios HYPO/HYPER com início, fim e duração. }
