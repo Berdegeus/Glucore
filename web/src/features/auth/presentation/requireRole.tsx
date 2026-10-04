@@ -53,7 +53,8 @@ export function RequireRole({ requiredRole, children }: { requiredRole: Role; ch
     case 'failed':
       return <ErrorState message={UNAVAILABLE_MESSAGE} onRetry={retryRestore} />;
     case 'anonymous':
-      return <Navigate to={loginPathFor(location)} replace />;
+      // After "Sair" there is no page to come back to (ACC-11).
+      return <Navigate to={state.signedOut ? LOGIN_PATH : loginPathFor(location)} replace />;
     case 'authenticated':
       return state.session.account.role === requiredRole ? (
         children

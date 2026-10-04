@@ -26,8 +26,11 @@ export type AuthState =
   | { status: 'restoring' }
   /** The restore failed for a reason other than a refused token, e.g. the gateway is down. */
   | { status: 'failed'; error: unknown }
-  /** `notice` is set when the session ended on its own (ACC-09). */
-  | { status: 'anonymous'; notice: string | null }
+  /**
+   * `notice` is set when the session ended on its own (ACC-09). `signedOut` is
+   * set after "Sair", so the guard sends the person to a plain login (ACC-11).
+   */
+  | { status: 'anonymous'; notice: string | null; signedOut?: true }
   | { status: 'authenticated'; session: Session };
 
 export interface AuthContextValue {
@@ -46,6 +49,7 @@ export interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const ANONYMOUS: AuthState = { status: 'anonymous', notice: null };
+const SIGNED_OUT: AuthState = { status: 'anonymous', notice: null, signedOut: true };
 
 /**
  * Holds who is signed in. It restores the session on mount, signs in and out
@@ -102,7 +106,7 @@ export function AuthProvider({ services, children }: { services: AuthServices; c
 
   const logout = useCallback(() => {
     services.logout();
-    setState(ANONYMOUS);
+    setState(SIGNED_OUT);
   }, [services]);
 
   const retryRestore = useCallback(() => {

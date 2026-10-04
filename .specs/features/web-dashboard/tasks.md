@@ -1286,14 +1286,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: "Sair" volta ao login; menu abre e fecha por teclado; axe sem violações
-- [ ] CSS da casca recolhe a navegação abaixo de 640 px
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/app/appShell.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: "Sair" volta ao login; menu abre e fecha por teclado; axe sem violações
+- [x] CSS da casca recolhe a navegação abaixo de 640 px
+- [x] Gate `quick` passa: `cd web && npx vitest run src/app/appShell.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the app shell`
+**Status**: ✅ Done
 
 ---
 

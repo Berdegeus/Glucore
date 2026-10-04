@@ -471,7 +471,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-08 | P1: Login único e acesso por papel | T23, T225, T43 | Implementing |
 | ACC-09 | P1: Login único e acesso por papel | T21, T24, T41 | Implementing |
 | ACC-10 | P1: Login único e acesso por papel | T25, T28, T32, T33, T44 | Implementing |
-| ACC-11 | P1: Login único e acesso por papel | T31, T41 | Implementing |
+| ACC-11 | P1: Login único e acesso por papel | T31, T41, T45 | Implementing |
 | ACC-12 | P1: Login único e acesso por papel | T22 | Implementing |
 | ARQ-01 | P1: Arquitetura limpa verificável (rubrica 37) | T10 | Implementing |
 | ARQ-02 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
@@ -510,14 +510,14 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-16 | P1: Layout customizável por widgets | T39 | Implementing |
 | RSP-01 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-02 | P1: Responsivo, acessível e com tema | - | Pending |
-| RSP-03 | P1: Responsivo, acessível e com tema | - | Pending |
+| RSP-03 | P1: Responsivo, acessível e com tema | T45 | Implementing |
 | RSP-04 | P1: Responsivo, acessível e com tema | T36 | Implementing |
 | RSP-05 | P1: Responsivo, acessível e com tema | - | Pending |
-| RSP-06 | P1: Responsivo, acessível e com tema | T39, T43 | Implementing |
+| RSP-06 | P1: Responsivo, acessível e com tema | T39, T43, T45 | Implementing |
 | RSP-07 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-08 | P1: Responsivo, acessível e com tema | T36 | Implementing |
 | RSP-09 | P1: Responsivo, acessível e com tema | T26, T37 | Implementing |
-| RSP-10 | P1: Responsivo, acessível e com tema | T36, T38 | Implementing |
+| RSP-10 | P1: Responsivo, acessível e com tema | T36, T38, T45 | Implementing |
 | RSP-11 | P1: Responsivo, acessível e com tema | - | Pending |
 | PAC-01 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-02 | P1: Dashboard do paciente com os dados do app | - | Pending |
