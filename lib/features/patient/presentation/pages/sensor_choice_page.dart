@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../sensor/domain/models.dart';
+import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import 'libre_nfc_page.dart';
@@ -12,6 +14,20 @@ class SensorChoicePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Sensor already linked: skip the brand list and open its control panel.
+    return BlocBuilder<SensorCubit, SensorUiState>(
+      buildWhen: (a, b) => a.session?.brand != b.session?.brand,
+      builder: (context, state) {
+        final session = state.session;
+        if (session == null) return _buildBrandList(context);
+        return session.brand == SensorBrand.libre2
+            ? const LibreNFCPage()
+            : SensorLinkPage(brand: session.brand);
+      },
+    );
+  }
+
+  Widget _buildBrandList(BuildContext context) {
     return Scaffold(
       appBar: UserAppBar(title: const Text('Escolher sensor')),
       body: ListView(
