@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Glucore is an Android-first Flutter MVP for CGM sensors: Sibionics, Accu-Chek SmartGuide and FreeStyle Libre 2. Four layers: Flutter UI → Kotlin session/BLE → C++/JNI bridge → proprietary vendor `.so` files (arm64-v8a only).
 
-**Current state (v1.1.0):** BLE connection live. Full GATT + Sibionics EU protocol (auth → time-sync → activation → history sync → glucose). **Multi-sensor**: Sibionics + Accu-Chek SmartGuide (PIN) + FreeStyle Libre 2 (NFC + Abbott lib) over a brand-agnostic `BrandBleManager`; app-scoped stack (`SensorCore` + `CgmForegroundService`). Flutter shell with Bloc/Cubit. **Offline-first** local SQLite (primary) + background sync; JWT auth tolerant of offline launch (P18) and scoped per-user (P19); nav providers above the root Navigator (P17). Backend: JWT auth + CRUD for carb/insulin.
+**Current state (v1.1.0):** BLE connection live. Full GATT + Sibionics EU protocol (auth → time-sync → activation → history sync → glucose). **Multi-sensor**: Sibionics + Accu-Chek SmartGuide (PIN) + FreeStyle Libre 2 (NFC + Abbott lib) over a brand-agnostic `BrandBleManager`; app-scoped stack (`SensorCore` + `CgmForegroundService`). Flutter shell with Bloc/Cubit. **Offline-first** local SQLite (primary) + background sync; JWT auth tolerant of offline launch (P18) and scoped per-user (P19); nav providers above the root Navigator (P17). Backend: three services (gateway + auth-service + glucose-service) with JWT auth, CRUD for carb/insulin/alerts and a dashboard summary; the app is not yet wired to the gateway (see Backend).
 
 **Versioning:** `dev` = integration branch for the in-progress version; `main` = tagged releases, device-regression-tested. See `docs/guides/versioning-and-branches.md` and `CHANGELOG.md`.
 
@@ -25,8 +25,8 @@ flutter run
 flutter build apk --debug
 flutter gen-l10n          # regenerate after editing .arb files
 cd android && ./gradlew app:assembleDebug
-cd backend && npm install && npm run migrate:dev   # migrates both services
-cd backend && npm run dev:glucose                  # :3001   (npm run dev:auth for :3002)
+cd backend && npm install && npm run migrate:dev   # migrates both services (glucose + auth)
+cd backend && npm run dev:glucose                  # :3001   (npm run dev:auth for :3002, npm run dev:gateway for :3000)
 cd backend && npm run build && npm test            # ALWAYS from backend/ root, never from a service
 ```
 
@@ -58,15 +58,16 @@ DI in `lib/injection_container.dart` — calls `sl.reset()` before registering t
 
 ### Backend
 
-Node/Express + Prisma/PostgreSQL. `backend/` is an npm workspace with **two services, two databases**:
+Node/Express + Prisma/PostgreSQL. `backend/` is an npm workspace with **three services** (two databases):
 
-- **`auth-service`** (:3002, `glucore_auth`) — identity. `User`, `AuthCredential`, `PasswordResetToken`, `AuthSession`. Serves `/auth/*`.
-- **`glucose-service`** (:3001, `glucore_dev`) — clinical data. `Patient`, sensors, readings, carbs, insulin, alerts. Serves `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`.
-- **`packages/shared`** — errors, asyncHandler, audit, and `auth/` (claims, JWT sign/verify, verifyJwt/requireRole). No Prisma dependency.
+- **`gateway`** (:3000, no database) — the single public entry point, everything under `/api/v1`. Proxies `/api/v1/auth/*` to auth-service and `/api/v1/{readings,carbs,insulin,alerts,settings,dashboard}` to glucose-service (JWT checked at the gateway); composes `GET/PUT /api/v1/me`, `DELETE /api/v1/account` and the registration saga (`POST /api/v1/auth/register`); owns login/register rate limiting. Resolves the other services through a `ServiceRegistry` (env or Consul) and calls them with an internal service token (`INTERNAL_JWT_SECRET`).
+- **`auth-service`** (:3002, `glucore_auth`) — identity. `User`, `AuthCredential`, `PasswordResetToken`, `AuthSession`. Serves `/auth/*` (including `/auth/refresh`) and `/internal/accounts`.
+- **`glucose-service`** (:3001, `glucore_dev`) — clinical data. `Patient`, sensors, readings, carbs, insulin, alerts. Serves `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`, `/dashboard/summary` and `/internal/patients`.
+- **`packages/shared`** — errors, asyncHandler, audit, health, service discovery, and `auth/` (claims, JWT sign/verify, verifyJwt/requireRole). No Prisma dependency.
 
-Each domain sits in `src/modules/<name>/` as `routes · controller · service · repository · schema · mapper`, wired in that service's `src/container.ts`. Auth via JWT Bearer, `{sub, role}`; the role comes from the claim, not a database read. **Both services must share `JWT_SECRET`** until the gateway exists.
+Each domain sits in `src/modules/<name>/` as `routes · controller · service · repository · schema · mapper`, wired in that service's `src/container.ts`. Auth via JWT Bearer, `{sub, role}`; the role comes from the claim, not a database read. **All three services share `JWT_SECRET`**; gateway ↔ service calls additionally use `INTERNAL_JWT_SECRET`. `docker compose up --build` in `backend/` brings up Postgres, Consul and the three services; only the gateway publishes a port. **Never expose auth-service directly** — the login rate limiter lives in the gateway.
 
-**No gateway yet**, so there is no single address: the app would have to talk to both ports, and it is out of scope until phase 4. `--dart-define=API_URL=http://<ip>:3001` still points at glucose-service.
+**Known gap (audit A-01):** the Flutter app still has a single `baseUrl` (`lib/core/api/api_client.dart`, default `:3001`) and unprefixed paths, so it does not work end to end against any backend topology yet. The fix is to point `API_URL` at the gateway (`http://<ip>:3000`) and append `/api/v1` in `ApiClient`; until then treat the app↔backend contract as broken (`docs/AUDIT_2026-09-08.md`).
 
 ### Debug panel / mock sensor
 

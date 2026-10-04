@@ -507,6 +507,10 @@ Para envio real de email de recuperacao de senha, configure `SMTP_HOST`, `SMTP_P
 
 Prerequisito: Flutter SDK instalado e Android conectado/emulador rodando.
 
+> **Atenção:** o backend agora tem gateway (:3000, prefixo `/api/v1`) e o app ainda não foi ligado a ele
+> (auditoria A-01). Com `:3001` login/registro dão 404; com `:3000` tudo dá 404 por falta do prefixo.
+> Até o PR "app → gateway", o app só funciona offline (modo local). O `API_URL` abaixo é o default atual.
+
 ```bash
 # Descobrir o IP da maquina (macOS)
 ipconfig getifaddr en0

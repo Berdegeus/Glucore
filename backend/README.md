@@ -2,16 +2,17 @@
 
 API REST do app Glucore: autenticação JWT e CRUD dos dados do paciente (leituras de glicose, carboidratos, insulina, alertas e limiares). Node + Express + Prisma sobre PostgreSQL.
 
-> **Estado atual:** dois serviços, dois bancos, **sem gateway ainda**. O cadastro e o login estão em
-> `:3002` e o resto em `:3001`, então não existe um endereço único — o app Flutter está fora de
-> escopo até o gateway chegar. Ver "Arquitetura" e a issue de microserviços.
+> **Estado atual:** três serviços — `gateway` (:3000, único endereço público, prefixo `/api/v1`),
+> `auth-service` (:3002) e `glucose-service` (:3001) — e dois bancos. Service Discovery por
+> `ServiceRegistry` (env ou Consul) e `docker compose up --build` sobem tudo. **O app Flutter ainda não
+> foi ligado ao gateway** (uma `baseUrl`, rotas sem `/api/v1`): ver "Rotas do gateway" e a auditoria
+> `docs/AUDIT_2026-09-08.md` (A-01).
 
 O app Flutter é offline-first: escreve local primeiro e empurra para cá em background (`PatientSyncService`). Esta API é o destino desse push e a fonte de reconciliação, não o caminho crítico da UI.
 
 ## Arquitetura
 
-O backend é um **monorepo npm workspaces**. Dois dos três serviços do alvo existem; falta o
-`gateway`.
+O backend é um **monorepo npm workspaces** com três serviços.
 
 ```
 backend/
@@ -19,6 +20,7 @@ backend/
   tsconfig.base.json           # composite: true — project references, não `paths`
   vitest.config.ts             # opções de RAIZ (projects, coverage, paralelismo)
   packages/shared/src/         # sem dono de banco: errors/, http/, util/, audit/, auth/
+  services/gateway/            # :3000, sem banco — entrada única, /api/v1
   services/auth-service/       # :3002, banco glucore_auth — identidade
   services/glucose-service/    # :3001, banco glucore_dev — dado clínico
 ```
@@ -35,7 +37,7 @@ Das 20 FKs originais, **17 permanecem**: a cadeia sensor → binding → pacient
 atravessa entre os serviços é o `userId` dentro do JWT, e nada mais.
 
 **O que se perdeu:** o `ON DELETE CASCADE` de `User → Patient`. O banco já não previne paciente
-órfão, o que torna `DELETE /account` uma operação cross-service obrigatória — ainda não construída.
+órfão, o que torna `DELETE /api/v1/account` uma operação cross-service obrigatória — o gateway a orquestra (ver "Rotas do gateway").
 
 ### Dois clients Prisma
 
@@ -89,12 +91,14 @@ npm install                   # instala o workspace e gera os dois clients Prism
 createdb glucore_dev && createdb glucore_auth_dev
 cp services/glucose-service/.env.example services/glucose-service/.env
 cp services/auth-service/.env.example     services/auth-service/.env
-# os dois .env precisam do MESMO JWT_SECRET: o auth assina, o glucose verifica.
-# Segredos diferentes fazem todo request autenticado responder 401.
+cp services/gateway/.env.example         services/gateway/.env
+# os três .env precisam do MESMO JWT_SECRET (o auth assina, gateway e glucose verificam) e do
+# MESMO INTERNAL_JWT_SECRET. Segredos diferentes fazem todo request autenticado responder 401.
 
 npm run migrate:dev           # migra os dois serviços
 npm run dev:glucose           # http://localhost:3001
 npm run dev:auth              # http://localhost:3002 (outro terminal)
+npm run dev:gateway           # http://localhost:3000 (outro terminal) — o endereço que o cliente usa
 ```
 
 Outros comandos, todos a partir de `backend/`:
@@ -102,7 +106,7 @@ Outros comandos, todos a partir de `backend/`:
 | Comando | O que faz |
 |---|---|
 | `npm run build` | `tsc -b` dos 3 projetos **e** typecheck dos dois `tests/` |
-| `npm test` | Vitest, 337 testes nos dois serviços. **Sempre da raiz** — ver abaixo |
+| `npm test` | Vitest, 483 testes nos três serviços. **Sempre da raiz** — ver abaixo |
 | `npm run test:coverage` | Idem com cobertura v8; os thresholds reprovam numa queda |
 | `npm run migrate:deploy` | Aplica migrations num ambiente já provisionado |
 
@@ -122,26 +126,35 @@ daquele projeto e perde `fileParallelism: false` / `maxWorkers: 1`, que são op�
 arquivos dão `TRUNCATE` concorrente no mesmo banco e a suíte falha de forma aleatória, num ponto que
 não tem nada a ver com a causa.
 
-O app conecta com `--dart-define=API_URL=http://<ip-da-máquina>:3001`. Sem esse define, o padrão é `http://localhost:3001` (`lib/core/api/api_client.dart`) — que só funciona em emulador, não em device físico.
+Subir tudo de uma vez: `docker compose up --build` em `backend/` (Postgres, Consul, os três serviços; só o
+gateway publica porta, `3000:3000`). Em dev sem Docker: `npm run dev:auth`, `dev:glucose` e `dev:gateway`.
+
+O app lê `--dart-define=API_URL=...` (padrão `http://localhost:3001`, `lib/core/api/api_client.dart`).
+**Hoje nenhum valor funciona ponta a ponta**: `:3001` não serve `/auth/*` e `:3000` exige o prefixo
+`/api/v1`, que o app ainda não envia (auditoria A-01). O alvo é `API_URL=http://<ip>:3000` com `/api/v1`
+absorvido no `ApiClient`.
 
 ## Variáveis de ambiente
 
 | Variável | Obrigatória | Efeito |
 |---|---|---|
-| `JWT_SECRET` | **sim** | Segredo de assinatura do JWT. Ausente ou vazio, `loadEnv()` lança `MissingEnvError` e o bootstrap sai com código 1 — o processo **não sobe** (`services/glucose-service/src/lib/env.ts`, `src/index.ts`). Não existe fallback de desenvolvimento. O `throw` é deliberado no lugar de `process.exit`: um `exit` alcançável por import derruba o worker do runner de teste sem falha reportada e sem saída. |
+| `JWT_SECRET` | **sim** | Segredo de assinatura do JWT. Ausente ou vazio, `loadEnv()` lança `MissingEnvError` e o bootstrap sai com código 1 — o processo **não sobe** (`src/lib/env.ts` e `src/index.ts` de cada serviço). Não existe fallback de desenvolvimento. O `throw` é deliberado no lugar de `process.exit`: um `exit` alcançável por import derruba o worker do runner de teste sem falha reportada e sem saída. |
 | `DATABASE_URL` | **sim** | String de conexão PostgreSQL usada pelo Prisma (`services/glucose-service/prisma/schema.prisma`). |
-| `PORT` | não | Porta HTTP. Padrão `3001`. |
-| `CORS_ORIGIN` | não | Lista de origens separadas por vírgula. Definida, restringe o CORS a elas; ausente, o CORS fica permissivo (conveniente em desenvolvimento, **defina em produção**). |
+| `PORT` | não | Porta HTTP. Padrões: gateway `3000`, glucose `3001`, auth `3002`. |
+| `CORS_ORIGIN` | em produção | Lista de origens separadas por vírgula. Definida, restringe o CORS a elas; ausente, fica permissivo em desenvolvimento, mas **em `NODE_ENV=production` o serviço não sobe sem ela**. |
+| `INTERNAL_JWT_SECRET` | **sim** (gateway, auth, glucose) | Segredo do token interno de serviço→serviço (rotas `/internal/*`). Sem ele o processo não sobe. |
+| `AUTH_SERVICE_URL` / `GLUCOSE_SERVICE_URL` | não (gateway) | Destinos usados quando `SERVICE_DISCOVERY=env`. Padrões `http://localhost:3002` / `:3001`. |
+| `SERVICE_DISCOVERY` / `CONSUL_HTTP_ADDR` | não | `env` (padrão) ou `consul`; endereço do Consul (padrão `http://localhost:8500`). |
 | `NODE_ENV` | não | Fora de `production`, o handler de erro imprime o stack trace no log. |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | não | Envio do e-mail de recuperação de senha. Sem configuração, o token é impresso no console e a resposta ao cliente não muda. |
 
 ## Convenções
 
 - **Autenticação**: `Authorization: Bearer <token>`. O token sai de `POST /auth/register` e `POST /auth/login` e vale 30 dias.
-- **Autorização**: as rotas de dados do paciente exigem papel `PATIENT`, lido do banco a cada requisição (não do JWT), então um rebaixamento vale na hora.
+- **Autorização**: as rotas de dados do paciente exigem papel `PATIENT`, lido da claim `role` do JWT (não do banco). Token sem `role` é rejeitado. Papéis privilegiados terão TTL curto com `POST /auth/refresh` e revogação via `AuthSession.isRevoked`; o do paciente vale 30 dias.
 - **Erros**: toda falha de autenticação e de banco responde `{ "error": "...", "code": "..." }`. O app decide pelo `code`, nunca pelo status isolado — `401` significa coisas diferentes em "token inválido" e em "senha atual errada".
 - **Tempo**: todo timestamp de entrada e saída é epoch em milissegundos (`timestampMs`, `timeMs`).
-- **Senha forte**: mínimo 8 caracteres com maiúscula, minúscula, dígito e caractere não alfanumérico (`services/glucose-service/src/lib/passwordPolicy.ts`). Vale em cadastro, redefinição e troca no perfil; **não** vale no login.
+- **Senha forte**: mínimo 8 caracteres com maiúscula, minúscula, dígito e caractere não alfanumérico (`services/auth-service/src/lib/passwordPolicy.ts`). Vale em cadastro, redefinição e troca no perfil; **não** vale no login.
 
 ### Códigos de erro
 
@@ -160,29 +173,47 @@ O app conecta com `--dart-define=API_URL=http://<ip-da-máquina>:3001`. Sem esse
 
 ### Limite de taxa
 
+Vive no **gateway** (`services/gateway/src/middleware/rateLimiters.ts`), não nos serviços: atrás do
+gateway o `req.ip` dos serviços é o do próprio gateway, e um limiter ali contaria todo mundo como um
+único cliente. Desligado sob `NODE_ENV=test`.
+
 | Rotas | Limite |
 |---|---|
-| `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/reset-password` | 10 requisições / 15 min por IP |
-| `POST /auth/register` | 20 requisições / 15 min por IP |
+| `POST /api/v1/auth/login`, `/forgot-password`, `/reset-password` | 10 requisições / 15 min por IP |
+| `POST /api/v1/auth/register` | 20 requisições / 15 min por IP |
 
 Excedido, a resposta é `429 Too Many Requests` com os headers padrão `RateLimit-*`.
 
+> **Restrição de deploy:** o `auth-service` **nunca** deve ser publicado diretamente — sem o gateway,
+> `POST /auth/login` fica sem limite. No compose só o gateway tem porta publicada.
+
 ---
+
+## Rotas do gateway — **gateway, porta 3000, prefixo `/api/v1`**
+
+Único endereço que o cliente deve usar. Código: `services/gateway/src/app.ts`.
+
+| Rota pública | Destino | Observação |
+|---|---|---|
+| `POST /api/v1/auth/register` | **saga** gateway | Cria a conta no auth-service e o `Patient` (com `birthDate`, `diabetesType`, `weightKg`, `targetRange`) no glucose-service; se a segunda perna falha, compensa apagando a conta. Falha da própria compensação é logada (`saga.compensation_failed`), não fechada. |
+| `/api/v1/auth/*` (login, status, profile, forgot/reset-password, refresh) | proxy → auth-service `/auth/*` | O caminho relativo é o mesmo da seção `/auth` abaixo. `profile` responde só o bloco de conta; para conta+paciente use `/me`. |
+| `GET/PUT /api/v1/me` | **composição** | Conta (obrigatória) + paciente (opcional: se falhar, devolve os defaults 80/180). |
+| `DELETE /api/v1/account` | **orquestração** | Apaga paciente e conta, as duas pernas. |
+| `/api/v1/{readings,carbs,insulin,alerts,settings,dashboard}` | proxy autenticado → glucose-service | JWT verificado no gateway; o caminho depois do prefixo é o das seções abaixo. |
+
+Os serviços também expõem `/internal/accounts` (auth) e `/internal/patients` (glucose), protegidos pelo
+token interno e usados só pelo gateway. As seções a seguir descrevem as rotas **nos serviços**; via
+gateway, acrescente `/api/v1`.
 
 ## `/auth` — **auth-service, porta 3002**
 
-> **Duas regressões conhecidas até o gateway existir**, ambas por a fatia de paciente estar em outro
-> banco:
-> 1. **`POST /auth/register` grava só a conta.** `birthDate`, `diabetesType`, `weightKg` e
->    `targetRange` são aceitos no corpo mas não têm destino: o `Patient` nasce com os defaults
->    80/180 na primeira requisição de dados ao `glucose-service` (`ensurePatient`). A saga de
->    registro no gateway é o que recupera esses campos.
-> 2. **`GET/PUT /auth/profile` respondem só o bloco de conta.** O bloco `patient` volta quando o
->    gateway compuser as duas metades.
+> **Registro e perfil via gateway.** Chamado direto, `POST /auth/register` grava só a conta e
+> `GET/PUT /auth/profile` respondem só o bloco de conta. A fatia de paciente é recuperada pela saga
+> `POST /api/v1/auth/register` e por `GET/PUT /api/v1/me` (ver "Rotas do gateway").
 
 ### `POST /auth/register` — cria conta
 
-Sem autenticação. Obrigatórios: `email` válido, `password` forte, `fullName` com 3+ caracteres. Opcionais: `phone`, `birthDate` (`YYYY-MM-DD` ou `DD/MM/YYYY`), `diabetesType`, `weightKg` (> 0), `targetRangeMin`/`targetRangeMax` (padrão 80/180, min < max) — **os quatro últimos não são persistidos hoje**.
+Sem autenticação. Obrigatórios: `email` válido, `password` forte, `fullName` com 3+ caracteres. Opcionais: `phone`, `birthDate` (`YYYY-MM-DD` ou `DD/MM/YYYY`), `diabetesType`, `weightKg` (> 0), `targetRangeMin`/`targetRangeMax` (padrão 80/180, min < max) — **os quatro últimos só são persistidos pela saga do gateway** (`POST /api/v1/auth/register`); direto no auth-service são aceitos e descartados.
 
 ```json
 {
@@ -527,6 +558,29 @@ Sem configuração salva, responde o padrão 80/180:
 ```
 
 `204` sem corpo.
+
+---
+
+## `/dashboard` — **glucose-service, porta 3001**
+
+Bearer + papel `PATIENT`. Só leitura; agrega os dados do próprio paciente.
+
+### `GET /dashboard/summary` — métricas do período
+
+| Query | Padrão | Regra |
+|---|---|---|
+| `from`, `to` | últimos 14 dias até hoje (UTC) | `YYYY-MM-DD`, inclusivos; `from <= to`; intervalo máximo de 90 dias |
+| `bucket` | `day` | só `day` está implementado |
+
+Resposta (`DashboardSummaryDto`): `totals` (leituras, carboidratos, insulina, alertas),
+`timeInRangePercent`, `gmiPercent`, `coefficientOfVariationPercent`, `byDay[]` (média, mín, máx, tempo
+no alvo e média móvel de 7 dias por dia), `insulinByType[]`, `alertsByType[]` e `excursions[]`
+(episódios `HYPO`/`HYPER` com início, fim e duração). Faixa inválida responde `400` com
+`code: "INVALID_DASHBOARD_RANGE"`. As métricas vêm da stored procedure `glucose_metrics()` e de
+`groupBy`/window functions (`modules/dashboard/dashboard.repository.ts`); a migration
+`20260831232506_dashboard_metrics_and_constraints` também cria índices parciais e CHECK constraints
+(inclusive `lowThreshold < highThreshold`, também validado em `PUT /settings/alerts`). Ainda **não há
+cliente**: nem o app nem um painel web consomem esta rota.
 
 ---
 
