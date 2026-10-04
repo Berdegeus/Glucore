@@ -483,7 +483,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
 | ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | T49, T52 | Implementing |
-| ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13, T57, T58, T59 | Implementing |
+| ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13, T57, T58, T59, T60 | Implementing |
 | ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | T10, T11 | Implementing |
 | ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | T15, T16 | Implementing |
 | ARQ-14 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
@@ -593,7 +593,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-15 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-16 | P2: Dashboard do profissional de saúde | - | Pending |
 | ADM-01 | P3: Dashboard do administrador | - | Pending |
-| ADM-02 | P3: Dashboard do administrador | - | Pending |
+| ADM-02 | P3: Dashboard do administrador | T60 | Implementing |
 | ADM-03 | P3: Dashboard do administrador | - | Pending |
 | ADM-04 | P3: Dashboard do administrador | - | Pending |
 | ADM-05 | P3: Dashboard do administrador | - | Pending |

@@ -1608,13 +1608,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: fatias e rótulos; total zero mostra estado vazio
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/donutChart.test.tsx`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: fatias e rótulos; total zero mostra estado vazio
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/donutChart.test.tsx`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the donut chart adapter`
+**Status**: ✅ Done
 
 ---
 
