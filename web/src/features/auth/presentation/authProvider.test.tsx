@@ -3,40 +3,10 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AppError } from '../../../shared/domain/appError';
-import type { Role } from '../../../shared/domain/role';
-import { accountOf, memoryTokenStore, sessionEventBus } from '../../../test/authFakes';
-import { createLogout, type SessionCleaner } from '../application/logout';
-import type { Session } from '../domain/session';
+import { makeAuthServices, sessionOf } from '../../../test/authServices';
 import { AuthProvider, SESSION_EXPIRED_MESSAGE, useAuth, type AuthServices } from './authProvider';
 
 const credentials = { email: 'ana@example.com', password: 'secret' };
-
-function sessionOf(role: Role = 'PATIENT', fullName = 'Ana Souza'): Session {
-  return { account: { ...accountOf(role), fullName }, expiresAt: null };
-}
-
-/** Real bus and real `createLogout`, fake network use cases. */
-function makeServices(overrides: Partial<AuthServices> = {}) {
-  const tokenStore = memoryTokenStore('token-1');
-  const sessionEvents = sessionEventBus();
-  const cleaners = new Set<SessionCleaner>();
-  const logout = vi.fn(createLogout({ tokenStore, cleaners }));
-  const services: AuthServices = {
-    restoreSession: vi.fn().mockResolvedValue(null),
-    login: vi.fn().mockImplementation(async () => {
-      sessionEvents.reset();
-      return sessionOf();
-    }),
-    logout,
-    sessionEvents,
-    registerSessionCleaner(cleaner) {
-      cleaners.add(cleaner);
-      return () => cleaners.delete(cleaner);
-    },
-    ...overrides,
-  };
-  return { services, tokenStore, sessionEvents, logout };
-}
 
 function Probe() {
   const { state, login, logout, retryRestore } = useAuth();
@@ -78,7 +48,7 @@ async function signIn(services: AuthServices) {
 
 describe('AuthProvider restore', () => {
   it('restores the session of a reloaded tab', async () => {
-    const { services } = makeServices({ restoreSession: vi.fn().mockResolvedValue(sessionOf('PATIENT', 'Bia')) });
+    const { services } = makeAuthServices({ restoreSession: vi.fn().mockResolvedValue(sessionOf('PATIENT', 'Bia')) });
     setup(services);
     expect(status()).toBe('restoring');
     await waitForStatus('authenticated');
@@ -86,14 +56,14 @@ describe('AuthProvider restore', () => {
   });
 
   it('is anonymous, with no notice, when there is no session to restore', async () => {
-    setup(makeServices().services);
+    setup(makeAuthServices().services);
     await waitForStatus('anonymous');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('reports a failed restore and tries again on request', async () => {
     const restoreSession = vi.fn().mockRejectedValueOnce(new AppError('unavailable')).mockResolvedValue(sessionOf());
-    setup(makeServices({ restoreSession }).services);
+    setup(makeAuthServices({ restoreSession }).services);
     await waitForStatus('failed');
     await press('de novo');
     await waitForStatus('authenticated');
@@ -103,7 +73,7 @@ describe('AuthProvider restore', () => {
 
 describe('AuthProvider login', () => {
   it('signs in through the use case', async () => {
-    const { services } = makeServices();
+    const { services } = makeAuthServices();
     await signIn(services);
     expect(services.login).toHaveBeenCalledWith(credentials);
     expect(screen.getByText('Olá, Ana Souza')).toBeInTheDocument();
@@ -111,7 +81,7 @@ describe('AuthProvider login', () => {
 
   it('lets the error reach the caller and stays anonymous', async () => {
     const login = vi.fn().mockRejectedValue(new AppError('invalid-credentials'));
-    const { services } = makeServices({ login });
+    const { services } = makeAuthServices({ login });
     setup(services);
     await waitForStatus('anonymous');
     await press('entrar');
@@ -122,7 +92,7 @@ describe('AuthProvider login', () => {
 
 describe('AuthProvider expiry (ACC-09)', () => {
   it('goes anonymous and shows the notice once when several calls fail together', async () => {
-    const { services, sessionEvents, logout } = makeServices();
+    const { services, sessionEvents, logout } = makeAuthServices();
     await signIn(services);
 
     act(() => {
@@ -138,7 +108,7 @@ describe('AuthProvider expiry (ACC-09)', () => {
   });
 
   it('shows the notice again after a new login and a second expiry', async () => {
-    const { services, sessionEvents } = makeServices();
+    const { services, sessionEvents } = makeAuthServices();
     await signIn(services);
     act(() => sessionEvents.emitExpired());
     expect(screen.getAllByText(SESSION_EXPIRED_MESSAGE)).toHaveLength(1);
@@ -151,7 +121,7 @@ describe('AuthProvider expiry (ACC-09)', () => {
   });
 
   it('ignores an expiry that arrives after the person signed out', async () => {
-    const { services, sessionEvents } = makeServices();
+    const { services, sessionEvents } = makeAuthServices();
     await signIn(services);
     await press('sair');
     act(() => sessionEvents.emitExpired());
@@ -162,7 +132,7 @@ describe('AuthProvider expiry (ACC-09)', () => {
 
 describe('AuthProvider logout and shared browser (ACC-11)', () => {
   it('signs out: clears the token and the query cache, and returns to anonymous', async () => {
-    const { services, tokenStore } = makeServices();
+    const { services, tokenStore } = makeAuthServices();
     const { queryClient } = await signIn(services);
     queryClient.setQueryData(['summary'], { mean: 120 });
 
@@ -175,7 +145,7 @@ describe('AuthProvider logout and shared browser (ACC-11)', () => {
   });
 
   it('clears the query cache when the session expires', async () => {
-    const { services, sessionEvents, tokenStore } = makeServices();
+    const { services, sessionEvents, tokenStore } = makeAuthServices();
     const { queryClient } = await signIn(services);
     queryClient.setQueryData(['summary'], { mean: 120 });
 
@@ -190,7 +160,7 @@ describe('AuthProvider logout and shared browser (ACC-11)', () => {
       .fn()
       .mockResolvedValueOnce(sessionOf('PATIENT', 'Ana'))
       .mockResolvedValueOnce(sessionOf('PATIENT', 'Caio'));
-    const { services } = makeServices({ login });
+    const { services } = makeAuthServices({ login });
     const { queryClient } = await signIn(services);
     queryClient.setQueryData(['summary'], { owner: 'Ana' });
 

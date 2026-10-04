@@ -1223,13 +1223,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: paciente em `/admin` vai a `/paciente` sem montar filhos; anônimo volta à rota pedida depois de entrar; destinos `//evil.com` e `https://x` são descartados
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/presentation/requireRole.test.tsx`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: paciente em `/admin` vai a `/paciente` sem montar filhos; anônimo volta à rota pedida depois de entrar; destinos `//evil.com` e `https://x` são descartados
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/presentation/requireRole.test.tsx`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): guard routes by role`
+**Status**: ✅ Done
 
 ---
 
