@@ -469,7 +469,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-06 | P1: Login único e acesso por papel | - | Pending |
 | ACC-07 | P1: Login único e acesso por papel | - | Pending |
 | ACC-08 | P1: Login único e acesso por papel | - | Pending |
-| ACC-09 | P1: Login único e acesso por papel | - | Pending |
+| ACC-09 | P1: Login único e acesso por papel | T21 | Implementing |
 | ACC-10 | P1: Login único e acesso por papel | - | Pending |
 | ACC-11 | P1: Login único e acesso por papel | - | Pending |
 | ACC-12 | P1: Login único e acesso por papel | - | Pending |
