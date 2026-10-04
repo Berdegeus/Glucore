@@ -11,6 +11,7 @@ Glucore é um MVP Flutter (Android-first) para sensores CGM Sibionics, com backe
 | [architecture/overview.md](architecture/overview.md) | Camadas, fluxo de boot, fluxo de dados fim-a-fim | precisar de visão geral ou for tocar em mais de uma camada |
 | [architecture/sensor-pipeline.md](architecture/sensor-pipeline.md) | BLE + JNI + protocolo Sibionics passo a passo | for mexer em conexão, leitura de glicose, registro de sensor |
 | [architecture/state-management.md](architecture/state-management.md) | Cubits, DI, stream de eventos, modo mock | for mexer em estado Flutter ou UI reativa |
+| [adr/README.md](adr/README.md) | Decisões de arquitetura do backend (serviços, bancos, JWT, camadas, discovery, saga) | precisar saber *por que* o backend é assim, ou for defender uma decisão |
 | [architecture/backend.md](architecture/backend.md) | API Express, Prisma, o que é usado vs planejado | for mexer no backend ou na sincronização |
 | [guides/setup-and-build.md](guides/setup-and-build.md) | Comandos, variáveis, restrições de build | for compilar, rodar ou configurar ambiente |
 | [guides/versioning-and-branches.md](guides/versioning-and-branches.md) | Esquema `dev`/`main`, semver, fluxo por versão | for abrir PR, versionar ou decidir destino de uma mudança |
