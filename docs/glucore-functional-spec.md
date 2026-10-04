@@ -193,7 +193,7 @@ Ao conectar, o sensor envia primeiro um **backlog de leituras antigas** antes da
 ### 5.5 Regras de armazenamento das leituras
 
 - Inserção com **deduplicação por timestamp** (mesma marca temporal substitui a existente).
-- Lista ordenada da mais recente para a mais antiga, limitada a **288 leituras** (≈24 h em intervalos de 5 min); excedentes mais antigos são descartados.
+- Lista ordenada da mais recente para a mais antiga, mantida por uma **janela de retenção de 14 dias** (contada a partir da leitura mais recente, sem teto de contagem); o que ficar fora da janela é descartado. Um backfill de sensor (~10–14 dias) é preservado inteiro.
 - Uma leitura é considerada **"ao vivo"** se tem menos de **15 minutos**; isso controla o selo "ao vivo" do cartão principal.
 
 ### 5.6 Monitoramento em segundo plano
@@ -296,7 +296,7 @@ Sem leituras → estado vazio "Sem leituras registradas".
 
 ### 9.2 Relatórios
 
-Aba com seletor de período por chips: **7, 14, 30 ou 90 dias** (padrão 14). Considera as leituras da janela escolhida (limitadas pelo cap local de 288 — ver observação abaixo).
+Aba com seletor de período por chips: **7, 14, 30 ou 90 dias** (padrão 14). Considera as leituras da janela escolhida (limitadas pela retenção local de 14 dias — ver observação abaixo).
 
 - **Cartão Indicadores**: glicose média (mg/dL), GMI estimado (apenas com ≥ 14 leituras na janela) e contagem de leituras.
 - **Cartão Tempo no alvo**: barra empilhada + legenda com 5 zonas e seus percentuais:
@@ -312,7 +312,7 @@ Aba com seletor de período por chips: **7, 14, 30 ou 90 dias** (padrão 14). Co
 (Os rótulos de faixa da legenda são fixos 54/70/180/250; a classificação real usa os limiares configurados para as zonas centrais — com limiares padrão 80/180 os rótulos e a regra ficam próximos, mas não idênticos: caso de borda conhecido.)
 
 - Sem leituras no período → "Sem leituras no período".
-- Observação de escopo: como o armazenamento local retém no máximo 288 leituras, na prática os períodos longos (30/90 dias) só refletem o que estiver retido localmente.
+- Observação de escopo: como o armazenamento local retém 14 dias de leituras, os períodos de 30/90 dias só refletem esses 14 dias.
 
 ---
 
@@ -371,7 +371,7 @@ Glicose por passeio aleatório: `delta = (aleatório[0,1) − 0.45) × 8`, valor
 
 - **Fonte primária = banco local do aparelho.** Toda leitura de dados na abertura vem do local; o app funciona integralmente sem rede (exceto login/perfil, que exigem o serviço remoto).
 - Cinco coleções locais: leituras, alertas, carboidratos, insulina, configurações de alerta. Cada gravação marca a coleção como **pendente de envio**.
-- Limites locais: 288 leituras, 100 alertas, 100 carboidratos, 100 insulinas.
+- Limites locais: leituras por janela de 14 dias (sem teto de contagem), 100 alertas, 100 carboidratos, 100 insulinas.
 
 ### 11.2 Envio (push)
 
@@ -402,7 +402,7 @@ Serviço HTTP autenticado por token Bearer (obtido em login/cadastro). Todas as 
 | Recurso | Operações | Comportamento |
 |---|---|---|
 | Conta | cadastrar; login; status da sessão; consultar perfil; atualizar perfil; esqueci/redefinir senha | Regras em §3. |
-| Leituras | listar (últimas 288, desc.); enviar lote (até 288, **upsert por paciente+timestamp**, valor arredondado a inteiro mg/dL); apagar todas | Campos por leitura: valor, timestamp (epoch ms), tendência (texto), taxa, código de alarme opcional. |
+| Leituras | listar (até 5.000 mais recentes, desc.); enviar lote (até 500 — acima disso 400, sem truncar —, **upsert por paciente+timestamp**, valor arredondado a inteiro mg/dL); apagar todas | Campos por leitura: valor, timestamp (epoch ms), tendência (texto), taxa, código de alarme opcional. |
 | Carboidratos | listar (últimos 100, desc.); criar item; atualizar item; excluir item; enviar lote (obsoleto, replace-all) | Item: id (UUID, pode ser gerado pelo cliente), gramas (número), descrição (texto), timestamp. Atualizar/excluir item de outro paciente ou inexistente → "não encontrado". |
 | Insulina | idem carboidratos | Item: id, unidades (número), tipo (texto não vazio), timestamp, dia da semana (texto, opcional). |
 | Alertas | listar (últimos 100, desc.); enviar lote (replace-all) | Item: tipo (glicose baixa/alta, sensor reconectado, falha de sincronização; o serviço também reconhece tipos reservados de risco de queda/subida rápida) + timestamp. |

@@ -115,7 +115,7 @@ As tabelas abaixo são as rotas **nos serviços**; via gateway, prefixe `/api/v1
 
 | Rota | Métodos | Comportamento |
 |---|---|---|
-| `/readings` | GET (últimas 288) / POST (batch upsert por `[patientId, recordedAt]`) / DELETE (tudo) |
+| `/readings` | GET (mais recentes primeiro, até 5.000) / POST (batch upsert por `[patientId, recordedAt]`, até 500 por lote — acima disso, 400) / DELETE (tudo) |
 | `/carbs` | GET (100, inclui `id`) / POST — **replace-all (deprecated)**: `deleteMany` + `createMany`, preserva `id` enviado |
 | `/carbs/item` | POST — cria 1 entrada, aceita `id` UUID do cliente, retorna `{id}` (201) |
 | `/carbs/item/:id` | PUT / DELETE — escopo `{id, patientId}`; 404 se não pertencer ao paciente |
@@ -207,7 +207,7 @@ O app grava local primeiro e o `PatientSyncService` empurra em background um **l
 item** (UUID gerado no cliente, `PendingOp`), usando os endpoints por item abaixo; os POST de coleção
 (replace-all) seguem no servidor só como rollback deprecated, com remoção prometida para o release
 seguinte (`ARCHITECTURE_FIX_PLAN.md` §4.2). Readings continuam em POST batch com upsert por
-`[patientId, recordedAt]` (até 288 linhas por push). Histórico do problema em
+`[patientId, recordedAt]` (até 500 linhas por push; lote maior é rejeitado com 400, nunca truncado; o app envia só as pendentes, em lotes). Histórico do problema em
 [ARCHITECTURE_REVIEW.md](../ARCHITECTURE_REVIEW.md) §P2/§P3/§P4.
 
 ### Endpoints por item (carbs / insulin)

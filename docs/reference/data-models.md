@@ -12,7 +12,7 @@
 | `rate double` | `rate` | `trendRate Float` |
 | `alarmCode int?` | `alarmCode` | `alarmCode Int?` |
 
-Endpoints: `GET/POST/DELETE /readings` (GET limita 288; POST = batch upsert).
+Endpoints: `GET/POST/DELETE /readings` (GET devolve as 5.000 mais recentes; POST = batch upsert de até 500, lote maior = 400).
 
 ## CarbEntry
 

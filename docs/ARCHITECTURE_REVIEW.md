@@ -90,7 +90,7 @@ Residual assumido: o conflito "mesmo item editado em dois aparelhos" continua la
 **Solução proposta:**
 1. `express-rate-limit` escopado nas rotas de auth: ex. login 10 req/15 min por IP, register 5/15 min, forgot-password 3/h; resposta 429 com `Retry-After`. Montar só em `/auth`, não global (o sync do app é legitimamente chatty).
 2. CORS: em `NODE_ENV=production`, exigir `CORS_ORIGIN` no mesmo estilo fail-fast do `env.ts` (sem env → `process.exit(1)`); manter fallback aberto apenas em dev.
-3. Complementos baratos: `helmet()` global e limite de body (`express.json({ limit: '256kb' })`) — os POSTs de coleção têm teto conhecido (288 leituras).
+3. Complementos baratos: `helmet()` global e limite de body (`express.json({ limit: '256kb' })`) — os POSTs de coleção têm teto conhecido (lote de readings: 500; era 288 até 2026-10-04).
 
 ### ⚪ P12 — Código morto / caminhos nunca usados
 
@@ -327,7 +327,7 @@ Cada evento só começa quando o anterior terminou (incluindo os awaits de `repo
 **Impacto:** números clínicos plausíveis porém enganosos para o paciente.
 **Solução proposta:**
 1. **GMI:** exibir somente quando o *span temporal* dos dados for suficiente — `readings.last.timestamp` a `readings.first.timestamp` ≥ 14 dias (padrão clínico), não contagem de leituras; abaixo disso, chip "GMI: dados insuficientes".
-2. **Capacidade local:** subir `PatientRepository.maxReadings` para cobrir a retenção desejada (ex.: 4 032 = 14 dias × 288/dia — trivial para SQLite) e manter o teto de 288 apenas no espelhamento remoto se o backend precisar; alternativa: `HistoryPage` consulta o `LocalPatientDataSource` com query por faixa de datas em vez de depender da lista em memória do estado.
+2. **Capacidade local** *(implementado em 2026-10-04: `maxReadings` removido; retenção por tempo de 14 dias via `readingRetention`/`retainRecentReadings`, backend sem truncar em silêncio)*: subir `PatientRepository.maxReadings` para cobrir a retenção desejada (ex.: 4 032 = 14 dias × 288/dia — trivial para SQLite) e manter o teto de 288 apenas no espelhamento remoto se o backend precisar; alternativa: `HistoryPage` consulta o `LocalPatientDataSource` com query por faixa de datas em vez de depender da lista em memória do estado.
 3. **Janelas explícitas:** todo agregado ganha rótulo de janela — TIR/média do `_StatsRow` calculados sobre as últimas 24 h (filtro por timestamp, não "tudo em memória") com label "últimas 24 h"; a `HistoryPage` mostra os dias que realmente existem ("últimos N dias com dados").
 
 **Observações menores (sem número), com solução:**
