@@ -440,14 +440,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com repositório falso: `get` sem layout devolve `{ widgets: null }`, `save` grava só para o `userId` recebido, `reset` apaga
-- [ ] `save` rejeita id de outro papel
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/auth-service/tests/modules/preferences.service.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com repositório falso: `get` sem layout devolve `{ widgets: null }`, `save` grava só para o `userId` recebido, `reset` apaga
+- [x] `save` rejeita id de outro papel
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/auth-service/tests/modules/preferences.service.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(auth-service): add the preferences service`
+**Status**: ✅ Done
 
 ---
 
