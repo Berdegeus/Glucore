@@ -50,4 +50,10 @@ Pinned exactly in `package.json` and `package-lock.json`. Node 22.13+ (CI runs N
 | globals | 17.13.0 | |
 | dependency-cruiser | 18.5.0 | |
 | jscpd | 5.4.0 | |
-| vitest, @vitest/coverage-v8 | 5.0.3 | |
+| vitest, @vitest/coverage-v8 | 5.0.3 | projects: `core` (domain/application, Node), `dom` (jsdom), `tooling` (tests/) |
+| jsdom | 29.1.1 | 30.x needs Node 22.22+/24.15+ |
+| @testing-library/react | 16.3.3 | |
+| @testing-library/dom | 10.4.2 | |
+| @testing-library/jest-dom | 7.0.1 | |
+| msw | 3.0.2 | unhandled requests fail the test (`onUnhandledFrame: 'error'`) |
+| vitest-axe, axe-core | 0.1.0, 4.13.0 | matcher types re-declared in `src/test/vitest-axe.d.ts` |

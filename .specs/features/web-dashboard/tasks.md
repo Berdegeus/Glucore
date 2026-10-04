@@ -644,14 +644,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de fumaça confere que a config declara o limite de 80 % para os dois globs
-- [ ] Um teste de exemplo com MSW e axe roda verde
-- [ ] Gate `quick` passa: `cd web && npx vitest run tests/arch/coverageConfig.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de fumaça confere que a config declara o limite de 80 % para os dois globs
+- [x] Um teste de exemplo com MSW e axe roda verde
+- [x] Gate `quick` passa: `cd web && npx vitest run tests/arch/coverageConfig.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `chore(web): set up Vitest, MSW and axe`
+**Status**: ✅ Done
 
 ---
 
