@@ -36,6 +36,16 @@ describe('library isolation, feature boundaries and cycles (dependency-cruiser)'
     ]);
   });
 
+  it('rejects the dashboard grid importing a widget', async () => {
+    expect(await violationsIn('isolation/grid-imports-widget')).toEqual([
+      {
+        rule: 'grid-knows-no-widgets',
+        from: 'src/features/dashboard-layout/presentation/dashboardGrid.ts',
+        to: 'src/features/dashboard-layout/presentation/widgets/KpiTir.ts',
+      },
+    ]);
+  });
+
   it('rejects a cycle A -> B -> A', async () => {
     // dependency-cruiser reports a cycle once, on whichever edge it meets first.
     const violations = await violationsIn('isolation/cycle');

@@ -482,7 +482,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33 | Implementing |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
-| ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
+| ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | T49, T52 | Implementing |
 | ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13 | Implementing |
 | ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | T10, T11 | Implementing |
 | ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | T15, T16 | Implementing |
@@ -508,8 +508,8 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-14 | P1: Layout customizável por widgets | T3, T5 | Implementing |
 | LAY-15 | P1: Layout customizável por widgets | - | Pending |
 | LAY-16 | P1: Layout customizável por widgets | T39 | Implementing |
-| RSP-01 | P1: Responsivo, acessível e com tema | - | Pending |
-| RSP-02 | P1: Responsivo, acessível e com tema | - | Pending |
+| RSP-01 | P1: Responsivo, acessível e com tema | T52 | Implementing |
+| RSP-02 | P1: Responsivo, acessível e com tema | T52 | Implementing |
 | RSP-03 | P1: Responsivo, acessível e com tema | T45 | Implementing |
 | RSP-04 | P1: Responsivo, acessível e com tema | T36 | Implementing |
 | RSP-05 | P1: Responsivo, acessível e com tema | - | Pending |

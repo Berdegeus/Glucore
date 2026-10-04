@@ -1437,14 +1437,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: `data-size` por item; CSS contém os pontos 640 e 1024 e os spans; itens com `min-width: 0` para não estourar a largura
-- [ ] A grade não importa nenhum widget (verificado por `lint:arch`)
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/dashboardGrid.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: `data-size` por item; CSS contém os pontos 640 e 1024 e os spans; itens com `min-width: 0` para não estourar a largura
+- [x] A grade não importa nenhum widget (verificado por `lint:arch`)
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/dashboardGrid.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the responsive dashboard grid`
+**Status**: ✅ Done
 
 ---
 

@@ -18,6 +18,9 @@ const npmPackage = (name) => `(^|/)node_modules/${name}/|^${name}(/|$)`;
 const SRC = '(^|/)src/';
 const CHART_ADAPTERS = '(^|/)src/shared/presentation/charts/';
 const LAYOUT_EDITOR = '(^|/)src/features/dashboard-layout/presentation/';
+const DASHBOARD_GRID = '(^|/)src/features/dashboard-layout/presentation/dashboardGrid\\.tsx?$';
+// Widget modules, and the registry and catalog that list them.
+const WIDGET_MODULES = '(^|/)src/.*(/widgets/|/widgetRegistry\\.tsx?$|/widgetCatalog\\.tsx?$)';
 const EXTERNAL = ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-bundled', 'npm-no-pkg', 'npm-unknown', 'core'];
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -85,6 +88,13 @@ module.exports = {
       severity: 'error',
       from: { path: SRC, pathNot: LAYOUT_EDITOR },
       to: { path: npmPackage('@dnd-kit') },
+    },
+    {
+      name: 'grid-knows-no-widgets',
+      comment: 'The dashboard grid is generic: it never imports a widget, the registry or the catalog (ARQ-10).',
+      severity: 'error',
+      from: { path: DASHBOARD_GRID },
+      to: { path: WIDGET_MODULES },
     },
     {
       name: 'feature-public-api-only',
