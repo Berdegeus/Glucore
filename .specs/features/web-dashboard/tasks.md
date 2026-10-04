@@ -966,13 +966,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: sem token devolve anônimo; token expirado é apagado; `/me` `401` apaga e devolve anônimo
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/application/restoreSession.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: sem token devolve anônimo; token expirado é apagado; `/me` `401` apaga e devolve anônimo
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/application/restoreSession.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): restore sessions on load`
+**Status**: ✅ Done
 
 ---
 
