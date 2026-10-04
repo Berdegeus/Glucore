@@ -836,15 +836,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: injeta `Authorization`; `204` sem corpo; falha de rede vira `unavailable`; corpo de erro não-JSON não quebra
-- [ ] Três requisições recebendo `401 TOKEN_INVALID` juntas limpam o token e notificam `expired` uma vez
-- [ ] `429` expõe `retryAfterSeconds`; `503` vira `unavailable`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/http/fetchHttpClient.test.ts`
-- [ ] Pelo menos 7 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: injeta `Authorization`; `204` sem corpo; falha de rede vira `unavailable`; corpo de erro não-JSON não quebra
+- [x] Três requisições recebendo `401 TOKEN_INVALID` juntas limpam o token e notificam `expired` uma vez
+- [x] `429` expõe `retryAfterSeconds`; `503` vira `unavailable`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/http/fetchHttpClient.test.ts`
+- [x] Pelo menos 7 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(web): add the fetch HTTP client`
+**Status**: ✅ Done
 
 ---
 
