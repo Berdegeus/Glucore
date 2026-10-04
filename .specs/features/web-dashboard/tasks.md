@@ -555,15 +555,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de fumaça usa a API do ESLint em arquivos virtuais: 251 linhas falha, complexidade 11 falha, aninhamento 4 falha, 5 parâmetros falha, `dangerouslySetInnerHTML` falha
-- [ ] Arquivo limpo passa; arquivo de teste com 300 linhas passa
-- [ ] `no-explicit-any` ligado; comentários `eslint-disable` sem justificativa reprovam
-- [ ] Gate `quick` passa: `cd web && npx vitest run tests/arch/eslintLimits.test.ts`
-- [ ] Pelo menos 7 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de fumaça usa a API do ESLint em arquivos virtuais: 251 linhas falha, complexidade 11 falha, aninhamento 4 falha, 5 parâmetros falha, `dangerouslySetInnerHTML` falha
+- [x] Arquivo limpo passa; arquivo de teste com 300 linhas passa
+- [x] `no-explicit-any` ligado; comentários `eslint-disable` sem justificativa reprovam
+- [x] Gate `quick` passa: `cd web && npx vitest run tests/arch/eslintLimits.test.ts`
+- [x] Pelo menos 7 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `chore(web): configure ESLint with readability limits`
+**Status**: ✅ Done
 
 ---
 

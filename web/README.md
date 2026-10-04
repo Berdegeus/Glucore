@@ -43,6 +43,10 @@ Pinned exactly in `package.json` and `package-lock.json`. Node 22.13+ (CI runs N
 | @types/node | 22.20.5 | matches the CI Node line |
 | eslint, @eslint/js | 9.39.5 | maintenance line; 10.x is out, but `eslint-plugin-react` and `eslint-plugin-jsx-a11y` declare peers up to ESLint 9 |
 | typescript-eslint | 8.71.0 | |
+| eslint-plugin-react-hooks | 7.1.1 | |
+| eslint-plugin-jsx-a11y | 6.10.2 | |
+| eslint-plugin-react | 7.37.5 | only `react/no-danger` is enabled |
+| @eslint-community/eslint-plugin-eslint-comments | 4.8.1 | a disable comment needs a `-- reason` |
 | globals | 17.13.0 | |
 | dependency-cruiser | 18.5.0 | |
 | jscpd | 5.4.0 | |
