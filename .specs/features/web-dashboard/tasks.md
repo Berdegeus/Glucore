@@ -708,13 +708,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste 1:1 dos três papéis e rejeição de valor desconhecido
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/domain/role.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste 1:1 dos três papéis e rejeição de valor desconhecido
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/domain/role.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add role and home path rules`
+**Status**: ✅ Done
 
 ---
 
