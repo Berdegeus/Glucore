@@ -81,6 +81,36 @@ void main() {
     expect(await failureError(), AuthError.serviceUnavailable);
   });
 
+  test('503 UPSTREAM_UNAVAILABLE from the gateway becomes serviceUnavailable',
+      () async {
+    repo.failure = _responseError(503, {
+      'error': 'Upstream service unavailable',
+      'code': 'UPSTREAM_UNAVAILABLE',
+    });
+
+    await cubit.login(email: 'ana@glucore.app', password: 'Senha123!');
+
+    expect(await failureError(), AuthError.serviceUnavailable);
+  });
+
+  test('429 from the gateway rate limiter (no code) becomes tooManyRequests',
+      () async {
+    final options = RequestOptions(path: '/auth/login');
+    repo.failure = DioException(
+      requestOptions: options,
+      type: DioExceptionType.badResponse,
+      response: Response<String>(
+        requestOptions: options,
+        statusCode: 429,
+        data: 'Too many requests, please try again later.',
+      ),
+    );
+
+    await cubit.login(email: 'ana@glucore.app', password: 'Senha123!');
+
+    expect(await failureError(), AuthError.tooManyRequests);
+  });
+
   test('an unclassified server error stays generic', () async {
     repo.failure = _responseError(500, {'error': 'Internal server error'});
 

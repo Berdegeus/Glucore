@@ -67,7 +67,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           ? l10n.profileCurrentPasswordIncorrect
           : _isNetwork(e)
               ? l10n.authNetworkError
-              : l10n.authServerError;
+              : e.response?.statusCode == 503
+                  ? l10n.authServiceUnavailableError
+                  : l10n.authServerError;
       GlucoreMessenger.error(context, message);
     } catch (_) {
       if (!mounted) return;

@@ -27,6 +27,8 @@ extension AuthErrorLocalization on AuthError {
         return l10n.passwordPolicyHint;
       case AuthError.serviceUnavailable:
         return l10n.authServiceUnavailableError;
+      case AuthError.tooManyRequests:
+        return l10n.authTooManyRequestsError;
       case AuthError.networkError:
         return l10n.authNetworkError;
       case AuthError.serverError:
