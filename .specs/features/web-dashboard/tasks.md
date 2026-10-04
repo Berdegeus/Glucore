@@ -815,13 +815,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Tabela de casos: 401 `TOKEN_INVALID`→`unauthenticated`; outro 401→`invalid-credentials`; 403→`forbidden` com `code`; 404→`not-found`; 400→`validation` com `code`; 409→`conflict`; 429→`rate-limited` com `Retry-After` em segundos (ausente→indefinido); 502/503/504→`unavailable`; outro 5xx→`unknown`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/http/apiErrorMapper.test.ts`
-- [ ] Pelo menos 11 testes novos passam e a contagem total da suíte não cai
+- [x] Tabela de casos: 401 `TOKEN_INVALID`→`unauthenticated`; outro 401→`invalid-credentials`; 403→`forbidden` com `code`; 404→`not-found`; 400→`validation` com `code`; 409→`conflict`; 429→`rate-limited` com `Retry-After` em segundos (ausente→indefinido); 502/503/504→`unavailable`; outro 5xx→`unknown`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/http/apiErrorMapper.test.ts`
+- [x] Pelo menos 11 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): map HTTP failures to AppError`
+**Status**: ✅ Done
 
 ---
 

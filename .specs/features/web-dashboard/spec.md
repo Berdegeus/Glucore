@@ -465,10 +465,10 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-02 | P1: Login único e acesso por papel | T18 | Implementing |
 | ACC-03 | P1: Login único e acesso por papel | - | Pending |
 | ACC-04 | P1: Login único e acesso por papel | - | Pending |
-| ACC-05 | P1: Login único e acesso por papel | T17 | Implementing |
+| ACC-05 | P1: Login único e acesso por papel | T17, T23 | Implementing |
 | ACC-06 | P1: Login único e acesso por papel | - | Pending |
-| ACC-07 | P1: Login único e acesso por papel | - | Pending |
-| ACC-08 | P1: Login único e acesso por papel | - | Pending |
+| ACC-07 | P1: Login único e acesso por papel | T23 | Implementing |
+| ACC-08 | P1: Login único e acesso por papel | T23 | Implementing |
 | ACC-09 | P1: Login único e acesso por papel | T21 | Implementing |
 | ACC-10 | P1: Login único e acesso por papel | - | Pending |
 | ACC-11 | P1: Login único e acesso por papel | - | Pending |
@@ -478,7 +478,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-03 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-04 | P1: Arquitetura limpa verificável (rubrica 37) | T17, T18 | Implementing |
 | ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | T20 | Implementing |
-| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
+| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23 | Implementing |
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
