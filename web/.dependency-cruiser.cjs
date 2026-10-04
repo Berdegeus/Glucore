@@ -10,6 +10,7 @@ const INFRASTRUCTURE = `(^|/)src/${FEATURE_OR_SHARED}infrastructure/`;
 const PRESENTATION = `(^|/)src/(${FEATURE_OR_SHARED}presentation/|app/)`;
 // The composition root is the only place that may wire every layer.
 const COMPOSITION = '(^|/)src/(composition/|main\\.tsx?$)';
+const TEST_FILE = '\\.test\\.tsx?$';
 
 const npmPackages = (...names) => `(^|/)node_modules/(${names.join('|')})/`;
 // A package matched whether it resolves into node_modules or not (yet) at all.
@@ -24,9 +25,9 @@ module.exports = {
   forbidden: [
     {
       name: 'domain-no-npm',
-      comment: 'domain is pure: no npm package and no Node/DOM module (ARQ-02).',
+      comment: 'domain is pure: no npm package and no Node/DOM module (ARQ-02). Its tests may import the test runner.',
       severity: 'error',
-      from: { path: DOMAIN },
+      from: { path: DOMAIN, pathNot: TEST_FILE },
       to: { dependencyTypes: EXTERNAL },
     },
     {

@@ -687,13 +687,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: construção por kind, `code` opcional, `retryAfterSeconds`, guarda `isAppError`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/domain/appError.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: construção por kind, `code` opcional, `retryAfterSeconds`, guarda `isAppError`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/domain/appError.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the domain AppError`
+**Status**: ✅ Done
 
 ---
 
