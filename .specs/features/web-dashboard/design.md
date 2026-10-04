@@ -120,7 +120,7 @@ Regras de dependência (todas viram regra no `.dependency-cruiser.cjs`):
 - **Location**: `web/src/features/*/domain/`, `web/src/shared/domain/`
 - **Interfaces**:
   - `Role`, `isRole(x)`, `homePathFor(role)` — papel e rota inicial (ACC-02)
-  - `AppError { kind, code?, retryAfterSeconds? }` — erro único do app (`kind`: `unauthenticated | forbidden | invalid-credentials | rate-limited | unavailable | not-found | validation | unknown`)
+  - `AppError { kind, code?, retryAfterSeconds? }` — erro único do app (`kind`: `unauthenticated | forbidden | invalid-credentials | rate-limited | unavailable | not-found | validation | conflict | unknown`)
   - `zoneOf(value, low, high): GlucoseZone` e `ZONE_BOUNDS` — limites da spec
   - `classifyRisk(m: CohortMetrics): 'HIGH'|'ATTENTION'|'OK'|'INSUFFICIENT'` — regra pura das Assumptions (PRO-04)
   - `isStale(lastReadingAt, now): boolean` — 60 min (PAC-13)
