@@ -12,6 +12,11 @@ const PRESENTATION = `(^|/)src/(${FEATURE_OR_SHARED}presentation/|app/)`;
 const COMPOSITION = '(^|/)src/(composition/|main\\.tsx?$)';
 
 const npmPackages = (...names) => `(^|/)node_modules/(${names.join('|')})/`;
+// A package matched whether it resolves into node_modules or not (yet) at all.
+const npmPackage = (name) => `(^|/)node_modules/${name}/|^${name}(/|$)`;
+const SRC = '(^|/)src/';
+const CHART_ADAPTERS = '(^|/)src/shared/presentation/charts/';
+const LAYOUT_EDITOR = '(^|/)src/features/dashboard-layout/presentation/';
 const EXTERNAL = ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-bundled', 'npm-no-pkg', 'npm-unknown', 'core'];
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -65,6 +70,37 @@ module.exports = {
       severity: 'error',
       from: { path: PRESENTATION },
       to: { path: INFRASTRUCTURE },
+    },
+    {
+      name: 'recharts-only-in-chart-adapters',
+      comment: 'Only the generic chart adapters know the chart library (ARQ-11).',
+      severity: 'error',
+      from: { path: SRC, pathNot: CHART_ADAPTERS },
+      to: { path: npmPackage('recharts') },
+    },
+    {
+      name: 'dnd-kit-only-in-layout-editor',
+      comment: 'Dragging lives in the layout editor alone, so the library can be swapped there.',
+      severity: 'error',
+      from: { path: SRC, pathNot: LAYOUT_EDITOR },
+      to: { path: npmPackage('@dnd-kit') },
+    },
+    {
+      name: 'feature-public-api-only',
+      comment: 'A feature reaches another only through its public index.ts (ARQ-15).',
+      severity: 'error',
+      from: { path: '(?:^|/)src/features/([^/]+)/' },
+      to: {
+        path: '(^|/)src/features/[^/]+/',
+        pathNot: ['(?:^|/)src/features/$1/', '(^|/)src/features/[^/]+/index\\.tsx?$'],
+      },
+    },
+    {
+      name: 'no-circular',
+      comment: 'No dependency cycle between modules (ARQ-15).',
+      severity: 'error',
+      from: {},
+      to: { circular: true },
     },
   ],
   options: {

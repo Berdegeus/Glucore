@@ -601,14 +601,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Fixtures violando cada regra falham (recharts fora, dnd-kit fora, import interno de outra feature, ciclo A→B→A)
-- [ ] Import pelo `index.ts` público passa
-- [ ] Gate `quick` passa: `cd web && npx vitest run tests/arch/isolation.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Fixtures violando cada regra falham (recharts fora, dnd-kit fora, import interno de outra feature, ciclo A→B→A)
+- [x] Import pelo `index.ts` público passa
+- [x] Gate `quick` passa: `cd web && npx vitest run tests/arch/isolation.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `chore(web): isolate libraries and feature boundaries`
+**Status**: ✅ Done
 
 ---
 
