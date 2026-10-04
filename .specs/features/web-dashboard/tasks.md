@@ -901,13 +901,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: dado válido passa tipado; dado inválido lança `AppError` com o endpoint na mensagem e sem vazar o corpo
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/http/parseDto.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: dado válido passa tipado; dado inválido lança `AppError` com o endpoint na mensagem e sem vazar o corpo
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/http/parseDto.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): validate API payloads at the boundary`
+**Status**: ✅ Done
 
 ---
 
