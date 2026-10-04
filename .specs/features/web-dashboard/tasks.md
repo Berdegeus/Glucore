@@ -395,15 +395,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste 1:1: id fora do catálogo do papel, id repetido, tamanho fora de S/M/L, 20 itens passam e 21 falham, corpo não-objeto, `widgets` não-array
-- [ ] Toda rejeição é `400` com `code: "INVALID_LAYOUT"`
-- [ ] Campo de identificação de usuário no corpo é ignorado
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/auth-service/tests/modules/preferences.schema.test.ts`
-- [ ] Pelo menos 8 testes novos passam e a contagem total da suíte não cai
+- [x] Teste 1:1: id fora do catálogo do papel, id repetido, tamanho fora de S/M/L, 20 itens passam e 21 falham, corpo não-objeto, `widgets` não-array
+- [x] Toda rejeição é `400` com `code: "INVALID_LAYOUT"`
+- [x] Campo de identificação de usuário no corpo é ignorado
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/auth-service/tests/modules/preferences.schema.test.ts`
+- [x] Pelo menos 8 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(auth-service): validate dashboard layout payloads`
+**Status**: ✅ Done
 
 ---
 
