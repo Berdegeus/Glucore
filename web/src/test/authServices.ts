@@ -5,8 +5,8 @@ import type { AuthServices } from '../features/auth/presentation/authProvider';
 import type { Role } from '../shared/domain/role';
 import { accountOf, memoryTokenStore, sessionEventBus } from './authFakes';
 
-export function sessionOf(role: Role = 'PATIENT', fullName = 'Ana Souza'): Session {
-  return { account: { ...accountOf(role), fullName }, expiresAt: null };
+export function sessionOf(role: Role = 'PATIENT', fullName = 'Ana Souza', expiresAt: Date | null = null): Session {
+  return { account: { ...accountOf(role), fullName }, expiresAt };
 }
 
 /**
@@ -25,6 +25,7 @@ export function makeAuthServices(overrides: Partial<AuthServices> = {}, loginRol
       return sessionOf(loginRole);
     }),
     logout,
+    refreshSession: vi.fn().mockImplementation(async ({ session }: { session: Session }) => session),
     sessionEvents,
     registerSessionCleaner(cleaner) {
       cleaners.add(cleaner);

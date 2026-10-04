@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { SessionEvents, Unsubscribe } from '../../../shared/domain/ports';
 import type { Login } from '../application/login';
 import type { Logout, SessionCleaner } from '../application/logout';
+import type { RefreshSession } from '../application/refreshSession';
 import type { RestoreSession } from '../application/restoreSession';
 import type { Credentials } from '../domain/ports';
 import type { Session } from '../domain/session';
@@ -15,6 +16,7 @@ export interface AuthServices {
   login: Login;
   restoreSession: RestoreSession;
   logout: Logout;
+  refreshSession: RefreshSession;
   sessionEvents: SessionEvents;
   registerSessionCleaner(cleaner: SessionCleaner): Unsubscribe;
 }
@@ -34,6 +36,11 @@ export interface AuthContextValue {
   logout(): void;
   /** Asks again after a failed restore. */
   retryRestore(): void;
+  /**
+   * Renews the token when the use case says it is time (ACC-10) and keeps the
+   * session with its new expiry. Rejects when the renewal fails.
+   */
+  renewSession(hadRecentActivity: boolean): Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -51,11 +58,11 @@ export function AuthProvider({ services, children }: { services: AuthServices; c
   const queryClient = useQueryClient();
   const [state, setState] = useState<AuthState>({ status: 'restoring' });
   const [attempt, setAttempt] = useState(0);
-  const signedIn = useRef(false);
+  const latest = useRef(state);
 
   useEffect(() => {
-    signedIn.current = state.status === 'authenticated';
-  }, [state.status]);
+    latest.current = state;
+  }, [state]);
 
   useEffect(() => services.registerSessionCleaner(() => queryClient.clear()), [services, queryClient]);
 
@@ -78,7 +85,7 @@ export function AuthProvider({ services, children }: { services: AuthServices; c
     () =>
       services.sessionEvents.subscribe(() => {
         // A request still in flight after "Sair" must not announce an expiry.
-        if (!signedIn.current) return;
+        if (latest.current.status !== 'authenticated') return;
         services.logout();
         setState({ status: 'anonymous', notice: SESSION_EXPIRED_MESSAGE });
       }),
@@ -103,7 +110,26 @@ export function AuthProvider({ services, children }: { services: AuthServices; c
     setAttempt((count) => count + 1);
   }, []);
 
-  const value = useMemo(() => ({ state, login, logout, retryRestore }), [state, login, logout, retryRestore]);
+  const renewSession = useCallback(
+    async (hadRecentActivity: boolean) => {
+      const current = latest.current;
+      if (current.status !== 'authenticated') return;
+      const next = await services.refreshSession({ session: current.session, hadRecentActivity });
+      if (latest.current.status !== 'authenticated') {
+        // Signed out while the renewal was in flight: drop the token it just stored.
+        services.logout();
+        return;
+      }
+      if (next === current.session) return;
+      setState({ status: 'authenticated', session: next });
+    },
+    [services],
+  );
+
+  const value = useMemo(
+    () => ({ state, login, logout, retryRestore, renewSession }),
+    [state, login, logout, retryRestore, renewSession],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

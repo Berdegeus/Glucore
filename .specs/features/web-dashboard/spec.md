@@ -470,7 +470,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-07 | P1: Login único e acesso por papel | T23, T29, T43 | Implementing |
 | ACC-08 | P1: Login único e acesso por papel | T23, T225, T43 | Implementing |
 | ACC-09 | P1: Login único e acesso por papel | T21, T24, T41 | Implementing |
-| ACC-10 | P1: Login único e acesso por papel | T25, T28, T32, T33 | Implementing |
+| ACC-10 | P1: Login único e acesso por papel | T25, T28, T32, T33, T44 | Implementing |
 | ACC-11 | P1: Login único e acesso por papel | T31, T41 | Implementing |
 | ACC-12 | P1: Login único e acesso por papel | T22 | Implementing |
 | ARQ-01 | P1: Arquitetura limpa verificável (rubrica 37) | T10 | Implementing |

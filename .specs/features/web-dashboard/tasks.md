@@ -1265,13 +1265,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com timers falsos: renova a 4:59 do fim com atividade; não renova sem atividade; paciente nunca agenda
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/presentation/useSessionRefresh.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com timers falsos: renova a 4:59 do fim com atividade; não renova sem atividade; paciente nunca agenda
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/presentation/useSessionRefresh.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): refresh sessions on activity`
+**Status**: ✅ Done
 
 ---
 
