@@ -37,6 +37,7 @@ Pinned exactly in `package.json` and `package-lock.json`. Node 22.13+ (CI runs N
 | ------- | ------- | ---- |
 | react, react-dom | 19.3.0 | |
 | @dnd-kit/core, @dnd-kit/sortable | 6.3.1, 10.0.0 | peers accept React 19; the spike `sortable.smoke.test.tsx` reorders with the keyboard sensor, so Pragmatic Drag and Drop was not needed |
+| @tanstack/react-query | 5.104.1 | server state; peer `react ^18 \|\| ^19` |
 | zod | 4.6.5 | runtime check of API payloads in `infrastructure` (`parseDto`); no peer dependencies |
 | vite | 8.3.2 | |
 | @vitejs/plugin-react | 6.1.1 | |

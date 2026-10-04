@@ -1180,13 +1180,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste da função de retry com cada kind e do atraso a partir de `retryAfterSeconds`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/queryClient.test.ts`
-- [ ] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
+- [x] Teste da função de retry com cada kind e do atraso a partir de `retryAfterSeconds`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/queryClient.test.ts`
+- [x] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the query client retry policy`
+**Status**: ✅ Done
 
 ---
 

@@ -465,7 +465,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-02 | P1: Login único e acesso por papel | T18 | Implementing |
 | ACC-03 | P1: Login único e acesso por papel | - | Pending |
 | ACC-04 | P1: Login único e acesso por papel | T30 | Implementing |
-| ACC-05 | P1: Login único e acesso por papel | T17, T23, T39 | Implementing |
+| ACC-05 | P1: Login único e acesso por papel | T17, T23, T39, T40 | Implementing |
 | ACC-06 | P1: Login único e acesso por papel | - | Pending |
 | ACC-07 | P1: Login único e acesso por papel | T23, T29 | Implementing |
 | ACC-08 | P1: Login único e acesso por papel | T23, T225 | Implementing |
@@ -534,7 +534,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-13 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-14 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-15 | P1: Dashboard do paciente com os dados do app | - | Pending |
-| PAC-16 | P1: Dashboard do paciente com os dados do app | - | Pending |
+| PAC-16 | P1: Dashboard do paciente com os dados do app | T40 | Implementing |
 | PAC-17 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-18 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | DEP-01 | P1: Publicação na Vercel | T10 | Implementing |
