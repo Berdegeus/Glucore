@@ -515,7 +515,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | RSP-05 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-06 | P1: Responsivo, acessível e com tema | T39, T43, T45 | Implementing |
 | RSP-07 | P1: Responsivo, acessível e com tema | - | Pending |
-| RSP-08 | P1: Responsivo, acessível e com tema | T36 | Implementing |
+| RSP-08 | P1: Responsivo, acessível e com tema | T36, T55 | Implementing |
 | RSP-09 | P1: Responsivo, acessível e com tema | T26, T37 | Implementing |
 | RSP-10 | P1: Responsivo, acessível e com tema | T36, T38, T45 | Implementing |
 | RSP-11 | P1: Responsivo, acessível e com tema | - | Pending |

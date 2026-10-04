@@ -37,6 +37,14 @@
   --zone-high-ink: #6b3f08;
   --zone-urgent-high-ink: #5a2102;
 
+  /* Chart series (RSP-08): 3:1 against canvas and surface; palette.ts adds a marker shape per series. */
+  --series-1: #0052ff;
+  --series-2: #b45309;
+  --series-3: #0f766e;
+  --series-4: #7e22ce;
+  --series-5: #be185d;
+  --series-6: #4d7c0f;
+
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -90,6 +98,13 @@
   --zone-urgent-low-ink: #ee8f99;
   --zone-high-ink: #f3c583;
   --zone-urgent-high-ink: #f0a97e;
+
+  --series-1: #7ea2ff;
+  --series-2: #fbbf24;
+  --series-3: #2dd4bf;
+  --series-4: #c084fc;
+  --series-5: #f472b6;
+  --series-6: #a3e635;
 }
 
 /* Touch targets of at least 44 x 44 px below 1024 px (RSP-04). */

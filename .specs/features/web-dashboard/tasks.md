@@ -1503,13 +1503,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: cada cor de série tem contraste ≥ 3:1 contra o fundo nos dois temas
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/palette.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: cada cor de série tem contraste ≥ 3:1 contra o fundo nos dois temas
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/palette.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the chart palette`
+**Status**: ✅ Done
 
 ---
 
