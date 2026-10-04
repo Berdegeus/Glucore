@@ -1201,14 +1201,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: expiração leva a anônimo e mostra "Sua sessão expirou. Entre novamente." uma vez
-- [ ] Sair e expirar limpam o cache de consultas, e outra pessoa no mesmo navegador não vê dados da anterior
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/presentation/authProvider.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: expiração leva a anônimo e mostra "Sua sessão expirou. Entre novamente." uma vez
+- [x] Sair e expirar limpam o cache de consultas, e outra pessoa no mesmo navegador não vê dados da anterior
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/presentation/authProvider.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the auth provider`
+**Status**: ✅ Done
 
 ---
 
