@@ -11,6 +11,7 @@
 | `startMonitoring` | — | `null` | dispara scan BLE; progresso via eventos |
 | `stopMonitoring` | — | `null` | emite `disconnected` |
 | `clearSession` | — | `null` | stopMonitoring + limpa SQLite; emite `idle` |
+| `scanBarcode` | — | `String` (texto cru) ou `null` | abre o **Google code scanner** (`play-services-code-scanner`, DataMatrix + QR) para a caixa do sensor; assíncrono. `null` = usuário cancelou; `PlatformException("SCANNER_UNAVAILABLE")` = sem Play Services/módulo ainda baixando — o Dart (`GoogleBarcodeScanner`) cai no scanner do `mobile_scanner`. Mesmo scanner que o Juggluco usa na caixa do Sibionics |
 
 Exceções Kotlin → `PlatformException(code: "NATIVE_ERROR", message)`.
 

@@ -79,6 +79,10 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Google's code scanner UI (same one Juggluco uses to read the box UDI):
+    // it brings its own camera pipeline, autofocus and pinch zoom, and needs no
+    // camera permission in the app.
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     testImplementation("junit:junit:4.13.2")
 }
 

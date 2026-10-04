@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../../core/utils/gs1_barcode.dart';
+import '../../../sensor/data/platform/barcode_scanner.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/patient_widgets.dart';
@@ -33,14 +34,27 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
     super.dispose();
   }
 
+  /// Google's code scanner first (its camera pipeline reads the Sibionics box;
+  /// the in-app sheet did not), the `mobile_scanner` sheet when it is
+  /// unavailable. The SmartGuide data matrix must be submitted raw; GS1
+  /// normalization only applies to Sibionics barcodes.
+  Future<String?> _scan() async {
+    try {
+      final raw = await const GoogleBarcodeScanner().scan();
+      if (raw == null) return null;
+      return _isAccuChek ? raw : (normalizeGs1Barcode(raw) ?? raw);
+    } on BarcodeScannerUnavailable {
+      if (!mounted) return null;
+      return showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => _ScannerSheet(normalizeGs1: !_isAccuChek),
+      );
+    }
+  }
+
   Future<void> _openScanner() async {
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      // The SmartGuide data matrix must be submitted raw; GS1 normalization
-      // only applies to Sibionics barcodes.
-      builder: (_) => _ScannerSheet(normalizeGs1: !_isAccuChek),
-    );
+    final result = await _scan();
     if (result != null && result.isNotEmpty && mounted) {
       setState(() {
         _barcodeController.text = result;
@@ -455,6 +469,10 @@ class _ScannerSheet extends StatefulWidget {
 class _ScannerSheetState extends State<_ScannerSheet> {
   final MobileScannerController _controller = MobileScannerController(
     formats: [BarcodeFormat.dataMatrix, BarcodeFormat.qrCode],
+    // The default analysis frame is 640x480: a dense UDI data matrix held at a
+    // normal distance gets only a few pixels per module there.
+    cameraResolution: const Size(1920, 1080),
+    autoZoom: true,
   );
   bool _scanned = false;
 
