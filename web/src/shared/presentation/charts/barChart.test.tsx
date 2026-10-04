@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { stubChartContainer } from '../../../test/chartContainer';
-import { renderChart } from '../../../test/chartQueries';
+import { expectResponsive, renderChart } from '../../../test/chartQueries';
 import { BarChart, type BarChartProps } from './barChart';
 
 stubChartContainer({ width: 600, height: 280 });
@@ -22,8 +22,7 @@ const heightOf = (bar: Element) => Number(bar.getAttribute('height'));
 describe('BarChart', () => {
   it('draws inside a ResponsiveContainer, at the container width (RSP-05)', () => {
     const { container } = draw();
-    expect(container.querySelector('.recharts-responsive-container')).not.toBeNull();
-    expect(container.querySelector('svg.recharts-surface')).toHaveAttribute('width', '600');
+    expectResponsive(container);
   });
 
   it('draws one bar per category for a single series, sized by value (PAC-07)', () => {

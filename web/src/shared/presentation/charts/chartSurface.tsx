@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
-import { ResponsiveContainer, Symbols } from 'recharts';
+import { CartesianGrid, ResponsiveContainer, Symbols, Tooltip } from 'recharts';
 import styles from './chartSurface.module.css';
-import { DEFAULT_CHART_HEIGHT } from './chartDefaults';
+import { DEFAULT_CHART_HEIGHT, GRID_PROPS, TOOLTIP_STYLE, tooltipValue } from './chartDefaults';
+import type { ValueFormatter } from './chartTypes';
 import type { MarkerShape } from './palette';
 
 const SWATCH_SIZE = 14;
@@ -72,4 +73,20 @@ export function markerDot(marker: MarkerShape, color: string) {
     if (cx == null || cy == null) return <g key={index} />;
     return <Symbols key={index} type={marker} cx={cx} cy={cy} size={60} fill={color} stroke="var(--color-canvas)" />;
   };
+}
+
+/** Grid lines of a Cartesian chart; horizontal only unless `vertical` is set. */
+export function ChartGrid({ vertical = false }: { vertical?: boolean }) {
+  return <CartesianGrid {...GRID_PROPS} horizontal={!vertical} vertical={vertical} />;
+}
+
+/** Hover tooltip with pt-BR values. */
+export function ChartTooltip({ format, cursor = false }: { format: ValueFormatter; cursor?: boolean }) {
+  return (
+    <Tooltip
+      formatter={tooltipValue(format)}
+      cursor={cursor ? { fill: 'var(--color-surface-sunken)' } : undefined}
+      {...TOOLTIP_STYLE}
+    />
+  );
 }

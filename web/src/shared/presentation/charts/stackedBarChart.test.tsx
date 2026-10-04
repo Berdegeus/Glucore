@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { stubChartContainer } from '../../../test/chartContainer';
-import { renderChart } from '../../../test/chartQueries';
+import { expectResponsive, renderChart } from '../../../test/chartQueries';
 import { ZONE_COLORS } from './palette';
 import { StackedBarChart, type StackedBarChartProps } from './stackedBarChart';
 
@@ -19,8 +19,7 @@ const segmentsOf = (all: (selector: string) => Element[]) => all('.recharts-bar-
 describe('StackedBarChart', () => {
   it('draws inside a ResponsiveContainer, at the container width (RSP-05)', () => {
     const { container } = draw();
-    expect(container.querySelector('.recharts-responsive-container')).not.toBeNull();
-    expect(container.querySelector('svg.recharts-surface')).toHaveAttribute('width', '600');
+    expectResponsive(container);
   });
 
   it('stacks the segments from the base upward in the order of the zones, in zone colors (PAC-10)', () => {

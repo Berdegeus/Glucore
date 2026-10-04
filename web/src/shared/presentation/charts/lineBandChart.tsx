@@ -1,15 +1,8 @@
 import type { ReactElement } from 'react';
-import { Area, CartesianGrid, ComposedChart, Line, ReferenceArea, Tooltip, XAxis, YAxis } from 'recharts';
-import {
-  AXIS_TICK,
-  BASE_CHART_PROPS,
-  GRID_PROPS,
-  NO_ANIMATION,
-  TOOLTIP_STYLE,
-  defaultFormat,
-  tooltipValue,
-} from './chartDefaults';
-import { ChartSurface, markerDot, type LegendItem } from './chartSurface';
+import { Area, ComposedChart, Line, ReferenceArea } from 'recharts';
+import { ChartAxes } from './chartAxes';
+import { BASE_CHART_PROPS, NO_ANIMATION, defaultFormat } from './chartDefaults';
+import { ChartGrid, ChartSurface, ChartTooltip, markerDot, type LegendItem } from './chartSurface';
 import type { ChartRow, SeriesSpec, ValueFormatter } from './chartTypes';
 import { seriesColor, seriesMarker } from './palette';
 
@@ -96,9 +89,8 @@ export function LineBandChart(props: LineBandChartProps): ReactElement {
   return (
     <ChartSurface height={height} legend={legendOf(props)}>
       <ComposedChart data={withBand(data, band)} {...BASE_CHART_PROPS}>
-        <CartesianGrid {...GRID_PROPS} />
-        <XAxis dataKey={xKey} tick={AXIS_TICK} tickFormatter={formatX} />
-        <YAxis tick={AXIS_TICK} tickFormatter={formatY} width={48} />
+        <ChartGrid />
+        <ChartAxes categoryKey={xKey} formatCategory={formatX} formatValue={formatY} />
         {targetRange && (
           <ReferenceArea y1={targetRange.low} y2={targetRange.high} fill="var(--zone-target)" fillOpacity={0.12} ifOverflow="extendDomain" />
         )}
@@ -115,7 +107,7 @@ export function LineBandChart(props: LineBandChartProps): ReactElement {
           />
         )}
         {lines.map((line, index) => renderSeries(line, index, props))}
-        <Tooltip formatter={tooltipValue(formatY)} {...TOOLTIP_STYLE} />
+        <ChartTooltip format={formatY} />
       </ComposedChart>
     </ChartSurface>
   );

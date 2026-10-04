@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
 import { stubChartContainer } from '../../../test/chartContainer';
-import { renderChart } from '../../../test/chartQueries';
+import { expectResponsive, renderChart } from '../../../test/chartQueries';
 import { ChartFrame } from './chartFrame';
 import { LineBandChart, withBand, type LineBandChartProps } from './lineBandChart';
 
@@ -28,8 +28,7 @@ const drawChart = (props: Partial<LineBandChartProps> = {}) =>
 describe('LineBandChart', () => {
   it('draws inside a ResponsiveContainer, at the container width (RSP-05)', () => {
     const { container } = drawChart();
-    expect(container.querySelector('.recharts-responsive-container')).not.toBeNull();
-    expect(container.querySelector('svg.recharts-surface')).toHaveAttribute('width', '600');
+    expectResponsive(container);
   });
 
   it('draws one curve per series, in series colors, dashing the one that asks for it (PAC-06)', () => {
