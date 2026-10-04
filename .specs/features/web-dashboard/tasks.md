@@ -859,13 +859,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: token válido devolve a data; token malformado ou sem `exp` devolve `null`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/auth/jwtExpiryReader.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: token válido devolve a data; token malformado ou sem `exp` devolve `null`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/auth/jwtExpiryReader.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): read token expiry for refresh scheduling`
+**Status**: ✅ Done
 
 ---
 
