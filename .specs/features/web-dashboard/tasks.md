@@ -5019,6 +5019,31 @@ T220 → T221 → T222 → T223 → T224
 
 ---
 
+## Tarefas adicionadas durante a execução
+
+Achados da execução que viraram tarefa. Cada uma depende só de tarefas já concluídas e pode rodar fora da ordem das fases.
+
+### T225: Expor Retry-After e X-Degraded no CORS do gateway
+
+**What**: O CORS do gateway passa a expor os cabeçalhos `Retry-After` e `X-Degraded` ao navegador (`exposedHeaders`), para a web ler a espera do `429` e a marca de resposta degradada.
+**Where**: `backend/services/gateway/src/app.ts`
+**Depends on**: T9
+**Reuses**: `cors({ origin })` já montado no gateway; teste de preflight da T9
+**Requirement**: ACC-08, PRO-15, DEP-07
+
+**Done when**:
+
+- [ ] Teste de integração: uma resposta cross-origin de origem listada traz `Access-Control-Expose-Headers` contendo `Retry-After` e `X-Degraded` (também com `CORS_ORIGIN` vazio, modo permissivo)
+- [ ] Origem não listada continua sem `Access-Control-Allow-Origin`
+- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `fix(gateway): expose Retry-After and X-Degraded through CORS`
+
+---
+
 ## Phase Execution Map
 
 ```
