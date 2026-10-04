@@ -1310,13 +1310,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: adicionar além de 20 falha; id repetido falha; mover no início e no fim; tamanho fora dos permitidos falha
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/domain/layout.test.ts`
-- [ ] Pelo menos 8 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: adicionar além de 20 falha; id repetido falha; mover no início e no fim; tamanho fora dos permitidos falha
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/domain/layout.test.ts`
+- [x] Pelo menos 8 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the layout domain`
+**Status**: ✅ Done
 
 ---
 
