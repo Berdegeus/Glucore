@@ -54,6 +54,22 @@ não são públicas. Código em `packages/shared/src/discovery/` e `services/gat
 `/api/v1`, então não funciona ponta a ponta com nenhuma topologia (auditoria A-01,
 [AUDIT_2026-09-08.md](../AUDIT_2026-09-08.md)).
 
+### Quebras de contrato do split
+
+O app Flutter ficou fora de escopo do split e as quebras foram autorizadas (issue #30); o ajuste do
+app é o PR "app → gateway" (A-01). O que mudou para quem consome a API:
+
+| Antes | Agora |
+|---|---|
+| Um endereço, `:3001`, sem prefixo | Gateway `:3000`, tudo sob `/api/v1`; `:3001`/`:3002` não são públicos |
+| `/auth/*` no mesmo serviço dos dados | `/auth/*` no auth-service, alcançado por `/api/v1/auth/*` |
+| `POST /auth/register` cria conta e paciente | O gateway orquestra (saga); direto no auth-service só a conta |
+| `GET/PUT /auth/profile` com conta + paciente | Só conta; conta + paciente é `GET/PUT /api/v1/me` |
+| Papel lido do banco a cada request | Papel na claim do JWT; token sem `role` é rejeitado |
+| Rate limit no serviço de auth | Rate limit no gateway |
+| `POST /carbs`, `/insulin`, `/alerts` (replace-all) | **Ainda existem**, deprecated, alcançáveis via gateway; a remoção fica para o release seguinte (`ARCHITECTURE_FIX_PLAN.md` §4.2). O caminho recomendado é `/item[/:id]` |
+| `POST /readings` (batch upsert) | Mantido — é idempotente por `[patientId, recordedAt]` |
+
 ### Dois clients Prisma
 
 `auth-service` gera o client em `services/auth-service/generated/prisma`, não no
