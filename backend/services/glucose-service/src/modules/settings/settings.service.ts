@@ -1,4 +1,4 @@
-import type { AuditContext, RecordAudit } from '@glucore/shared';
+import { BadRequestError, type AuditContext, type RecordAudit } from '@glucore/shared';
 
 import type { IPatientRepository } from '../patient/patient.repository';
 import type { ISettingsRepository } from './settings.repository';
@@ -33,16 +33,21 @@ export class SettingsService {
   }
 
   /**
-   * No validation, deliberately: this route accepts an inverted range today
-   * (unlike the profile route, which rejects one) and the suite pins that.
-   * Adding the check is a product decision — it needs the app to handle the
-   * rejection, and a CHECK constraint to make it stick.
+   * Rejects an inverted range (phase 6, `glucose_metrics` migration): a
+   * low >= high threshold makes every reading count as both hypo and hyper at
+   * once, which broke the dashboard's TIR math the moment a real row like
+   * that showed up in dev data. The database now backs this with a CHECK
+   * constraint too — this is the app-side half so the caller gets a 400
+   * instead of a raw constraint-violation 500.
    */
   async updateForUser(
     userId: string,
     thresholds: AlertThresholdsDto,
     context: AuditContext,
   ): Promise<void> {
+    if (thresholds.lowThreshold >= thresholds.highThreshold) {
+      throw new BadRequestError('lowThreshold must be less than highThreshold', 'INVALID_THRESHOLD_RANGE');
+    }
     const patientId = await this.patients.ensure(userId);
     await this.settings.upsert(patientId, {
       lowGlucoseMgDl: thresholds.lowThreshold,

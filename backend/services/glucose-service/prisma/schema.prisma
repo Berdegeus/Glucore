@@ -198,6 +198,7 @@ model AlertEvent {
 
   @@index([patientId, triggeredAt])
   @@index([glucosePredictionId])
+  @@index([patientId, alertType, triggeredAt])
 }
 
 model CarbEvent {

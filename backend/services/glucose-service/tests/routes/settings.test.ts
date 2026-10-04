@@ -119,14 +119,30 @@ describe('PUT /settings/alerts', () => {
     expect(otherRow.lowGlucoseMgDl).toBe(80);
   });
 
-  it('currently accepts an inverted range — no validation on this route today', async () => {
+  it('rejects an inverted range (phase 6: the dashboard cannot compute TIR against one)', async () => {
     const res = await request(app)
       .put('/settings/alerts')
       .set(auth())
       .send({ lowThreshold: 200, highThreshold: 100 });
 
-    expect(res.status).toBe(204);
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: 'lowThreshold must be less than highThreshold',
+      code: 'INVALID_THRESHOLD_RANGE',
+    });
+
+    // The row from the earlier `beforeEach` setup is untouched by the rejected write.
     const after = await request(app).get('/settings/alerts').set(auth());
-    expect(after.body).toEqual({ lowThreshold: 200, highThreshold: 100 });
+    expect(after.body).toEqual({ lowThreshold: 80, highThreshold: 180 });
+  });
+
+  it('rejects an equal low/high (zero-width range never contains a reading)', async () => {
+    const res = await request(app)
+      .put('/settings/alerts')
+      .set(auth())
+      .send({ lowThreshold: 100, highThreshold: 100 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_THRESHOLD_RANGE');
   });
 });

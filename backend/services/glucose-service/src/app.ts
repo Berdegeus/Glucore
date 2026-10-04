@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import { createHealthRouter, type HealthCheckable } from '@glucore/shared';
 import { createAlertsRouter } from './modules/alerts/alerts.routes';
 import { createCarbsRouter } from './modules/carbs/carbs.routes';
+import { createDashboardRouter } from './modules/dashboard/dashboard.routes';
 import { createInsulinRouter } from './modules/insulin/insulin.routes';
 import { createReadingsRouter } from './modules/readings/readings.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
@@ -56,6 +57,7 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use('/insulin', createInsulinRouter(container.insulin));
   app.use('/alerts', createAlertsRouter(container.alerts));
   app.use('/settings', createSettingsRouter(container.settings));
+  app.use('/dashboard', createDashboardRouter(container.dashboard));
   app.use('/internal', container.internalPatientRouter);
 
   // Classifies known failures into `{ error, code }`; the handler below is the

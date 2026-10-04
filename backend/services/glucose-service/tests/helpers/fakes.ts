@@ -27,6 +27,15 @@ import type {
   ISettingsRepository,
   ThresholdValues,
 } from '../../src/modules/settings/settings.repository';
+import type { DateRange, IDashboardRepository } from '../../src/modules/dashboard/dashboard.repository';
+import type {
+  AlertsByTypeDto,
+  DailyBucketDto,
+  DashboardTotals,
+  ExcursionDto,
+  InsulinByTypeDto,
+  PeriodMetricsDto,
+} from '../../src/modules/dashboard/dashboard.mapper';
 
 let sequence = 0;
 export const nextId = (): string =>
@@ -225,6 +234,70 @@ export class FakeSettingsRepository implements ISettingsRepository {
   async upsert(_patientId: string, values: ThresholdValues): Promise<void> {
     this.lastUpsert = values;
     this.stored = values;
+  }
+}
+
+/**
+ * Fake dashboard repository — every method returns whatever the test staged in
+ * the corresponding field. The real repository's job is entirely SQL (raw
+ * queries + groupBy + a stored procedure), so there is no meaningful in-memory
+ * reimplementation of it; this fake only exists to isolate `DashboardService`'s
+ * own logic (threshold resolution, range building) from that SQL.
+ */
+export class FakeDashboardRepository implements IDashboardRepository {
+  thresholdConfig: { lowGlucoseMgDl: number; highGlucoseMgDl: number } | null = null;
+  totals: DashboardTotals = { readingsCount: 0, carbEntries: 0, insulinEntries: 0, alertsCount: 0 };
+  periodMetrics: PeriodMetricsDto = {
+    avgGlucose: null,
+    gmiPercent: null,
+    cvPercent: null,
+    timeInRangePercent: null,
+    readingsCount: 0,
+  };
+  dailyBuckets: DailyBucketDto[] = [];
+  insulinByType: InsulinByTypeDto[] = [];
+  alertsByType: AlertsByTypeDto[] = [];
+  excursions: ExcursionDto[] = [];
+
+  /** Every range this fake was called with, in call order — asserts what the service built. */
+  readonly rangesSeen: DateRange[] = [];
+  readonly thresholdsSeen: Array<{ low: number; high: number }> = [];
+
+  async getThresholdConfig(
+    _patientId: string,
+  ): Promise<{ lowGlucoseMgDl: number; highGlucoseMgDl: number } | null> {
+    return this.thresholdConfig;
+  }
+
+  async getTotals(_patientId: string, range: DateRange): Promise<DashboardTotals> {
+    this.rangesSeen.push(range);
+    return this.totals;
+  }
+
+  async getInsulinByType(): Promise<InsulinByTypeDto[]> {
+    return this.insulinByType;
+  }
+
+  async getAlertsByType(): Promise<AlertsByTypeDto[]> {
+    return this.alertsByType;
+  }
+
+  async getPeriodMetrics(
+    _patientId: string,
+    _range: DateRange,
+    low: number,
+    high: number,
+  ): Promise<PeriodMetricsDto> {
+    this.thresholdsSeen.push({ low, high });
+    return this.periodMetrics;
+  }
+
+  async getDailyBuckets(): Promise<DailyBucketDto[]> {
+    return this.dailyBuckets;
+  }
+
+  async getExcursions(): Promise<ExcursionDto[]> {
+    return this.excursions;
   }
 }
 

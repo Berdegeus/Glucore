@@ -10,6 +10,9 @@ import { AlertsService } from './modules/alerts/alerts.service';
 import { CarbsController } from './modules/carbs/carbs.controller';
 import { PrismaCarbRepository } from './modules/carbs/carbs.repository';
 import { CarbsService } from './modules/carbs/carbs.service';
+import { DashboardController } from './modules/dashboard/dashboard.controller';
+import { PrismaDashboardRepository } from './modules/dashboard/dashboard.repository';
+import { DashboardService } from './modules/dashboard/dashboard.service';
 import { InsulinController } from './modules/insulin/insulin.controller';
 import { PrismaInsulinRepository } from './modules/insulin/insulin.repository';
 import { InsulinService } from './modules/insulin/insulin.service';
@@ -36,6 +39,7 @@ export interface Container {
   insulin: InsulinController;
   alerts: AlertsController;
   settings: SettingsController;
+  dashboard: DashboardController;
   internalPatientRouter: Router;
 }
 
@@ -68,6 +72,9 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
     ),
     settings: new SettingsController(
       new SettingsService(new PrismaSettingsRepository(prisma), patients, recordAudit),
+    ),
+    dashboard: new DashboardController(
+      new DashboardService(new PrismaDashboardRepository(prisma), patients),
     ),
     internalPatientRouter: createInternalPatientRouter(
       new PatientController(new PatientService(patients, recordAudit)),
