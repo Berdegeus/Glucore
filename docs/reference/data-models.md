@@ -33,7 +33,7 @@ Endpoints: `GET/POST/DELETE /readings` (GET limita 288; POST = batch upsert).
 | `units double` | `units` | `doseUnits Decimal(10,2)` |
 | `type InsulinType {bolus,basal,correction}` | `type` (string livre) | `insulinType String` |
 | `time DateTime` | `timeMs` | `eventAt DateTime` |
-| `dayOfWeek String` (valores de `kDaysOfWeek`, PT) | `dayOfWeek` | `dayOfWeek String @default("")` |
+| `dayOfWeek String` (valores de `kDaysOfWeek`, PT; preenchido por `dayOfWeekFor(time)`, sem seletor na tela desde 2026-10-04) | `dayOfWeek` | `dayOfWeek String @default("")` |
 
 Mesma superfície de carbs: `GET /insulin?before=&limit=`, `POST /insulin/item`, `PUT`/`DELETE /insulin/item/:id`, e o `POST /insulin` de coleção deprecated. `kDaysOfWeek` definido em `lib/features/patient/domain/entities/insulin_entry.dart` ("Segunda-feira"…"Domingo").
 

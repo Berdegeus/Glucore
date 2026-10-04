@@ -17,6 +17,13 @@ o projeto segue versionamento semântico (ver [docs/guides/versioning-and-branch
 
 ### Added
 - `AccountService.deleteAccount()` (`DELETE /account`), sem tela ainda.
+- **Scanner da caixa pelo Google Code Scanner** (`play-services-code-scanner`, método `scanBarcode` no canal
+  nativo): mesmo scanner do Juggluco, com foco e pinch zoom próprios, lê o UDI do Sibionics. A folha do
+  `mobile_scanner` (agora com 1920×1080 e `autoZoom`) fica como plano B sem Play Services.
+
+### Removed
+- Seletor de **dia da semana** nas telas de cadastro e edição de insulina: o campo `dayOfWeek` continua no
+  modelo e no backend, mas é calculado a partir da data escolhida (`dayOfWeekFor`).
 
 ### Notes
 - Tokens emitidos antes da claim `role` são rejeitados (`TOKEN_INVALID`): quem tinha sessão salva volta

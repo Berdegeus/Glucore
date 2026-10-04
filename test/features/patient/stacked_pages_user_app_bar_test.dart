@@ -151,6 +151,20 @@ void main() {
       );
     });
 
+    // The weekday selector was removed (2026-10-04): the weekday is derived
+    // from the chosen date, so no screen asks for it.
+    if (entry.key.startsWith('Insulin')) {
+      testWidgets('${entry.key} no longer asks for the day of the week',
+          (tester) async {
+        await pumpStacked(tester, entry.value);
+
+        expect(find.text('Dia da semana'), findsNothing);
+        expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+        // The dose type selector is still there.
+        expect(find.byType(DropdownButtonFormField<InsulinType>), findsOneWidget);
+      });
+    }
+
     testWidgets('${entry.key} keeps a working back button', (tester) async {
       await pumpStacked(tester, entry.value);
 

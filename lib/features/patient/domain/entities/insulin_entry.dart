@@ -12,6 +12,10 @@ const kDaysOfWeek = [
   'Domingo',
 ];
 
+/// Name of the weekday of [time], in the same form as [kDaysOfWeek]. The entry
+/// forms no longer ask for it: it is always the weekday of the chosen time.
+String dayOfWeekFor(DateTime time) => kDaysOfWeek[time.weekday - 1];
+
 class InsulinEntry {
   const InsulinEntry({
     required this.id,
