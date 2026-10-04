@@ -4,8 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AppError } from '../../../shared/domain/appError';
 import type { Role } from '../../../shared/domain/role';
-import { SessionEventBus } from '../../../shared/infrastructure/events/sessionEventBus';
-import { accountOf, memoryTokenStore } from '../../../test/authFakes';
+import { accountOf, memoryTokenStore, sessionEventBus } from '../../../test/authFakes';
 import { createLogout, type SessionCleaner } from '../application/logout';
 import type { Session } from '../domain/session';
 import { AuthProvider, SESSION_EXPIRED_MESSAGE, useAuth, type AuthServices } from './authProvider';
@@ -19,7 +18,7 @@ function sessionOf(role: Role = 'PATIENT', fullName = 'Ana Souza'): Session {
 /** Real bus and real `createLogout`, fake network use cases. */
 function makeServices(overrides: Partial<AuthServices> = {}) {
   const tokenStore = memoryTokenStore('token-1');
-  const sessionEvents = new SessionEventBus();
+  const sessionEvents = sessionEventBus();
   const cleaners = new Set<SessionCleaner>();
   const logout = vi.fn(createLogout({ tokenStore, cleaners }));
   const services: AuthServices = {
