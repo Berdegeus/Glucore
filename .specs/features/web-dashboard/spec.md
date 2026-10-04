@@ -481,8 +481,8 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34 | Implementing |
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33 | Implementing |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
-| ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
-| ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
+| ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
+| ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
 | ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13 | Implementing |
 | ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | T10, T11 | Implementing |
 | ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | T15, T16 | Implementing |
@@ -492,7 +492,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-17 | P1: Arquitetura limpa verificável (rubrica 37) | T14, T16 | Implementing |
 | ARQ-18 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
-| LAY-01 | P1: Layout customizável por widgets | T1, T48 | Implementing |
+| LAY-01 | P1: Layout customizável por widgets | T1, T48, T49 | Implementing |
 | LAY-02 | P1: Layout customizável por widgets | T48 | Implementing |
 | LAY-03 | P1: Layout customizável por widgets | T46 | Implementing |
 | LAY-04 | P1: Layout customizável por widgets | T19, T46 | Implementing |
