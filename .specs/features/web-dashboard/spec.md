@@ -498,8 +498,8 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-04 | P1: Layout customizável por widgets | - | Pending |
 | LAY-05 | P1: Layout customizável por widgets | - | Pending |
 | LAY-06 | P1: Layout customizável por widgets | - | Pending |
-| LAY-07 | P1: Layout customizável por widgets | T3, T5, T6, T7 | Implementing |
-| LAY-08 | P1: Layout customizável por widgets | T5, T6, T7 | Implementing |
+| LAY-07 | P1: Layout customizável por widgets | T3, T5, T6, T7, T8 | Implementing |
+| LAY-08 | P1: Layout customizável por widgets | T5, T6, T7, T8 | Implementing |
 | LAY-09 | P1: Layout customizável por widgets | T5, T6, T7 | Implementing |
 | LAY-10 | P1: Layout customizável por widgets | - | Pending |
 | LAY-11 | P1: Layout customizável por widgets | T1, T2, T4, T7 | Implementing |

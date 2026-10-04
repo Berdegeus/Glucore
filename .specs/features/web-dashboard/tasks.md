@@ -485,14 +485,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: sem token responde `401` no gateway; com token encaminha a um servidor stub registrado como `auth` e preserva o corpo do `PUT`
-- [ ] Os prefixos atuais seguem encaminhando ao `glucose`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: sem token responde `401` no gateway; com token encaminha a um servidor stub registrado como `auth` e preserva o corpo do `PUT`
+- [x] Os prefixos atuais seguem encaminhando ao `glucose`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(gateway): route preferences to auth-service`
+**Status**: ✅ Done
 
 ---
 

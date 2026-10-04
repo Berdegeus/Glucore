@@ -29,6 +29,21 @@ export interface BuildAppOptions {
   container?: Container;
 }
 
+/**
+ * Pure proxies behind the end-user token: prefix → the service that owns it.
+ * The clinical prefixes live in glucose; the dashboard layout is identity-side
+ * data and lives in auth.
+ */
+const AUTHENTICATED_PROXIES: Readonly<Record<string, 'glucose' | 'auth'>> = {
+  readings: 'glucose',
+  carbs: 'glucose',
+  insulin: 'glucose',
+  alerts: 'glucose',
+  settings: 'glucose',
+  dashboard: 'glucose',
+  preferences: 'auth',
+};
+
 const errorHandler = createErrorHandler([upstreamClassifier, appErrorClassifier, httpContractClassifier]);
 
 /** No database here, so "ready" only ever proves the process itself is up. */
@@ -43,8 +58,8 @@ const noopHealthCheck: HealthCheckable = {
  * drive it in-process, the same as the other two services.
  *
  * Unlike them, `express.json()` is never mounted globally here: everything
- * under `/api/v1/{auth,readings,carbs,insulin,alerts,settings,dashboard}` is a pure
- * proxy, and a global body parser would consume the request stream before
+ * under `/api/v1/{auth,readings,carbs,insulin,alerts,settings,dashboard,preferences}`
+ * is a pure proxy, and a global body parser would consume the request stream before
  * `http-proxy-middleware` can forward it — silently sending an empty body
  * downstream on every POST. The three composition routers below
  * (`/api/v1/auth/register`, `/api/v1/me`, `/api/v1/account`) each mount their
@@ -93,11 +108,11 @@ export function buildApp(options: BuildAppOptions = {}): Express {
     createAccountRouter(new AccountController(container.authClient, container.glucoseClient), container.authenticate),
   );
 
-  for (const prefix of ['readings', 'carbs', 'insulin', 'alerts', 'settings', 'dashboard']) {
+  for (const [prefix, service] of Object.entries(AUTHENTICATED_PROXIES)) {
     app.use(
       `/api/v1/${prefix}`,
       container.authenticate,
-      createProxyRoute(prefix, 'glucose', container.registry),
+      createProxyRoute(prefix, service, container.registry),
     );
   }
 
