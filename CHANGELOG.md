@@ -21,6 +21,11 @@ o projeto segue versionamento semântico (ver [docs/guides/versioning-and-branch
   nativo): mesmo scanner do Juggluco, com foco e pinch zoom próprios, lê o UDI do Sibionics. A folha do
   `mobile_scanner` (agora com 1920×1080 e `autoZoom`) fica como plano B sem Play Services.
 
+- **Deploy do backend em produção** (VM Oracle Always Free + Caddy/HTTPS, `https://glucore.duckdns.org`):
+  `backend/deploy/` (compose de produção sem Consul, Caddyfile, backup criptografado, `update.sh`, runbook) e
+  `.github/workflows/publish-images.yml` (publica as 3 imagens no GHCR depois do CI verde na `main`).
+  Estado e pendências em `docs/guides/deployment.md`.
+
 ### Removed
 - Seletor de **dia da semana** nas telas de cadastro e edição de insulina: o campo `dayOfWeek` continua no
   modelo e no backend, mas é calculado a partir da data escolhida (`dayOfWeekFor`).
