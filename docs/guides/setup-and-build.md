@@ -7,8 +7,8 @@
 ```bash
 flutter analyze
 flutter test --no-pub
-flutter run                                    # backend em localhost:3001 (emulador: use IP)
-flutter run --dart-define=API_URL=http://192.168.1.100:3001   # device físico
+flutter run                                    # gateway em localhost:3000 (só serve no emulador desktop)
+flutter run --dart-define=API_URL=http://192.168.1.100:3000   # device físico (host do gateway, SEM /api/v1)
 flutter build apk --debug
 flutter gen-l10n                               # após editar .arb
 cd android && ./gradlew app:assembleDebug

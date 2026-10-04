@@ -3,16 +3,30 @@ import 'package:dio/dio.dart';
 import '../session/session_expiry_notifier.dart';
 import 'auth_token_store.dart';
 
-// Pass --dart-define=API_URL=http://<machine-ip>:3001 when building/running.
-// Example: flutter run --dart-define=API_URL=http://192.168.1.100:3001
-const _baseUrl = String.fromEnvironment(
+// The backend is reached only through the gateway, which serves everything
+// under `/api/v1` (`backend/README.md`, "Rotas do gateway"). Pass
+// --dart-define=API_URL=http://<machine-ip>:3000 when building/running — the
+// host only, WITHOUT `/api/v1`: [gatewayBaseUrl] appends it.
+// Example: flutter run --dart-define=API_URL=http://192.168.1.100:3000
+// (Android emulator: http://10.0.2.2:3000). Without the define, the app uses
+// the production backend (https://glucore.duckdns.org).
+const _apiUrl = String.fromEnvironment(
   'API_URL',
-  defaultValue: 'http://localhost:3001',
+  defaultValue: 'https://glucore.duckdns.org',
 );
+
+/// Path prefix the gateway mounts every public route under.
+const apiPrefix = '/api/v1';
+
+/// Dio `baseUrl` for a given `API_URL`: the host (trailing slashes tolerated)
+/// plus [apiPrefix]. It is the single place that knows the prefix, so no
+/// datasource spells it in a path.
+String gatewayBaseUrl(String apiUrl) =>
+    '${apiUrl.trim().replaceFirst(RegExp(r'/+$'), '')}$apiPrefix';
 
 /// Error code the backend returns when the bearer token is missing, malformed
 /// or expired. It is the ONLY code that ends the session: `401` alone is not
-/// enough, because a wrong current password on `PUT /auth/profile` also answers
+/// enough, because a wrong current password on `PUT /me` also answers
 /// `401` (code `INVALID_CURRENT_PASSWORD`) and must keep the user signed in.
 const _tokenInvalidCode = 'TOKEN_INVALID';
 
@@ -25,7 +39,7 @@ class ApiClient {
   ) {
     final dio = Dio(
       BaseOptions(
-        baseUrl: _baseUrl,
+        baseUrl: gatewayBaseUrl(_apiUrl),
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 15),
         headers: {'Content-Type': 'application/json'},

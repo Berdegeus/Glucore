@@ -6,6 +6,9 @@ import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -41,11 +44,6 @@ class MainActivity : FlutterActivity() {
                             val brand = SensorBrand.fromWireName(call.argument<String>("brand"))
                             result.success(core.registerSensor(barcode, brand))
                         }
-                        "submitTransmitter" -> {
-                            val transmitterBarcode = call.argument<String>("transmitterBarcode") ?: ""
-                            core.submitTransmitter(transmitterBarcode)
-                            result.success(null)
-                        }
                         "startMonitoring" -> {
                             core.startMonitoring()
                             result.success(null)
@@ -73,6 +71,9 @@ class MainActivity : FlutterActivity() {
                                 }
                             }.start()
                         }
+                        // Asynchronous: answers from the scanner callbacks, so it
+                        // must not fall through to the shared `result` handling.
+                        "scanBarcode" -> scanBarcode(result)
                         "startNfcScan" -> {
                             startNfcScan()
                             result.success(null)
@@ -97,6 +98,26 @@ class MainActivity : FlutterActivity() {
                     core.setEventSink(null)
                 }
             })
+    }
+
+    // ── Box barcode (Google code scanner) ─────────────────────────────────────
+
+    /**
+     * Opens Google's code scanner for the box UDI (data matrix) or a QR code.
+     * Answers the raw text, `null` when the user cancels, or the error
+     * `SCANNER_UNAVAILABLE` when the scanner cannot run (no Play Services, the
+     * module still downloading, ...) so Dart can fall back to its own scanner.
+     */
+    private fun scanBarcode(result: MethodChannel.Result) {
+        val options = GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_DATA_MATRIX, Barcode.FORMAT_QR_CODE)
+            .build()
+        GmsBarcodeScanning.getClient(this, options).startScan()
+            .addOnSuccessListener { barcode -> result.success(barcode.rawValue) }
+            .addOnCanceledListener { result.success(null) }
+            .addOnFailureListener { e ->
+                result.error("SCANNER_UNAVAILABLE", e.message, null)
+            }
     }
 
     // ── Libre 2 NFC reader mode ───────────────────────────────────────────────

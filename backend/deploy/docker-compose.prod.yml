@@ -1,0 +1,127 @@
+# Produção em uma única VM. As imagens vêm do GHCR (publicadas pelo CI);
+# `up --build` só é necessário para testar localmente. Uso (de dentro de backend/):
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d --build
+#
+# Só o Caddy publica porta (80/443). Gateway, auth-service, glucose-service e
+# Postgres ficam na rede interna do compose. Nunca publique o auth-service: o
+# limite de taxa do login vive no gateway.
+# Sem Consul: SERVICE_DISCOVERY=env com URLs fixas na rede do compose.
+
+x-common: &common
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  postgres:
+    <<: *common
+    image: postgres:16
+    environment:
+      POSTGRES_USER: glucore
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      POSTGRES_DB: glucore_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../docker/postgres/init-auth-db.sql:/docker-entrypoint-initdb.d/init-auth-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glucore"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 1g
+
+  auth-service:
+    <<: *common
+    image: ghcr.io/berdegeus/glucore-auth:${TAG:-latest}
+    build:
+      context: ..
+      dockerfile: services/auth-service/Dockerfile
+    # Migração no boot: ok com uma réplica só.
+    command: sh -c "npm run migrate:deploy && node dist/index.js"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://glucore:${POSTGRES_PASSWORD}@postgres:5432/glucore_auth_dev?schema=public
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET}
+      INTERNAL_JWT_SECRET: ${INTERNAL_JWT_SECRET:?defina INTERNAL_JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:?defina CORS_ORIGIN}
+      PORT: "3002"
+      BCRYPT_ROUNDS: "12"
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+    expose:
+      - "3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 512m
+
+  glucose-service:
+    <<: *common
+    image: ghcr.io/berdegeus/glucore-glucose:${TAG:-latest}
+    build:
+      context: ..
+      dockerfile: services/glucose-service/Dockerfile
+    command: sh -c "npm run migrate:deploy && node dist/index.js"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://glucore:${POSTGRES_PASSWORD}@postgres:5432/glucore_dev?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_JWT_SECRET: ${INTERNAL_JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      PORT: "3001"
+    expose:
+      - "3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 512m
+
+  gateway:
+    <<: *common
+    image: ghcr.io/berdegeus/glucore-gateway:${TAG:-latest}
+    build:
+      context: ..
+      dockerfile: services/gateway/Dockerfile
+    environment:
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_JWT_SECRET: ${INTERNAL_JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      PORT: "3000"
+      SERVICE_DISCOVERY: env
+      AUTH_SERVICE_URL: http://auth-service:3002
+      GLUCOSE_SERVICE_URL: http://glucose-service:3001
+    expose:
+      - "3000"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      glucose-service:
+        condition: service_healthy
+    mem_limit: 384m
+
+  caddy:
+    <<: *common
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_HOST: ${API_HOST:?defina API_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - gateway
+    mem_limit: 128m
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

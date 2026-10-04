@@ -49,32 +49,4 @@ object GlucoreSibionicsBridge {
      * @return JSON string with active sensor data or error
      */
     external fun restoreActiveSensor(): String
-
-    /**
-     * Save a matched Bluetooth device for the sensor.
-     *
-     * @param sensorId Sensor identifier
-     * @param deviceName Bluetooth device name
-     * @param macAddress Bluetooth MAC address
-     * @return true if saved successfully
-     */
-    external fun saveMatchedDevice(sensorId: String, deviceName: String, macAddress: String): Boolean
-
-    /**
-     * Get the initial write command for connecting to a sensor.
-     *
-     * @param sensorId Sensor identifier
-     * @return JSON string with command data or error
-     */
-    external fun getInitialWrite(sensorId: String): String
-
-    /**
-     * Handle a notification payload from the sensor.
-     *
-     * @param sensorId Sensor identifier
-     * @param payload Raw notification payload bytes
-     * @param timestampMs Timestamp when notification was received
-     * @return JSON string with processed data or error
-     */
-    external fun handleNotification(sensorId: String, payload: ByteArray, timestampMs: Long): String
 }

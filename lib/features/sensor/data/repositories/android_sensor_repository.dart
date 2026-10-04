@@ -56,16 +56,6 @@ class AndroidSensorRepository implements SensorRepository {
   }
 
   @override
-  Future<void> submitTransmitter(String transmitterBarcode) async {
-    try {
-      await platform.submitTransmitter(transmitterBarcode);
-    } catch (e) {
-      _eventController.addError(e);
-      rethrow;
-    }
-  }
-
-  @override
   Future<void> startMonitoring() async {
     try {
       await platform.startMonitoring();

@@ -1,152 +1,68 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:glucore/features/auth/data/datasources/account_service.dart';
-import 'package:glucore/features/auth/domain/repositories/auth_repository.dart';
-import 'package:glucore/features/auth/domain/usecases/get_auth_status_usecase.dart';
-import 'package:glucore/features/auth/domain/usecases/login_usecase.dart';
-import 'package:glucore/features/auth/domain/usecases/logout_usecase.dart';
-import 'package:glucore/features/auth/domain/usecases/register_usecase.dart';
-import 'package:glucore/features/auth/presentation/cubit/auth_cubit.dart';
-import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'package:glucore/features/patient/presentation/widgets/user_app_bar.dart';
 import 'package:glucore/l10n/l10n.dart';
 
-/// Spec: TCC-04 — spec.md P1 "Identidade do usuário e saída visíveis em todas
-/// as telas" AC1, AC2, AC3, AC5.
+/// `UserAppBar` used to carry an identity chip with the logged-in name and a
+/// menu offering "Sair da conta" on every authenticated screen (spec TCC-04 /
+/// spec.md P1 AC1-AC3, AC5). That was removed by product decision on
+/// 2026-08-24: logging out now happens only in Settings, so the header holds
+/// nothing but the screen's own title and icons.
+///
+/// These tests pin the widget's remaining contract and guard against the chip
+/// coming back by accident. The logout flow itself is covered where it now
+/// lives, in `settings_page.dart`.
 void main() {
-  late _FakeAuthRepository repo;
-  late AuthCubit authCubit;
-
-  setUp(() {
-    repo = _FakeAuthRepository();
-    authCubit = AuthCubit(
-      loginUseCase: LoginUseCase(repo),
-      logoutUseCase: LogoutUseCase(repo),
-      getAuthStatusUseCase: GetAuthStatusUseCase(repo),
-      registerUseCase: RegisterUseCase(repo),
-      connectivityChanges: const Stream.empty(),
-    );
-  });
-
-  tearDown(() => authCubit.close());
-
   Future<void> pumpAppBar(
     WidgetTester tester, {
-    required UserIdentityCubit identity,
+    Widget? title,
     List<Widget>? actions,
   }) async {
     await tester.pumpWidget(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider<UserIdentityCubit>.value(value: identity),
-          BlocProvider<AuthCubit>.value(value: authCubit),
-        ],
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            appBar: UserAppBar(actions: actions),
-            body: const SizedBox(),
-          ),
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          appBar: UserAppBar(title: title, actions: actions),
+          body: const SizedBox(),
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
 
-  Future<void> openMenu(WidgetTester tester) async {
-    await tester.tap(find.byType(PopupMenuButton<String>));
-    await tester.pumpAndSettle();
-  }
-
-  testWidgets('shows the loaded user name', (tester) async {
-    final identity = UserIdentityCubit(
-      accountService: _FakeAccountService(profile: _profile('Ana Silva')),
-    );
-    addTearDown(identity.close);
-    await identity.load('Paciente Glucore');
-
-    await pumpAppBar(tester, identity: identity);
-
-    expect(find.text('Ana Silva'), findsOneWidget);
-  });
-
-  testWidgets('shows the default name while the profile has not loaded',
+  testWidgets('renders without any account action in the header',
       (tester) async {
-    final identity = UserIdentityCubit(
-      accountService: _FakeAccountService(profile: _profile('Ana Silva')),
-    );
-    addTearDown(identity.close);
-    // load() is deliberately never called: state.fullName stays null.
+    await pumpAppBar(tester);
 
-    await pumpAppBar(tester, identity: identity);
-
-    expect(find.text('Paciente Glucore'), findsOneWidget);
+    expect(find.byType(PopupMenuButton<String>), findsNothing);
+    expect(find.text('Sair da conta'), findsNothing);
+    expect(find.byIcon(Icons.logout_rounded), findsNothing);
   });
 
-  testWidgets('the menu offers "Sair da conta"', (tester) async {
-    final identity = UserIdentityCubit(
-      accountService: _FakeAccountService(profile: _profile('Ana Silva')),
-    );
-    addTearDown(identity.close);
-    await identity.load('Paciente Glucore');
-
-    await pumpAppBar(tester, identity: identity);
-    await openMenu(tester);
-
-    expect(find.text('Sair da conta'), findsWidgets);
-  });
-
-  testWidgets('confirming the logout dialog calls AuthCubit.logout()',
+  testWidgets('does not require an identity or auth provider to build',
       (tester) async {
-    final identity = UserIdentityCubit(
-      accountService: _FakeAccountService(profile: _profile('Ana Silva')),
-    );
-    addTearDown(identity.close);
-    await identity.load('Paciente Glucore');
+    // Deliberately pumped with NO BlocProvider above it: the widget must not
+    // depend on UserIdentityCubit/AuthCubit any more. A reintroduced watch
+    // would throw ProviderNotFoundException here.
+    await pumpAppBar(tester);
 
-    await pumpAppBar(tester, identity: identity);
-    await openMenu(tester);
-    await tester.tap(find.text('Sair da conta').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Sair da conta').last);
-    await tester.pumpAndSettle();
-
-    expect(repo.logoutCalls, 1);
+    expect(tester.takeException(), isNull);
+    expect(find.byType(UserAppBar), findsOneWidget);
   });
 
-  testWidgets('cancelling the logout dialog does not call AuthCubit.logout()',
-      (tester) async {
-    final identity = UserIdentityCubit(
-      accountService: _FakeAccountService(profile: _profile('Ana Silva')),
-    );
-    addTearDown(identity.close);
-    await identity.load('Paciente Glucore');
+  testWidgets('renders the screen title it is given', (tester) async {
+    await pumpAppBar(tester, title: const Text('Configurações'));
 
-    await pumpAppBar(tester, identity: identity);
-    await openMenu(tester);
-    await tester.tap(find.text('Sair da conta').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cancelar'));
-    await tester.pumpAndSettle();
-
-    expect(repo.logoutCalls, 0);
+    expect(find.text('Configurações'), findsOneWidget);
   });
 
   testWidgets('extra actions passed in are still rendered and functional',
       (tester) async {
-    final identity = UserIdentityCubit(
-      accountService: _FakeAccountService(profile: _profile('Ana Silva')),
-    );
-    addTearDown(identity.close);
-    await identity.load('Paciente Glucore');
     var tapped = false;
 
     await pumpAppBar(
       tester,
-      identity: identity,
       actions: [
         IconButton(
           icon: const Icon(Icons.notifications_none_rounded),
@@ -159,52 +75,4 @@ void main() {
     await tester.tap(find.byIcon(Icons.notifications_none_rounded));
     expect(tapped, isTrue);
   });
-}
-
-AccountProfile _profile(String fullName) => AccountProfile(
-      email: 'ana@glucore.app',
-      fullName: fullName,
-      birthDate: null,
-      diabetesType: null,
-      weightKg: null,
-      targetRangeMin: 80,
-      targetRangeMax: 180,
-    );
-
-class _FakeAccountService extends AccountService {
-  _FakeAccountService({this.profile}) : super(Dio());
-
-  final AccountProfile? profile;
-
-  @override
-  Future<AccountProfile> fetchProfile() async => profile!;
-}
-
-class _FakeAuthRepository implements AuthRepository {
-  int logoutCalls = 0;
-
-  @override
-  Future<AuthSessionStatus> isLoggedIn() async => AuthSessionStatus.invalid;
-
-  @override
-  Future<bool> login({required String email, required String password}) async =>
-      true;
-
-  @override
-  Future<bool> register({
-    required String fullName,
-    required String email,
-    required String password,
-    String? phone,
-    DateTime? birthDate,
-    double? weightKg,
-    int? targetRangeMin,
-    int? targetRangeMax,
-  }) async =>
-      true;
-
-  @override
-  Future<void> logout() async {
-    logoutCalls++;
-  }
 }

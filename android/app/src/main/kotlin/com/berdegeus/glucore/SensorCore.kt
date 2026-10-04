@@ -103,8 +103,6 @@ class SensorCore(context: Context) {
         requestedBrand: SensorBrand = SensorBrand.SIBIONICS
     ): Map<String, Any?>? = platform.registerSensor(barcode, requestedBrand)
 
-    fun submitTransmitter(transmitterBarcode: String) = platform.submitTransmitter(transmitterBarcode)
-
     fun startMonitoring() {
         if (platform.startMonitoring()) {
             CgmForegroundService.start(appContext)

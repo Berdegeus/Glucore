@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AlertType } from '@prisma/client';
+import { NotFoundError } from '@glucore/shared';
 
 import { toAppAlertType, toDbAlertType } from '../../src/modules/alerts/alerts.mapper';
 import { AlertsService } from '../../src/modules/alerts/alerts.service';
@@ -59,12 +60,13 @@ describe('alert type adapter', () => {
 });
 
 describe('AlertsService', () => {
-  it('maps rows through the adapter on the way out', async () => {
+  it('maps rows through the adapter on the way out, id included', async () => {
     const { alerts, service } = build();
     const triggeredAt = new Date('2026-08-25T09:00:00.000Z');
-    alerts.rows = [alertRow(USER, AlertType.HYPO_RISK, triggeredAt)];
+    const row = alertRow(USER, AlertType.HYPO_RISK, triggeredAt);
+    alerts.rows = [row];
     expect(await service.listForUser(USER)).toEqual([
-      { type: 'glucoseLow', timestampMs: triggeredAt.getTime() },
+      { id: row.id, type: 'glucoseLow', timestampMs: triggeredAt.getTime() },
     ]);
   });
 
@@ -77,5 +79,55 @@ describe('AlertsService', () => {
     );
     expect(alerts.lastReplace).toHaveLength(100);
     expect(audit.entries[0].metadata).toEqual({ count: 150 });
+  });
+
+  it('drops an id that is not a UUID instead of rejecting the batch', async () => {
+    const { alerts, service } = build();
+    await service.replaceAllForUser(
+      USER,
+      [{ id: 'not-a-uuid', type: 'glucoseLow', timestampMs: 1 }],
+      CONTEXT,
+    );
+    expect(alerts.lastReplace[0].id).toBeUndefined();
+  });
+
+  it('creates an entry, converting the app type and keeping a client-minted id', async () => {
+    const { alerts, service } = build();
+    const id = '11111111-1111-4111-8111-111111111111';
+    const created = await service.createForUser(
+      USER,
+      { id, type: 'glucoseLow', timestampMs: 1000 },
+      CONTEXT,
+    );
+    expect(created).toBe(id);
+    expect(alerts.rows[0]).toMatchObject({ id, alertType: AlertType.HYPO_RISK });
+  });
+
+  it('records a CREATE audit entry keyed by the new id', async () => {
+    const { audit, service } = build();
+    const created = await service.createForUser(
+      USER,
+      { type: 'glucoseLow', timestampMs: 1000 },
+      CONTEXT,
+    );
+    expect(audit.entries).toEqual([
+      expect.objectContaining({ entity: 'AlertEvent', action: 'CREATE', entityId: created }),
+    ]);
+  });
+
+  it('answers 404 when the entry belongs to someone else', async () => {
+    const { alerts, service } = build();
+    alerts.affected = 0;
+    await expect(
+      service.updateForUser(USER, 'other', { type: 'glucoseLow', timestampMs: 1 }, CONTEXT),
+    ).rejects.toThrow(NotFoundError);
+    await expect(service.deleteForUser(USER, 'other', CONTEXT)).rejects.toThrow('not found');
+  });
+
+  it('does not record an audit entry for a write that touched nothing', async () => {
+    const { alerts, audit, service } = build();
+    alerts.affected = 0;
+    await service.deleteForUser(USER, 'other', CONTEXT).catch(() => undefined);
+    expect(audit.entries).toEqual([]);
   });
 });

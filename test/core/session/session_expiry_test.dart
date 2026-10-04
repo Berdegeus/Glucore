@@ -87,7 +87,7 @@ void main() {
       }));
 
       await expectLater(
-        dio.put<void>('/auth/profile'),
+        dio.put<void>('/me'),
         throwsA(isA<DioException>()),
       );
 

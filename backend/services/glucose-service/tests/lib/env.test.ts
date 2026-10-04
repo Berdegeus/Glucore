@@ -72,4 +72,26 @@ describe('loadEnv', () => {
     vi.stubEnv('CORS_ORIGIN', '');
     expect(loadEnv().corsOrigins).toEqual([]);
   });
+
+  it('requires CORS_ORIGIN in production', () => {
+    vi.stubEnv('JWT_SECRET', 'a-secret');
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('CORS_ORIGIN', '');
+    expect(() => loadEnv()).toThrow(MissingEnvError);
+    expect(() => loadEnv()).toThrow(/CORS_ORIGIN is not set/);
+  });
+
+  it('accepts a configured CORS_ORIGIN in production', () => {
+    vi.stubEnv('JWT_SECRET', 'a-secret');
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('CORS_ORIGIN', 'https://app.example.com');
+    expect(loadEnv().corsOrigins).toEqual(['https://app.example.com']);
+  });
+
+  it('stays permissive outside production', () => {
+    vi.stubEnv('JWT_SECRET', 'a-secret');
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('CORS_ORIGIN', '');
+    expect(loadEnv().corsOrigins).toEqual([]);
+  });
 });

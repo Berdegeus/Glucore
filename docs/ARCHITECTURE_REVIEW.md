@@ -2,7 +2,7 @@
 
 > **Este arquivo é um relatório de problemas, separado da documentação estável.** Gerado por inspeção integral do código em 2026-07-05, branch `feat/insulin-and-carb-management`. **Atualizado em 2026-07-07** (branch `feat/multi-sensor-libre2-accuchek`) por uma segunda revisão independente: status de P1–P16 reavaliado contra o código atual e novos problemas P17–P35 adicionados. **Atualizado em 2026-07-30 (v1.1.0):** os 3 críticos P17, P18 e P19 foram corrigidos (ver CHANGELOG.md). Demais problemas seguem em diagnóstico.
 
-Sumário: **35 problemas** (P1–P35). Da revisão original, **10 resolvidos** (P1, P3, P6, P7, P8, P9, P10, P14, P15, P16), **3 parciais** (P2, P5, P11) e **3 abertos** (P4, P12, P13). P6 e P16 fecharam em 2026-08-20. A revisão de 2026-07-07 acrescentou os críticos P17, P18, P19 — **todos resolvidos na v1.1.0 (2026-07-30)**. Os demais de P20–P35 seguem abertos com **Solução proposta** (diagnóstico + desenho técnico). Seção A: revisão da conexão com sensores. Seção B: proposta de HAL Android/iOS.
+Sumário: **35 problemas** (P1–P35). Da revisão original, **15 resolvidos** (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P12, P13, P14, P15, P16), **1 parcial** (P11) e **0 abertos**. P6 e P16 fecharam em 2026-08-20. P2, P4, P5 e P12 fecharam em 2026-08-29 com as Fases 3–5; P13 fechou na mesma data **por remoção** — `MockSensorRepository` e `DebugPanel` foram revertidos em `f91adea` e o alvo do problema deixou de existir. Entre os de 2026-07-07, P28 passou a parcial: o op-log resolve a race no diário e ela sobrevive só no caminho de coleção. A revisão de 2026-07-07 acrescentou os críticos P17, P18, P19 — **todos resolvidos na v1.1.0 (2026-07-30)**. Os demais de P20–P35 seguem abertos com **Solução proposta** (status reverificado contra o código em 2026-10-04: P11 e P20 estão quase fechados, P27(b) virou código morto e P29(b) foi corrigido — ver a nota datada em cada item) (diagnóstico + desenho técnico). Seção A: revisão da conexão com sensores. Seção B: proposta de HAL Android/iOS.
 
 Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 
@@ -15,12 +15,18 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 **Descrição:** `PatientLocalDataSource` era implementado apenas por `RemotePatientDataSource` (Dio). Leituras de glicose, alertas, diário e thresholds dependiam do backend estar acessível.
 **✅ Resolvido (2026-07-07):** offline-first implementado — `LocalPatientDataSource` (sqflite, `glucore_patient.db`, flag `synced` por linha) é a fonte primária (`patient_local_datasource.dart:17`); `PatientSyncService` faz push com debounce/retry e reagenda quando a conectividade volta (`patient_sync_service.dart:18`); `PatientRepository.refreshFromRemote()` reconcilia preservando pendências (`patient_repository.dart:58-71`). Problemas residuais na sincronização: ver P27 e P28.
 
-### 🔴 P2 — Sincronização replace-all (deleteMany + createMany)
-**Local:** `backend/services/glucose-service/src/modules/carbs/carbs.repository.ts:58-59`, `insulin/insulin.repository.ts:62-63`, `alerts/alerts.repository.ts:25-26`; cliente em `patient_sync_service.dart:90-117` (POST da coleção inteira)
+### ⚪ P2 — Sincronização replace-all (deleteMany + createMany)
+**Local:** `backend/services/glucose-service/src/modules/carbs/carbs.repository.ts`, `insulin/insulin.repository.ts`, `alerts/alerts.repository.ts`; cliente em `patient_sync_service.dart:90-117` (POST da coleção inteira)
 **Descrição:** adicionar/editar/apagar 1 item apaga **todas** as linhas do paciente e recria a coleção; máximo 100 itens (excedente silenciosamente truncado).
 **Impacto:** perda de dados em concorrência (dois devices = last-writer-wins da coleção inteira); histórico >100 entradas destruído.
 
-**🟡 Parcial (2026-07-07):** o backend ganhou endpoints por item (`POST /carbs/item`, `PUT/DELETE /carbs/item/:id` — o batch está marcado deprecated em `backend/services/glucose-service/src/modules/carbs/carbs.routes.ts:18`) e o replace-all agora preserva ids enviados pelo cliente, **mas o app continua usando exclusivamente o replace-all em lote** (`patient_remote_datasource.dart:73-86`). O risco multi-device permanece integral. Agravante novo: o replace-all não é atômico — ver P27.
+**✅ Resolvido (2026-08-30).** A Solução proposta foi implementada nos quatro pontos, registrada como `AD-009` no `.specs/STATE.md`:
+1. Op-log local `pending_ops(seq, entity, entity_id, op, payload_json, created_at)`; cada escrita de diário grava a linha e enfileira a op **na mesma transação**.
+2. `PatientSyncService` drena a fila em ordem de `seq` e para na primeira falha recuperável, preservando a op e as posteriores. `upsert` é `PUT` com fallback para `POST` no 404, o que torna o reenvio idempotente; `DELETE` que responde 404 conta como sucesso. Op confirmada sai da fila.
+3. O replace-all ficou restrito a leituras de glicose e thresholds — append-only, nunca editados por item.
+4. Carbs e insulin já tinham `POST/PUT/DELETE /item`; alerts ganhou os endpoints unitários que faltavam (`POST /alerts/item`, `PUT`/`DELETE /alerts/item/:id`, `id` no DTO) na reconciliação com a reestruturação do backend em `backend/services/glucose-service/` (workspace npm, PR #31). As três listagens ganharam paginação `before`/`limit`, então o truncamento em 100 acabou. Os `POST` de coleção seguem vivos e deprecated como caminho de rollback.
+
+Residual assumido: o conflito "mesmo item editado em dois aparelhos" continua last-writer-wins **por item**, não por coleção. O ponto 4 da proposta previa desempate por `updated_at` no backend; não foi implementado e não era necessário para fechar a perda de dados.
 **Solução proposta:** migrar o app para a API por item, em cima do P4 (UUID no cliente):
 1. Trocar a flag `synced` por coluna de coleção por um **op-log local**: tabela `pending_ops(id, entity, entity_id, op ∈ {upsert, delete}, payload_json, created_at)`. Cada `addCarbEntry`/`edit*`/`delete*` grava a linha do dado **e** enfileira uma op.
 2. `PatientSyncService._pushPending` passa a drenar o op-log em ordem: `upsert` → `POST /carbs/item` ou `PUT /carbs/item/:id`; `delete` → `DELETE /carbs/item/:id`. Op confirmada (2xx) é removida da fila; falha mantém e re-tenta. Idempotência garantida pelo UUID.
@@ -31,11 +37,13 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 **Local:** `lib/features/patient/presentation/cubit/patient_cubit.dart`
 **✅ Resolvido (2026-07-07):** o backlog de history readings só atualiza o estado em memória; a persistência acontece uma única vez quando a leitura atual chega (`patient_cubit.dart:143-151`, comentário explícito), e o push remoto tem debounce de 2 s no `PatientSyncService` (`patient_sync_service.dart:53-59`).
 
-### 🟠 P4 — Identidade de entradas por timestamp
+### ⚪ P4 — Identidade de entradas por timestamp
 **Local:** `patient_cubit.dart:72-104` (`editCarbEntry`/`deleteCarbEntry`/`editInsulinEntry`/`deleteInsulinEntry` casam por `time.millisecondsSinceEpoch`); PKs locais `time_ms` (`patient_local_datasource.dart:59-74`)
 **Descrição:** carb/insulin não têm `id`; edição/remoção compara timestamps; agora o timestamp também é PRIMARY KEY no SQLite local — duas entradas no mesmo ms colidem silenciosamente (`ConflictAlgorithm.replace`), e editar o horário muda a identidade.
 **Impacto:** editar/apagar o item errado; corrupção silenciosa do diário; e agora também é a chave usada pelo `mark*Synced` do sync (ver P28).
-**Status 2026-07-07: aberto e reforçado** — o backend já expõe ids estáveis (P2 parcial), mas o app não os consome.
+**✅ Resolvido (2026-08-29).** Os cinco pontos da Solução proposta foram implementados, com um desvio: a entidade que ganhou `id` é `AppAlertItem` também, não só carb e insulina, e o banco local foi para a **v3** (a v2 já tinha sido usada pela tabela de meta). As três tabelas do diário passaram a `id TEXT PRIMARY KEY` com índice sobre a coluna de horário, e a migração v2 → v3 recria cada tabela gerando um UUID por linha existente, dentro da transação do `onUpgrade` — falha no meio deixa o banco na v2, sem perder diário. Edição e remoção casam por `id`, o `copyWith` preserva o id, os payloads remotos carregam `id`, e entrada que chega do servidor sem id válido ganha um id local em vez de ser descartada. Duas entradas no mesmo milissegundo sobrevivem e são editáveis de forma independente.
+
+**Histórico — 🔴 Aberto e reforçado (2026-07-07):** o backend já expõe ids estáveis (P2 parcial), mas o app não os consome.
 **Solução proposta:**
 1. Adicionar `final String id` a `CarbEntry`/`InsulinEntry` (`patient_models.dart`), gerado com `package:uuid` (v4) no construtor de criação; entradas vindas do backend usam o id do servidor.
 2. Migração do SQLite local para v2: `ALTER TABLE carbs ADD COLUMN id TEXT` + backfill `id = uuid()` para linhas existentes; trocar a PK: recriar tabela com `id TEXT PRIMARY KEY` e `time_ms` como coluna indexada comum (mesmo para `insulin`). `onUpgrade` aditivo, sem DROP de dados.
@@ -43,10 +51,12 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 4. Payloads remotos incluem `id` (o backend já preserva UUIDs válidos no replace-all e já opera por id nos endpoints unitários).
 5. `mark*Synced` do sync passa a marcar por `id` — elimina metade do P28 de graça.
 
-### 🟠 P5 — Nomes que mentem sobre a arquitetura
+### ⚪ P5 — Nomes que mentem sobre a arquitetura
 **Local:** `auth_local_datasource.dart` (interface `AuthLocalDataSource` ← impl `RemoteAuthDataSource`)
 
-**🟡 Parcial (2026-07-07):** `patient_local_datasource.dart` agora contém um datasource local de verdade (`LocalPatientDataSource`) e o remoto vive em `patient_remote_datasource.dart` — resolvido no lado patient. Permanece a mentira no auth: `AuthLocalDataSource` é implementada só por `RemoteAuthDataSource` (`auth_local_datasource.dart:6-21`).
+**✅ Resolvido (2026-08-29).** O rename mecânico foi feito como proposto: a interface é `AuthDataSource` em `lib/features/auth/data/datasources/auth_datasource.dart`, e o campo `localDataSource` de `AuthRepositoryImpl`, que carregava a mesma mentira, virou `dataSource`. Sem mudança de comportamento e sem asserção alterada. Se o P18 evoluir para auth offline com estado cacheado, um `LocalAuthDataSource` de verdade volta a fazer sentido e a interface passa a ter duas implementações honestas.
+
+**Histórico — 🟡 Parcial (2026-07-07):** `patient_local_datasource.dart` agora contém um datasource local de verdade (`LocalPatientDataSource`) e o remoto vive em `patient_remote_datasource.dart` — resolvido no lado patient. Permanece a mentira no auth: `AuthLocalDataSource` é implementada só por `RemoteAuthDataSource` (`auth_local_datasource.dart:6-21`).
 **Solução proposta:** rename mecânico, sem mudança de comportamento: interface `AuthLocalDataSource` → `AuthDataSource`, arquivo `auth_local_datasource.dart` → `auth_datasource.dart`; ajustar o registro em `injection_container.dart:39-41` e imports. Se o P18 introduzir um modo offline com estado de auth cacheado, aí sim criar um `LocalAuthDataSource` real (token + userId em secure storage) e a interface volta a ter duas implementações honestas.
 
 ### 🟠 P6 — CLAUDE.md desatualizado em pontos críticos
@@ -74,14 +84,23 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 
 ### 🟡 P11 — Segurança do backend: segredo default, CORS aberto, sem rate-limit
 
-**🟡 Parcial (2026-08-26):** `JWT_SECRET` é obrigatório com fail-fast no boot — `loadEnv()`/`getJwtSecret()` lançam `MissingEnvError` e o bootstrap sai 1 (`backend/services/glucose-service/src/lib/env.ts:24-30,42`); o CORS é restringível por `CORS_ORIGIN` (`backend/services/glucose-service/src/app.ts:39`, `backend/services/glucose-service/src/lib/env.ts:59-62`) — mas sem a env cai em `cors()` aberto. Rate-limit **existe** desde então (`backend/services/glucose-service/src/routes/auth.ts:47-63`): 10 req/15 min por IP em login, forgot-password e reset-password; 20/15 min em register; desligado sob `NODE_ENV=test`. Resta só o item 2 abaixo (CORS obrigatório em produção).
+> **📌 Atualização 2026-10-04 (auditoria `AUDIT_2026-09-08.md`):** quase fechado. `CORS_ORIGIN` agora é obrigatório em produção nos três serviços (`lib/env.ts`, commit `43eba9e`) e o rate limit foi movido para o gateway (`services/gateway/src/middleware/rateLimiters.ts`, commit `2358e70`). Resta só o item 3 da proposta: nenhum serviço usa `helmet()` nem `express.json({limit})`.
+
+**🟡 Parcial (2026-08-26):** `JWT_SECRET` é obrigatório com fail-fast no boot — `loadEnv()`/`getJwtSecret()` lançam `MissingEnvError` e o bootstrap sai 1 (`backend/services/glucose-service/src/lib/env.ts:24-30,42`); o CORS é restringível por `CORS_ORIGIN` (`backend/services/glucose-service/src/app.ts:39`, `backend/services/glucose-service/src/lib/env.ts:59-62`) — mas sem a env cai em `cors()` aberto. Rate-limit **existe** desde então e hoje mora no `auth-service` (`backend/services/auth-service/src/container.ts`): 10 req/15 min por IP em login, forgot-password e reset-password; 20/15 min em register. Já não é desligado por `NODE_ENV` — o teste injeta a decisão pelo container, e os limiters se mudam para o gateway na Fase 4.4. Resta só o item 2 abaixo (CORS obrigatório em produção).
 **Solução proposta:**
 1. `express-rate-limit` escopado nas rotas de auth: ex. login 10 req/15 min por IP, register 5/15 min, forgot-password 3/h; resposta 429 com `Retry-After`. Montar só em `/auth`, não global (o sync do app é legitimamente chatty).
 2. CORS: em `NODE_ENV=production`, exigir `CORS_ORIGIN` no mesmo estilo fail-fast do `env.ts` (sem env → `process.exit(1)`); manter fallback aberto apenas em dev.
-3. Complementos baratos: `helmet()` global e limite de body (`express.json({ limit: '256kb' })`) — os POSTs de coleção têm teto conhecido (288 leituras).
+3. Complementos baratos: `helmet()` global e limite de body (`express.json({ limit: '256kb' })`) — os POSTs de coleção têm teto conhecido (lote de readings: 500; era 288 até 2026-10-04).
 
-### 🟡 P12 — Código morto / caminhos nunca usados
-**Status 2026-07-07: parcialmente resolvido.**
+### ⚪ P12 — Código morto / caminhos nunca usados
+
+**✅ Resolvido (2026-08-29).** Os três resíduos foram fechados como a Solução proposta desenhava:
+- **Transmitter:** o fluxo saiu inteiro das duas pilhas — `submitTransmitter` no canal, cubit, repositório, contrato de domínio e plataforma; `SibionicsBarcode.validateTransmitterBarcode`; o campo `transmitterId` de `SibionicsSessionRecord`/`SensorSessionSnapshot` e dos mapas do canal; os estados `AWAITING_TRANSMITTER`/`TRANSMITTER_ASSIGNED`. A coluna `transmitter_id` ficou no SQLite, sem escrita e comentada, exatamente como proposto. Um teste de varredura (`test/features/sensor/dead_code_pruning_test.dart`) falha se qualquer menção voltar a `lib/`.
+- **Warmup BLE:** escolhida a segunda opção — `WarmupPayload` apagado do Kotlin. A chave `warmup` do evento continua no shape, sempre `null` nos seis emissores, e o `warmingUp` real do Libre 2 por NFC segue intacto.
+- **Prisma:** as dez tabelas sem rota foram anotadas com `/// roadmap`, sem migração destrutiva.
+- **Stubs nativos:** `saveMatchedDevice`, `getInitialWrite` e `handleNotification` (que só logavam e devolviam erro) saíram do C++ e do Kotlin; `llvm-nm` na biblioteca reconstruída lista exatamente os quatro símbolos JNI que sobraram.
+
+**Histórico — 🟡 Parcialmente resolvido (2026-07-07):**
 - ✅ `home_page.dart` removido; `LibreNFCPage` deixou de ser placeholder (fluxo NFC + biblioteca Abbott implementados).
 - ✅ Status `warmingUp` agora é emitido pelo caminho NFC do Libre 2 (`LibreNfcHandler.kt:78,95,104`).
 - Aberto: fluxo `submitTransmitter` segue com plumbing completo (channel→SQLite) e **nenhuma UI chamando** (nenhuma referência fora do cubit/platform); payload `warmup` do BLE (`WarmupPayload`, `SensorPlatformImpl.kt:7`) segue nunca emitido; tabelas Prisma aspiracionais seguem sem uso.
@@ -90,7 +109,13 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 2. **Warmup BLE:** o Libre 2 já expõe warmup via NFC; para Sibionics, ou emitir `warmup` real a partir do tempo de ativação nativo (o `SensorSessionManager` saberá o `activated_at_ms` com o P24), ou apagar `WarmupPayload` e o campo `warmup` do contrato de evento — não deixar contrato fantasma.
 3. **Prisma:** mover as tabelas aspiracionais (`GlucosePrediction`, `ClinicalReport`, `HealthProfessional`, …) para um comentário/roadmap no schema e gerar migração de drop, ou marcá-las com `/// roadmap` — o critério é que `prisma migrate` não crie superfície que nenhuma rota toca.
 
-### 🟡 P13 — Mock fura a camada de repositório
+### ⚪ P13 — Mock fura a camada de repositório
+
+**✅ Resolvido por remoção (2026-08-29).** O alvo do problema não existe mais: `MockSensorRepository` e `DebugPanel` foram revertidos em **`f91adea`**, e não há nenhum caminho de sensor falso em `lib/` hoje. Sem mock, não há dependência invertida a corrigir — o `SensorCubit` fala só com `SensorRepository`. Nada foi implementado para fechar este item; ele deixou de ter base. O item 5.1 do `ARCHITECTURE_FIX_PLAN.md` saiu do plano pelo mesmo motivo, por decisão do usuário registrada nas Assumptions da spec `arch-phases-3-5`.
+
+Reintroduzir um sensor falso volta a ser uma decisão de projeto, não um copy-paste: a `Solução proposta` abaixo continua válida como desenho **se** isso acontecer, e a Seção B prevê `MockHal` atrás da interface do HAL.
+
+**Histórico — 🟡 Aberto (2026-07-07):**
 **Local:** `sensor_cubit.dart:6` (import direto de `mock_sensor_repository.dart`), `activateMock()` (`sensor_cubit.dart:237-264`)
 **Status 2026-07-07: aberto** (inalterado). O CLAUDE.md ao menos já documenta o mock como exceção legítima de debug.
 **Solução proposta:** inverter a dependência sem cerimônia extra: criar um `SwitchableSensorRepository implements SensorRepository` registrado no DI como o `SensorRepository` (delegando para `AndroidSensorRepository` por padrão), com `enableMock()`/`disableMock()` disponíveis apenas em debug (`assert` + `kDebugMode`). Ele expõe **um único stream** que re-emite o do delegate ativo e anexa a flag `isMock` ao evento. O `SensorCubit` perde `_mockRepo`, `activateMock`, `deactivateMock` e o import do mock (`sensor_cubit.dart:6,16,237-294`); o `DebugPanel` passa a chamar o switcher via `sl<>`. `injectMockReading` vira método do próprio mock (`emitReading(value)`), acessado pelo switcher.
@@ -148,6 +173,8 @@ Severidade: 🔴 crítico · 🟠 alto · 🟡 médio · ⚪ baixo/higiene.
 4. O push pendente nunca pode cruzar contas: o `PatientSyncService` deve checar `owner_user_id == userId atual` antes de qualquer `pushNow()`.
 
 ### 🟠 P20 — Token expirado = sync silenciosamente morto para sempre (sem tratamento de 401)
+
+> **📌 Atualização 2026-10-04 (auditoria):** majoritariamente resolvido. Existe interceptor 401 (`api_client.dart`, `_isInvalidToken` = 401 + `code: TOKEN_INVALID`) → `SessionExpiryNotifier`; o sync classifica 401 como permanente (`PatientUnauthorizedException` → `_pushWithRetry` para sem retry); há testes em `test/core/session/`. **Residual:** o item 4 da proposta (indicador `syncStatus` / "espelhamento parado" em Configurações) não existe. A descrição abaixo é a original.
 **Local:** `lib/core/api/api_client.dart` (nenhum interceptor de resposta), `patient_repository.dart:67-70` (`catch (_) → null`), `patient_sync_service.dart:76-88` (retry engole tudo)
 **Descrição:** não existe tratamento de 401 em nenhuma camada. Quando o JWT expira, todo push/pull falha e é engolido como se fosse "offline"; o usuário continua vendo o app funcionar (dados locais), sem qualquer indicação de que nada mais sincroniza, e o `AuthCubit` nunca fica sabendo.
 **Impacto:** perda silenciosa e permanente de espelhamento no backend; contradiz a expectativa de "backup na nuvem".
@@ -220,6 +247,8 @@ _enqueue(sensorCubit.state);
 Cada evento só começa quando o anterior terminou (incluindo os awaits de `repository.load()`/`saveReadings`), então `previousStatus` e as listas lidas no início da invocação são sempre o resultado da invocação anterior — elimina duplicação de alertas de reconexão e persistência fora de ordem. Complementos: (a) o estado inicial entra pela mesma fila (remove o caso "processado duas vezes" por caminhos diferentes); (b) manter os `emit` síncronos no começo do handler para a UI não atrasar atrás de I/O; (c) teste com rajada de 50 `historyReading` + `readingAvailable` verificando lista final e um único `saveReadings`.
 
 ### 🟠 P27 — Contratos de sync inconsistentes: replace-all não atômico e "limpar leituras" que ressuscita
+
+> **📌 Atualização 2026-10-04 (auditoria):** (a) **segue aberto** — `deleteMany` + `createMany` sem `$transaction` em carbs, insulin e alerts. (b) **mudou de natureza:** `clearReadings` virou código morto (`patient_cubit.dart`, sem chamador desde a reversão do DebugPanel em `f91adea`); a ação é remover o método, não corrigir a semântica.
 **Local:** `backend/services/glucose-service/src/modules/carbs/carbs.repository.ts:58-59`, `alerts/alerts.repository.ts:25-26`, `insulin/insulin.repository.ts:62-63` (deleteMany + createMany **fora de transação**); `readings/readings.repository.ts` (POST é upsert-merge, sem delete); `patient_cubit.dart:106-111` (`clearReadings` salva lista vazia)
 **Descrição:** (a) As coleções carb/insulin/alert são substituídas com dois statements não transacionais — falha entre o delete e o create apaga a coleção do paciente no servidor. (b) Readings têm semântica oposta: o POST só faz upsert; o app assume replace-all (`saveReadings(const [])` para limpar), então limpar leituras nunca chega ao servidor e o próximo `refreshFromRemote` **restaura tudo** localmente. O endpoint `DELETE /readings` existe mas o app nunca o chama.
 **Impacto:** perda de coleção inteira numa falha no meio do replace; função "limpar leituras" (debug panel) inefetiva e confusa — dados voltam sozinhos.
@@ -232,6 +261,7 @@ Cada evento só começa quando o anterior terminou (incluindo os awaits de `repo
 **Local:** `patient_sync_service.dart:90-117` (`_pushPending` → load → POST → `mark*Synced`), `patient_local_datasource.dart:166-190` (`_markSyncedByKey` marca por chave, sem comparar valor)
 **Descrição:** o push carrega o snapshot, envia ao backend e marca as linhas como `synced = 1` **por chave**. Se o usuário editar uma entrada (mesma chave `time_ms`, valor novo, `synced = 0`) entre o load e o mark, a linha editada é marcada como sincronizada sem que o valor novo tenha sido enviado.
 **Impacto:** edição silenciosamente nunca espelhada no backend (até que outra escrita na mesma coleção reenfileire tudo). O comentário no código afirma a garantia oposta (`patient_local_datasource.dart:164-165`).
+**🟡 Parcial (2026-08-29):** resolvido para as três coleções do diário pelo ponto 3 abaixo — o op-log do P2 foi implementado, e uma edição durante o push é uma op nova na fila, não uma flag que alguém pode marcar por engano. `mark*Synced` também passou a casar por `id`, não por `time_ms`, o que elimina a colisão de chave. Continua aberto para leituras e thresholds, que seguem no caminho de coleção com a flag booleana. Ali a race descrita é possível em tese, mas não tem como corromper dado: leitura de glicose é append-only e o valor de um dado `timestamp_ms` não muda, então marcar a chave enviada não perde edição nenhuma. O ponto 4 (comentário mentiroso) continua valendo se o caminho de coleção voltar a receber dado editável.
 **Solução proposta:** versionar as linhas em vez de flag booleana:
 1. Trocar `synced INTEGER` por `revision INTEGER NOT NULL DEFAULT 1` + `synced_revision INTEGER NOT NULL DEFAULT 0` (migração aditiva). Todo `save*` incrementa `revision` das linhas alteradas; "pendente" = `revision > synced_revision`.
 2. O push captura `(chave, revision)` de cada linha no momento do `load()`; após o POST bem-sucedido, `UPDATE ... SET synced_revision = ? WHERE chave = ? AND revision = ?` — uma edição concorrente já incrementou `revision`, o `WHERE` não casa e a linha permanece pendente. Corrige a race sem locks.
@@ -239,6 +269,8 @@ Cada evento só começa quando o anterior terminou (incluindo os awaits de `repo
 4. Corrigir o comentário mentiroso em `patient_local_datasource.dart:164-165` junto com a mudança.
 
 ### 🟡 P29 — Fluxo de registro de sensor: spinner sem saída, promessa de conexão automática e erro duplicado
+
+> **📌 Atualização 2026-10-04 (auditoria):** (a) aberto (`_tutorialStep` manual, spinner eterno após falha). (b) **resolvido** em `bb27bcc` (scan da câmera passa a chamar `registerSensor` e `SensorCubit.registerSensor` faz `await startMonitoring()`), já incorporado a esta branch pelo merge `5067e4f`. (c) aberto (`addError` + `rethrow` duplicam o erro).
 **Local:** `sensor_link_page.dart:114-137` (step 2 = spinner incondicional), `:326-328` (tutorial: "vinculado automaticamente"), `SensorPlatformImpl.kt:79-125` + `android_sensor_repository.dart:44-56` + `sensor_cubit.dart:86-104` (erro chega por exceção **e** por evento)
 **Descrição:** (a) Ao tocar "Registrar sensor" a tela vai para o passo 2 e mostra `CircularProgressIndicator` + "Aguardando conexão Bluetooth…" — se o registro falha, o texto de erro aparece em cima, mas o spinner fica para sempre (nenhum caminho volta `_tutorialStep`). (b) O tutorial promete detecção/vinculação automática, mas registrar **não** inicia monitoramento — o usuário cai na visão de sessão ativa e precisa achar o botão "Iniciar monitoramento". (c) O registro com falha lança `PlatformException` (capturada pelo cubit → emite `error`) e o Android também emite o evento `error` pelo EventChannel; o `AndroidSensorRepository` ainda faz `addError` no mesmo stream — três caminhos para o mesmo erro, com risco de UI piscando erro duplicado.
 **Impacto:** estado visual inconsistente pós-falha; usuário não sabe que precisa de mais um passo; tratamento de erro redundante e frágil.
@@ -295,7 +327,7 @@ Cada evento só começa quando o anterior terminou (incluindo os awaits de `repo
 **Impacto:** números clínicos plausíveis porém enganosos para o paciente.
 **Solução proposta:**
 1. **GMI:** exibir somente quando o *span temporal* dos dados for suficiente — `readings.last.timestamp` a `readings.first.timestamp` ≥ 14 dias (padrão clínico), não contagem de leituras; abaixo disso, chip "GMI: dados insuficientes".
-2. **Capacidade local:** subir `PatientRepository.maxReadings` para cobrir a retenção desejada (ex.: 4 032 = 14 dias × 288/dia — trivial para SQLite) e manter o teto de 288 apenas no espelhamento remoto se o backend precisar; alternativa: `HistoryPage` consulta o `LocalPatientDataSource` com query por faixa de datas em vez de depender da lista em memória do estado.
+2. **Capacidade local** *(implementado em 2026-10-04: `maxReadings` removido; retenção por tempo de 14 dias via `readingRetention`/`retainRecentReadings`, backend sem truncar em silêncio)*: subir `PatientRepository.maxReadings` para cobrir a retenção desejada (ex.: 4 032 = 14 dias × 288/dia — trivial para SQLite) e manter o teto de 288 apenas no espelhamento remoto se o backend precisar; alternativa: `HistoryPage` consulta o `LocalPatientDataSource` com query por faixa de datas em vez de depender da lista em memória do estado.
 3. **Janelas explícitas:** todo agregado ganha rótulo de janela — TIR/média do `_StatsRow` calculados sobre as últimas 24 h (filtro por timestamp, não "tudo em memória") com label "últimas 24 h"; a `HistoryPage` mostra os dias que realmente existem ("últimos N dias com dados").
 
 **Observações menores (sem número), com solução:**

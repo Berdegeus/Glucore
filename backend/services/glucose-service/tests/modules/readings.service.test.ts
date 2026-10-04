@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BadRequestError } from '@glucore/shared';
 
-import { ReadingsService } from '../../src/modules/readings/readings.service';
-import { parseReadingBatch } from '../../src/modules/readings/readings.schema';
+import { MAX_READ_ROWS, ReadingsService } from '../../src/modules/readings/readings.service';
+import { MAX_READING_BATCH, parseReadingBatch } from '../../src/modules/readings/readings.schema';
 import {
   FakePatientRepository,
   FakeReadingRepository,
@@ -22,6 +22,19 @@ function build() {
 describe('parseReadingBatch', () => {
   it('accepts an array', () => {
     expect(parseReadingBatch({ readings: [] })).toEqual([]);
+  });
+
+  it('accepts a batch of exactly the maximum size', () => {
+    const readings = Array.from({ length: MAX_READING_BATCH }, () => ({}));
+    expect(parseReadingBatch({ readings })).toHaveLength(MAX_READING_BATCH);
+  });
+
+  it('rejects a batch over the maximum instead of truncating it', () => {
+    const readings = Array.from({ length: MAX_READING_BATCH + 1 }, () => ({}));
+    expect(() => parseReadingBatch({ readings })).toThrow(BadRequestError);
+    expect(() => parseReadingBatch({ readings })).toThrow(
+      `readings batch exceeds ${MAX_READING_BATCH} entries`,
+    );
   });
 
   it.each([[{ readings: 'nope' }], [{}], [undefined], [{ readings: null }]])(
@@ -50,22 +63,22 @@ describe('ReadingsService', () => {
     ]);
   });
 
-  it('asks for one day of samples at the sensor cadence', async () => {
+  it('returns more than a day of samples, up to the safety bound', async () => {
     const { readings, service } = build();
-    readings.rows = Array.from({ length: 400 }, () => readingRow(USER));
-    expect(await service.listForUser(USER)).toHaveLength(288);
+    readings.rows = Array.from({ length: MAX_READ_ROWS + 10 }, () => readingRow(USER));
+    expect(await service.listForUser(USER)).toHaveLength(MAX_READ_ROWS);
   });
 
-  it('truncates a sync to the same bound', async () => {
+  it('writes a whole batch without dropping any entry', async () => {
     const { readings, service } = build();
-    const batch = Array.from({ length: 400 }, (_unused, index) => ({
+    const batch = Array.from({ length: MAX_READING_BATCH }, (_unused, index) => ({
       value: 100,
       timestampMs: index,
       trend: 'stable',
       rate: 0,
     }));
     await service.syncForUser(USER, batch);
-    expect(readings.lastUpsert).toHaveLength(288);
+    expect(readings.lastUpsert).toHaveLength(MAX_READING_BATCH);
   });
 
   it('creates the patient row before writing', async () => {

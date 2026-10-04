@@ -1,0 +1,13 @@
+# HTTPS automático (Let's Encrypt) para o host definido em API_HOST.
+{$API_HOST} {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+	request_body {
+		max_size 1MB
+	}
+	reverse_proxy gateway:3000
+}

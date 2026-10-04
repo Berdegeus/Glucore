@@ -3,6 +3,7 @@ import type { AlertEvent } from '@prisma/client';
 
 /** An alert as the app reads it. */
 export interface AlertDto {
+  id: string;
   type: string;
   timestampMs: number;
 }
@@ -60,5 +61,9 @@ export function toAppAlertType(type: AlertType): string {
 }
 
 export function toAlertDto(row: AlertEvent): AlertDto {
-  return { type: toAppAlertType(row.alertType), timestampMs: row.triggeredAt.getTime() };
+  return {
+    id: row.id,
+    type: toAppAlertType(row.alertType),
+    timestampMs: row.triggeredAt.getTime(),
+  };
 }

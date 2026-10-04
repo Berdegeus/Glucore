@@ -2,21 +2,52 @@
 
 API REST do app Glucore: autenticação JWT e CRUD dos dados do paciente (leituras de glicose, carboidratos, insulina, alertas e limiares). Node + Express + Prisma sobre PostgreSQL.
 
+> **Estado atual:** três serviços — `gateway` (:3000, único endereço público, prefixo `/api/v1`),
+> `auth-service` (:3002) e `glucose-service` (:3001) — e dois bancos. Service Discovery por
+> `ServiceRegistry` (env ou Consul) e `docker compose up --build` sobem tudo. O app Flutter fala só com o gateway
+> (`<API_URL>/api/v1`): ver "Rotas do gateway".
+
 O app Flutter é offline-first: escreve local primeiro e empurra para cá em background (`PatientSyncService`). Esta API é o destino desse push e a fonte de reconciliação, não o caminho crítico da UI.
 
 ## Arquitetura
 
-O backend é um **monorepo npm workspaces**. Hoje há um serviço; o alvo são três
-(`gateway`, `auth-service`, `glucose-service`), e o layout já é o de destino.
+O backend é um **monorepo npm workspaces** com três serviços.
 
 ```
 backend/
   package.json                 # workspaces: packages/*, services/*
   tsconfig.base.json           # composite: true — project references, não `paths`
   vitest.config.ts             # opções de RAIZ (projects, coverage, paralelismo)
-  packages/shared/src/         # código sem dono de banco: errors/, http/, util/, audit/
-  services/glucose-service/    # a API atual
+  packages/shared/src/         # sem dono de banco: errors/, http/, util/, audit/, auth/
+  services/gateway/            # :3000, sem banco — entrada única, /api/v1
+  services/auth-service/       # :3002, banco glucore_auth — identidade
+  services/glucose-service/    # :3001, banco glucore_dev — dado clínico
 ```
+
+### A fronteira: identidade, não domínio clínico
+
+`User`, `AuthCredential`, `PasswordResetToken` e `AuthSession` vivem no `auth-service`. Todo o resto
+— `Patient`, sensores, leituras, carboidratos, insulina, alertas, relatórios — fica no
+`glucose-service`.
+
+Das 20 FKs originais, **17 permanecem**: a cadeia sensor → binding → paciente → leitura continua
+íntegra dentro do banco clínico e ainda cascateia. As três cortadas apontavam para `User`, e hoje
+`Patient.userId`, `HealthProfessional.userId` e `Administrator.userId` são UUIDs soltos. O que
+atravessa entre os serviços é o `userId` dentro do JWT, e nada mais.
+
+**O que se perdeu:** o `ON DELETE CASCADE` de `User → Patient`. O banco já não previne paciente
+órfão, o que torna `DELETE /api/v1/account` uma operação cross-service obrigatória — o gateway a orquestra (ver "Rotas do gateway").
+
+### Dois clients Prisma
+
+Cada serviço gera o seu. O do `auth-service` sai em `services/auth-service/generated/prisma`, e não
+no `node_modules/.prisma/client` da raiz: aquele diretório é único no workspace e os dois serviços
+rodam `prisma generate` no install, então o último venceria e o outro compilaria contra um schema
+que não é o dele.
+
+Consequência que morde em silêncio: **em `auth-service`, importar `Prisma` de `'@prisma/client'`
+está errado**. São classes diferentes, todo `instanceof` seria falso, e todo `P2002` viraria 500.
+Importe de `src/lib/prisma.ts` — o único arquivo que conhece o caminho gerado.
 
 `packages/shared` **não depende de `@prisma/client`**: o contrato de erro é uma cadeia de
 classifiers (`createErrorHandler`), e o link que conhece Prisma vive no serviço. É o que permitirá
@@ -34,13 +65,18 @@ src/modules/<nome>/
   <nome>.mapper.ts       linha Prisma <-> DTO
 ```
 
-Módulos: `readings`, `carbs`, `insulin`, `alerts`, `settings`, `patient`. As dependências são
-injetadas por construtor a partir de `src/container.ts`, escrito à mão — nesse tamanho o wiring é
-três linhas por módulo e continua tipado, enquanto um container com decorators custaria um passo de
-build de metadados e esconderia o grafo.
+Módulos do `glucose-service`: `readings`, `carbs`, `insulin`, `alerts`, `settings`, `patient`.
+Do `auth-service`: `accounts`, `sessions`, `password` — divididos por **o que cada um escreve**, e
+não por forma de URL, e é por isso que `/register` e `/login` acabam em módulos diferentes apesar de
+vizinhos no path.
 
-`src/routes/auth.ts` é a única rota ainda não convertida: ela escreve `User`, `Patient` e
-`AuthCredential` numa transação só, e parti-la pertence à extração do `auth-service`.
+As dependências são injetadas por construtor a partir do `src/container.ts` de cada serviço,
+escrito à mão — nesse tamanho o wiring é três linhas por módulo e continua tipado, enquanto um
+container com decorators custaria um passo de build de metadados e esconderia o grafo.
+
+O container do `auth-service` é também onde as duas **Strategies** são escolhidas:
+`BcryptPasswordHasher` (o custo é argumento de construtor, não uma pergunta sobre `NODE_ENV`) e o
+`Mailer` (`SmtpMailer` ou `ConsoleMailer`, decidido por configuração e não por `catch`).
 
 `buildApp(options)` monta o Express **sem** chamar `listen`, e aceita um `container` opcional — é o
 que permite `request(buildApp())` no supertest e repositórios em memória nos testes de unidade.
@@ -49,18 +85,27 @@ que permite `request(buildApp())` no supertest e repositórios em memória nos t
 
 ```bash
 cd backend
-npm install
-cp services/glucose-service/.env.example services/glucose-service/.env   # DATABASE_URL e JWT_SECRET
-npm run migrate:dev           # cria/atualiza o schema e gera o client
-npm run dev                   # sobe em http://localhost:3001
+npm install                   # instala o workspace e gera os dois clients Prisma
+
+createdb glucore_dev && createdb glucore_auth_dev
+cp services/glucose-service/.env.example services/glucose-service/.env
+cp services/auth-service/.env.example     services/auth-service/.env
+cp services/gateway/.env.example         services/gateway/.env
+# os três .env precisam do MESMO JWT_SECRET (o auth assina, gateway e glucose verificam) e do
+# MESMO INTERNAL_JWT_SECRET. Segredos diferentes fazem todo request autenticado responder 401.
+
+npm run migrate:dev           # migra os dois serviços
+npm run dev:glucose           # http://localhost:3001
+npm run dev:auth              # http://localhost:3002 (outro terminal)
+npm run dev:gateway           # http://localhost:3000 (outro terminal) — o endereço que o cliente usa
 ```
 
 Outros comandos, todos a partir de `backend/`:
 
 | Comando | O que faz |
 |---|---|
-| `npm run build` | `tsc -b` dos projetos **e** typecheck de `tests/` |
-| `npm test` | Vitest, 312 testes. A integração exige Postgres — ver abaixo |
+| `npm run build` | `tsc -b` dos 3 projetos **e** typecheck dos dois `tests/` |
+| `npm test` | Vitest, 483 testes nos três serviços. **Sempre da raiz** — ver abaixo |
 | `npm run test:coverage` | Idem com cobertura v8; os thresholds reprovam numa queda |
 | `npm run migrate:deploy` | Aplica migrations num ambiente já provisionado |
 
@@ -69,29 +114,44 @@ ajuda e sai 0**. E `--noEmit` é incompatível com `composite: true`, que as pro
 exigem. `npm run build` é a checagem de tipos.
 
 Os testes de integração rodam contra um Postgres real, não contra um mock — é a única forma de
-verificar as constraints e o SQL. A URL sai de `services/glucose-service/.env.test` (copiar de
-`.env.test.example`); esse arquivo é por máquina e não é versionado.
+verificar as constraints e o SQL. **Um banco por serviço, no teste também:** `glucore_test` e
+`glucore_auth_test`, cada URL vindo do `.env.test` do respectivo serviço (copiar do
+`.env.test.example`; por máquina, não versionado). Apontar os dois para o mesmo banco deixaria um
+fixture de um serviço mascarar uma tabela faltando no outro — exatamente o acoplamento que o split
+existe para remover.
 
-O app conecta com `--dart-define=API_URL=http://<ip-da-máquina>:3001`. Sem esse define, o padrão é `http://localhost:3001` (`lib/core/api/api_client.dart`) — que só funciona em emulador, não em device físico.
+**Rodar `npm test` sempre da raiz de `backend/`.** De dentro de um serviço, o Vitest lê só o config
+daquele projeto e perde `fileParallelism: false` / `maxWorkers: 1`, que são opções de raiz. Aí dois
+arquivos dão `TRUNCATE` concorrente no mesmo banco e a suíte falha de forma aleatória, num ponto que
+não tem nada a ver com a causa.
+
+Subir tudo de uma vez: `docker compose up --build` em `backend/` (Postgres, Consul, os três serviços; só o
+gateway publica porta, `3000:3000`). Em dev sem Docker: `npm run dev:auth`, `dev:glucose` e `dev:gateway`.
+
+O app lê `--dart-define=API_URL=http://<ip>:3000` (padrão `http://localhost:3000`): o host do gateway, **sem**
+`/api/v1`, que o `ApiClient` acrescenta (`lib/core/api/api_client.dart`). Emulador Android: `http://10.0.2.2:3000`.
 
 ## Variáveis de ambiente
 
 | Variável | Obrigatória | Efeito |
 |---|---|---|
-| `JWT_SECRET` | **sim** | Segredo de assinatura do JWT. Ausente ou vazio, `loadEnv()` lança `MissingEnvError` e o bootstrap sai com código 1 — o processo **não sobe** (`services/glucose-service/src/lib/env.ts`, `src/index.ts`). Não existe fallback de desenvolvimento. O `throw` é deliberado no lugar de `process.exit`: um `exit` alcançável por import derruba o worker do runner de teste sem falha reportada e sem saída. |
+| `JWT_SECRET` | **sim** | Segredo de assinatura do JWT. Ausente ou vazio, `loadEnv()` lança `MissingEnvError` e o bootstrap sai com código 1 — o processo **não sobe** (`src/lib/env.ts` e `src/index.ts` de cada serviço). Não existe fallback de desenvolvimento. O `throw` é deliberado no lugar de `process.exit`: um `exit` alcançável por import derruba o worker do runner de teste sem falha reportada e sem saída. |
 | `DATABASE_URL` | **sim** | String de conexão PostgreSQL usada pelo Prisma (`services/glucose-service/prisma/schema.prisma`). |
-| `PORT` | não | Porta HTTP. Padrão `3001`. |
-| `CORS_ORIGIN` | não | Lista de origens separadas por vírgula. Definida, restringe o CORS a elas; ausente, o CORS fica permissivo (conveniente em desenvolvimento, **defina em produção**). |
+| `PORT` | não | Porta HTTP. Padrões: gateway `3000`, glucose `3001`, auth `3002`. |
+| `CORS_ORIGIN` | em produção | Lista de origens separadas por vírgula. Definida, restringe o CORS a elas; ausente, fica permissivo em desenvolvimento, mas **em `NODE_ENV=production` o serviço não sobe sem ela**. |
+| `INTERNAL_JWT_SECRET` | **sim** (gateway, auth, glucose) | Segredo do token interno de serviço→serviço (rotas `/internal/*`). Sem ele o processo não sobe. |
+| `AUTH_SERVICE_URL` / `GLUCOSE_SERVICE_URL` | não (gateway) | Destinos usados quando `SERVICE_DISCOVERY=env`. Padrões `http://localhost:3002` / `:3001`. |
+| `SERVICE_DISCOVERY` / `CONSUL_HTTP_ADDR` | não | `env` (padrão) ou `consul`; endereço do Consul (padrão `http://localhost:8500`). |
 | `NODE_ENV` | não | Fora de `production`, o handler de erro imprime o stack trace no log. |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | não | Envio do e-mail de recuperação de senha. Sem configuração, o token é impresso no console e a resposta ao cliente não muda. |
 
 ## Convenções
 
 - **Autenticação**: `Authorization: Bearer <token>`. O token sai de `POST /auth/register` e `POST /auth/login` e vale 30 dias.
-- **Autorização**: as rotas de dados do paciente exigem papel `PATIENT`, lido do banco a cada requisição (não do JWT), então um rebaixamento vale na hora.
+- **Autorização**: as rotas de dados do paciente exigem papel `PATIENT`, lido da claim `role` do JWT (não do banco). Token sem `role` é rejeitado. Papéis privilegiados terão TTL curto com `POST /auth/refresh` e revogação via `AuthSession.isRevoked`; o do paciente vale 30 dias.
 - **Erros**: toda falha de autenticação e de banco responde `{ "error": "...", "code": "..." }`. O app decide pelo `code`, nunca pelo status isolado — `401` significa coisas diferentes em "token inválido" e em "senha atual errada".
 - **Tempo**: todo timestamp de entrada e saída é epoch em milissegundos (`timestampMs`, `timeMs`).
-- **Senha forte**: mínimo 8 caracteres com maiúscula, minúscula, dígito e caractere não alfanumérico (`services/glucose-service/src/lib/passwordPolicy.ts`). Vale em cadastro, redefinição e troca no perfil; **não** vale no login.
+- **Senha forte**: mínimo 8 caracteres com maiúscula, minúscula, dígito e caractere não alfanumérico (`services/auth-service/src/lib/passwordPolicy.ts`). Vale em cadastro, redefinição e troca no perfil; **não** vale no login.
 
 ### Códigos de erro
 
@@ -110,20 +170,47 @@ O app conecta com `--dart-define=API_URL=http://<ip-da-máquina>:3001`. Sem esse
 
 ### Limite de taxa
 
+Vive no **gateway** (`services/gateway/src/middleware/rateLimiters.ts`), não nos serviços: atrás do
+gateway o `req.ip` dos serviços é o do próprio gateway, e um limiter ali contaria todo mundo como um
+único cliente. Desligado sob `NODE_ENV=test`.
+
 | Rotas | Limite |
 |---|---|
-| `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/reset-password` | 10 requisições / 15 min por IP |
-| `POST /auth/register` | 20 requisições / 15 min por IP |
+| `POST /api/v1/auth/login`, `/forgot-password`, `/reset-password` | 10 requisições / 15 min por IP |
+| `POST /api/v1/auth/register` | 20 requisições / 15 min por IP |
 
 Excedido, a resposta é `429 Too Many Requests` com os headers padrão `RateLimit-*`.
 
+> **Restrição de deploy:** o `auth-service` **nunca** deve ser publicado diretamente — sem o gateway,
+> `POST /auth/login` fica sem limite. No compose só o gateway tem porta publicada.
+
 ---
 
-## `/auth`
+## Rotas do gateway — **gateway, porta 3000, prefixo `/api/v1`**
+
+Único endereço que o cliente deve usar. Código: `services/gateway/src/app.ts`.
+
+| Rota pública | Destino | Observação |
+|---|---|---|
+| `POST /api/v1/auth/register` | **saga** gateway | Cria a conta no auth-service e o `Patient` (com `birthDate`, `diabetesType`, `weightKg`, `targetRange`) no glucose-service; se a segunda perna falha, compensa apagando a conta. Falha da própria compensação é logada (`saga.compensation_failed`), não fechada. |
+| `/api/v1/auth/*` (login, status, profile, forgot/reset-password, refresh) | proxy → auth-service `/auth/*` | O caminho relativo é o mesmo da seção `/auth` abaixo. `profile` responde só o bloco de conta; para conta+paciente use `/me`. |
+| `GET/PUT /api/v1/me` | **composição** | Conta (obrigatória) + paciente (opcional: se falhar, devolve os defaults 80/180). |
+| `DELETE /api/v1/account` | **orquestração** | Apaga paciente e conta, as duas pernas. |
+| `/api/v1/{readings,carbs,insulin,alerts,settings,dashboard}` | proxy autenticado → glucose-service | JWT verificado no gateway; o caminho depois do prefixo é o das seções abaixo. |
+
+Os serviços também expõem `/internal/accounts` (auth) e `/internal/patients` (glucose), protegidos pelo
+token interno e usados só pelo gateway. As seções a seguir descrevem as rotas **nos serviços**; via
+gateway, acrescente `/api/v1`.
+
+## `/auth` — **auth-service, porta 3002**
+
+> **Registro e perfil via gateway.** Chamado direto, `POST /auth/register` grava só a conta e
+> `GET/PUT /auth/profile` respondem só o bloco de conta. A fatia de paciente é recuperada pela saga
+> `POST /api/v1/auth/register` e por `GET/PUT /api/v1/me` (ver "Rotas do gateway").
 
 ### `POST /auth/register` — cria conta
 
-Sem autenticação. Obrigatórios: `email` válido, `password` forte, `fullName` com 3+ caracteres. Opcionais: `phone`, `birthDate` (`YYYY-MM-DD` ou `DD/MM/YYYY`), `diabetesType`, `weightKg` (> 0), `targetRangeMin`/`targetRangeMax` (padrão 80/180, min < max).
+Sem autenticação. Obrigatórios: `email` válido, `password` forte, `fullName` com 3+ caracteres. Opcionais: `phone`, `birthDate` (`YYYY-MM-DD` ou `DD/MM/YYYY`), `diabetesType`, `weightKg` (> 0), `targetRangeMin`/`targetRangeMax` (padrão 80/180, min < max) — **os quatro últimos só são persistidos pela saga do gateway** (`POST /api/v1/auth/register`); direto no auth-service são aceitos e descartados.
 
 ```json
 {
@@ -248,7 +335,7 @@ Erros: `400 Invalid input`, `400 WEAK_PASSWORD`, `400 Invalid or expired token` 
 
 ---
 
-## `/readings`
+## `/readings` — **glucose-service, porta 3001**
 
 Bearer + papel `PATIENT` em todas as rotas.
 
@@ -287,12 +374,22 @@ Corpo com no máximo 288 itens; itens além disso são descartados. A chave é `
 
 Bearer + papel `PATIENT`.
 
-### `GET /carbs` — últimas 100 entradas
+### `GET /carbs` — página de entradas, mais recentes primeiro
+
+Aceita `before` e `limit` (ver **Paginação**). Sem parâmetros, devolve as 100 mais recentes.
 
 ```json
 [
   { "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "grams": 45, "description": "almoço", "timeMs": 1751800000000 }
 ]
+```
+
+Percorrendo o histórico inteiro, uma página por vez:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$API/carbs?limit=200"
+# a próxima página começa no timeMs da última entrada devolvida
+curl -H "Authorization: Bearer $TOKEN" "$API/carbs?limit=200&before=1751800000000"
 ```
 
 ### `POST /carbs/item` — cria uma entrada
@@ -339,7 +436,9 @@ Apaga todas as entradas do paciente e recria a lista enviada (máximo 100). Mant
 
 Bearer + papel `PATIENT`. Mesma estrutura de `/carbs`, com `units`, `type` e `dayOfWeek`.
 
-### `GET /insulin` — últimas 100 entradas
+### `GET /insulin` — página de entradas, mais recentes primeiro
+
+Aceita `before` e `limit` (ver **Paginação**). Sem parâmetros, devolve as 100 mais recentes.
 
 ```json
 [
@@ -387,22 +486,50 @@ Erros `400`: `units must be a number`, `type must be a non-empty string`, `timeM
 
 Bearer + papel `PATIENT`.
 
-### `GET /alerts` — últimos 100 alertas
+### `GET /alerts` — página de alertas, mais recentes primeiro
 
-O tipo é traduzido para o vocabulário do app (`glucoseLow`, `glucoseHigh`, `sensorReconnected`, `syncFailure`):
+Aceita `before` e `limit` como `/carbs` e `/insulin` (ver **Paginação**). Sem parâmetros, devolve os 100 mais recentes. O tipo é traduzido para o vocabulário do app (`glucoseLow`, `glucoseHigh`, `sensorReconnected`, `syncFailure`):
 
 ```json
 [
-  { "type": "glucoseLow", "timestampMs": 1751800000000 }
+  { "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f", "type": "glucoseLow", "timestampMs": 1751800000000 }
 ]
 ```
 
-### `POST /alerts` — substituição em lote
+### `POST /alerts/item` — cria um alerta
 
-Apaga os alertas do paciente e grava a lista enviada (máximo 100). Aceita tanto o vocabulário do app quanto os nomes do enum do banco (`HYPO_RISK`, `HYPER_RISK`, `SENSOR_RECONNECTED`, `SYNC_FAILURE`, `FAST_DROP`, `FAST_RISE`); tipo desconhecido vira `SYNC_FAILURE`.
+`id` é opcional e, quando enviado, precisa ser UUID.
 
 ```json
-{ "alerts": [ { "type": "glucoseHigh", "timestampMs": 1751800000000 } ] }
+{ "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f", "type": "glucoseHigh", "timestampMs": 1751800000000 }
+```
+
+`201`:
+
+```json
+{ "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f" }
+```
+
+Erros: `400 type must be a non-empty string`, `400 timestampMs must be a number (epoch ms)`, `400 id must be a UUID`. Um `type` fora do vocabulário conhecido **não** é rejeitado: vira `SYNC_FAILURE`, como já fazia o endpoint em lote.
+
+### `PUT /alerts/item/:id` — atualiza um alerta
+
+```json
+{ "type": "glucoseLow", "timestampMs": 1751803600000 }
+```
+
+`204` sem corpo. Erros: `400 id must be a UUID`, `400` de campo, `404 not found` (inclusive quando o alerta é de outro paciente).
+
+### `DELETE /alerts/item/:id` — remove um alerta
+
+`204` sem corpo. Erros: `400 id must be a UUID`, `404 not found`.
+
+### `POST /alerts` — substituição em lote (**deprecated**)
+
+Apaga os alertas do paciente e grava a lista enviada (máximo 100). Mantido só para compatibilidade com o app antigo; use as rotas `/item`. Preserva o `id` enviado pelo cliente. Aceita tanto o vocabulário do app quanto os nomes do enum do banco (`HYPO_RISK`, `HYPER_RISK`, `SENSOR_RECONNECTED`, `SYNC_FAILURE`, `FAST_DROP`, `FAST_RISE`); tipo desconhecido vira `SYNC_FAILURE`.
+
+```json
+{ "alerts": [ { "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f", "type": "glucoseHigh", "timestampMs": 1751800000000 } ] }
 ```
 
 `204` sem corpo. Erro: `400 alerts must be array`.
@@ -431,14 +558,98 @@ Sem configuração salva, responde o padrão 80/180:
 
 ---
 
+## `/dashboard` — **glucose-service, porta 3001**
+
+Bearer + papel `PATIENT`. Só leitura; agrega os dados do próprio paciente.
+
+### `GET /dashboard/summary` — métricas do período
+
+| Query | Padrão | Regra |
+|---|---|---|
+| `from`, `to` | últimos 14 dias até hoje (UTC) | `YYYY-MM-DD`, inclusivos; `from <= to`; intervalo máximo de 90 dias |
+| `bucket` | `day` | só `day` está implementado |
+
+Resposta (`DashboardSummaryDto`): `totals` (leituras, carboidratos, insulina, alertas),
+`timeInRangePercent`, `gmiPercent`, `coefficientOfVariationPercent`, `byDay[]` (média, mín, máx, tempo
+no alvo e média móvel de 7 dias por dia), `insulinByType[]`, `alertsByType[]` e `excursions[]`
+(episódios `HYPO`/`HYPER` com início, fim e duração). Faixa inválida responde `400` com
+`code: "INVALID_DASHBOARD_RANGE"`. As métricas vêm da stored procedure `glucose_metrics()` e de
+`groupBy`/window functions (`modules/dashboard/dashboard.repository.ts`); a migration
+`20260831232506_dashboard_metrics_and_constraints` também cria índices parciais e CHECK constraints
+(inclusive `lowThreshold < highThreshold`, também validado em `PUT /settings/alerts`). Ainda **não há
+cliente**: nem o app nem um painel web consomem esta rota.
+
+---
+
 ## Auditoria
 
 Operações relevantes (login, registro, recuperação e troca de senha, alteração de perfil, escrita e remoção de dados clínicos) gravam uma linha em `AuditLog` com usuário, entidade, ação, id da entidade, IP e user agent. A gravação é best-effort: falha nela é logada e **não** aborta a operação de negócio — perder a trilha é menos grave que perder um registro de insulina do paciente.
 
 A trilha nunca guarda senha, hash, token de redefinição nem valores de campo; em alteração de perfil registra apenas os **nomes** dos campos alterados.
 
+**Uma tabela por serviço.** `glucore_auth.AuditLog` guarda `REGISTER`, `LOGIN`, `FORGOT_PASSWORD`,
+`RESET_PASSWORD` e `UPDATE_PROFILE`, e **mantém** a FK `userId → User.id ON DELETE SET NULL` — as
+duas tabelas estão no mesmo banco, e `SetNull` em vez de `Cascade` porque apagar uma conta não pode
+apagar o registro do que ela fez. `glucore_dev.AuditLog` guarda as escritas clínicas com `userId`
+solto: não existe `User` naquele banco para referenciar.
+
+## Paginação
+
+`GET /carbs`, `GET /insulin` e `GET /alerts` compartilham o mesmo contrato de query string.
+
+| Parâmetro | Tipo | Default | Regra |
+| --------- | ---- | ------- | ----- |
+| `limit` | inteiro | `100` | entre 1 e 500 |
+| `before` | inteiro (epoch ms) | ausente | limite superior **exclusivo**; ausente significa "a partir da mais recente" |
+
+As entradas voltam em ordem decrescente de horário. Uma chamada sem nenhum dos dois preserva o comportamento anterior — as 100 mais recentes —, então o app em campo continua funcionando enquanto o cliente novo é distribuído.
+
+Para virar a página, use o horário da última entrada recebida como `before` da chamada seguinte. Como `before` é exclusivo, nenhuma entrada aparece em duas páginas; um `before` anterior à entrada mais antiga devolve `200` com lista vazia.
+
+Fora da faixa, a resposta é `400` com `error` e `code`:
+
+```json
+{ "error": "limit must be an integer between 1 and 500", "code": "INVALID_PAGINATION" }
+```
+
+`before` não inteiro ou negativo responde `{ "error": "before must be an epoch in milliseconds", "code": "INVALID_PAGINATION" }`.
+
+## Índices da paginação
+
+As três listagens do diário rodam a mesma consulta: igualdade em `patientId`, faixa em
+`< before` sobre a coluna de horário, ordenação decrescente por essa mesma coluna e `take`.
+Um índice composto `(patientId, <coluna de horário>)` atende as três partes de uma vez —
+filtra pelo prefixo, corta a faixa e já entrega as linhas ordenadas, sem sort adicional.
+
+| Consulta | Índice que a atende | Onde é declarado |
+| -------- | ------------------- | ---------------- |
+| `GET /carbs` — `where { patientId, eventAt: { lt } }`, `orderBy eventAt desc` | `CarbEvent_patientId_eventAt_idx` | `schema.prisma`, `@@index([patientId, eventAt])` do `CarbEvent` |
+| `GET /insulin` — `where { patientId, eventAt: { lt } }`, `orderBy eventAt desc` | `InsulinEvent_patientId_eventAt_idx` | `schema.prisma`, `@@index([patientId, eventAt])` do `InsulinEvent` |
+| `GET /alerts` — `where { patientId, triggeredAt: { lt } }`, `orderBy triggeredAt desc` | `AlertEvent_patientId_triggeredAt_idx` | `schema.prisma`, `@@index([patientId, triggeredAt])` do `AlertEvent` |
+
+Os três já existiam e são criados pela migration `20260517172000_domain_model_alignment`.
+A verificação não encontrou índice faltando, então esta release não acrescenta migration de
+índice. Índice novo só entra se uma consulta nova não for coberta por um destes.
+
+## Tabelas de roadmap
+
+Dez modelos do schema não têm rota nesta release e estão anotados com `/// roadmap` em
+`prisma/schema.prisma`: `HealthProfessional`, `Administrator`, `SensorDevice`,
+`SensorBinding`, `SensorSession`, `SensorStatusEvent`, `GlucosePrediction`,
+`ClinicalReport`, `MetricsSnapshot` e `DashboardAccessGrant`. Eles ficam no schema de
+propósito — descrevem o modelo de domínio planejado. A anotação existe para que a próxima
+leitura não os confunda com tabela morta e tente removê-los.
+
 ## Migrations
 
-Toda mudança em `services/glucose-service/prisma/schema.prisma` acompanha a migration versionada em `services/glucose-service/prisma/migrations/`, no mesmo PR. Aplicar: `npm run migrate:dev` em desenvolvimento, `npm run migrate:deploy` em ambiente já provisionado.
+Cada serviço tem o seu schema e o seu histórico. Toda mudança em
+`services/<serviço>/prisma/schema.prisma` acompanha a migration versionada em
+`services/<serviço>/prisma/migrations/`, no mesmo PR. Aplicar: `npm run migrate:dev` em
+desenvolvimento (roda nos dois), `npm run migrate:deploy` em ambiente já provisionado.
+
+A migration `split_identity_out` do `glucose-service` é a que tirou a identidade dali. Vale ler o
+SQL dela antes de escrever outra destrutiva: **toda FK é removida antes de qualquer `DROP TABLE`**.
+`Patient.userId` referenciava `User.id` com `ON DELETE CASCADE`, e essa cadeia segue até
+`GlucoseReading` — derrubar `User` com a constraint de pé levaria o dado clínico junto.
 
 CHECK constraints e índices parciais não são expressáveis no schema do Prisma 5: gerar com `prisma migrate dev --create-only`, editar o SQL à mão e então aplicar.

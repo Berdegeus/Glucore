@@ -111,6 +111,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   String? _mapDioError(DioException e, AppLocalizations l10n) {
     if (e.response?.statusCode == 401) return l10n.profileCurrentPasswordIncorrect;
     if (e.response?.statusCode == 409) return l10n.registerEmailAlreadyExistsError;
+    if (e.response?.statusCode == 503) return l10n.authServiceUnavailableError;
     final isNetwork = e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.receiveTimeout ||

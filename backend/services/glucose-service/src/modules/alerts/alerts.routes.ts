@@ -11,6 +11,11 @@ export function createAlertsRouter(controller: AlertsController): Router {
   router.use(requireRole('PATIENT'));
 
   router.get('/', asyncHandler(controller.list));
+  router.post('/item', asyncHandler(controller.create));
+  router.put('/item/:id', asyncHandler(controller.update));
+  router.delete('/item/:id', asyncHandler(controller.remove));
+
+  // Deprecated: replace-all batch. Superseded by the /item routes above.
   router.post('/', asyncHandler(controller.replaceAll));
 
   return router;

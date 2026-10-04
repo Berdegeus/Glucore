@@ -56,6 +56,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: .specs/features/arch-phases-0-2-gaps/validation.md (tooling)
 - last seen: 2026-08-21T00:41:13Z
 
+### L-008 - Uma AC de concorrencia ('editar durante um push em andamento') so conta como coberta com um teste que dispara a operacao longa sem await e escreve no meio; ler o mecanismo e confirmar que a mutacao adjacente morre nao substitui a assercao direta.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `test/features/patient` · harmful: 0
+- features: arch-phases-3-5
+- evidence: SYNC-07 (test/features/patient)
+- last seen: 2026-08-30T01:06:00Z
+
+### L-009 - AC com duas metades ('a preferencia fica em system' E 'o app segue o SO') precisa de assercao para as duas; delegar a metade nao asserida ao framework deixa o caso de borda declarado na spec sem teste.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `test/core/theme` · harmful: 0
+- features: arch-phases-3-5
+- evidence: THEME-03 (test/core/theme)
+- last seen: 2026-08-30T01:06:00Z
+
+### L-010 - AC que fixa a granularidade do commit ('atualizar o doc no mesmo commit') e violada por um commit de documentacao no fim da iteracao; ou o doc entra junto com a mudanca de contrato, ou a AC nao deve prometer o acoplamento por commit.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `docs/reference` · harmful: 0
+- features: arch-phases-3-5
+- evidence: PLAN-04 (docs/reference)
+- last seen: 2026-08-30T01:06:00Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

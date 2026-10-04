@@ -1,7 +1,8 @@
-import type { Express } from 'express';
-import request from 'supertest';
+import { signAccessToken } from '@glucore/shared';
 
 import { prisma } from '../../src/lib/prisma';
+
+import { TEST_JWT_SECRET } from './testEnv';
 
 /**
  * Empties every application table between test cases.
@@ -25,48 +26,68 @@ export async function disconnect(): Promise<void> {
   await prisma.$disconnect();
 }
 
-export interface RegisteredUser {
+export interface SignedInPatient {
   token: string;
   userId: string;
-  email: string;
-  password: string;
 }
 
 let sequence = 0;
 
 /**
- * Registers a patient through the public API and returns its bearer token.
+ * Seeds a patient and returns a bearer token for them.
  *
- * Going through the route rather than seeding Prisma directly is on purpose:
- * these are characterization tests, so the fixture should exercise the same code
- * path a real client does — including the nested Patient/AlertThresholdConfig
- * creation that the refactor must preserve.
+ * This used to be `registerUser`, and it went through `POST /auth/register`
+ * followed by `GET /auth/status` — deliberately, so the fixture would exercise
+ * the same path a real client does, including the nested Patient and
+ * AlertThresholdConfig creation the refactor had to preserve.
+ *
+ * That reasoning expired with the split. Registration happens in auth-service
+ * now, against another database; this service has no `/auth` to call and no
+ * `User` table to write. What it does have is a userId arriving in a verified
+ * token, so the fixture mints one directly — which is exactly the shape of a
+ * real request here, and is now the honest imitation.
+ *
+ * The alert thresholds are seeded alongside the patient because registration is
+ * where they used to come from, and every settings test reads them. Their
+ * values match the defaults the mapper falls back to, so a test that never
+ * touches them sees the same numbers either way.
  */
-export async function registerUser(
-  app: Express,
-  overrides: Record<string, unknown> = {},
-): Promise<RegisteredUser> {
+export async function signedInPatient(
+  overrides: { targetRangeMin?: number; targetRangeMax?: number } = {},
+): Promise<SignedInPatient> {
   sequence += 1;
-  const email = `user${sequence}.${Date.now()}@example.com`;
-  const password = 'Senha123!';
+  const userId = deterministicUuid(sequence);
+  const targetRangeMin = overrides.targetRangeMin ?? 80;
+  const targetRangeMax = overrides.targetRangeMax ?? 180;
 
-  const response = await request(app)
-    .post('/auth/register')
-    .send({ email, password, fullName: 'Paciente Teste', ...overrides });
+  await prisma.patient.create({
+    data: {
+      userId,
+      targetRangeMin,
+      targetRangeMax,
+      alertThresholdConfig: {
+        create: { lowGlucoseMgDl: targetRangeMin, highGlucoseMgDl: targetRangeMax },
+      },
+    },
+  });
 
-  if (response.status !== 201) {
-    throw new Error(
-      `registerUser expected 201, got ${response.status}\n` +
-        `headers=${JSON.stringify(response.headers)}\n` +
-        `text=${response.text}`,
-    );
-  }
+  return {
+    userId,
+    token: signAccessToken({ sub: userId, role: 'PATIENT' }, TEST_JWT_SECRET),
+  };
+}
 
-  const status = await request(app)
-    .get('/auth/status')
-    .set('Authorization', `Bearer ${response.body.token}`);
-
-  return { token: response.body.token, userId: status.body.userId, email, password };
+/**
+ * A valid v4 UUID that varies per call.
+ *
+ * `Patient.userId` is a `uuid` column, so the id has to parse as one — and the
+ * ids no longer come from a database default, since the row this service used
+ * to follow lives elsewhere. Derived from a counter rather than random so a
+ * failing test names the same id when it is re-run.
+ */
+function deterministicUuid(n: number): string {
+  const tail = n.toString(16).padStart(12, '0');
+  return `00000000-0000-4000-8000-${tail}`;
 }
 
 export { prisma };

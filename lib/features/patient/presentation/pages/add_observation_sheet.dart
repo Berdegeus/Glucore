@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../widgets/glucore_messenger.dart';
 import '../widgets/patient_widgets.dart';
 import 'carb_entry_page.dart';
@@ -21,12 +21,12 @@ class AddObservationSheet extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Text(
+                Text(
                   'Adicionar observação',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.ink,
+                    color: context.glucoreColors.ink,
                   ),
                 ),
                 const Spacer(),
@@ -47,7 +47,7 @@ class AddObservationSheet extends StatelessWidget {
               children: [
                 _OptionTile(
                   icon: Icons.restaurant_rounded,
-                  color: AppTheme.zoneTargetBg,
+                  color: context.glucoreColors.zoneTargetBg,
                   label: 'Refeição',
                   onTap: () {
                     Navigator.of(context).pop();
@@ -61,7 +61,7 @@ class AddObservationSheet extends StatelessWidget {
                 ),
                 _OptionTile(
                   icon: Icons.vaccines_outlined,
-                  color: AppTheme.brandBlue,
+                  color: context.glucoreColors.brandBlue,
                   label: 'Insulina',
                   onTap: () {
                     Navigator.of(context).pop();
@@ -75,7 +75,7 @@ class AddObservationSheet extends StatelessWidget {
                 ),
                 _OptionTile(
                   icon: Icons.directions_run_rounded,
-                  color: AppTheme.brandAmber,
+                  color: context.glucoreColors.brandAmber,
                   label: 'Exercício',
                   onTap: () {
                     Navigator.of(context).pop();
@@ -85,7 +85,7 @@ class AddObservationSheet extends StatelessWidget {
                 ),
                 _OptionTile(
                   icon: Icons.edit_note_rounded,
-                  color: AppTheme.inkMuted,
+                  color: context.glucoreColors.inkMuted,
                   label: 'Nota livre',
                   onTap: () {
                     Navigator.of(context).pop();

@@ -2,7 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/glucore_messenger.dart';
@@ -111,7 +111,7 @@ class _LibreNFCPageState extends State<LibreNFCPage> {
               if (state.failure != null)
                 Text(
                   state.failure!.message,
-                  style: const TextStyle(color: AppTheme.zoneLowBg),
+                  style: TextStyle(color: context.glucoreColors.zoneLowBg),
                 ),
               if (state.session != null &&
                   state.session!.brand == SensorBrand.libre2) ...[
@@ -150,7 +150,7 @@ class _LibraryCard extends StatelessWidget {
               children: [
                 Icon(
                   installed ? Icons.check_circle : Icons.folder_zip_outlined,
-                  color: installed ? AppTheme.zoneTargetBg : AppTheme.brandSecondary,
+                  color: installed ? context.glucoreColors.zoneTargetBg : context.glucoreColors.brandSecondary,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -237,7 +237,7 @@ class _NfcCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.nfc_rounded,
-                    color: scanning ? AppTheme.brandPrimary : AppTheme.inkMuted,
+                    color: scanning ? context.glucoreColors.brandPrimary : context.glucoreColors.inkMuted,
                   ),
                   const SizedBox(width: 8),
                   Text(

@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -71,13 +70,67 @@ void main() {
       await dataSource.markReadingsSynced(readings);
       expect(await dataSource.pendingCollections(), isEmpty);
     });
+
+    GlucoseReadingItem reading(int ms, double value) => GlucoseReadingItem(
+          value: value,
+          timestamp: DateTime.fromMillisecondsSinceEpoch(ms),
+          trend: GlucoseTrend.stable,
+          rate: 0,
+        );
+
+    test('keeps every reading beyond the old 288 cap', () async {
+      final many = [for (var i = 0; i < 1500; i++) reading(i * 1000, 100)];
+
+      await dataSource.saveReadings(many);
+
+      expect((await dataSource.load()).readings, hasLength(1500));
+    });
+
+    test('re-saving unchanged readings keeps them synced; only new or changed '
+        'ones go back to pending', () async {
+      final first = [reading(1000, 100), reading(2000, 110), reading(3000, 120)];
+      await dataSource.saveReadings(first);
+      await dataSource.markReadingsSynced(first);
+      expect(await dataSource.pendingReadings(), isEmpty);
+
+      await dataSource.saveReadings([
+        ...first.take(2),
+        reading(3000, 125), // same timestamp, new value
+        reading(4000, 130), // new
+      ]);
+
+      final pending = await dataSource.pendingReadings();
+      expect(
+        pending.map((r) => r.timestamp.millisecondsSinceEpoch).toSet(),
+        {3000, 4000},
+      );
+    });
+
+    test('a reading missing from the saved set is deleted', () async {
+      await dataSource.saveReadings([reading(1000, 100), reading(2000, 110)]);
+
+      await dataSource.saveReadings([reading(2000, 110)]);
+
+      final left = (await dataSource.load()).readings;
+      expect(left.map((r) => r.timestamp.millisecondsSinceEpoch), [2000]);
+    });
+
+    test('pendingReadings lists only unsynced rows, newest first', () async {
+      final all = [reading(1000, 100), reading(2000, 110), reading(3000, 120)];
+      await dataSource.saveReadings(all);
+      await dataSource.markReadingsSynced([all[1]]);
+
+      final pending = await dataSource.pendingReadings();
+
+      expect(pending.map((r) => r.timestamp.millisecondsSinceEpoch), [3000, 1000]);
+    });
   });
 
   group('alerts', () {
     test('round-trip + pending flag + markSynced', () async {
       final alerts = [
-        AppAlertItem(type: AppAlertType.glucoseLow, timestamp: t0),
-        AppAlertItem(type: AppAlertType.sensorReconnected, timestamp: t0),
+        AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: t0),
+        AppAlertItem.create(type: AppAlertType.sensorReconnected, timestamp: t0),
       ];
       await dataSource.saveAlerts(alerts);
 
@@ -100,7 +153,7 @@ void main() {
   group('carbs', () {
     test('round-trip + pending flag + markSynced', () async {
       final carbs = [
-        CarbEntry(grams: 45, description: 'Almoço', time: t0),
+        CarbEntry.create(grams: 45, description: 'Almoço', time: t0),
       ];
       await dataSource.saveCarbs(carbs);
 
@@ -119,7 +172,7 @@ void main() {
   group('insulin', () {
     test('round-trip + pending flag + markSynced', () async {
       final insulin = [
-        InsulinEntry(
+        InsulinEntry.create(
           units: 4.5,
           type: InsulinType.bolus,
           time: t0,
@@ -169,11 +222,137 @@ void main() {
     });
   });
 
+  group('IDENT-04/IDENT-07: linhas do diário chaveadas por id', () {
+    test('duas entradas de carboidrato no mesmo time_ms persistem as duas',
+        () async {
+      final first = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final second =
+          CarbEntry.create(grams: 60, description: 'Jantar', time: t0);
+
+      await dataSource.saveCarbs([first, second]);
+      final snapshot = await dataSource.load();
+
+      expect(snapshot.carbs, hasLength(2));
+      expect(
+        snapshot.carbs.map((c) => c.id),
+        containsAll([first.id, second.id]),
+      );
+      expect(
+        snapshot.carbs.map((c) => c.description),
+        containsAll(['Lanche', 'Jantar']),
+      );
+    });
+
+    test('duas entradas no mesmo time_ms são atualizáveis independentemente',
+        () async {
+      final first = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final second =
+          CarbEntry.create(grams: 60, description: 'Jantar', time: t0);
+      await dataSource.saveCarbs([first, second]);
+
+      // Muda o horário e as gramas só da primeira.
+      await dataSource
+          .saveCarbs([first.copyWith(time: t1, grams: 35), second]);
+      final snapshot = await dataSource.load();
+
+      expect(snapshot.carbs, hasLength(2));
+      final edited = snapshot.carbs.firstWhere((c) => c.id == first.id);
+      final untouched = snapshot.carbs.firstWhere((c) => c.id == second.id);
+      expect(edited.time, t1);
+      expect(edited.grams, 35);
+      expect(untouched.time, t0);
+      expect(untouched.grams, 60);
+      expect(untouched.description, 'Jantar');
+    });
+
+    test('markCarbsSynced marca só a linha do id enviado', () async {
+      final first = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      final second =
+          CarbEntry.create(grams: 60, description: 'Jantar', time: t0);
+      await dataSource.saveCarbs([first, second]);
+
+      await dataSource.markCarbsSynced([first]);
+      expect(await dataSource.pendingCollections(), {PatientCollection.carbs});
+
+      await dataSource.markCarbsSynced([second]);
+      expect(await dataSource.pendingCollections(), isEmpty);
+    });
+
+    test('markCarbsSynced casa por id mesmo com o horário alterado', () async {
+      final entry = CarbEntry.create(grams: 30, description: 'Lanche', time: t0);
+      await dataSource.saveCarbs([entry]);
+
+      // Mesmo id, horário diferente do gravado: o casamento é por id.
+      await dataSource.markCarbsSynced([entry.copyWith(time: t1)]);
+
+      expect(await dataSource.pendingCollections(), isEmpty);
+    });
+
+    test('markInsulinSynced casa por id mesmo com o horário alterado',
+        () async {
+      final entry = InsulinEntry.create(
+        units: 4.5,
+        type: InsulinType.bolus,
+        time: t0,
+        dayOfWeek: kDaysOfWeek[2],
+      );
+      await dataSource.saveInsulin([entry]);
+
+      await dataSource.markInsulinSynced([entry.copyWith(time: t1)]);
+
+      expect(await dataSource.pendingCollections(), isEmpty);
+    });
+
+    test('dois alertas do mesmo tipo e horário persistem e sincronizam por id',
+        () async {
+      final first =
+          AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: t0);
+      final second =
+          AppAlertItem.create(type: AppAlertType.glucoseLow, timestamp: t0);
+      await dataSource.saveAlerts([first, second]);
+
+      final snapshot = await dataSource.load();
+      expect(snapshot.alerts, hasLength(2));
+      expect(
+        snapshot.alerts.map((a) => a.id),
+        containsAll([first.id, second.id]),
+      );
+
+      await dataSource.markAlertsSynced([first]);
+      expect(await dataSource.pendingCollections(), {PatientCollection.alerts});
+
+      await dataSource.markAlertsSynced([second]);
+      expect(await dataSource.pendingCollections(), isEmpty);
+    });
+
+    test('o id sobrevive ao round-trip das três coleções', () async {
+      final carb = CarbEntry.create(grams: 45, description: 'Almoço', time: t0);
+      final insulin = InsulinEntry.create(
+        units: 4.5,
+        type: InsulinType.bolus,
+        time: t0,
+        dayOfWeek: kDaysOfWeek[2],
+      );
+      final alert =
+          AppAlertItem.create(type: AppAlertType.syncFailure, timestamp: t0);
+
+      await dataSource.saveCarbs([carb]);
+      await dataSource.saveInsulin([insulin]);
+      await dataSource.saveAlerts([alert]);
+      final snapshot = await dataSource.load();
+
+      expect(snapshot.carbs.single.id, carb.id);
+      expect(snapshot.insulin.single.id, insulin.id);
+      expect(snapshot.alerts.single.id, alert.id);
+    });
+  });
+
   group('replaceWithServerSnapshot', () {
     test('server rows land synced=1 and local pending rows survive', () async {
-      // Entrada local ainda pendente de push.
-      final pendingCarb = CarbEntry(grams: 30, description: 'Lanche', time: t1);
-      await dataSource.saveCarbs([pendingCarb]);
+      // Entrada local ainda pendente de push: a pendência do diário é a
+      // operação em `pending_ops`, não a flag `synced` (IDENT-07).
+      final pendingCarb = CarbEntry.create(grams: 30, description: 'Lanche', time: t1);
+      await dataSource.upsertCarb(pendingCarb);
 
       final serverSnapshot = PatientSnapshot(
         readings: [
@@ -185,7 +364,7 @@ void main() {
           ),
         ],
         alerts: const [],
-        carbs: [CarbEntry(grams: 60, description: 'Jantar', time: t0)],
+        carbs: [CarbEntry.create(grams: 60, description: 'Jantar', time: t0)],
         insulin: const [],
         alertSettings:
             const AlertSettingsModel(lowThreshold: 75, highThreshold: 190),

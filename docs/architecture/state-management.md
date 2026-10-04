@@ -22,7 +22,7 @@ Usecases (`LoginUseCase`, `RegisterUseCase`, `LogoutUseCase`, `GetAuthStatusUseC
   - `connected` após `disconnected|error` → alerta `sensorReconnected`.
   - Persistência: `saveReadings`/`saveAlerts` **somente se `!isMock`** (dados de mock não vão nem pro sqflite); ao sair do mock, recarrega snapshot local descartando dados de mock em memória.
 - CRUD carbo/insulina: listas imutáveis reordenadas por `time` desc; **identidade da entrada = `time.millisecondsSinceEpoch`** (ver ARCHITECTURE_REVIEW §P4); cada operação regrava a coleção inteira (local e, via sync, no backend).
-- Caps: `maxReadings=288`, `maxAlerts=100`, `maxEntries=100` (em `PatientRepository`).
+- Leituras: retenção por tempo, `readingRetention` = 14 dias (a partir da leitura mais recente; `retainRecentReadings`), enviadas ao backend em lotes de `readingPushBatchSize` = 500. Caps: `maxAlerts=100`, `maxEntries=100` (em `PatientRepository`).
 
 ### Camada de dados do paciente (offline-first, §P1)
 

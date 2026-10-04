@@ -12,7 +12,6 @@ abstract class SensorRepository {
     String barcode, {
     SensorBrand brand = SensorBrand.sibionics,
   });
-  Future<void> submitTransmitter(String transmitterBarcode);
   Future<void> startMonitoring();
   Future<void> stopMonitoring();
   Stream<SensorEvent> observeSessionEvents();

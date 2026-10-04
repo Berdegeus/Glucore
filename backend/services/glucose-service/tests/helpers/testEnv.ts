@@ -21,3 +21,8 @@ export const TEST_DATABASE_URL =
   'postgresql://postgres:postgres@localhost:5432/glucore_test?schema=public';
 
 export const TEST_JWT_SECRET = 'test-secret-for-integration-tests';
+
+// Distinct from TEST_JWT_SECRET, mirroring the production split. Same literal
+// as auth-service's copy, so a gateway-signed internal token in a test can
+// verify against either service.
+export const TEST_INTERNAL_JWT_SECRET = 'test-internal-secret-for-integration-tests';

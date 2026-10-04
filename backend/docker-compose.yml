@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: glucore_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-auth-db.sql:/docker-entrypoint-initdb.d/init-auth-db.sql:ro
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  consul:
+    image: hashicorp/consul:1.20
+    command: agent -dev -client=0.0.0.0 -ui
+    ports:
+      - "8500:8500"
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    # Migration runs on boot instead of a dedicated one-shot container —
+    # fine for a single replica, the MVP simplification documented in the plan.
+    command: sh -c "npm run migrate:deploy && node dist/index.js"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/glucore_auth_dev?schema=public
+      JWT_SECRET: dev-shared-jwt-secret-change-me
+      INTERNAL_JWT_SECRET: dev-shared-internal-secret-change-me
+      PORT: "3002"
+      CONSUL_HTTP_ADDR: http://consul:8500
+      # Registered in Consul under this address — never localhost, or the
+      # health check would probe the Consul agent's own container instead.
+      SERVICE_HOST: auth-service
+    expose:
+      - "3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+
+  glucose-service:
+    build:
+      context: .
+      dockerfile: services/glucose-service/Dockerfile
+    command: sh -c "npm run migrate:deploy && node dist/index.js"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/glucore_dev?schema=public
+      JWT_SECRET: dev-shared-jwt-secret-change-me
+      INTERNAL_JWT_SECRET: dev-shared-internal-secret-change-me
+      PORT: "3001"
+      CONSUL_HTTP_ADDR: http://consul:8500
+      SERVICE_HOST: glucose-service
+    expose:
+      - "3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    environment:
+      JWT_SECRET: dev-shared-jwt-secret-change-me
+      INTERNAL_JWT_SECRET: dev-shared-internal-secret-change-me
+      PORT: "3000"
+      SERVICE_DISCOVERY: consul
+      CONSUL_HTTP_ADDR: http://consul:8500
+    ports:
+      - "3000:3000"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      glucose-service:
+        condition: service_healthy
+      consul:
+        condition: service_started
+
+volumes:
+  postgres_data:

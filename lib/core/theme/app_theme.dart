@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'glucore_colors.dart';
+
 class AppTheme {
   // Brand
   static const Color brandBlue = Color(0xFF0052FF);
@@ -56,40 +58,54 @@ class AppTheme {
         color: color,
       );
 
-  static ThemeData light() {
+  static ThemeData light() => _build(Brightness.light, GlucoreColors.light);
+
+  static ThemeData dark() => _build(Brightness.dark, GlucoreColors.dark);
+
+  /// Uma só montagem de `ThemeData` para os dois temas: o que muda entre eles
+  /// são as cores da paleta, nunca a forma dos componentes.
+  static ThemeData _build(Brightness brightness, GlucoreColors palette) {
+    final borderColor = brightness == Brightness.light
+        ? const Color(0xFFE5E7EB)
+        : const Color(0xFF343945);
+
     return ThemeData(
       useMaterial3: true,
+      brightness: brightness,
+      extensions: <ThemeExtension<dynamic>>[palette],
       colorScheme: ColorScheme.fromSeed(
-        seedColor: brandBlue,
-        primary: brandBlue,
-        surface: surfaceCanvas,
+        seedColor: palette.brandBlue,
+        brightness: brightness,
+        primary: palette.brandBlue,
+        surface: palette.surfaceCanvas,
+        onSurface: palette.ink,
       ),
-      scaffoldBackgroundColor: surfaceElevated,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: surfaceCanvas,
+      scaffoldBackgroundColor: palette.surfaceElevated,
+      appBarTheme: AppBarTheme(
+        backgroundColor: palette.surfaceCanvas,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shadowColor: Colors.transparent,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          color: ink,
+          color: palette.ink,
           fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
-        iconTheme: IconThemeData(color: ink),
+        iconTheme: IconThemeData(color: palette.ink),
       ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: brandBlue, width: 2),
+          borderSide: BorderSide(color: palette.brandBlue, width: 2),
         ),
         filled: true,
-        fillColor: surfaceCanvas,
+        fillColor: palette.surfaceCanvas,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
@@ -97,7 +113,7 @@ class AppTheme {
         elevation: 0,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        color: surfaceCanvas,
+        color: palette.surfaceCanvas,
         surfaceTintColor: Colors.transparent,
       ),
       snackBarTheme: const SnackBarThemeData(
@@ -105,8 +121,10 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: brandBlue,
-          foregroundColor: Colors.white,
+          backgroundColor: palette.brandBlue,
+          foregroundColor: brightness == Brightness.light
+              ? Colors.white
+              : const Color(0xFF0A0B0D),
           shape: const StadiumBorder(),
           minimumSize: const Size.fromHeight(48),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
@@ -114,8 +132,8 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: brandBlue),
-          foregroundColor: brandBlue,
+          side: BorderSide(color: palette.brandBlue),
+          foregroundColor: palette.brandBlue,
           shape: const StadiumBorder(),
           minimumSize: const Size.fromHeight(48),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
@@ -123,8 +141,10 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: brandBlue,
-          foregroundColor: Colors.white,
+          backgroundColor: palette.brandBlue,
+          foregroundColor: brightness == Brightness.light
+              ? Colors.white
+              : const Color(0xFF0A0B0D),
           shape: const StadiumBorder(),
           minimumSize: const Size.fromHeight(48),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),

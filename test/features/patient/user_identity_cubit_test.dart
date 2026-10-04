@@ -31,7 +31,7 @@ void main() {
     test('a failed fetch falls back to the given default name', () async {
       final service = _FakeAccountService(
         error: DioException(
-          requestOptions: RequestOptions(path: '/auth/profile'),
+          requestOptions: RequestOptions(path: '/me'),
           type: DioExceptionType.connectionError,
         ),
       );

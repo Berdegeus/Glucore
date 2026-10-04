@@ -25,13 +25,20 @@ describe('SettingsService', () => {
     expect(await service.getForUser(USER)).toEqual({ lowThreshold: 70, highThreshold: 200 });
   });
 
-  it('accepts an inverted range', async () => {
-    // Characterized behaviour, not an oversight to fix here: this route has
-    // never validated the range, and rejecting it needs an app-side change and
-    // a CHECK constraint to make it stick.
+  it('rejects an inverted range (phase 6: the dashboard cannot compute TIR against one)', async () => {
     const { settings, service } = build();
-    await service.updateForUser(USER, { lowThreshold: 200, highThreshold: 70 }, CONTEXT);
-    expect(settings.lastUpsert).toEqual({ lowGlucoseMgDl: 200, highGlucoseMgDl: 70 });
+    await expect(
+      service.updateForUser(USER, { lowThreshold: 200, highThreshold: 70 }, CONTEXT),
+    ).rejects.toThrow('lowThreshold must be less than highThreshold');
+    expect(settings.lastUpsert).toBeNull();
+  });
+
+  it('rejects an equal low/high', async () => {
+    const { settings, service } = build();
+    await expect(
+      service.updateForUser(USER, { lowThreshold: 100, highThreshold: 100 }, CONTEXT),
+    ).rejects.toThrow('lowThreshold must be less than highThreshold');
+    expect(settings.lastUpsert).toBeNull();
   });
 
   it('records an audit entry on update', async () => {

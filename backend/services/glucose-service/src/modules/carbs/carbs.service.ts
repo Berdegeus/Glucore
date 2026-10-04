@@ -1,12 +1,18 @@
-import { isUuid, NotFoundError, type AuditContext, type RecordAudit } from '@glucore/shared';
+import {
+  isUuid,
+  NotFoundError,
+  parsePageQuery,
+  type AuditContext,
+  type RecordAudit,
+} from '@glucore/shared';
 
 import type { IPatientRepository } from '../patient/patient.repository';
 import { toCarbDto, type CarbDto } from './carbs.mapper';
 import type { CarbCreate, ICarbRepository } from './carbs.repository';
 import type { CarbInput } from './carbs.schema';
 
-/** The diary shows a rolling window, not the whole history. */
-const DIARY_PAGE = 100;
+/** Cap kept from the pre-pagination batch endpoint; the /item path has none. */
+const BATCH_LIMIT = 100;
 
 export class CarbsService {
   constructor(
@@ -15,9 +21,14 @@ export class CarbsService {
     private readonly recordAudit: RecordAudit,
   ) {}
 
-  async listForUser(userId: string): Promise<CarbDto[]> {
+  /** No `before`/`limit` keeps the pre-pagination shape: the 100 most recent. */
+  async listForUser(
+    userId: string,
+    query: { before?: unknown; limit?: unknown } = {},
+  ): Promise<CarbDto[]> {
+    const page = parsePageQuery(query);
     const patientId = await this.patients.ensure(userId);
-    const rows = await this.carbs.listRecent(patientId, DIARY_PAGE);
+    const rows = await this.carbs.listPage(patientId, page);
     return rows.map(toCarbDto);
   }
 
@@ -85,7 +96,7 @@ export class CarbsService {
     const patientId = await this.patients.ensure(userId);
     await this.carbs.replaceAll(
       patientId,
-      entries.slice(0, DIARY_PAGE).map((entry) => ({
+      entries.slice(0, BATCH_LIMIT).map((entry) => ({
         ...entry,
         id: isUuid(entry.id) ? entry.id : undefined,
       })),

@@ -5,13 +5,11 @@ import '../../domain/events.dart';
 
 class SensorSessionSnapshot {
   final String sensorId;
-  final String? transmitterId;
   final bool connected;
   final SensorBrand brand;
 
   SensorSessionSnapshot({
     required this.sensorId,
-    this.transmitterId,
     required this.connected,
     this.brand = SensorBrand.sibionics,
   });
@@ -19,7 +17,6 @@ class SensorSessionSnapshot {
   factory SensorSessionSnapshot.fromMap(Map<dynamic, dynamic> map) {
     return SensorSessionSnapshot(
       sensorId: map['sensorId']?.toString() ?? '',
-      transmitterId: map['transmitterId']?.toString(),
       connected: map['connected'] == true,
       brand: SensorBrand.fromWireName(map['brand']?.toString()),
     );
@@ -27,14 +24,12 @@ class SensorSessionSnapshot {
 
   Map<String, dynamic> toMap() => {
     'sensorId': sensorId,
-    'transmitterId': transmitterId,
     'connected': connected,
     'brand': brand.wireName,
   };
 
   SensorSession toSession() => SensorSession(
         sensorId: sensorId,
-        transmitterId: transmitterId,
         brand: brand,
       );
 }
@@ -63,7 +58,6 @@ class SensorPlatformEvent {
       final s = map['session'] as Map<dynamic, dynamic>;
       session = SensorSession(
         sensorId: s['sensorId'].toString(),
-        transmitterId: s['transmitterId']?.toString(),
         brand: SensorBrand.fromWireName(
           (s['brand'] ?? map['brand'])?.toString(),
         ),
@@ -169,12 +163,6 @@ class SensorPlatform {
     });
     if (result == null) return null;
     return SensorSessionSnapshot.fromMap(result as Map<dynamic, dynamic>);
-  }
-
-  Future<void> submitTransmitter(String transmitterBarcode) async {
-    await _methodChannel.invokeMethod('submitTransmitter', {
-      'transmitterBarcode': transmitterBarcode,
-    });
   }
 
   Future<void> startMonitoring() async {

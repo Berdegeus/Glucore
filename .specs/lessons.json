@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 8,
+  "next_id": 11,
   "lessons": [
     {
       "id": "L-001",
@@ -130,6 +130,60 @@
       ],
       "created": "2026-08-21T00:41:13Z",
       "last_seen": "2026-08-21T00:41:13Z"
+    },
+    {
+      "id": "L-008",
+      "key": "ac_gap::uma ac de concorrencia editar durante um push em andamento so conta como coberta com um teste que dispara a operacao longa sem await e escreve no meio ler o mecanismo e confirmar que a mutacao adjacente morre nao substitui a assercao direta",
+      "text": "Uma AC de concorrencia ('editar durante um push em andamento') so conta como coberta com um teste que dispara a operacao longa sem await e escreve no meio; ler o mecanismo e confirmar que a mutacao adjacente morre nao substitui a assercao direta.",
+      "signal": "ac_gap",
+      "scope": "test/features/patient",
+      "status": "candidate",
+      "features": [
+        "arch-phases-3-5"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "SYNC-07 (test/features/patient)"
+      ],
+      "created": "2026-08-30T01:06:00Z",
+      "last_seen": "2026-08-30T01:06:00Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_precision_gap::ac com duas metades a preferencia fica em system e o app segue o so precisa de assercao para as duas delegar a metade nao asserida ao framework deixa o caso de borda declarado na spec sem teste",
+      "text": "AC com duas metades ('a preferencia fica em system' E 'o app segue o SO') precisa de assercao para as duas; delegar a metade nao asserida ao framework deixa o caso de borda declarado na spec sem teste.",
+      "signal": "spec_precision_gap",
+      "scope": "test/core/theme",
+      "status": "candidate",
+      "features": [
+        "arch-phases-3-5"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "THEME-03 (test/core/theme)"
+      ],
+      "created": "2026-08-30T01:06:00Z",
+      "last_seen": "2026-08-30T01:06:00Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_deviation::ac que fixa a granularidade do commit atualizar o doc no mesmo commit e violada por um commit de documentacao no fim da iteracao ou o doc entra junto com a mudanca de contrato ou a ac nao deve prometer o acoplamento por commit",
+      "text": "AC que fixa a granularidade do commit ('atualizar o doc no mesmo commit') e violada por um commit de documentacao no fim da iteracao; ou o doc entra junto com a mudanca de contrato, ou a AC nao deve prometer o acoplamento por commit.",
+      "signal": "spec_deviation",
+      "scope": "docs/reference",
+      "status": "candidate",
+      "features": [
+        "arch-phases-3-5"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "PLAN-04 (docs/reference)"
+      ],
+      "created": "2026-08-30T01:06:00Z",
+      "last_seen": "2026-08-30T01:06:00Z"
     }
   ]
 }

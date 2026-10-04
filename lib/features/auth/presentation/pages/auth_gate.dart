@@ -18,6 +18,20 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
+      buildWhen: (previous, current) {
+        // A login/register attempt goes through `loading` while the user is
+        // already on `LoginPage` (`unauthenticated`). That screen owns its
+        // own inline loading indicator and shows the failure message itself
+        // via its BlocConsumer — which stays subscribed to the same cubit
+        // regardless of this buildWhen. Rebuilding here would swap in the
+        // full-screen spinner below, tearing down LoginPage's State (typed
+        // email/password) before the failure message ever reaches the user.
+        if (previous.status == AuthStatus.unauthenticated &&
+            current.status == AuthStatus.loading) {
+          return false;
+        }
+        return true;
+      },
       builder: (context, state) {
         if (state.status == AuthStatus.loading || state.status == AuthStatus.initial) {
           return const Scaffold(

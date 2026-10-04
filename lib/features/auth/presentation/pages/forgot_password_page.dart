@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:glucore/core/theme/app_theme.dart';
+import 'package:glucore/core/theme/glucore_colors.dart';
 import 'package:glucore/core/utils/field_label.dart';
 import 'package:glucore/core/validation/password_policy.dart';
 import 'package:glucore/features/patient/presentation/widgets/glucore_form_layout.dart';
@@ -220,10 +220,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(
+        Icon(
           Icons.check_circle_outline,
           size: 64,
-          color: AppTheme.zoneTargetBg,
+          color: context.glucoreColors.zoneTargetBg,
         ),
         const SizedBox(height: 16),
         Text(

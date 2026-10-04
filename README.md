@@ -512,16 +512,16 @@ Prerequisito: Flutter SDK instalado e Android conectado/emulador rodando.
 ipconfig getifaddr en0
 
 # Rodar com o backend apontando para o IP certo
-flutter run --dart-define=API_URL=http://<SEU_IP>:3001
+flutter run --dart-define=API_URL=http://<SEU_IP>:3000
 
 # Ou com emulador (backend na mesma maquina)
-flutter run --dart-define=API_URL=http://10.0.2.2:3001
+flutter run --dart-define=API_URL=http://10.0.2.2:3000
 ```
 
 Build de debug para dispositivo fisico:
 
 ```bash
-flutter build apk --debug --dart-define=API_URL=http://<SEU_IP>:3001
+flutter build apk --debug --dart-define=API_URL=http://<SEU_IP>:3000
 ```
 
 ### Outros comandos uteis

@@ -1,0 +1,119 @@
+// Identity, and nothing else.
+//
+// This schema owns who a person is and how they prove it. Everything clinical —
+// Patient, sensors, readings, carbs, insulin, alerts, reports — lives in
+// glucose-service's database and is joined only by a userId carried in the JWT.
+//
+// The boundary was drawn here because it is the one place the two halves barely
+// touch: of the twenty foreign keys in the original schema, seventeen stay
+// inside glucose. The three that were cut (Patient.userId,
+// HealthProfessional.userId, Administrator.userId) all pointed at User.
+//
+// What that costs: the ON DELETE CASCADE from User to Patient is gone, so the
+// database no longer prevents orphans. Deleting an account has to become an
+// explicit cross-service operation (DELETE /api/v1/account) rather than a row
+// deletion — under LGPD that makes it mandatory, not a nice-to-have.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Generated into this service rather than the default `node_modules/.prisma/client`.
+//
+// That default is a single directory shared by the whole workspace, and both
+// services run `prisma generate` on install: whichever ran last would win, and
+// the other service would be typechecking against a client for a schema it does
+// not own. The failure is nasty because it depends on install order.
+//
+// glucose-service keeps the default (it was there first and imports
+// `@prisma/client` in nineteen files); this service imports the generated client
+// through `src/lib/prisma.ts` alone, so the path appears exactly once.
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum UserRole {
+  PATIENT
+  HEALTH_PROFESSIONAL
+  ADMINISTRATOR
+}
+
+model User {
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName            String
+  email               String               @unique
+  phone               String?
+  status              UserStatus           @default(ACTIVE)
+  role                UserRole             @default(PATIENT)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  authCredential      AuthCredential?
+  passwordResetTokens PasswordResetToken[]
+  authSessions        AuthSession[]
+  auditLogs           AuditLog[]
+}
+
+model AuthCredential {
+  userId       String    @id @db.Uuid
+  passwordHash String
+  mfaSecret    String?
+  lastLoginAt  DateTime?
+  isMfaEnabled Boolean   @default(false)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token     String    @unique
+  userId    String    @db.Uuid
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Written on every login and registration; not yet read. It becomes load-bearing
+// when the gateway starts checking `isRevoked` for the web roles, which is what
+// their one-hour token buys.
+model AuthSession {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid
+  issuedAt  DateTime @default(now())
+  expiresAt DateTime
+  userAgent String?
+  isRevoked Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRevoked])
+}
+
+// One audit table per service. This one records LOGIN, REGISTER,
+// FORGOT_PASSWORD, RESET_PASSWORD and UPDATE_PROFILE; the clinical writes are
+// recorded in glucose's own table.
+//
+// The FK survives here, unlike in glucose, because User is in this same
+// database. SetNull rather than Cascade: deleting an account must not erase the
+// trail of what that account did.
+model AuditLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String?  @db.Uuid
+  entity    String
+  action    String
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([entity, createdAt])
+}

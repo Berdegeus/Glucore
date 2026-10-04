@@ -1,0 +1,17 @@
+{
+  // Typechecks the test suite, which the build project cannot: it emits with
+  // `composite: true` and a rootDir of src/, so tests/ is outside it.
+  //
+  // Without this the in-memory fakes would only be checked by the runtime,
+  // which transpiles without typechecking — and a fake that no longer matches
+  // its repository interface is exactly the failure they exist to catch.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

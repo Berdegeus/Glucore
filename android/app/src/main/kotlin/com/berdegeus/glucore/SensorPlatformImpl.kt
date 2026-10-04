@@ -4,7 +4,6 @@ import android.os.Handler
 import android.os.Looper
 import tk.glucodata.Natives
 
-data class WarmupPayload(val elapsedMs: Long, val totalMs: Long)
 data class GlucoseReadingPayload(val value: Double)
 data class FailurePayload(val message: String)
 
@@ -143,11 +142,6 @@ class SensorPlatformImpl(
         emitEvent(status = "idle", session = snapshot, connected = false)
     }
 
-    fun submitTransmitter(transmitterBarcode: String) {
-        sessionManager.submitTransmitter(transmitterBarcode)
-            .onFailure { emitError("Transmitter submission failed: ${it.message}") }
-    }
-
     /** Returns true when the BLE scan actually started (monitoring is live). */
     fun startMonitoring(): Boolean {
         val session = sessionManager.getCurrentSession()
@@ -259,7 +253,6 @@ class SensorPlatformImpl(
         status: String,
         session: SensorSessionSnapshot? = null,
         connected: Boolean = false,
-        warmup: WarmupPayload? = null,
         reading: GlucoseReadingPayload? = null,
         failure: FailurePayload? = null
     ) {
@@ -268,13 +261,14 @@ class SensorPlatformImpl(
             "session" to session?.let {
                 mapOf(
                     "sensorId" to it.sensorId,
-                    "transmitterId" to it.transmitterId,
                     "brand" to it.brand.wireName
                 )
             },
             "brand" to (session?.brand ?: sessionManager.getCurrentSession()?.brand)?.wireName,
             "connected" to connected,
-            "warmup" to warmup?.let { mapOf("elapsedMs" to it.elapsedMs, "totalMs" to it.totalMs) },
+            // The BLE path never produces warmup progress; the Libre 2 NFC path
+            // signals warmup through the `nfc` field with status `warmingUp`.
+            "warmup" to null,
             "reading" to reading?.let { mapOf("value" to it.value) },
             "failure" to failure?.let { mapOf("message" to it.message) }
         ))
@@ -287,7 +281,6 @@ class SensorPlatformImpl(
     private fun SensorSessionSnapshot.toPlatformMap(): Map<String, Any?> =
         mapOf(
             "sensorId" to sensorId,
-            "transmitterId" to transmitterId,
             "connected" to connected,
             "brand" to brand.wireName
         )

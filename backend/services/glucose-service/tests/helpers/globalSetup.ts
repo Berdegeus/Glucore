@@ -32,6 +32,12 @@ export default function setup(): void {
       cwd: SERVICE_ROOT,
       env: { ...process.env, DATABASE_URL: databaseUrl },
       stdio: 'pipe',
+      // Windows resolves `npx` as `npx.cmd`. Passing the extension directly
+      // (without `shell`) throws EINVAL on Node >= 18.19/20.11/21.6 (the
+      // CVE-2024-27980 fix requires a shell for .cmd/.bat). `shell: true` is
+      // the workaround Node's own advisory documents; safe here because both
+      // the command and its args are hardcoded, never user input.
+      shell: true,
     });
   } catch (error) {
     const detail =

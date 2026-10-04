@@ -67,6 +67,8 @@ backend/node_modules/
 backend/dist/
 backend/.env
 *.env
+backend/deploy/.env.prod
+backend/deploy/.env.backup
 backend/prisma/*.db
 
 # Office lock files (created while a document is open; never a project artifact)
@@ -83,3 +85,9 @@ backend/**/tsconfig.tsbuildinfo
 backend/services/*/dist/
 backend/packages/*/dist/
 backend/services/*/.env.test
+
+# Prisma clients are generated on install (postinstall), never committed.
+# auth-service generates into its own directory because the workspace-wide
+# node_modules/.prisma/client is shared and the two services would overwrite
+# each other there — see services/auth-service/prisma/schema.prisma.
+backend/services/*/generated/

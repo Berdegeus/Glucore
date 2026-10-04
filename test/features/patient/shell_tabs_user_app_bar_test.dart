@@ -13,11 +13,13 @@ import 'package:glucore/features/auth/domain/usecases/register_usecase.dart';
 import 'package:glucore/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
-import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/domain/usecases/patient_usecases.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/presentation/cubit/patient_cubit.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/diary_page.dart';
 import 'package:glucore/features/patient/presentation/pages/monitoring_home_page.dart';
 import 'package:glucore/features/patient/presentation/pages/profile_page.dart';
@@ -82,12 +84,23 @@ void main() {
   };
 
   for (final entry in tabs.entries) {
-    testWidgets('${entry.key} shows the logged-in user and the logout menu',
+    // The identity chip and its "Sair da conta" menu were removed from the
+    // header by product decision (2026-08-24); logout lives only in Settings.
+    // What the header must still NOT do is offer account actions.
+    testWidgets('${entry.key} keeps the header free of account actions',
         (tester) async {
       await pumpTab(tester, entry.value);
 
-      expect(find.text('Ana Silva'), findsOneWidget);
-      expect(find.byType(PopupMenuButton<String>), findsOneWidget);
+      expect(find.byType(PopupMenuButton<String>), findsNothing);
+      // Scoped to the AppBar on purpose: SettingsPage still offers logout in
+      // its BODY, which is where it now lives.
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Sair da conta'),
+        ),
+        findsNothing,
+      );
     });
   }
 
@@ -157,7 +170,7 @@ class _FakeAuthRepository implements AuthRepository {
 // PatientState, mirroring sensor_choice_navigation_test.dart's fake.
 class _FakePatientCubit extends PatientCubit {
   _FakePatientCubit._(PatientRepository repository)
-      : super(repository: repository);
+      : super(useCases: PatientUseCases.fromRepository(repository));
 
   factory _FakePatientCubit() {
     final local = LocalPatientDataSource();
@@ -168,7 +181,7 @@ class _FakePatientCubit extends PatientCubit {
       connectivityChanges: const Stream.empty(),
     );
     return _FakePatientCubit._(
-      PatientRepository(
+      PatientRepositoryImpl(
         local: local,
         remote: remote,
         syncService: sync,
@@ -181,7 +194,7 @@ class _FakePatientCubit extends PatientCubit {
   Future<void> initialize(SensorCubit sensorCubit) async {}
 }
 
-class _FakePatientRemote implements PatientDataSource {
+class _FakePatientRemote implements PatientRemoteApi {
   @override
   Future<PatientSnapshot> load() async =>
       throw UnimplementedError('not used in this test');
@@ -200,4 +213,22 @@ class _FakePatientRemote implements PatientDataSource {
 
   @override
   Future<void> saveAlertSettings(AlertSettingsModel settings) async {}
+
+  @override
+  Future<void> upsertCarb(CarbEntry entry) async {}
+
+  @override
+  Future<void> deleteCarb(String id) async {}
+
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) async {}
+
+  @override
+  Future<void> deleteInsulin(String id) async {}
+
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) async {}
+
+  @override
+  Future<void> deleteAlert(String id) async {}
 }

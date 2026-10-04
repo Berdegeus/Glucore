@@ -149,9 +149,9 @@ void main() {
       'an incorrect current password keeps the screen open with the error '
       'and the session active', (tester) async {
     account.failure = DioException(
-      requestOptions: RequestOptions(path: '/auth/profile'),
+      requestOptions: RequestOptions(path: '/me'),
       response: Response<void>(
-        requestOptions: RequestOptions(path: '/auth/profile'),
+        requestOptions: RequestOptions(path: '/me'),
         statusCode: 401,
       ),
       type: DioExceptionType.badResponse,

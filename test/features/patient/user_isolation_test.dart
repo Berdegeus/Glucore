@@ -5,9 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/core/api/auth_token_store.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
-import 'package:glucore/features/patient/data/repositories/patient_repository.dart';
+import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
-import 'package:glucore/features/patient/presentation/models/patient_models.dart';
+import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// P19: local patient data must be scoped to its owning user. A different
@@ -49,7 +50,7 @@ void main() {
     test('wipeAllData clears collections but keeps the owner', () async {
       await local.setOwner('user-A');
       await local.saveCarbs([
-        CarbEntry(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
+        CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
       ]);
 
       await local.wipeAllData();
@@ -72,7 +73,7 @@ void main() {
       );
       tokenStore = _FakeTokenStore();
       final remote = _FakeRemote();
-      repo = PatientRepository(
+      repo = PatientRepositoryImpl(
         local: local,
         remote: remote,
         syncService: PatientSyncService(
@@ -100,7 +101,7 @@ void main() {
     test('different user wipes and reports switch', () async {
       await local.setOwner('user-A');
       await local.saveCarbs([
-        CarbEntry(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
+        CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
       ]);
       tokenStore.userId = 'user-B';
 
@@ -138,26 +139,29 @@ void main() {
     test('does not push when the local owner differs from the current user',
         () async {
       await local.setOwner('user-A');
-      await local.saveCarbs([
-        CarbEntry(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
-      ]);
+      await local.upsertCarb(
+        CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
+      );
       tokenStore.userId = 'user-B'; // wrong account
 
       await sync.pushNow();
 
-      expect(remote.savedCarbs, isEmpty);
+      expect(remote.upsertedCarbs, isEmpty);
+      // A operação continua na fila, esperando o dono certo.
+      expect(await local.pendingOps(), hasLength(1));
     });
 
     test('pushes when the owner matches the current user', () async {
       await local.setOwner('user-A');
-      await local.saveCarbs([
-        CarbEntry(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
-      ]);
+      await local.upsertCarb(
+        CarbEntry.create(time: DateTime(2026, 1, 1), grams: 30, description: 'x'),
+      );
       tokenStore.userId = 'user-A';
 
       await sync.pushNow();
 
-      expect(remote.savedCarbs, hasLength(1));
+      expect(remote.upsertedCarbs, hasLength(1));
+      expect(remote.upsertedCarbs.single.grams, 30);
     });
   });
 }
@@ -169,15 +173,28 @@ class _FakeTokenStore extends AuthTokenStore {
   Future<String?> readUserId() async => userId;
 }
 
-class _FakeRemote implements PatientDataSource {
+class _FakeRemote implements PatientRemoteApi {
   final savedReadings = <List<GlucoseReadingItem>>[];
   final savedAlerts = <List<AppAlertItem>>[];
   final savedCarbs = <List<CarbEntry>>[];
   final savedInsulin = <List<InsulinEntry>>[];
   final savedSettings = <AlertSettingsModel>[];
+  final upsertedCarbs = <CarbEntry>[];
 
   @override
   Future<PatientSnapshot> load() => throw UnimplementedError();
+  @override
+  Future<void> upsertCarb(CarbEntry entry) async => upsertedCarbs.add(entry);
+  @override
+  Future<void> deleteCarb(String id) async {}
+  @override
+  Future<void> upsertInsulin(InsulinEntry entry) async {}
+  @override
+  Future<void> deleteInsulin(String id) async {}
+  @override
+  Future<void> upsertAlert(AppAlertItem alert) async {}
+  @override
+  Future<void> deleteAlert(String id) async {}
   @override
   Future<void> saveReadings(List<GlucoseReadingItem> readings) async =>
       savedReadings.add(readings);

@@ -6,11 +6,12 @@ import type { IReadingRepository } from './readings.repository';
 import type { ReadingInput } from './readings.schema';
 
 /**
- * A day of CGM samples at the 5-minute cadence the sensors use. Bounds both the
- * read and the batch write, so neither a long-offline device nor a crafted
- * payload can turn one request into an unbounded transaction.
+ * Most readings one GET returns, newest first. It is a safety bound, not a
+ * retention policy: ~17 days at the 5-minute cadence, which covers the 14-day
+ * window the app keeps and shows. The batch write is bounded separately by
+ * `MAX_READING_BATCH`, which rejects instead of truncating.
  */
-const ONE_DAY_OF_SAMPLES = 288;
+export const MAX_READ_ROWS = 5000;
 
 export class ReadingsService {
   constructor(
@@ -21,13 +22,13 @@ export class ReadingsService {
 
   async listForUser(userId: string): Promise<ReadingDto[]> {
     const patientId = await this.patients.ensure(userId);
-    const rows = await this.readings.listRecent(patientId, ONE_DAY_OF_SAMPLES);
+    const rows = await this.readings.listRecent(patientId, MAX_READ_ROWS);
     return rows.map(toReadingDto);
   }
 
   async syncForUser(userId: string, readings: readonly ReadingInput[]): Promise<void> {
     const patientId = await this.patients.ensure(userId);
-    await this.readings.upsertMany(patientId, readings.slice(0, ONE_DAY_OF_SAMPLES));
+    await this.readings.upsertMany(patientId, readings);
   }
 
   async clearForUser(userId: string, context: AuditContext): Promise<void> {

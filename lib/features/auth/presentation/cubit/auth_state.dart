@@ -10,6 +10,7 @@ enum AuthError {
   emailAlreadyExists,
   weakPassword,
   serviceUnavailable,
+  tooManyRequests,
   networkError,
   serverError,
 }

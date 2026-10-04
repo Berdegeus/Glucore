@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { defineConfig } from 'vitest/config';
 
-import { TEST_DATABASE_URL, TEST_JWT_SECRET } from './tests/helpers/testEnv';
+import { TEST_DATABASE_URL, TEST_INTERNAL_JWT_SECRET, TEST_JWT_SECRET } from './tests/helpers/testEnv';
 
 /**
  * Project-level config for glucose-service.
@@ -29,6 +29,7 @@ export default defineConfig({
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
       JWT_SECRET: TEST_JWT_SECRET,
+      INTERNAL_JWT_SECRET: TEST_INTERNAL_JWT_SECRET,
       // Keep the SMTP branch of the password-reset flow deterministic: with no
       // host configured the mailer throws and the route logs the token instead.
       SMTP_HOST: '',

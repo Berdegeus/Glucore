@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Glucore is an Android-first Flutter MVP for CGM sensors: Sibionics, Accu-Chek SmartGuide and FreeStyle Libre 2. Four layers: Flutter UI → Kotlin session/BLE → C++/JNI bridge → proprietary vendor `.so` files (arm64-v8a only).
 
-**Current state (v1.1.0):** BLE connection live. Full GATT + Sibionics EU protocol (auth → time-sync → activation → history sync → glucose). **Multi-sensor**: Sibionics + Accu-Chek SmartGuide (PIN) + FreeStyle Libre 2 (NFC + Abbott lib) over a brand-agnostic `BrandBleManager`; app-scoped stack (`SensorCore` + `CgmForegroundService`). Flutter shell with Bloc/Cubit. **Offline-first** local SQLite (primary) + background sync; JWT auth tolerant of offline launch (P18) and scoped per-user (P19); nav providers above the root Navigator (P17). Backend: JWT auth + CRUD for carb/insulin.
+**Current state (v1.1.0):** BLE connection live. Full GATT + Sibionics EU protocol (auth → time-sync → activation → history sync → glucose). **Multi-sensor**: Sibionics + Accu-Chek SmartGuide (PIN) + FreeStyle Libre 2 (NFC + Abbott lib) over a brand-agnostic `BrandBleManager`; app-scoped stack (`SensorCore` + `CgmForegroundService`). Flutter shell with Bloc/Cubit. **Offline-first** local SQLite (primary) + background sync; JWT auth tolerant of offline launch (P18) and scoped per-user (P19); nav providers above the root Navigator (P17). Backend: three services (gateway + auth-service + glucose-service) with JWT auth, CRUD for carb/insulin/alerts and a dashboard summary; the app talks to it through `/api/v1` (see Backend).
 
 **Versioning:** `dev` = integration branch for the in-progress version; `main` = tagged releases, device-regression-tested. See `docs/guides/versioning-and-branches.md` and `CHANGELOG.md`.
 
 **Docs:** detailed docs live in `docs/` (index: `docs/README.md`; multi-brand sensor stack: `docs/reference/multi-sensor-architecture.md`; QA gates and PR checklist: `docs/guides/qa-process.md`; architecture review & known issues: `docs/ARCHITECTURE_REVIEW.md`; fix plan: `docs/ARCHITECTURE_FIX_PLAN.md`). Domain skills in `.claude/skills/`. When CLAUDE.md and `docs/` conflict, `docs/` wins.
 
-**CI/review reference:** `.github/workflows/ci.yml` (GitHub Actions) is the source of truth for whether a PR is ready — not a local run by the author. It gates `flutter analyze`/`flutter test`, the Kotlin JVM unit tests, and the backend typecheck/test on every PR and push to `main`/`dev`. Full APK build/deploy stays out of CI until the vendor `.so` distribution problem is solved (`docs/ARCHITECTURE_FIX_PLAN.md`, item 2.4).
+**CI/review reference:** `.github/workflows/ci.yml` (GitHub Actions) is the source of truth for whether a PR is ready — not a local run by the author. It gates `flutter analyze`/`flutter test`, the Kotlin JVM unit tests, and the backend typecheck/test on every PR and push to `main`/`dev`. Full APK build/deploy stays out of CI until the vendor `.so` distribution problem is solved (`docs/ARCHITECTURE_FIX_PLAN.md`, item 2.4). The **backend** is deployed from CI: `.github/workflows/publish-images.yml` publishes the three images to GHCR after CI is green on `main`, and the production VM pulls them (`docs/guides/deployment.md`).
 
 This file holds stable invariants (native constraints, commands, layer map). Anything that changes sprint to sprint — data flow detail, screen inventory, feature status — belongs in `docs/`, not here.
 
@@ -25,8 +25,9 @@ flutter run
 flutter build apk --debug
 flutter gen-l10n          # regenerate after editing .arb files
 cd android && ./gradlew app:assembleDebug
-cd backend && npm install && npm run migrate:dev && npm run dev      # backend on :3001
-cd backend && npm run build && npm test                              # tsc -b + vitest (needs Postgres)
+cd backend && npm install && npm run migrate:dev   # migrates both services (glucose + auth)
+cd backend && npm run dev:glucose                  # :3001   (npm run dev:auth for :3002, npm run dev:gateway for :3000)
+cd backend && npm run build && npm test            # ALWAYS from backend/ root, never from a service
 ```
 
 ## Architecture
@@ -57,7 +58,16 @@ DI in `lib/injection_container.dart` — calls `sl.reset()` before registering t
 
 ### Backend
 
-Node/Express + Prisma/PostgreSQL, port 3001. `backend/` is an npm workspace: `packages/shared` (errors, asyncHandler, audit — no `@prisma/client` dependency) and `services/glucose-service`, which serves every route today. Inside the service, each domain sits in `src/modules/<name>/` as `routes · controller · service · repository · schema · mapper`, wired in `src/container.ts`; `src/routes/auth.ts` is the one route not yet modularized. Routes: `/auth`, `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`. Auth via JWT Bearer. Flutter connects via `--dart-define=API_URL=http://<ip>:3001` (default `http://localhost:3001` in `lib/core/api/api_client.dart`).
+Node/Express + Prisma/PostgreSQL. `backend/` is an npm workspace with **three services** (two databases):
+
+- **`gateway`** (:3000, no database) — the single public entry point, everything under `/api/v1`. Proxies `/api/v1/auth/*` to auth-service and `/api/v1/{readings,carbs,insulin,alerts,settings,dashboard}` to glucose-service (JWT checked at the gateway); composes `GET/PUT /api/v1/me`, `DELETE /api/v1/account` and the registration saga (`POST /api/v1/auth/register`); owns login/register rate limiting. Resolves the other services through a `ServiceRegistry` (env or Consul) and calls them with an internal service token (`INTERNAL_JWT_SECRET`).
+- **`auth-service`** (:3002, `glucore_auth`) — identity. `User`, `AuthCredential`, `PasswordResetToken`, `AuthSession`. Serves `/auth/*` (including `/auth/refresh`) and `/internal/accounts`.
+- **`glucose-service`** (:3001, `glucore_dev`) — clinical data. `Patient`, sensors, readings, carbs, insulin, alerts. Serves `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`, `/dashboard/summary` and `/internal/patients`.
+- **`packages/shared`** — errors, asyncHandler, audit, health, service discovery, and `auth/` (claims, JWT sign/verify, verifyJwt/requireRole). No Prisma dependency.
+
+Each domain sits in `src/modules/<name>/` as `routes · controller · service · repository · schema · mapper`, wired in that service's `src/container.ts`. Auth via JWT Bearer, `{sub, role}`; the role comes from the claim, not a database read. **All three services share `JWT_SECRET`**; gateway ↔ service calls additionally use `INTERNAL_JWT_SECRET`. `docker compose up --build` in `backend/` brings up Postgres, Consul and the three services; only the gateway publishes a port. **Never expose auth-service directly** — the login rate limiter lives in the gateway. Production is a single Oracle Always Free VM (x86_64) behind Caddy at `https://glucore.duckdns.org`; its compose is `backend/deploy/docker-compose.prod.yml` (no Consul, `SERVICE_DISCOVERY=env`), not the dev `docker-compose.yml`.
+
+The Flutter app talks only to the gateway: `ApiClient` (`lib/core/api/api_client.dart`) builds `baseUrl` as `<API_URL>/api/v1` via `gatewayBaseUrl`, so datasources keep relative paths (`/auth/login`, `/carbs/item`, ...). Run with `--dart-define=API_URL=http://<ip>:3000` (host only; emulator `http://10.0.2.2:3000`). The profile goes through the composed `GET/PUT /me`; `DELETE /account` has a client method (`AccountService.deleteAccount`) but no screen yet.
 
 ### Debug panel / mock sensor
 
@@ -145,6 +155,9 @@ Juggluco declares three more (`strGlucose`, `nums.item`, `NightPost`) that this 
 | `android/app/src/main/cpp/CMakeLists.txt` | C++17 build, links vendor `.so` |
 | `backend/services/glucose-service/src/app.ts` | `buildApp()` — assembles Express, binds no port |
 | `backend/services/glucose-service/src/container.ts` | Composition root |
+| `backend/services/auth-service/src/container.ts` | Composition root; picks password hasher and mailer |
+| `backend/services/auth-service/src/lib/prisma.ts` | The only file that knows where auth's client is generated |
+| `backend/packages/shared/src/auth/` | Claims, token signing/verification, verifyJwt/requireRole |
 
 `Juggluco/` — reference copy of open-source Juggluco. **Not in this working tree** (never committed); if you clone it locally for reference, do not modify it and do not index the whole repo.
 

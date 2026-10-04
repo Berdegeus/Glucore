@@ -4,7 +4,7 @@ import 'package:glucore/l10n/l10n.dart';
 import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
 
@@ -104,7 +104,7 @@ class _CarbEntryPageState extends State<CarbEntryPage> {
                     return;
                   }
                   await context.read<PatientCubit>().addCarbEntry(
-                    CarbEntry(
+                    CarbEntry.create(
                       grams: int.parse(_gramsController.text),
                       description: _descController.text.trim(),
                       time: _selectedTime,

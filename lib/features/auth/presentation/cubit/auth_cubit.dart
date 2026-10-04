@@ -163,6 +163,9 @@ class AuthCubit extends Cubit<AuthState> {
       case DioExceptionType.connectionError:
         return AuthError.networkError;
       default:
+        // The gateway's rate limiter answers 429 with a plain-text body and no
+        // `code`, so it has to be recognised by status.
+        if (e.response?.statusCode == 429) return AuthError.tooManyRequests;
         return _mapErrorCode(e.response?.data) ?? AuthError.serverError;
     }
   }
@@ -176,6 +179,8 @@ class AuthCubit extends Cubit<AuthState> {
       case 'WEAK_PASSWORD':
         return AuthError.weakPassword;
       case 'DATABASE_UNAVAILABLE':
+      // A service behind the gateway is down (gateway 503).
+      case 'UPSTREAM_UNAVAILABLE':
         return AuthError.serviceUnavailable;
       default:
         return null;

@@ -5,7 +5,7 @@ import 'package:glucore/l10n/localized_values.dart';
 import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
-import '../models/patient_models.dart';
+import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
 
@@ -21,13 +21,11 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
   final _unitsController = TextEditingController();
   InsulinType _selectedType = InsulinType.bolus;
   late DateTime _selectedTime;
-  late String _selectedDayOfWeek;
 
   @override
   void initState() {
     super.initState();
     _selectedTime = DateTime.now();
-    _selectedDayOfWeek = kDaysOfWeek[_selectedTime.weekday - 1];
   }
 
   @override
@@ -110,19 +108,6 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
                   child: Text(l10n.entryTimePicker),
                 ),
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedDayOfWeek,
-                decoration: InputDecoration(
-                  labelText: l10n.insulinEntryDayOfWeekLabel,
-                ),
-                items: kDaysOfWeek
-                    .map((day) => DropdownMenuItem(value: day, child: Text(day)))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() => _selectedDayOfWeek = value ?? kDaysOfWeek[0]);
-                },
-              ),
               const SizedBox(height: 18),
               FilledButton(
                 onPressed: () async {
@@ -131,11 +116,11 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
                     return;
                   }
                   await context.read<PatientCubit>().addInsulinEntry(
-                    InsulinEntry(
+                    InsulinEntry.create(
                       units: double.parse(_unitsController.text),
                       type: _selectedType,
                       time: _selectedTime,
-                      dayOfWeek: _selectedDayOfWeek,
+                      dayOfWeek: dayOfWeekFor(_selectedTime),
                     ),
                   );
                   if (!context.mounted) {

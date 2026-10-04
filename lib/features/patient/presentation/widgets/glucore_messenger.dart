@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/glucore_colors.dart';
 
 /// Severity of a message shown to the user.
 enum GlucoreMessageVariant { info, warning, error, success }
 
 extension GlucoreMessageVariantX on GlucoreMessageVariant {
-  Color get background => switch (this) {
-        GlucoreMessageVariant.info => AppTheme.neutralInfo,
-        GlucoreMessageVariant.warning => AppTheme.zoneHighBg,
-        GlucoreMessageVariant.error => AppTheme.zoneLowBg,
-        GlucoreMessageVariant.success => AppTheme.zoneTargetBg,
+  Color background(BuildContext context) => switch (this) {
+        GlucoreMessageVariant.info => context.glucoreColors.neutralInfo,
+        GlucoreMessageVariant.warning => context.glucoreColors.zoneHighBg,
+        GlucoreMessageVariant.error => context.glucoreColors.zoneLowBg,
+        GlucoreMessageVariant.success => context.glucoreColors.zoneTargetBg,
       };
 
   IconData get icon => switch (this) {
@@ -25,7 +25,7 @@ extension GlucoreMessageVariantX on GlucoreMessageVariant {
 ///
 /// Screens call [info], [warning], [error] or [success] so severity always
 /// reads the same way: one icon and one background colour per variant, both
-/// taken from [AppTheme].
+/// taken from a paleta do tema ativo.
 class GlucoreMessenger {
   const GlucoreMessenger._();
 
@@ -50,15 +50,15 @@ class GlucoreMessenger {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          backgroundColor: variant.background,
+          backgroundColor: variant.background(context),
           content: Row(
             children: [
-              Icon(variant.icon, color: AppTheme.surfaceCanvas),
+              Icon(variant.icon, color: context.glucoreColors.surfaceCanvas),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   message,
-                  style: const TextStyle(color: AppTheme.surfaceCanvas),
+                  style: TextStyle(color: context.glucoreColors.surfaceCanvas),
                 ),
               ),
             ],

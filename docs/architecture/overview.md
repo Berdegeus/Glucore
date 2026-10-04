@@ -59,7 +59,7 @@ No lado Android, a propriedade da pilha do sensor é da aplicação, não da Act
 2. `SibionicsBleManager` chama `Natives.SIprocessData`; código 1 → `getlastGlucose()` → decodifica long empacotado.
 3. Evento (`syncingHistory`/`readingAvailable`) sai pelo `EventChannel`.
 4. `SensorPlatform.observeSensorEvents()` → `AndroidSensorRepository` → `SensorCubit` emite `SensorUiState`.
-5. `PatientCubit` (assinante do `SensorCubit.stream`) faz upsert em `readings` (cap 288), gera alertas de threshold, e persiste via `RemotePatientDataSource` → `POST /readings` no backend → Prisma/PostgreSQL.
+5. `PatientCubit` (assinante do `SensorCubit.stream`) faz upsert em `readings` (retenção de 14 dias, sem teto de contagem), gera alertas de threshold, e persiste via `RemotePatientDataSource` → `POST /readings` no backend → Prisma/PostgreSQL.
 
 **Importante:** apesar dos nomes `PatientLocalDataSource`/`PatientLocalRepository`, a persistência do paciente é 100% remota (Dio → backend). Não há cache offline. Só a sessão do sensor (SQLite Android) e o flag de onboarding são locais.
 
@@ -76,7 +76,7 @@ Remota (não mais local-only): `RemoteAuthDataSource` → `POST /auth/login|regi
 | `lib/app.dart` | Splash → onboarding → AuthGate |
 | `lib/features/auth/presentation/pages/auth_gate.dart` | Cria SensorCubit/PatientCubit quando autenticado |
 | `lib/features/patient/presentation/shell/patient_shell_page.dart` | Shell com 4 abas + FAB |
-| `lib/core/api/api_client.dart` | Dio base URL (`--dart-define=API_URL`, default `http://localhost:3001`) |
+| `lib/core/api/api_client.dart` | Dio base URL: `<API_URL>/api/v1` (`--dart-define=API_URL`, default `http://localhost:3000`, o gateway) |
 | `android/.../MainActivity.kt` | Registro dos channels (delega ao `SensorCore`) |
 | `android/.../GlucoreApp.kt` | Application; dona do `SensorCore` |
 | `android/.../SensorCore.kt` | Agregado application-scoped da pilha do sensor |
