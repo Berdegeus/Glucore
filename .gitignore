@@ -67,6 +67,8 @@ backend/node_modules/
 backend/dist/
 backend/.env
 *.env
+backend/deploy/.env.prod
+backend/deploy/.env.backup
 backend/prisma/*.db
 
 # Office lock files (created while a document is open; never a project artifact)
