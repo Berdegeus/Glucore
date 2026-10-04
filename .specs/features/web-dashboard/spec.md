@@ -485,11 +485,11 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13 | Implementing |
 | ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | T10, T11 | Implementing |
-| ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | T15 | Implementing |
+| ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | T15, T16 | Implementing |
 | ARQ-14 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-15 | P1: Arquitetura limpa verificável (rubrica 37) | T13 | Implementing |
-| ARQ-16 | P1: Arquitetura limpa verificável (rubrica 37) | T11 | Implementing |
-| ARQ-17 | P1: Arquitetura limpa verificável (rubrica 37) | T14 | Implementing |
+| ARQ-16 | P1: Arquitetura limpa verificável (rubrica 37) | T11, T16 | Implementing |
+| ARQ-17 | P1: Arquitetura limpa verificável (rubrica 37) | T14, T16 | Implementing |
 | ARQ-18 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | LAY-01 | P1: Layout customizável por widgets | T1 | Implementing |
@@ -541,7 +541,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-02 | P1: Publicação na Vercel | - | Pending |
 | DEP-03 | P1: Publicação na Vercel | - | Pending |
 | DEP-04 | P1: Publicação na Vercel | T10 | Implementing |
-| DEP-05 | P1: Publicação na Vercel | - | Pending |
+| DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
 | DEP-06 | P1: Publicação na Vercel | - | Pending |
 | DEP-07 | P1: Publicação na Vercel | T9 | Implementing |
 | API-01 | P2: Ajustes de backend para os gráficos novos | - | Pending |

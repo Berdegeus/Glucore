@@ -23,9 +23,11 @@ export default defineConfig({
         },
       },
       {
-        // Architecture, deploy and docs guards: plain Node.
+        // Architecture, deploy and docs guards: plain Node. They drive ESLint,
+        // dependency-cruiser and jscpd, whose cold start after `npm ci` can
+        // pass the default 5 s on a CI runner.
         extends: true,
-        test: { name: 'tooling', include: ['tests/**/*.test.ts'], environment: 'node' },
+        test: { name: 'tooling', include: ['tests/**/*.test.ts'], environment: 'node', testTimeout: 30_000 },
       },
     ],
     coverage: {

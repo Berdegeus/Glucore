@@ -106,3 +106,37 @@ jobs:
           name: backend-coverage
           path: backend/coverage/
           retention-days: 30
+
+  web:
+    name: Web typecheck + lint + test + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      # Same Node line as the backend job: one version in the repository.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run typecheck
+      # Zero warnings allowed; the readability limits (complexity, depth,
+      # file size, parameters) are errors here.
+      - run: npm run lint
+      # dependency-cruiser: layer rule, isolated libraries, public feature
+      # API and no cycles.
+      - run: npm run lint:arch
+      # Fails below 80 % of lines in domain and application.
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-coverage
+          path: web/coverage/
+          retention-days: 30
+      - run: npm run dup
+      - run: npm run build
+      - run: npm run size
+      # Only what ships to the browser; dev tooling advisories do not block.
+      - run: npm audit --omit=dev --audit-level=high

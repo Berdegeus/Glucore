@@ -666,13 +666,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] YAML válido e o job espelha os comandos locais, com cobertura enviada como artefato
-- [ ] Nenhum job existente foi alterado
-- [ ] Gate `build` passa: `python -c "import yaml,sys; yaml.safe_load(open('.github/workflows/ci.yml'))" && cd web && npm run build`
+- [x] YAML válido e o job espelha os comandos locais, com cobertura enviada como artefato
+- [x] Nenhum job existente foi alterado
+- [x] Gate `build` passa: `python -c "import yaml,sys; yaml.safe_load(open('.github/workflows/ci.yml'))" && cd web && npm run build`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `ci: add the web job`
+**Status**: ✅ Done
 
 ---
 
