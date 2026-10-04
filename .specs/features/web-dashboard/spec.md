@@ -492,7 +492,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-17 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-18 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
-| LAY-01 | P1: Layout customizável por widgets | - | Pending |
+| LAY-01 | P1: Layout customizável por widgets | T1 | Implementing |
 | LAY-02 | P1: Layout customizável por widgets | - | Pending |
 | LAY-03 | P1: Layout customizável por widgets | - | Pending |
 | LAY-04 | P1: Layout customizável por widgets | - | Pending |
@@ -502,7 +502,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-08 | P1: Layout customizável por widgets | - | Pending |
 | LAY-09 | P1: Layout customizável por widgets | - | Pending |
 | LAY-10 | P1: Layout customizável por widgets | - | Pending |
-| LAY-11 | P1: Layout customizável por widgets | - | Pending |
+| LAY-11 | P1: Layout customizável por widgets | T1 | Implementing |
 | LAY-12 | P1: Layout customizável por widgets | - | Pending |
 | LAY-13 | P1: Layout customizável por widgets | - | Pending |
 | LAY-14 | P1: Layout customizável por widgets | - | Pending |

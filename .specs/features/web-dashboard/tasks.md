@@ -329,13 +329,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] `roles.PATIENT` com 16 ids, `roles.HEALTH_PROFESSIONAL` com 11, `roles.ADMINISTRATOR` com 11, `sizes: ["S","M","L"]` e `maxWidgets: 20`
-- [ ] Ids idênticos aos da seção Catálogo da spec, incluindo os KPIs individuais de profissional e admin
-- [ ] Gate `build` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] `roles.PATIENT` com 16 ids, `roles.HEALTH_PROFESSIONAL` com 11, `roles.ADMINISTRATOR` com 11, `sizes: ["S","M","L"]` e `maxWidgets: 20`
+- [x] Ids idênticos aos da seção Catálogo da spec, incluindo os KPIs individuais de profissional e admin
+- [x] Gate `build` passa: `cd backend && npm run build && npm run test:coverage`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(contracts): add the dashboard widget catalog`
+**Status**: ✅ Done
 
 ---
 
