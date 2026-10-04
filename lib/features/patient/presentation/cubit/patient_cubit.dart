@@ -241,7 +241,7 @@ class PatientCubit extends Cubit<PatientState> {
     );
     updated.add(entry);
     updated.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return updated.take(PatientRepository.maxReadings).toList();
+    return retainRecentReadings(updated);
   }
 
   AppAlertItem? _thresholdAlertFor({

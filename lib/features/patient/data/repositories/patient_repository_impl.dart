@@ -53,9 +53,7 @@ class PatientRepositoryImpl implements PatientRepository {
 
   @override
   Future<void> saveReadings(List<GlucoseReadingItem> readings) async {
-    await _local.saveReadings(
-      readings.take(PatientRepository.maxReadings).toList(),
-    );
+    await _local.saveReadings(retainRecentReadings(readings));
     _syncService.schedulePush();
   }
 

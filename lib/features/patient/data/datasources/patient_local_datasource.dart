@@ -393,9 +393,50 @@ class LocalPatientDataSource implements PatientDataSource {
     );
   }
 
+  /// Grava o conjunto de leituras **sem reescrever o que não mudou**.
+  ///
+  /// A linha idêntica à já guardada mantém o `synced` que tinha; só a nova ou a
+  /// alterada volta a `synced = 0`, e a que saiu do conjunto é apagada. Com o
+  /// buffer sem teto de contagem, trocar a tabela inteira a cada leitura
+  /// reenviaria milhares de linhas já sincronizadas a cada push.
   @override
-  Future<void> saveReadings(List<GlucoseReadingItem> readings) =>
-      _replaceTable('readings', readings.map((r) => _readingToRow(r, synced: 0)));
+  Future<void> saveReadings(List<GlucoseReadingItem> readings) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      final existing = {
+        for (final row in await txn.query('readings'))
+          row['timestamp_ms'] as int: row,
+      };
+      final batch = txn.batch();
+      final incoming = <int>{};
+      for (final reading in readings) {
+        final row = _readingToRow(reading, synced: 0);
+        final key = row['timestamp_ms'] as int;
+        incoming.add(key);
+        final stored = existing[key];
+        if (stored != null && _sameReadingRow(stored, row)) continue;
+        batch.insert('readings', row,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final key in existing.keys) {
+        if (!incoming.contains(key)) {
+          batch.delete('readings', where: 'timestamp_ms = ?', whereArgs: [key]);
+        }
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
+  /// Leituras com `synced = 0`, da mais nova para a mais antiga.
+  Future<List<GlucoseReadingItem>> pendingReadings() async {
+    final db = await _db;
+    final rows = await db.query(
+      'readings',
+      where: 'synced = 0',
+      orderBy: 'timestamp_ms DESC',
+    );
+    return rows.map(_rowToReading).toList();
+  }
 
   @override
   Future<void> saveAlerts(List<AppAlertItem> alerts) =>
@@ -585,6 +626,12 @@ class LocalPatientDataSource implements PatientDataSource {
         rate: (r['rate'] as num).toDouble(),
         alarmCode: r['alarm_code'] as int?,
       );
+
+  static bool _sameReadingRow(Map<String, Object?> a, Map<String, Object?> b) =>
+      a['value'] == b['value'] &&
+      a['trend'] == b['trend'] &&
+      a['rate'] == b['rate'] &&
+      a['alarm_code'] == b['alarm_code'];
 
   static Map<String, Object?> _readingToRow(
     GlucoseReadingItem r, {

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/api/auth_token_store.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../domain/repositories/patient_repository.dart';
 import '../datasources/patient_datasource.dart';
 import '../datasources/patient_local_datasource.dart';
 import 'pending_op.dart';
@@ -122,13 +123,24 @@ class PatientSyncService {
     if (!pushesReadings && !pushesSettings) {
       return;
     }
-    final snapshot = await _local.load();
 
     if (pushesReadings) {
-      await _remote.saveReadings(snapshot.readings);
-      await _local.markReadingsSynced(snapshot.readings);
+      // Só as pendentes, em lotes que o backend aceita inteiros (ele rejeita,
+      // não trunca). Cada lote é marcado ao ser confirmado: se um falhar, os
+      // anteriores não são reenviados e os demais seguem pendentes.
+      final pendingReadings = await _local.pendingReadings();
+      const size = PatientRepository.readingPushBatchSize;
+      for (var start = 0; start < pendingReadings.length; start += size) {
+        final end = start + size < pendingReadings.length
+            ? start + size
+            : pendingReadings.length;
+        final chunk = pendingReadings.sublist(start, end);
+        await _remote.saveReadings(chunk);
+        await _local.markReadingsSynced(chunk);
+      }
     }
     if (pushesSettings) {
+      final snapshot = await _local.load();
       await _remote.saveAlertSettings(snapshot.alertSettings);
       await _local.markSettingsSynced();
     }

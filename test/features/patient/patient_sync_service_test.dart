@@ -8,6 +8,7 @@ import 'package:glucore/features/patient/data/datasources/patient_local_datasour
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
+import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class _FakeRemote implements PatientRemoteApi {
@@ -65,8 +66,19 @@ class _FakeRemote implements PatientRemoteApi {
   @override
   Future<PatientSnapshot> load() => throw UnimplementedError();
 
+  /// A partir de qual chamada (1-based) `saveReadings` passa a falhar, ou `null`.
+  /// "A partir de" e não "só essa": o serviço tenta de novo, e a retentativa
+  /// não pode mascarar a falha.
+  int? failReadingBatchesFrom;
+  var _readingCalls = 0;
+
   @override
   Future<void> saveReadings(List<GlucoseReadingItem> readings) async {
+    _readingCalls++;
+    if (failReadingBatchesFrom != null &&
+        _readingCalls >= failReadingBatchesFrom!) {
+      throw Exception('network down');
+    }
     _maybeFail();
     savedReadings.add(readings);
   }
@@ -481,6 +493,60 @@ void main() {
       expect(await local.pendingCollections(), isNot(contains(
         PatientCollection.readings,
       )));
+    });
+
+    GlucoseReadingItem reading(int index) => GlucoseReadingItem(
+          value: 100,
+          timestamp: entryTime.add(Duration(minutes: index)),
+          trend: GlucoseTrend.stable,
+          rate: 0,
+        );
+
+    test('um backlog grande sobe em lotes que o backend aceita inteiros',
+        () async {
+      await local.saveReadings([for (var i = 0; i < 1200; i++) reading(i)]);
+
+      final pushed = await service.pushNow();
+
+      expect(pushed, isTrue);
+      expect(
+        remote.savedReadings.map((batch) => batch.length),
+        [500, 500, 200],
+      );
+      expect(
+        remote.savedReadings.every(
+          (batch) => batch.length <= PatientRepository.readingPushBatchSize,
+        ),
+        isTrue,
+      );
+      expect(await local.pendingReadings(), isEmpty);
+    });
+
+    test('só as leituras pendentes sobem; as já confirmadas não são reenviadas',
+        () async {
+      final synced = [for (var i = 0; i < 600; i++) reading(i)];
+      await local.saveReadings(synced);
+      await local.markReadingsSynced(synced);
+
+      await local.saveReadings([...synced, reading(600), reading(601)]);
+      await service.pushNow();
+
+      expect(remote.savedReadings, hasLength(1));
+      expect(
+        remote.savedReadings.single.map((r) => r.timestamp),
+        containsAll([reading(600).timestamp, reading(601).timestamp]),
+      );
+      expect(remote.savedReadings.single, hasLength(2));
+    });
+
+    test('se um lote falha, os já confirmados ficam synced e o resto pendente',
+        () async {
+      await local.saveReadings([for (var i = 0; i < 1200; i++) reading(i)]);
+      remote.failReadingBatchesFrom = 2; // 1º ok, 2º em diante falha
+
+      await service.pushNow();
+
+      expect(await local.pendingReadings(), hasLength(700));
     });
   });
 }

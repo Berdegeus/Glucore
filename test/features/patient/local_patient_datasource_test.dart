@@ -70,6 +70,60 @@ void main() {
       await dataSource.markReadingsSynced(readings);
       expect(await dataSource.pendingCollections(), isEmpty);
     });
+
+    GlucoseReadingItem reading(int ms, double value) => GlucoseReadingItem(
+          value: value,
+          timestamp: DateTime.fromMillisecondsSinceEpoch(ms),
+          trend: GlucoseTrend.stable,
+          rate: 0,
+        );
+
+    test('keeps every reading beyond the old 288 cap', () async {
+      final many = [for (var i = 0; i < 1500; i++) reading(i * 1000, 100)];
+
+      await dataSource.saveReadings(many);
+
+      expect((await dataSource.load()).readings, hasLength(1500));
+    });
+
+    test('re-saving unchanged readings keeps them synced; only new or changed '
+        'ones go back to pending', () async {
+      final first = [reading(1000, 100), reading(2000, 110), reading(3000, 120)];
+      await dataSource.saveReadings(first);
+      await dataSource.markReadingsSynced(first);
+      expect(await dataSource.pendingReadings(), isEmpty);
+
+      await dataSource.saveReadings([
+        ...first.take(2),
+        reading(3000, 125), // same timestamp, new value
+        reading(4000, 130), // new
+      ]);
+
+      final pending = await dataSource.pendingReadings();
+      expect(
+        pending.map((r) => r.timestamp.millisecondsSinceEpoch).toSet(),
+        {3000, 4000},
+      );
+    });
+
+    test('a reading missing from the saved set is deleted', () async {
+      await dataSource.saveReadings([reading(1000, 100), reading(2000, 110)]);
+
+      await dataSource.saveReadings([reading(2000, 110)]);
+
+      final left = (await dataSource.load()).readings;
+      expect(left.map((r) => r.timestamp.millisecondsSinceEpoch), [2000]);
+    });
+
+    test('pendingReadings lists only unsynced rows, newest first', () async {
+      final all = [reading(1000, 100), reading(2000, 110), reading(3000, 120)];
+      await dataSource.saveReadings(all);
+      await dataSource.markReadingsSynced([all[1]]);
+
+      final pending = await dataSource.pendingReadings();
+
+      expect(pending.map((r) => r.timestamp.millisecondsSinceEpoch), [3000, 1000]);
+    });
   });
 
   group('alerts', () {

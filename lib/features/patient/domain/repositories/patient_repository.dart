@@ -6,8 +6,17 @@ import '../entities/patient_entities.dart';
 /// `data/repositories/patient_repository_impl.dart`; o domínio só declara o que
 /// as camadas de cima podem pedir.
 abstract class PatientRepository {
-  /// Teto do buffer de leituras mantido em memória e no banco local.
-  static const maxReadings = 288;
+  /// Janela de retenção das leituras, em memória e no banco local.
+  ///
+  /// É por tempo, não por contagem: um teto de contagem (era 288, ≈ 1 dia)
+  /// descartava o backfill do sensor — que traz ~14 dias — e fazia os períodos
+  /// longos do histórico mostrarem quase nada. 14 dias cobre a vida do sensor e
+  /// a janela do dashboard.
+  static const readingRetention = Duration(days: 14);
+
+  /// Leituras por POST. Casa com `MAX_READING_BATCH` do glucose-service, que
+  /// rejeita (400) um lote maior em vez de truncá-lo.
+  static const readingPushBatchSize = 500;
 
   /// Teto da lista de alertas.
   static const maxAlerts = 100;
@@ -66,4 +75,17 @@ abstract class PatientRepository {
 
   /// Reconciliação com o backend. Sem rede → `null`, silencioso.
   Future<PatientSnapshot?> refreshFromRemote();
+}
+
+/// Descarta as leituras mais antigas que [PatientRepository.readingRetention],
+/// contadas a partir da leitura mais recente (não do relógio: um aparelho com
+/// o relógio errado não pode apagar o histórico). Não reordena a lista.
+List<GlucoseReadingItem> retainRecentReadings(List<GlucoseReadingItem> readings) {
+  if (readings.isEmpty) return readings;
+  var newest = readings.first.timestamp;
+  for (final reading in readings) {
+    if (reading.timestamp.isAfter(newest)) newest = reading.timestamp;
+  }
+  final cutoff = newest.subtract(PatientRepository.readingRetention);
+  return readings.where((r) => !r.timestamp.isBefore(cutoff)).toList();
 }
