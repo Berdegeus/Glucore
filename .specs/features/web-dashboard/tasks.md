@@ -1545,13 +1545,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: séries e banda chegam ao Recharts; faixa-alvo usa os limites recebidos; marcadores renderizam; envolvido em `ResponsiveContainer`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/lineBandChart.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: séries e banda chegam ao Recharts; faixa-alvo usa os limites recebidos; marcadores renderizam; envolvido em `ResponsiveContainer`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/lineBandChart.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the line-band chart adapter`
+**Status**: ✅ Done
 
 ---
 

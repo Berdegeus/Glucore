@@ -40,6 +40,8 @@ Pinned exactly in `package.json` and `package-lock.json`. Node 22.13+ (CI runs N
 | react-router | 7.18.4 | 8.x is out but needs Node 22.22+; 7.x keeps the Node 22.13 floor. Peers `react >=18` |
 | @tanstack/react-query | 5.104.1 | server state; peer `react ^18 \|\| ^19` |
 | zod | 4.6.5 | runtime check of API payloads in `infrastructure` (`parseDto`); no peer dependencies |
+| recharts | 3.10.1 | charts; imported only under `src/shared/presentation/charts/` (ARQ-11). Peers `react ^19`, `react-dom ^19` and `react-is ^19` are met by 19.3.0; no peer conflict |
+| react-is | 19.3.0 | peer of recharts, pinned to the React version |
 | vite | 8.3.2 | |
 | @vitejs/plugin-react | 6.1.1 | |
 | typescript | 6.0.3 | 7.x is out, but `typescript-eslint` 8 accepts `<6.1.0` |
