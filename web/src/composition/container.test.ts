@@ -34,6 +34,18 @@ describe('createContainer (ARQ-08)', () => {
     for (const useCase of Object.values(useCases.auth)) expect(useCase).toBeTypeOf('function');
   });
 
+  it('exposes the layout use cases, wired to /api/v1/preferences/dashboard', async () => {
+    server.use(http.get(`${API}/preferences/dashboard`, () => HttpResponse.json({ widgets: null })));
+    const { useCases } = createContainer({ apiUrl: HOST });
+
+    expect(Object.keys(useCases.layout).sort()).toEqual(['loadLayout', 'resetLayout', 'saveLayout']);
+
+    const loaded = await useCases.layout.loadLayout('PATIENT');
+
+    expect(loaded.degraded).toBe(false);
+    expect(loaded.layout.widgets.length).toBeGreaterThan(0);
+  });
+
   it('builds one SessionEventBus, shared with the HTTP client', async () => {
     server.use(http.get(`${API}/me`, () => HttpResponse.json({ error: 'x', code: 'TOKEN_INVALID' }, { status: 401 })));
     const container = createContainer({ apiUrl: HOST });

@@ -4,6 +4,9 @@ import { createRefreshSession, type RefreshSession } from '../features/auth/appl
 import { createRestoreSession, type RestoreSession } from '../features/auth/application/restoreSession';
 import { HttpAccountRepository } from '../features/auth/infrastructure/httpAccountRepository';
 import { HttpSessionRepository } from '../features/auth/infrastructure/httpSessionRepository';
+import { createLayoutUseCases, type LayoutUseCases } from '../features/dashboard-layout/application/layoutUseCases';
+import { HttpLayoutRepository } from '../features/dashboard-layout/infrastructure/httpLayoutRepository';
+import { allDefinitions } from '../features/dashboard-layout/presentation/widgetRegistry';
 import type { Clock, SessionEvents, TimeZoneProvider, TokenStore, Unsubscribe } from '../shared/domain/ports';
 import { JwtExpiryReader } from '../shared/infrastructure/auth/jwtExpiryReader';
 import { BrowserTimeZoneProvider, SystemClock } from '../shared/infrastructure/env/browserEnvironment';
@@ -23,7 +26,7 @@ export interface AuthUseCases {
 }
 
 export interface Container {
-  useCases: { auth: AuthUseCases };
+  useCases: { auth: AuthUseCases; layout: LayoutUseCases };
   /** The one bus: the HTTP client publishes on it and the UI subscribes to it (ACC-09). */
   sessionEvents: SessionEvents;
   tokenStore: TokenStore;
@@ -47,6 +50,7 @@ export function createContainer(env: AppEnv): Container {
 
   const sessions = new HttpSessionRepository(http);
   const accounts = new HttpAccountRepository(http);
+  const layouts = new HttpLayoutRepository(http);
   const expiryReader = new JwtExpiryReader();
   const cleaners = new Set<SessionCleaner>();
 
@@ -58,6 +62,8 @@ export function createContainer(env: AppEnv): Container {
         logout: createLogout({ tokenStore, cleaners }),
         refreshSession: createRefreshSession({ sessions, tokenStore, expiryReader, clock }),
       },
+      // The registry is read at load time: widgets register when their modules load.
+      layout: createLayoutUseCases({ layouts, catalog: allDefinitions }),
     },
     sessionEvents,
     tokenStore,

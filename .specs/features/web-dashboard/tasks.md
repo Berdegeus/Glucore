@@ -1416,13 +1416,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com fakes de cada caminho, inclusive falha de rede no load
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/application/layoutUseCases.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com fakes de cada caminho, inclusive falha de rede no load
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/application/layoutUseCases.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add layout use cases`
+**Status**: ✅ Done
 
 ---
 
