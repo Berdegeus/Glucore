@@ -924,13 +924,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de `needsRefresh`: só profissional/admin, só com menos de 5 min e atividade recente (fronteira 5:00 e 4:59)
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/domain`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de `needsRefresh`: só profissional/admin, só com menos de 5 min e atividade recente (fronteira 5:00 e 4:59)
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/domain`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the auth domain`
+**Status**: ✅ Done
 
 ---
 
