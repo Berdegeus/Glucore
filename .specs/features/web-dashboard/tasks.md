@@ -462,15 +462,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest: sem token `401 TOKEN_INVALID`; `GET` sem layout `{ widgets: null }`; `PUT` e depois `GET` devolvem o mesmo layout; `PUT` inválido `400 INVALID_LAYOUT`; `DELETE` `204`
-- [ ] Usuário B não lê nem sobrescreve o layout do usuário A
-- [ ] Profissional não grava id de widget de paciente
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 7 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest: sem token `401 TOKEN_INVALID`; `GET` sem layout `{ widgets: null }`; `PUT` e depois `GET` devolvem o mesmo layout; `PUT` inválido `400 INVALID_LAYOUT`; `DELETE` `204`
+- [x] Usuário B não lê nem sobrescreve o layout do usuário A
+- [x] Profissional não grava id de widget de paciente
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 7 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): expose /preferences/dashboard`
+**Status**: ✅ Done
 
 ---
 

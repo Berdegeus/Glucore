@@ -15,6 +15,10 @@ import { PasswordController } from './modules/password/password.controller';
 import { PrismaPasswordRepository } from './modules/password/password.repository';
 import { createPasswordRouter } from './modules/password/password.routes';
 import { PasswordService } from './modules/password/password.service';
+import { PreferencesController } from './modules/preferences/preferences.controller';
+import { PrismaPreferencesRepository } from './modules/preferences/preferences.repository';
+import { createPreferencesRouter } from './modules/preferences/preferences.routes';
+import { PreferencesService } from './modules/preferences/preferences.service';
 import { SessionsController } from './modules/sessions/sessions.controller';
 import { PrismaSessionRepository } from './modules/sessions/sessions.repository';
 import { createSessionsRouter } from './modules/sessions/sessions.routes';
@@ -37,6 +41,7 @@ import { SessionsService } from './modules/sessions/sessions.service';
 export interface Container {
   authRouter: Router;
   internalRouter: Router;
+  preferencesRouter: Router;
 }
 
 export interface ContainerOverrides {
@@ -70,5 +75,9 @@ export function createContainer(env: Env = loadEnv(), overrides: ContainerOverri
     requireInternalAuth,
   );
 
-  return { authRouter, internalRouter };
+  const preferencesRouter = createPreferencesRouter(
+    new PreferencesController(new PreferencesService(new PrismaPreferencesRepository(prisma))),
+  );
+
+  return { authRouter, internalRouter, preferencesRouter };
 }
