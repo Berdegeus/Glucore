@@ -4,9 +4,8 @@ API REST do app Glucore: autenticação JWT e CRUD dos dados do paciente (leitur
 
 > **Estado atual:** três serviços — `gateway` (:3000, único endereço público, prefixo `/api/v1`),
 > `auth-service` (:3002) e `glucose-service` (:3001) — e dois bancos. Service Discovery por
-> `ServiceRegistry` (env ou Consul) e `docker compose up --build` sobem tudo. **O app Flutter ainda não
-> foi ligado ao gateway** (uma `baseUrl`, rotas sem `/api/v1`): ver "Rotas do gateway" e a auditoria
-> `docs/AUDIT_2026-09-08.md` (A-01).
+> `ServiceRegistry` (env ou Consul) e `docker compose up --build` sobem tudo. O app Flutter fala só com o gateway
+> (`<API_URL>/api/v1`): ver "Rotas do gateway".
 
 O app Flutter é offline-first: escreve local primeiro e empurra para cá em background (`PatientSyncService`). Esta API é o destino desse push e a fonte de reconciliação, não o caminho crítico da UI.
 
@@ -129,10 +128,8 @@ não tem nada a ver com a causa.
 Subir tudo de uma vez: `docker compose up --build` em `backend/` (Postgres, Consul, os três serviços; só o
 gateway publica porta, `3000:3000`). Em dev sem Docker: `npm run dev:auth`, `dev:glucose` e `dev:gateway`.
 
-O app lê `--dart-define=API_URL=...` (padrão `http://localhost:3001`, `lib/core/api/api_client.dart`).
-**Hoje nenhum valor funciona ponta a ponta**: `:3001` não serve `/auth/*` e `:3000` exige o prefixo
-`/api/v1`, que o app ainda não envia (auditoria A-01). O alvo é `API_URL=http://<ip>:3000` com `/api/v1`
-absorvido no `ApiClient`.
+O app lê `--dart-define=API_URL=http://<ip>:3000` (padrão `http://localhost:3000`): o host do gateway, **sem**
+`/api/v1`, que o `ApiClient` acrescenta (`lib/core/api/api_client.dart`). Emulador Android: `http://10.0.2.2:3000`.
 
 ## Variáveis de ambiente
 

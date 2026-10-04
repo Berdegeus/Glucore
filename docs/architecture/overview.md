@@ -76,7 +76,7 @@ Remota (não mais local-only): `RemoteAuthDataSource` → `POST /auth/login|regi
 | `lib/app.dart` | Splash → onboarding → AuthGate |
 | `lib/features/auth/presentation/pages/auth_gate.dart` | Cria SensorCubit/PatientCubit quando autenticado |
 | `lib/features/patient/presentation/shell/patient_shell_page.dart` | Shell com 4 abas + FAB |
-| `lib/core/api/api_client.dart` | Dio base URL (`--dart-define=API_URL`, default `http://localhost:3001`; deveria apontar ao gateway `:3000` com `/api/v1` — pendente, auditoria A-01) |
+| `lib/core/api/api_client.dart` | Dio base URL: `<API_URL>/api/v1` (`--dart-define=API_URL`, default `http://localhost:3000`, o gateway) |
 | `android/.../MainActivity.kt` | Registro dos channels (delega ao `SensorCore`) |
 | `android/.../GlucoreApp.kt` | Application; dona do `SensorCore` |
 | `android/.../SensorCore.kt` | Agregado application-scoped da pilha do sensor |

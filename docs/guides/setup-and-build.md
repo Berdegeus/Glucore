@@ -4,15 +4,11 @@
 
 ## Comandos Flutter
 
-> **Atenção:** o backend agora tem gateway (:3000, prefixo `/api/v1`) e o app ainda não foi ligado a ele
-> (auditoria A-01). Com `:3001` login/registro dão 404; com `:3000` tudo dá 404 por falta do prefixo.
-> Até o PR "app → gateway", o app só funciona offline (modo local). O `API_URL` abaixo é o default atual.
-
 ```bash
 flutter analyze
 flutter test --no-pub
-flutter run                                    # backend em localhost:3001 (emulador: use IP)
-flutter run --dart-define=API_URL=http://192.168.1.100:3001   # device físico
+flutter run                                    # gateway em localhost:3000 (só serve no emulador desktop)
+flutter run --dart-define=API_URL=http://192.168.1.100:3000   # device físico (host do gateway, SEM /api/v1)
 flutter build apk --debug
 flutter gen-l10n                               # após editar .arb
 cd android && ./gradlew app:assembleDebug

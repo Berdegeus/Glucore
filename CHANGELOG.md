@@ -3,6 +3,25 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 o projeto segue versionamento semântico (ver [docs/guides/versioning-and-branches.md](docs/guides/versioning-and-branches.md)).
 
+## [Unreleased] — app ligado ao gateway (branch `feat/app-to-gateway`)
+
+### Changed
+- **O app fala só com o gateway** (`/api/v1`): `ApiClient` monta a `baseUrl` como `<API_URL>/api/v1`
+  (padrão `http://localhost:3000`; antes `:3001` sem prefixo, que não servia mais `/auth/*`). Os
+  datasources seguem com caminhos relativos. **`--dart-define=API_URL` passa a ser o host do gateway, sem
+  `/api/v1`.**
+- Perfil, troca de e-mail e de senha usam `GET/PUT /me` (conta + paciente compostos) em vez de
+  `/auth/profile`.
+- Erros do gateway mapeados: 429 do rate limit (`AuthError.tooManyRequests`, string nova) e
+  `UPSTREAM_UNAVAILABLE`/503 (`serviceUnavailable`).
+
+### Added
+- `AccountService.deleteAccount()` (`DELETE /account`), sem tela ainda.
+
+### Notes
+- Tokens emitidos antes da claim `role` são rejeitados (`TOKEN_INVALID`): quem tinha sessão salva volta
+  ao login uma vez. Os dados locais (sqflite) não são afetados.
+
 ## [Unreleased] — auth-service extraído, Fase 3 (branch `refactor/auth-service`)
 
 A fronteira deixa de ser de pastas e passa a ser de **banco**: identidade sai do serviço clínico e

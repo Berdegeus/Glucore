@@ -50,9 +50,8 @@ Os destinos vêm de um `ServiceRegistry` (Strategy): `SERVICE_DISCOVERY=env` (UR
 `INTERNAL_JWT_SECRET` e batem em `/internal/accounts` (auth) e `/internal/patients` (glucose), que
 não são públicas. Código em `packages/shared/src/discovery/` e `services/gateway/src/clients/`.
 
-**O app Flutter ainda não usa o gateway**: tem uma `baseUrl` (default `:3001`) e caminhos sem
-`/api/v1`, então não funciona ponta a ponta com nenhuma topologia (auditoria A-01,
-[AUDIT_2026-09-08.md](../AUDIT_2026-09-08.md)).
+O app Flutter fala **só** com o gateway: `ApiClient` monta a `baseUrl` como `<API_URL>/api/v1` (`gatewayBaseUrl`,
+`lib/core/api/api_client.dart`) e os datasources usam caminhos relativos. O perfil usa `GET/PUT /me`.
 
 ### Quebras de contrato do split
 
@@ -257,9 +256,7 @@ Quatro bancos: `glucore_dev` / `glucore_test` (glucose) e `glucore_auth_dev` / `
 (auth). Os de teste vêm de `.env.test` de cada serviço (untracked; copiar do `.env.test.example`).
 
 App físico → backend na máquina: `flutter run --dart-define=API_URL=http://<ip-da-maquina>:3000`
-(gateway). **O app não funciona ponta a ponta hoje**: o `ApiClient` ainda não acrescenta o prefixo
-`/api/v1` nem separa auth de dados (auditoria A-01). O alvo é `API_URL` → gateway, com `/api/v1`
-embutido na `baseUrl`; os caminhos relativos dos datasources continuam válidos.
+(host do gateway, **sem** `/api/v1` — o app acrescenta). Emulador Android: `http://10.0.2.2:3000`.
 
 ## Arquivos-chave
 

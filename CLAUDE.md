@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Glucore is an Android-first Flutter MVP for CGM sensors: Sibionics, Accu-Chek SmartGuide and FreeStyle Libre 2. Four layers: Flutter UI → Kotlin session/BLE → C++/JNI bridge → proprietary vendor `.so` files (arm64-v8a only).
 
-**Current state (v1.1.0):** BLE connection live. Full GATT + Sibionics EU protocol (auth → time-sync → activation → history sync → glucose). **Multi-sensor**: Sibionics + Accu-Chek SmartGuide (PIN) + FreeStyle Libre 2 (NFC + Abbott lib) over a brand-agnostic `BrandBleManager`; app-scoped stack (`SensorCore` + `CgmForegroundService`). Flutter shell with Bloc/Cubit. **Offline-first** local SQLite (primary) + background sync; JWT auth tolerant of offline launch (P18) and scoped per-user (P19); nav providers above the root Navigator (P17). Backend: three services (gateway + auth-service + glucose-service) with JWT auth, CRUD for carb/insulin/alerts and a dashboard summary; the app is not yet wired to the gateway (see Backend).
+**Current state (v1.1.0):** BLE connection live. Full GATT + Sibionics EU protocol (auth → time-sync → activation → history sync → glucose). **Multi-sensor**: Sibionics + Accu-Chek SmartGuide (PIN) + FreeStyle Libre 2 (NFC + Abbott lib) over a brand-agnostic `BrandBleManager`; app-scoped stack (`SensorCore` + `CgmForegroundService`). Flutter shell with Bloc/Cubit. **Offline-first** local SQLite (primary) + background sync; JWT auth tolerant of offline launch (P18) and scoped per-user (P19); nav providers above the root Navigator (P17). Backend: three services (gateway + auth-service + glucose-service) with JWT auth, CRUD for carb/insulin/alerts and a dashboard summary; the app talks to it through `/api/v1` (see Backend).
 
 **Versioning:** `dev` = integration branch for the in-progress version; `main` = tagged releases, device-regression-tested. See `docs/guides/versioning-and-branches.md` and `CHANGELOG.md`.
 
@@ -67,7 +67,7 @@ Node/Express + Prisma/PostgreSQL. `backend/` is an npm workspace with **three se
 
 Each domain sits in `src/modules/<name>/` as `routes · controller · service · repository · schema · mapper`, wired in that service's `src/container.ts`. Auth via JWT Bearer, `{sub, role}`; the role comes from the claim, not a database read. **All three services share `JWT_SECRET`**; gateway ↔ service calls additionally use `INTERNAL_JWT_SECRET`. `docker compose up --build` in `backend/` brings up Postgres, Consul and the three services; only the gateway publishes a port. **Never expose auth-service directly** — the login rate limiter lives in the gateway.
 
-**Known gap (audit A-01):** the Flutter app still has a single `baseUrl` (`lib/core/api/api_client.dart`, default `:3001`) and unprefixed paths, so it does not work end to end against any backend topology yet. The fix is to point `API_URL` at the gateway (`http://<ip>:3000`) and append `/api/v1` in `ApiClient`; until then treat the app↔backend contract as broken (`docs/AUDIT_2026-09-08.md`).
+The Flutter app talks only to the gateway: `ApiClient` (`lib/core/api/api_client.dart`) builds `baseUrl` as `<API_URL>/api/v1` via `gatewayBaseUrl`, so datasources keep relative paths (`/auth/login`, `/carbs/item`, ...). Run with `--dart-define=API_URL=http://<ip>:3000` (host only; emulator `http://10.0.2.2:3000`). The profile goes through the composed `GET/PUT /me`; `DELETE /account` has a client method (`AccountService.deleteAccount`) but no screen yet.
 
 ### Debug panel / mock sensor
 
