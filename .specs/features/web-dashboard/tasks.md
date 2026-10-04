@@ -350,15 +350,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exportados pelo barrel `packages/shared/src/index.ts`
-- [ ] Teste em `backend/services/auth-service/tests/modules/widgetCatalog.test.ts` lê `contracts/widget-catalog.json` e falha se ids ou tamanhos divergirem
-- [ ] Teste confere 16/11/11 ids e o limite 20
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/auth-service/tests/modules/widgetCatalog.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Exportados pelo barrel `packages/shared/src/index.ts`
+- [x] Teste em `backend/services/auth-service/tests/modules/widgetCatalog.test.ts` lê `contracts/widget-catalog.json` e falha se ids ou tamanhos divergirem
+- [x] Teste confere 16/11/11 ids e o limite 20
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/auth-service/tests/modules/widgetCatalog.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(shared): expose the widget catalog to the services`
+**Status**: ✅ Done
 
 ---
 

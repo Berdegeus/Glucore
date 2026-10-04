@@ -35,6 +35,12 @@ export {
   type PageQuery,
 } from './util/pageQuery';
 export {
+  MAX_LAYOUT_WIDGETS,
+  WIDGET_IDS_BY_ROLE,
+  WIDGET_SIZES,
+  type WidgetSize,
+} from './dashboard/widgetCatalog';
+export {
   auditRequestContext,
   recordAudit,
   sanitizeMetadata,
