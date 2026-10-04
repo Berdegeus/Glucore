@@ -945,13 +945,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com fakes: sucesso grava token e devolve papel de `/me`; `invalid-credentials` propaga sem gravar; falha em `/me` apaga o token; papel desconhecido é rejeitado
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/application/login.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com fakes: sucesso grava token e devolve papel de `/me`; `invalid-credentials` propaga sem gravar; falha em `/me` apaga o token; papel desconhecido é rejeitado
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/application/login.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the login use case`
+**Status**: ✅ Done
 
 ---
 
