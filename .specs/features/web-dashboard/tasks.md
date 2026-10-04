@@ -578,15 +578,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de fumaça roda `cruise()` sobre fixtures em `web/tests/arch/fixtures/`: domain importando pacote npm, domain importando application, application importando infrastructure, presentation importando infrastructure — cada um falha
-- [ ] Fixture conforme passa
-- [ ] `npm run lint:arch` roda sobre `src`
-- [ ] Gate `quick` passa: `cd web && npx vitest run tests/arch/layers.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de fumaça roda `cruise()` sobre fixtures em `web/tests/arch/fixtures/`: domain importando pacote npm, domain importando application, application importando infrastructure, presentation importando infrastructure — cada um falha
+- [x] Fixture conforme passa
+- [x] `npm run lint:arch` roda sobre `src`
+- [x] Gate `quick` passa: `cd web && npx vitest run tests/arch/layers.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `chore(web): enforce the layer rule with dependency-cruiser`
+**Status**: ✅ Done
 
 ---
 

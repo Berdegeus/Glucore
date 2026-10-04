@@ -9,7 +9,8 @@ import tseslint from 'typescript-eslint';
 const TEST_FILES = ['**/*.test.{ts,tsx}', 'tests/**'];
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules'] },
+  // Fixtures break the architecture rules on purpose; they are inputs, not code.
+  { ignores: ['dist', 'coverage', 'node_modules', 'tests/**/fixtures'] },
   { linterOptions: { reportUnusedDisableDirectives: 'error' } },
   {
     files: ['**/*.{ts,tsx,js,mjs,cjs}'],
