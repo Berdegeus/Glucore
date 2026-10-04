@@ -473,7 +473,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-10 | P1: Login único e acesso por papel | - | Pending |
 | ACC-11 | P1: Login único e acesso por papel | - | Pending |
 | ACC-12 | P1: Login único e acesso por papel | - | Pending |
-| ARQ-01 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
+| ARQ-01 | P1: Arquitetura limpa verificável (rubrica 37) | T10 | Implementing |
 | ARQ-02 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-03 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-04 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
@@ -484,7 +484,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
-| ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
+| ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | T10 | Implementing |
 | ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-14 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-15 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
@@ -537,10 +537,10 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-16 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-17 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-18 | P1: Dashboard do paciente com os dados do app | - | Pending |
-| DEP-01 | P1: Publicação na Vercel | - | Pending |
+| DEP-01 | P1: Publicação na Vercel | T10 | Implementing |
 | DEP-02 | P1: Publicação na Vercel | - | Pending |
 | DEP-03 | P1: Publicação na Vercel | - | Pending |
-| DEP-04 | P1: Publicação na Vercel | - | Pending |
+| DEP-04 | P1: Publicação na Vercel | T10 | Implementing |
 | DEP-05 | P1: Publicação na Vercel | - | Pending |
 | DEP-06 | P1: Publicação na Vercel | - | Pending |
 | DEP-07 | P1: Publicação na Vercel | T9 | Implementing |

@@ -532,15 +532,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] `tsconfig` com `strict`, `noImplicitAny`, `noUncheckedIndexedAccess`; pastas `src/{app,composition,shared,features}`
-- [ ] `.env.example` com `VITE_API_URL`; `web/node_modules` e `web/dist` no `.gitignore`
-- [ ] Versões das bibliotecas fixadas no `package-lock.json` e listadas em `web/README.md`
-- [ ] `npm run typecheck` e `npm run build` passam
-- [ ] Gate `build` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size`
+- [x] `tsconfig` com `strict`, `noImplicitAny`, `noUncheckedIndexedAccess`; pastas `src/{app,composition,shared,features}`
+- [x] `.env.example` com `VITE_API_URL`; `web/node_modules` e `web/dist` no `.gitignore`
+- [x] Versões das bibliotecas fixadas no `package-lock.json` e listadas em `web/README.md`
+- [x] `npm run typecheck` e `npm run build` passam
+- [x] Gate `build` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(web): scaffold the dashboard SPA`
+**Status**: ✅ Done
 
 ---
 

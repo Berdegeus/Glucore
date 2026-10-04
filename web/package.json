@@ -1,0 +1,41 @@
+{
+  "name": "glucore-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "lint": "eslint . --max-warnings 0",
+    "lint:arch": "depcruise src --config .dependency-cruiser.cjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "dup": "jscpd src",
+    "size": "node scripts/checkBundleSize.mjs"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "@vitest/coverage-v8": "5.0.3",
+    "dependency-cruiser": "18.5.0",
+    "eslint": "9.39.5",
+    "globals": "17.13.0",
+    "jscpd": "5.4.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
+  }
+}
