@@ -87,6 +87,7 @@ class SensorCubit extends Cubit<SensorUiState> {
       final session = await repository.registerSensor(barcode, brand: brand);
       if (session != null) {
         emit(state.copyWith(session: session, clearFailure: true));
+        await startMonitoring();
       }
     } catch (e) {
       emit(
