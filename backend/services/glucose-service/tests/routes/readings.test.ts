@@ -3,6 +3,8 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app';
+import { MAX_READING_BATCH } from '../../src/modules/readings/readings.schema';
+import { MAX_READ_ROWS } from '../../src/modules/readings/readings.service';
 import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
 
 /**
@@ -90,10 +92,10 @@ describe('GET /readings', () => {
     expect(res.body.map((r: { value: number }) => r.value)).toEqual([120, 110, 100]);
   });
 
-  it('caps the response at 288 rows', async () => {
+  it('returns more than a day of rows (no 288 cap)', async () => {
     const base = Date.UTC(2026, 7, 1);
     await prisma.glucoseReading.createMany({
-      data: Array.from({ length: 300 }, (_, i) => ({
+      data: Array.from({ length: 600 }, (_, i) => ({
         patientId: user.userId,
         recordedAt: new Date(base + i * 60_000),
         valueMgDl: 100 + (i % 50),
@@ -101,7 +103,22 @@ describe('GET /readings', () => {
     });
 
     const res = await request(app).get('/readings').set(auth());
-    expect(res.body).toHaveLength(288);
+    expect(res.body).toHaveLength(600);
+  });
+
+  it('bounds the response at MAX_READ_ROWS, keeping the newest', async () => {
+    const base = Date.UTC(2026, 7, 1);
+    await prisma.glucoseReading.createMany({
+      data: Array.from({ length: MAX_READ_ROWS + 1 }, (_, i) => ({
+        patientId: user.userId,
+        recordedAt: new Date(base + i * 60_000),
+        valueMgDl: 100,
+      })),
+    });
+
+    const res = await request(app).get('/readings').set(auth());
+    expect(res.body).toHaveLength(MAX_READ_ROWS);
+    expect(res.body[0].timestampMs).toBe(base + MAX_READ_ROWS * 60_000);
   });
 
   it('never returns another patient rows', async () => {
@@ -175,13 +192,13 @@ describe('POST /readings', () => {
     expect(rows[0].valueMgDl).toBe(155);
   });
 
-  it('keeps only the first 288 entries of a larger batch', async () => {
+  it('stores a full-size batch whole (no 288 cap)', async () => {
     const base = Date.UTC(2026, 7, 1);
-    await request(app)
+    const res = await request(app)
       .post('/readings')
       .set(auth())
       .send({
-        readings: Array.from({ length: 300 }, (_, i) => ({
+        readings: Array.from({ length: MAX_READING_BATCH }, (_, i) => ({
           value: 100,
           timestampMs: base + i * 60_000,
           trend: 'stable',
@@ -189,7 +206,29 @@ describe('POST /readings', () => {
         })),
       });
 
-    expect(await prisma.glucoseReading.count({ where: { patientId: user.userId } })).toBe(288);
+    expect(res.status).toBe(204);
+    expect(await prisma.glucoseReading.count({ where: { patientId: user.userId } })).toBe(
+      MAX_READING_BATCH,
+    );
+  });
+
+  it('rejects a batch over the maximum with 400 and stores nothing', async () => {
+    const base = Date.UTC(2026, 7, 1);
+    const res = await request(app)
+      .post('/readings')
+      .set(auth())
+      .send({
+        readings: Array.from({ length: MAX_READING_BATCH + 1 }, (_, i) => ({
+          value: 100,
+          timestampMs: base + i * 60_000,
+          trend: 'stable',
+          rate: 0,
+        })),
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: `readings batch exceeds ${MAX_READING_BATCH} entries` });
+    expect(await prisma.glucoseReading.count({ where: { patientId: user.userId } })).toBe(0);
   });
 
   it('accepts an empty batch', async () => {
