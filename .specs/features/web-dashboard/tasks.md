@@ -1566,13 +1566,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: uma e duas séries; eixo de categorias; `ResponsiveContainer`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/barChart.test.tsx`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: uma e duas séries; eixo de categorias; `ResponsiveContainer`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/barChart.test.tsx`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the bar chart adapter`
+**Status**: ✅ Done
 
 ---
 

@@ -63,8 +63,8 @@ export function stubChartContainer(initial: Size = { width: 600, height: 300 }):
     Object.assign(current, initial);
     globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
     Element.prototype.getBoundingClientRect = function measure(this: Element): DOMRect {
-      const measured = this.classList.contains(CONTAINER_CLASS) ? current : { width: 0, height: 0 };
-      return { x: 0, y: 0, top: 0, left: 0, right: measured.width, bottom: measured.height, ...measured } as DOMRect;
+      const size = this.classList.contains(CONTAINER_CLASS) ? current : { width: 0, height: 0 };
+      return { x: 0, y: 0, top: 0, left: 0, right: size.width, bottom: size.height, ...size } as DOMRect;
     };
   });
 

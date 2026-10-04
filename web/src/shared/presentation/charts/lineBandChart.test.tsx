@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
 import { stubChartContainer } from '../../../test/chartContainer';
+import { renderChart } from '../../../test/chartQueries';
 import { ChartFrame } from './chartFrame';
 import { LineBandChart, withBand, type LineBandChartProps } from './lineBandChart';
 
@@ -21,44 +22,41 @@ const LINES = [
 const BAND = { minKey: 'min', maxKey: 'max', label: 'Mínimo a máximo' };
 const TARGET = { low: 70, high: 180, label: 'Faixa-alvo' };
 
-function renderChart(props: Partial<LineBandChartProps> = {}) {
-  const { container } = render(<LineBandChart data={DATA} xKey="day" lines={LINES} {...props} />);
-  const all = (selector: string) => [...container.querySelectorAll(selector)];
-  return { container, all };
-}
+const drawChart = (props: Partial<LineBandChartProps> = {}) =>
+  renderChart(<LineBandChart data={DATA} xKey="day" lines={LINES} {...props} />);
 
 describe('LineBandChart', () => {
   it('draws inside a ResponsiveContainer, at the container width (RSP-05)', () => {
-    const { container } = renderChart();
+    const { container } = drawChart();
     expect(container.querySelector('.recharts-responsive-container')).not.toBeNull();
     expect(container.querySelector('svg.recharts-surface')).toHaveAttribute('width', '600');
   });
 
   it('draws one curve per series, in series colors, dashing the one that asks for it (PAC-06)', () => {
-    const { all } = renderChart();
+    const { all } = drawChart();
     const curves = all('.recharts-line-curve');
     expect(curves.map((curve) => curve.getAttribute('stroke'))).toEqual(['var(--series-1)', 'var(--series-2)']);
     expect(curves.map((curve) => curve.getAttribute('stroke-dasharray'))).toEqual([null, '6 4']);
   });
 
   it('draws the min-max band as one filled area behind the lines (PAC-06)', () => {
-    const { all } = renderChart({ band: BAND });
+    const { all } = drawChart({ band: BAND });
     expect(all('.recharts-area-area')).toHaveLength(1);
-    expect(renderChart().all('.recharts-area')).toHaveLength(0);
+    expect(drawChart().all('.recharts-area')).toHaveLength(0);
   });
 
   it('draws the target range between the limits it received (PAC-06)', () => {
-    const { all } = renderChart({ targetRange: TARGET });
+    const { all } = drawChart({ targetRange: TARGET });
     const [area] = all('.recharts-reference-area-rect');
     expect(area).toHaveAttribute('y1', '70');
     expect(area).toHaveAttribute('y2', '180');
   });
 
   it('draws a marker on every point with the shape of its series, only when asked (RSP-08)', () => {
-    const plain = renderChart().all('.recharts-line-dots .recharts-symbols');
+    const plain = drawChart().all('.recharts-line-dots .recharts-symbols');
     expect(plain).toHaveLength(0);
 
-    const { all } = renderChart({ markers: true });
+    const { all } = drawChart({ markers: true });
     const symbols = all('.recharts-line-dots .recharts-symbols');
     expect(symbols).toHaveLength(DATA.length * LINES.length);
     const shapes = new Set(symbols.map((symbol) => symbol.getAttribute('d')));
@@ -66,13 +64,13 @@ describe('LineBandChart', () => {
   });
 
   it('fills under each line when asked', () => {
-    const { all } = renderChart({ filled: true });
+    const { all } = drawChart({ filled: true });
     expect(all('.recharts-area-area')).toHaveLength(LINES.length);
     expect(all('.recharts-line-curve')).toHaveLength(0);
   });
 
   it('lists every series, the band and the target range in the legend', () => {
-    renderChart({ band: BAND, targetRange: TARGET });
+    drawChart({ band: BAND, targetRange: TARGET });
     const labels = screen.getAllByRole('listitem').map((item) => item.textContent);
     expect(labels).toEqual(['Média diária', 'Média de 7 dias', 'Mínimo a máximo', 'Faixa-alvo']);
   });
