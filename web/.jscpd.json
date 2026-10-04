@@ -1,0 +1,6 @@
+{
+  "threshold": 3,
+  "format": ["typescript", "tsx"],
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/coverage/**"],
+  "reporters": ["console"]
+}

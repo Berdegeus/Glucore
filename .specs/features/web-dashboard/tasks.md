@@ -623,13 +623,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de fumaça roda o jscpd sobre um fixture com dois arquivos duplicados e espera falha; sobre `src` passa
-- [ ] Gate `quick` passa: `cd web && npx vitest run tests/arch/duplication.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de fumaça roda o jscpd sobre um fixture com dois arquivos duplicados e espera falha; sobre `src` passa
+- [x] Gate `quick` passa: `cd web && npx vitest run tests/arch/duplication.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `chore(web): cap code duplication with jscpd`
+**Status**: ✅ Done
 
 ---
 

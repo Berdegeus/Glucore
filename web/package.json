@@ -15,7 +15,7 @@
     "lint:arch": "depcruise src --config .dependency-cruiser.cjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "dup": "jscpd src",
+    "dup": "jscpd --config .jscpd.json src",
     "size": "node scripts/checkBundleSize.mjs"
   },
   "dependencies": {

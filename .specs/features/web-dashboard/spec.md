@@ -489,7 +489,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-14 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-15 | P1: Arquitetura limpa verificável (rubrica 37) | T13 | Implementing |
 | ARQ-16 | P1: Arquitetura limpa verificável (rubrica 37) | T11 | Implementing |
-| ARQ-17 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
+| ARQ-17 | P1: Arquitetura limpa verificável (rubrica 37) | T14 | Implementing |
 | ARQ-18 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | LAY-01 | P1: Layout customizável por widgets | T1 | Implementing |
