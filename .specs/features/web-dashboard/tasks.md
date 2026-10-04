@@ -1071,14 +1071,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: o container expõe `useCases.auth.*` e um `SessionEventBus` único
-- [ ] `npm run lint:arch` passa sem exceções fora de `composition/`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/composition/container.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: o container expõe `useCases.auth.*` e um `SessionEventBus` único
+- [x] `npm run lint:arch` passa sem exceções fora de `composition/`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/composition/container.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the composition root`
+**Status**: ✅ Done
 
 ---
 
