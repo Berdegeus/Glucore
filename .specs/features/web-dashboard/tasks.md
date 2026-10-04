@@ -794,13 +794,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: grava e lê em `sessionStorage`; nunca chama `localStorage` (spy); acesso que lança cai para memória e expõe `persistent=false`; `clear` apaga
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/storage/sessionTokenStore.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: grava e lê em `sessionStorage`; nunca chama `localStorage` (spy); acesso que lança cai para memória e expõe `persistent=false`; `clear` apaga
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/storage/sessionTokenStore.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): store the access token in sessionStorage`
+**Status**: ✅ Done
 
 ---
 
