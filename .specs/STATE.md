@@ -19,6 +19,7 @@
 **Contexto**: O TTL do JWT é de 30 dias (item 5.2 ficou fora de escopo), então um claim de papel dentro do token ficaria obsoleto por até um mês.
 **Decisão**: `requireRole` resolve `user.role` via Prisma em cada requisição protegida.
 **Consequência**: Uma query extra nas rotas de dados; rebaixamento de papel vale imediatamente.
+**Status**: superseded by AD-012
 
 ### AD-004 — Auditoria é best-effort
 **Data**: 2026-08-10
@@ -69,6 +70,30 @@
 **Contexto**: Em paralelo a esta feature, a branch `refactor/auth-service` levou o plano de microsserviços da Fase 2 para a Fase 3: `User`, `AuthCredential`, `PasswordResetToken` e `AuthSession` saíram do `glucose-service` para um `auth-service` próprio (:3002, banco `glucore_auth`), com migration destrutiva no banco clínico. As duas branches saíram do mesmo `main` (`e4fdafe`) e ambas mexem no `glucose-service`. O `git merge-tree` acusava **um** conflito textual (`backend/README.md`), o que subestimava o problema: o conflito real era semântico. Esta branch mantinha `registerUser()` — um fixture que registra pelo `POST /auth/register` — e o usava 30 vezes nos testes de rota, incluindo os ~300 linhas novas de alerts e paginação; a Fase 3 removeu essa rota do `glucose-service`. Mesclar sem intervenção compila em nada: testes chamando um fixture inexistente, mais um `tests/routes/auth.test.ts` inteiro exercitando rotas que saíram.
 **Decisão**: Decisão explícita do usuário entre três ordens possíveis (esta primeiro, a Fase 3 primeiro, ou reconciliar as duas): **reconciliar num branch só e abrir uma PR só**. Base `feat/arch-phases-3-5`, merge de `refactor/auth-service` por cima. O `auth.test.ts` e o `db.ts` antigo saíram pelo merge automático (a Fase 3 os removeu e esta branch não os tocou); restou converter à mão as duas chamadas de `registerUser` nos casos novos de alerts para `signedInPatient()`, que semeia o `Patient` e assina o token em vez de passar por uma rota que não existe mais.
 **Consequência**: **382 testes de backend** (357 desta branch + a suíte do `auth-service`, menos os 44 de `/auth` que deixaram de rodar contra o `glucose-service`), cobertura 96,23% statements / 91,52% branches, acima do limiar de 90%. 345 testes Flutter e `flutter analyze` limpos, sem regressão. O fix de portabilidade Windows do `globalSetup.ts` (`shell: true`, ver `AD-010`) foi replicado no `globalSetup.ts` do `auth-service`, que nasceu como cópia do anterior e teria reintroduzido o mesmo `EINVAL`. **Herdadas da Fase 3, e válidas até o gateway existir**: o cadastro grava só a conta (os campos de paciente do `register` não têm destino, e o `Patient` nasce com os defaults 80/180 no primeiro acesso a dados); `GET/PUT /auth/profile` respondem só o bloco de conta; e não há endereço único — cadastro e login em :3002, resto em :3001 —, então o app não roda ponta a ponta até a Fase 4.
+
+### AD-012 — O papel viaja no JWT e o backend o lê do token, não do banco
+**Data**: 2026-10-04
+**Contexto**: O AD-003 mandava `requireRole` ler `user.role` no banco a cada requisição. Com a separação em auth-service e glucose-service, isso custaria uma chamada de rede por requisição, inclusive no sync de leituras. O código já mudou: `packages/shared/src/auth/claims.ts` e `middleware.ts` leem `role` do claim, e `jwt.ts` dá 1 h de validade ao profissional e ao administrador (paciente mantém 30 dias).
+**Decisão**: O papel vem do claim do JWT. A web nunca autoriza pelo claim: usa `GET /api/v1/me` para saber o papel e só decodifica o `exp` para agendar a renovação. A revogação por `AuthSession.isRevoked` vale só no `refresh` dos papéis web.
+**Consequência**: Rebaixar um usuário só vale quando o token expira (até 1 h para profissional e admin, até 30 dias para paciente). O login continua sem checar `User.status`; bloquear usuário é uma feature própria.
+
+### AD-013 — A web é feature-first com quatro camadas e a regra de dependência é verificada por ferramenta
+**Data**: 2026-10-04
+**Contexto**: A rubrica 37 pede padrões, princípios de design e arquitetura limpa no frontend. Uma convenção só escrita em documento se perde; o app Flutter já provou o valor de uma guarda estrutural (`domain_layering_test.dart`).
+**Decisão**: `web/src/features/<feature>/{domain,application,infrastructure,presentation}`, mais `shared/` e um composition root. `dependency-cruiser` (`npm run lint:arch`) falha o CI quando `domain` importa qualquer pacote ou outra camada, quando `presentation` importa `infrastructure`, ou quando `recharts` e `@dnd-kit` aparecem fora dos seus diretórios. Features só se enxergam pelo `index.ts` público.
+**Consequência**: Cada violação vira um teste vermelho no CI. O custo é mais pastas e um adaptador por biblioteca externa. Detalhes em `.specs/features/web-dashboard/design.md`.
+
+### AD-014 — Endpoints novos ficam no serviço dono do domínio e o gateway compõe o que cruza bancos
+**Data**: 2026-10-04
+**Contexto**: O dashboard por papel precisa de preferências, convites e vínculos, carteira do profissional e visão do admin. Os dados de identidade estão em `glucore_auth` e os clínicos em `glucore_dev`.
+**Decisão**: Preferências de layout no auth-service (FK para `User`, a conta apaga em cascata). Convites, vínculos, carteira e agregados clínicos no glucose-service. Nomes e a visão do admin são compostos no gateway por rotas `/internal` com token interno, no mesmo padrão do `/me`. Nenhum serviço chama o outro.
+**Consequência**: A composição do gateway ganha rotas, mas os bancos continuam separados. A perna de nomes é degradável (`X-Degraded`); a visão do admin falha se um dos serviços falhar.
+
+### AD-015 — Consentimento por código de convite gerado no app, vínculo revogável pelo paciente
+**Data**: 2026-10-04
+**Contexto**: `DashboardAccessGrant` existia só no schema. O cadastro do profissional é aberto e o CRM não é validado, então a barreira de privacidade é o consentimento do paciente.
+**Decisão**: O paciente gera no app um código de 8 caracteres, uso único e 24 h de validade, gravado como sha256. O profissional o resgata na web e cria o vínculo `READ`. Só o paciente revoga; `expiresAt` não é usado na v1. Toda leitura de dado de paciente por profissional e todo evento de convite ou vínculo vai para a trilha de auditoria, sem valores clínicos.
+**Consequência**: Sem código, o profissional não vê nenhum dado. Um vínculo ativo não expira sozinho, então o app precisa deixar a revogação à vista.
 
 ---
 
