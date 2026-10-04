@@ -1352,14 +1352,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: o padrão de cada papel só tem ids do papel
-- [ ] Teste lê `contracts/widget-catalog.json` e falha se `widgetIds` divergir
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/domain`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: o padrão de cada papel só tem ids do papel
+- [x] Teste lê `contracts/widget-catalog.json` e falha se `widgetIds` divergir
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/domain`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add default layouts per role`
+**Status**: ✅ Done
 
 ---
 
