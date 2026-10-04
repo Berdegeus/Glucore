@@ -880,13 +880,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com `Intl` simulado devolve o fuso; ausência de fuso cai para `UTC`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/env/browserEnvironment.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com `Intl` simulado devolve o fuso; ausência de fuso cai para `UTC`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/env/browserEnvironment.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): provide browser time zone and clock`
+**Status**: ✅ Done
 
 ---
 

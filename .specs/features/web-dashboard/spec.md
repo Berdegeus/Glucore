@@ -516,7 +516,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | RSP-06 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-07 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-08 | P1: Responsivo, acessível e com tema | - | Pending |
-| RSP-09 | P1: Responsivo, acessível e com tema | - | Pending |
+| RSP-09 | P1: Responsivo, acessível e com tema | T26 | Implementing |
 | RSP-10 | P1: Responsivo, acessível e com tema | - | Pending |
 | RSP-11 | P1: Responsivo, acessível e com tema | - | Pending |
 | PAC-01 | P1: Dashboard do paciente com os dados do app | - | Pending |
@@ -544,7 +544,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
 | DEP-06 | P1: Publicação na Vercel | - | Pending |
 | DEP-07 | P1: Publicação na Vercel | T9 | Implementing |
-| API-01 | P2: Ajustes de backend para os gráficos novos | - | Pending |
+| API-01 | P2: Ajustes de backend para os gráficos novos | T26 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-03 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-04 | P2: Ajustes de backend para os gráficos novos | - | Pending |
