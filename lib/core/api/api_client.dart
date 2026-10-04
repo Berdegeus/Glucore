@@ -8,10 +8,11 @@ import 'auth_token_store.dart';
 // --dart-define=API_URL=http://<machine-ip>:3000 when building/running — the
 // host only, WITHOUT `/api/v1`: [gatewayBaseUrl] appends it.
 // Example: flutter run --dart-define=API_URL=http://192.168.1.100:3000
-// (Android emulator: http://10.0.2.2:3000).
+// (Android emulator: http://10.0.2.2:3000). Without the define, the app uses
+// the production backend (https://glucore.duckdns.org).
 const _apiUrl = String.fromEnvironment(
   'API_URL',
-  defaultValue: 'http://localhost:3000',
+  defaultValue: 'https://glucore.duckdns.org',
 );
 
 /// Path prefix the gateway mounts every public route under.
