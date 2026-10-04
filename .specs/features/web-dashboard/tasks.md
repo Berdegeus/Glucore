@@ -1095,14 +1095,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste lê o CSS e calcula o contraste: texto ≥ 4,5:1 e elementos gráficos ≥ 3:1 nos dois temas
-- [ ] Controles têm `min-height`/`min-width` de 44 px abaixo de 1024 px
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/theme/tokens.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste lê o CSS e calcula o contraste: texto ≥ 4,5:1 e elementos gráficos ≥ 3:1 nos dois temas
+- [x] Controles têm `min-height`/`min-width` de 44 px abaixo de 1024 px
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/theme/tokens.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add theme tokens`
+**Status**: ✅ Done
 
 ---
 
