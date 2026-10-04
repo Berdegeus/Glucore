@@ -1008,13 +1008,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: paciente nunca renova; profissional perto do fim renova e troca o token; falha propaga `unauthenticated`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/auth/application/refreshSession.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: paciente nunca renova; profissional perto do fim renova e troca o token; falha propaga `unauthenticated`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/auth/application/refreshSession.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): refresh web-role sessions`
+**Status**: ✅ Done
 
 ---
 
