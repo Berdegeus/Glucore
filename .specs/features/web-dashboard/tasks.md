@@ -2846,13 +2846,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: `Tab` e `Enter` movem; primeiro não move para antes; último não move para depois; anúncio lido
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/moveButtons.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: `Tab` e `Enter` movem; primeiro não move para antes; último não move para depois; anúncio lido
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/moveButtons.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): move widgets with the keyboard`
+**Status**: ✅ Done
 
 ---
 
