@@ -2,6 +2,7 @@ import { http, HttpResponse, type JsonBodyType } from 'msw';
 import { afterEach, describe, expect, it } from 'vitest';
 import { accountPageDto, accountRowDto, overviewDto, overviewOf } from '../../../test/adminFakes';
 import { API_BASE, createTestHttpClient, rejectionOf } from '../../../test/httpClient';
+import { itMapsForbidden, itRejectsMalformed, type MalformedCase, type RepositoryCall } from '../../../test/repositoryErrors';
 import { server } from '../../../test/server';
 import type { AdminRepository } from '../domain/overview';
 import { HttpAdminRepository } from './httpAdminRepository';
@@ -30,7 +31,7 @@ function capture(url: string, body: JsonBodyType) {
   return seen;
 }
 
-const CALLS: [string, string, Call][] = [
+const CALLS: RepositoryCall<AdminRepository>[] = [
   ['overview', OVERVIEW, overview],
   ['users', USERS, users],
 ];
@@ -89,11 +90,7 @@ describe('HttpAdminRepository.users (ADM-04)', () => {
 });
 
 describe('HttpAdminRepository errors (ADM-05, ARQ-06)', () => {
-  it.each(CALLS)('%s: 403 FORBIDDEN_ROLE becomes forbidden with the code', async (_name, url, call) => {
-    server.use(http.get(url, () => HttpResponse.json({ error: 'Wrong role', code: 'FORBIDDEN_ROLE' }, { status: 403 })));
-
-    expect(await rejectionOf(call(setup()))).toMatchObject({ kind: 'forbidden', code: 'FORBIDDEN_ROLE' });
-  });
+  itMapsForbidden(CALLS, setup, 'FORBIDDEN_ROLE');
 
   it.each(CALLS)('%s: 503 becomes unavailable', async (_name, url, call) => {
     server.use(http.get(url, () => HttpResponse.json({ error: 'Down', code: 'SERVICE_UNAVAILABLE' }, { status: 503 })));
@@ -101,7 +98,7 @@ describe('HttpAdminRepository errors (ADM-05, ARQ-06)', () => {
     expect(await rejectionOf(call(setup()))).toMatchObject({ kind: 'unavailable' });
   });
 
-  const MALFORMED: [string, string, object, Call][] = [
+  const MALFORMED: MalformedCase<AdminRepository>[] = [
     ['overview, a missing grants block', OVERVIEW, overviewDto({ grants: undefined }), overview],
     ['overview, an unknown role in the split', OVERVIEW, overviewDto({ accounts: { total: 1, byRole: [{ role: 'ROOT', count: 1 }], byStatus: [] } }), overview],
     ['overview, a negative count', OVERVIEW, overviewDto({ registrationsInPeriod: -1 }), overview],
@@ -109,13 +106,5 @@ describe('HttpAdminRepository errors (ADM-05, ARQ-06)', () => {
     ['users, items that is not a list', USERS, { items: 'nope' }, users],
   ];
 
-  it.each(MALFORMED)('%s: rejects it as an unexpected response, naming the endpoint but not the data', async (_name, url, body, call) => {
-    server.use(http.get(url, () => HttpResponse.json(body)));
-
-    const error = await rejectionOf(call(setup()));
-
-    expect(error).toMatchObject({ kind: 'unknown' });
-    expect((error as Error).message).toContain(`GET ${new URL(url).pathname.replace('/api/v1', '')}`);
-    expect((error as Error).message).not.toContain('ana@example.com');
-  });
+  itRejectsMalformed(MALFORMED, setup, 'ana@example.com');
 });

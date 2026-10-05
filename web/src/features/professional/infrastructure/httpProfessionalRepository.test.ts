@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it } from 'vitest';
 import { API_BASE, createTestHttpClient, rejectionOf } from '../../../test/httpClient';
 import { cohortDto, cohortSummaryOf, patientPageDto, patientPageOf, patientRowDto, patientRowOf } from '../../../test/professionalFakes';
+import { itMapsForbidden, itRejectsMalformed, type MalformedCase, type RepositoryCall } from '../../../test/repositoryErrors';
 import { server } from '../../../test/server';
 import type { ProfessionalRepository } from '../domain/cohort';
 import { HttpProfessionalRepository } from './httpProfessionalRepository';
@@ -19,7 +20,7 @@ function setup(token: string | null = 'tok-1'): ProfessionalRepository {
   return new HttpProfessionalRepository(createTestHttpClient(token).client);
 }
 
-const CALLS: [string, string, Call][] = [
+const CALLS: RepositoryCall<ProfessionalRepository>[] = [
   ['listPatients', PATIENTS, list],
   ['cohort', COHORT, cohort],
 ];
@@ -103,17 +104,8 @@ describe('HttpProfessionalRepository.cohort (PRO-09, PRO-10)', () => {
 });
 
 describe('HttpProfessionalRepository errors (PRO-13, ARQ-06)', () => {
-  it.each(CALLS)('%s: 403 NO_ACTIVE_GRANT becomes forbidden with the code', async (_name, url, call) => {
-    server.use(http.get(url, () => HttpResponse.json({ error: 'No active grant', code: 'NO_ACTIVE_GRANT' }, { status: 403 })));
-
-    expect(await rejectionOf(call(setup()))).toMatchObject({ kind: 'forbidden', code: 'NO_ACTIVE_GRANT' });
-  });
-
-  it.each(CALLS)('%s: 403 FORBIDDEN_ROLE becomes forbidden with its own code', async (_name, url, call) => {
-    server.use(http.get(url, () => HttpResponse.json({ error: 'Wrong role', code: 'FORBIDDEN_ROLE' }, { status: 403 })));
-
-    expect(await rejectionOf(call(setup()))).toMatchObject({ kind: 'forbidden', code: 'FORBIDDEN_ROLE' });
-  });
+  itMapsForbidden(CALLS, setup, 'NO_ACTIVE_GRANT');
+  itMapsForbidden(CALLS, setup, 'FORBIDDEN_ROLE');
 
   it.each(CALLS)('%s: an unreachable gateway becomes unavailable', async (_name, url, call) => {
     server.use(http.get(url, () => HttpResponse.error()));
@@ -121,20 +113,12 @@ describe('HttpProfessionalRepository errors (PRO-13, ARQ-06)', () => {
     expect(await rejectionOf(call(setup()))).toMatchObject({ kind: 'unavailable' });
   });
 
-  const MALFORMED: [string, string, object, Call][] = [
+  const MALFORMED: MalformedCase<ProfessionalRepository>[] = [
     ['listPatients, a row without initials', PATIENTS, patientPageDto([patientRowDto({ initials: undefined })]), list],
     ['listPatients, items that is not a list', PATIENTS, { items: 'nope' }, list],
     ['cohort, a missing patientsStale', COHORT, cohortDto({ patientsStale: undefined }), cohort],
     ['cohort, an unknown TIR bucket', COHORT, cohortDto({ tirHistogram: [{ bucket: 'ten', count: 1 }] }), cohort],
   ];
 
-  it.each(MALFORMED)('%s: rejects it as an unexpected response, naming the endpoint but not the data', async (_name, url, body, call) => {
-    server.use(http.get(url, () => HttpResponse.json(body)));
-
-    const error = await rejectionOf(call(setup()));
-
-    expect(error).toMatchObject({ kind: 'unknown' });
-    expect((error as Error).message).toContain(`GET ${new URL(url).pathname.replace('/api/v1', '')}`);
-    expect((error as Error).message).not.toContain('Ana');
-  });
+  itRejectsMalformed(MALFORMED, setup, 'Ana');
 });
