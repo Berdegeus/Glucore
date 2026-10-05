@@ -4,7 +4,7 @@ import { ZONE_COLORS } from '../../../../shared/presentation/charts/palette';
 import { describeChartWidget, renderWidget } from '../../../../test/widgetHarness';
 import ChartZones, { chartZonesDefinition, CHART_ZONES_TITLE } from './chartZones';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 
 describeChartWidget({
   Widget: ChartZones,

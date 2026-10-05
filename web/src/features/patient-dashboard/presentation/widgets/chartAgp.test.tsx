@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { describeChartWidget, renderWidget } from '../../../../test/widgetHarness';
 import ChartAgp, { chartAgpDefinition, CHART_AGP_TITLE } from './chartAgp';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 const mgdl = (value: number) => `${value}${NBSP}mg/dL`;
 
 describeChartWidget({

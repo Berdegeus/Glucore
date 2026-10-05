@@ -2514,16 +2514,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `chart-insulin-type`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza o total de unidades e a contagem por tipo de insulina a partir de `summary.insulinByType`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Usa o adaptador `BarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/chartInsulinType.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `chart-insulin-type`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza o total de unidades e a contagem por tipo de insulina a partir de `summary.insulinByType`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Usa o adaptador `BarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/chartInsulinType.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add chart-insulin-type widget`
+**Status**: ✅ Done
 
 ---
 

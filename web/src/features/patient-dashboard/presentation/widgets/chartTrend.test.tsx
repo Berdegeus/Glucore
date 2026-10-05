@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { describeChartWidget, renderWidget } from '../../../../test/widgetHarness';
 import ChartTrend, { chartTrendDefinition, CHART_TREND_TITLE } from './chartTrend';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 
 describeChartWidget({
   Widget: ChartTrend,

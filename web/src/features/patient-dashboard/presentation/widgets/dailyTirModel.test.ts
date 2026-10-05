@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { dayBucket } from '../../../../test/summaryFakes';
 import { dailyTirAlternative, dailyTirRows } from './dailyTirModel';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 const GAP_DAY = dayBucket({ day: '2026-07-02', timeInRangePercent: null, readingsCount: 0 });
 const tir = (day: string, percent: number) => dayBucket({ day: `2026-07-${day}`, timeInRangePercent: percent });
 

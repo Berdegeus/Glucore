@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { heatmapAlternative, heatmapCells, WEEKDAY_LABELS } from './heatmapCells';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 const cell = (dayOfWeek: number, hour: number, avgGlucose: number, count = 3) => ({ dayOfWeek, hour, avgGlucose, count });
 
 describe('heat map cells (PAC-10)', () => {

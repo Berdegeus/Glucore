@@ -4,7 +4,7 @@ import { daysWithReadings, summaryFixture } from '../../../../test/summaryFakes'
 import { describeChartWidget, renderWidget } from '../../../../test/widgetHarness';
 import ChartDailyTir, { chartDailyTirDefinition, CHART_DAILY_TIR_TITLE } from './chartDailyTir';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 
 describeChartWidget({
   Widget: ChartDailyTir,

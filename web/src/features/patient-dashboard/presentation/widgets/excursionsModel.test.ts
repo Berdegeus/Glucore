@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Excursion } from '../../domain/summary';
 import { excursionCells, EXCURSIONS_COLUMNS } from './excursionsModel';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 const excursion = (overrides: Partial<Excursion> = {}): Excursion => ({
   kind: 'HYPO',
   startedAt: '2026-08-05T08:00:00.000Z',

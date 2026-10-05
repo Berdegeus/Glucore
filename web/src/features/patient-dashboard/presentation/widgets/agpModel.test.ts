@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { agpAlternative, agpRows } from './agpModel';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 const point = (hour: number, p50: number, count = 4) => ({ hour, p5: p50 - 40, p25: p50 - 20, p50, p75: p50 + 20, p95: p50 + 40, count });
 
 describe('AGP model (PAC-10)', () => {

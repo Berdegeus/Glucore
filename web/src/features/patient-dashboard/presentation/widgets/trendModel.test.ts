@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { dayBucket } from '../../../../test/summaryFakes';
 import { DEFAULT_TARGET_RANGE, trendAlternative, trendRows } from './trendModel';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 const GAP_DAY = dayBucket({
   day: '2026-07-02',
   avgGlucose: null,

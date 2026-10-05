@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ZONE_COLORS } from '../../../../shared/presentation/charts/palette';
 import { ZONE_LABELS, ZONE_SEGMENTS, zonesAlternative, zonesRow } from './zonesModel';
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 const DISTRIBUTION = { veryLow: 1.25, low: 5, target: 62.5, high: 25, veryHigh: 6.25 };
 
 describe('zones model (PAC-10)', () => {
