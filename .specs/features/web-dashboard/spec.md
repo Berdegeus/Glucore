@@ -490,7 +490,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-15 | P1: Arquitetura limpa verificável (rubrica 37) | T13 | Implementing |
 | ARQ-16 | P1: Arquitetura limpa verificável (rubrica 37) | T11, T16 | Implementing |
 | ARQ-17 | P1: Arquitetura limpa verificável (rubrica 37) | T14, T16, T126 | Implementing |
-| ARQ-18 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
+| ARQ-18 | P1: Arquitetura limpa verificável (rubrica 37) | T224 | Implementing |
 | ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | T126, T127 | Implementing |
 | LAY-01 | P1: Layout customizável por widgets | T1, T48, T49, T108, T189 | Implementing |
 | LAY-02 | P1: Layout customizável por widgets | T48, T51, T54 | Implementing |
@@ -537,13 +537,13 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-16 | P1: Dashboard do paciente com os dados do app | T40, T86 | Implementing |
 | PAC-17 | P1: Dashboard do paciente com os dados do app | T86 | Implementing |
 | PAC-18 | P1: Dashboard do paciente com os dados do app | T110 | Implementing |
-| DEP-01 | P1: Publicação na Vercel | T10, T125 | Implementing |
+| DEP-01 | P1: Publicação na Vercel | T10, T125, T224 | Implementing |
 | DEP-02 | P1: Publicação na Vercel | T121 | Implementing |
 | DEP-03 | P1: Publicação na Vercel | T121 | Implementing |
 | DEP-04 | P1: Publicação na Vercel | T10, T125 | Implementing |
 | DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
 | DEP-06 | P1: Publicação na Vercel | T122, T123 | Implementing |
-| DEP-07 | P1: Publicação na Vercel | T9, T225, T124, T125 | Implementing |
+| DEP-07 | P1: Publicação na Vercel | T9, T225, T124, T125, T223 | Implementing |
 | API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67, T73, T74, T75, T84 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66, T75 | Implementing |
 | API-03 | P2: Ajustes de backend para os gráficos novos | T68, T74 | Implementing |
@@ -551,7 +551,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | API-05 | P2: Ajustes de backend para os gráficos novos | T70, T74 | Implementing |
 | API-06 | P2: Ajustes de backend para os gráficos novos | T71, T74 | Implementing |
 | API-07 | P2: Ajustes de backend para os gráficos novos | T73 | Implementing |
-| API-08 | P2: Ajustes de backend para os gráficos novos | T67, T73, T74, T75 | Implementing |
+| API-08 | P2: Ajustes de backend para os gráficos novos | T67, T73, T74, T75, T223 | Implementing |
 | API-09 | P2: Ajustes de backend para os gráficos novos | T76, T77, T78 | Implementing |
 | REG-01 | P2: Cadastro do profissional de saúde | T128, T129, T132, T133, T134, T136, T137, T168, T169, T170 | Implementing |
 | REG-02 | P2: Cadastro do profissional de saúde | T129, T136, T167, T168, T170 | Implementing |

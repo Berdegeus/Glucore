@@ -5172,14 +5172,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Rotas `/preferences`, `/sharing`, `/professional`, `/admin`, `/auth/register/professional` e internas descritas com exemplo
-- [ ] Códigos `INVALID_LAYOUT`, `INVALID_TIMEZONE`, `INVALID_INVITE`, `NO_ACTIVE_GRANT` listados
-- [ ] Nenhuma frase "sem rota nesta release" sobra para `HealthProfessional` e `DashboardAccessGrant`
-- [ ] Gate `build` passa: `cd web && npm run test:coverage && cd ../backend && npm run build`
+- [x] Rotas `/preferences`, `/sharing`, `/professional`, `/admin`, `/auth/register/professional` e internas descritas com exemplo
+- [x] Códigos `INVALID_LAYOUT`, `INVALID_TIMEZONE`, `INVALID_INVITE`, `NO_ACTIVE_GRANT` listados
+- [x] Nenhuma frase "sem rota nesta release" sobra para `HealthProfessional` e `DashboardAccessGrant`
+- [x] Gate `build` passa: `cd web && npm run test:coverage && cd ../backend && npm run build`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs(backend): document the dashboard routes`
+**Status**: ✅ Done
 
 ---
 
@@ -5193,12 +5194,13 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Comandos da web listados; mapa de camadas cita `web/`; cada arquivo citado existe
-- [ ] Gate `build` passa: `cd web && npm run test:coverage && cd ../backend && npm run build`
+- [x] Comandos da web listados; mapa de camadas cita `web/`; cada arquivo citado existe
+- [x] Gate `build` passa: `cd web && npm run test:coverage && cd ../backend && npm run build`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs: describe the web dashboard in the repository docs`
+**Status**: ✅ Done
 
 ---
 
