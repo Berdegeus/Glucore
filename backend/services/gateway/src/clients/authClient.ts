@@ -27,6 +27,11 @@ export class AuthClient {
     return this.http.request('POST', '/internal/accounts', GATEWAY_SERVICE_IDENTITY, input);
   }
 
+  /** The role is fixed by the route on the receiving end; a `role` in the input would be ignored there. */
+  registerProfessional(input: RegisterAccountInput): Promise<RegisterAccountResult> {
+    return this.http.request('POST', '/internal/accounts/professional', GATEWAY_SERVICE_IDENTITY, input);
+  }
+
   getAccount(userId: string, role: UserRoleName): Promise<unknown> {
     return this.http.request('GET', '/internal/accounts/me', { sub: userId, role });
   }

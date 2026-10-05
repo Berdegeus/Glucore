@@ -3214,13 +3214,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com servidor stub: envia o corpo, devolve `{ userId, token }`, propaga erro do upstream
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/gateway/tests/clients/authClient.professional.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com servidor stub: envia o corpo, devolve `{ userId, token }`, propaga erro do upstream
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/gateway/tests/clients/authClient.professional.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(gateway): add professional registration to the auth client`
+**Status**: ✅ Done
 
 ---
 
