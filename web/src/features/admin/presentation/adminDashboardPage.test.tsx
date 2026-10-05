@@ -25,6 +25,9 @@ const DEFERRED_TITLES = ['Pacientes cadastrados e ativos', 'Leituras por dia', '
 /** The titles of the cards of the grid, in the order they sit. */
 const regionNames = () => screen.getAllByRole('region').flatMap((region) => region.querySelector(':scope > h2')?.textContent ?? []);
 
+/** The error messages on screen; the toolbar keeps an empty alert region for its own notices. */
+const errors = () => screen.queryAllByRole('alert').filter((alert) => alert.textContent);
+
 const card = (title: string) => screen.findByRole('region', { name: title }, SLOW);
 const REGISTERED_TITLES = () => definitionsForRole('ADMINISTRATOR').map((definition) => widgetTitle(definition));
 
@@ -48,7 +51,7 @@ describe('AdminDashboardPage opening (ADM-01, ADM-07)', () => {
 
     await waitFor(() => expect(regionNames()).toHaveLength(7), SLOW);
     expect(regionNames()).toEqual(REGISTERED_TITLES());
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(errors()).toHaveLength(0);
     for (const title of DEFERRED_TITLES) expect(screen.queryByText(title)).not.toBeInTheDocument();
   });
 
@@ -91,8 +94,8 @@ describe('AdminDashboardPage without access (ADM-05)', () => {
     mockLayoutStore(null);
     renderOnContainer(<AdminDashboardPage />);
 
-    await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(7), SLOW);
-    for (const alert of screen.getAllByRole('alert')) expect(alert).toHaveTextContent(ERROR_MESSAGE);
+    await waitFor(() => expect(errors()).toHaveLength(7), SLOW);
+    for (const alert of errors()) expect(alert).toHaveTextContent(ERROR_MESSAGE);
     expect(screen.getAllByRole('button', { name: 'Tentar novamente' })).toHaveLength(7);
   });
 });
