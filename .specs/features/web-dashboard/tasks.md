@@ -4842,15 +4842,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `adm-kpi-active-patients`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza pacientes ativos em 24 h e em 7 dias a partir de `overview.activePatients`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admKpiActivePatients.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `adm-kpi-active-patients`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza pacientes ativos em 24 h e em 7 dias a partir de `overview.activePatients`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admKpiActivePatients.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add adm-kpi-active-patients widget`
+**Status**: ✅ Done
 
 ---
 

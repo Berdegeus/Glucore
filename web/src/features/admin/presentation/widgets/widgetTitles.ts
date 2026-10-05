@@ -4,9 +4,11 @@
 export const ADM_KPI_ACCOUNTS_TITLE = 'Contas';
 export const ADM_KPI_REGISTRATIONS_TITLE = 'Cadastros no período';
 export const ADM_KPI_REGISTRATIONS_NOTE = 'contas novas no período';
+export const ADM_KPI_ACTIVE_PATIENTS_TITLE = 'Pacientes ativos';
 
 /** Title of each administrator widget by its `titleKey`. */
 export const ADMIN_WIDGET_TITLES: Readonly<Record<string, string>> = {
   'widget.adm-kpi-accounts': ADM_KPI_ACCOUNTS_TITLE,
   'widget.adm-kpi-registrations': ADM_KPI_REGISTRATIONS_TITLE,
+  'widget.adm-kpi-active-patients': ADM_KPI_ACTIVE_PATIENTS_TITLE,
 };
