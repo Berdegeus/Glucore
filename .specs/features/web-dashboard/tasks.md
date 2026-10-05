@@ -2994,14 +2994,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste `web/tests/deploy/bundleSize.test.ts` com `dist` falso: abaixo passa, acima falha com o total na mensagem
-- [ ] `npm run size` passa no build real
-- [ ] Gate `quick` passa: `cd web && npx vitest run tests/deploy/bundleSize.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste `web/tests/deploy/bundleSize.test.ts` com `dist` falso: abaixo passa, acima falha com o total na mensagem
+- [x] `npm run size` passa no build real
+- [x] Gate `quick` passa: `cd web && npx vitest run tests/deploy/bundleSize.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `chore(web): enforce the 250 kB bundle budget`
+**Status**: ✅ Done
 
 ---
 

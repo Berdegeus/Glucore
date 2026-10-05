@@ -542,7 +542,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-03 | P1: Publicação na Vercel | T121 | Implementing |
 | DEP-04 | P1: Publicação na Vercel | T10 | Implementing |
 | DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
-| DEP-06 | P1: Publicação na Vercel | T122 | Implementing |
+| DEP-06 | P1: Publicação na Vercel | T122, T123 | Implementing |
 | DEP-07 | P1: Publicação na Vercel | T9, T225 | Implementing |
 | API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67, T73, T74, T75, T84 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66, T75 | Implementing |
