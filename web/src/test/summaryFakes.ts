@@ -1,4 +1,4 @@
-import type { GlucoseSummary } from '../features/patient-dashboard/domain/summary';
+import type { DailyBucket, GlucoseSummary } from '../features/patient-dashboard/domain/summary';
 
 /**
  * A complete summary as `GET /dashboard/summary` answers it, with the values of
@@ -63,4 +63,25 @@ export function summaryFixture(overrides: Partial<GlucoseSummary> = {}): Glucose
     ],
     ...overrides,
   };
+}
+
+/** One day of a summary; by default a full day (288 readings at 120 mg/dL) that is none of the days in `summaryFixture`. */
+export function dayBucket(overrides: Partial<DailyBucket> = {}): DailyBucket {
+  return {
+    day: '2026-07-01',
+    avgGlucose: 120,
+    minGlucose: 90,
+    maxGlucose: 160,
+    timeInRangePercent: 100,
+    movingAvg7d: 120,
+    readingsCount: 288,
+    carbsGrams: 0,
+    insulinUnits: 0,
+    ...overrides,
+  };
+}
+
+/** `count` consecutive days of July that all have readings. */
+export function daysWithReadings(count: number): DailyBucket[] {
+  return Array.from({ length: count }, (_, index) => dayBucket({ day: `2026-07-${String(index + 1).padStart(2, '0')}` }));
 }
