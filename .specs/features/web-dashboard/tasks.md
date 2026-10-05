@@ -3875,13 +3875,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest: profissional só vê vinculados; sem vínculo `403 NO_ACTIVE_GRANT`; paciente `403 FORBIDDEN_ROLE`; `:id` inválido `400`; leitura grava auditoria; limites de paginação
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest: profissional só vê vinculados; sem vínculo `403 NO_ACTIVE_GRANT`; paciente `403 FORBIDDEN_ROLE`; `:id` inválido `400`; leitura grava auditoria; limites de paginação
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(glucose-service): expose professional routes`
+**Status**: ✅ Done
 
 ---
 
