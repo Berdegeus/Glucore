@@ -26,6 +26,11 @@ export interface DateRange {
 }
 
 export interface IDashboardRepository {
+  /**
+   * The `[from, toExclusive)` window, in UTC, covering the calendar days
+   * `fromDate`..`toDate` (both inclusive) as lived in `tz`.
+   */
+  resolveBounds(fromDate: Date, toDate: Date, tz: string): Promise<DateRange>;
   /** The patient's configured thresholds, if any — `AlertThresholdConfig` is an optional relation. */
   getThresholdConfig(
     patientId: string,
@@ -44,8 +49,28 @@ export interface IDashboardRepository {
   getExcursions(patientId: string, range: DateRange, low: number, high: number): Promise<ExcursionDto[]>;
 }
 
+/** `YYYY-MM-DD` of a UTC-midnight `Date` — the calendar day the caller meant. */
+function isoDay(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 export class PrismaDashboardRepository implements IDashboardRepository {
   constructor(private readonly prisma: PrismaClient) {}
+
+  async resolveBounds(fromDate: Date, toDate: Date, tz: string): Promise<DateRange> {
+    // The calendar day is read as a `date` and turned into local midnight of
+    // `tz` by the first `AT TIME ZONE`; the second renders that instant as the
+    // naive UTC wall clock `recordedAt` is stored in. Doing the "+ 1 day" on the
+    // date, before localizing, is what keeps a daylight-saving day 23 or 25 hours
+    // long instead of a flat 24. With `tz = 'UTC'` both steps are identities,
+    // so the answer is the same midnight-to-midnight window the endpoint always used.
+    const rows = await this.prisma.$queryRaw<Array<{ from_utc: Date; to_exclusive_utc: Date }>>`
+      SELECT
+        ((${isoDay(fromDate)}::date)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC' AS from_utc,
+        (((${isoDay(toDate)}::date + 1)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC') AS to_exclusive_utc
+    `;
+    return { from: rows[0].from_utc, toExclusive: rows[0].to_exclusive_utc };
+  }
 
   async getThresholdConfig(
     patientId: string,

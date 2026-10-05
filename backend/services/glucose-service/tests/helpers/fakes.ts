@@ -264,6 +264,11 @@ export class FakeDashboardRepository implements IDashboardRepository {
   readonly rangesSeen: DateRange[] = [];
   readonly thresholdsSeen: Array<{ low: number; high: number }> = [];
 
+  /** Plain UTC arithmetic; the real window-in-zone logic is covered against Postgres. */
+  async resolveBounds(fromDate: Date, toDate: Date): Promise<DateRange> {
+    return { from: fromDate, toExclusive: new Date(toDate.getTime() + 24 * 60 * 60 * 1000) };
+  }
+
   async getThresholdConfig(
     _patientId: string,
   ): Promise<{ lowGlucoseMgDl: number; highGlucoseMgDl: number } | null> {

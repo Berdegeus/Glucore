@@ -1757,13 +1757,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração: `UTC` dá o mesmo resultado de hoje; `America/Sao_Paulo` começa às 03:00 UTC; um período com troca de horário (`America/New_York`) tem o tamanho certo
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Integração: `UTC` dá o mesmo resultado de hoje; `America/Sao_Paulo` começa às 03:00 UTC; um período com troca de horário (`America/New_York`) tem o tamanho certo
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(glucose-service): resolve period bounds in the caller's time zone`
+**Status**: ✅ Done
 
 ---
 
