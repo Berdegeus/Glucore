@@ -22,6 +22,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('pt', 'BR'),
         home: Scaffold(
           appBar: UserAppBar(title: title, actions: actions),
           body: const SizedBox(),

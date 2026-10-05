@@ -16,6 +16,7 @@ import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
 import 'notifications_page.dart';
 import 'sensor_choice_page.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class MonitoringHomePage extends StatefulWidget {
   const MonitoringHomePage({super.key});
@@ -480,8 +481,8 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 8),
         GlucoreStatChip(
           label: l10n.monitoringAverageLabel,
-          value: avg.toStringAsFixed(0),
-          unit: l10n.genericGlucoseUnit,
+          value: context.formatGlucose(avg),
+          unit: context.glucoseUnit.label,
         ),
         if (gmi != null) ...[
           const SizedBox(width: 8),

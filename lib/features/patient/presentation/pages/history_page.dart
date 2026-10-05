@@ -12,6 +12,7 @@ import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../../l10n/localized_values.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
@@ -142,7 +143,7 @@ class _DayRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${avg.toStringAsFixed(0)} mg/dL',
+                context.formatGlucoseWithUnit(avg),
                 style: AppTheme.monoStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,

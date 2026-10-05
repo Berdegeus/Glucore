@@ -52,15 +52,16 @@ class NotificationService {
     body: _l10n.notificationSensorDisconnectedBody,
   );
 
-  Future<void> showGlucoseLow(double value) => _show(
+  /// [value] arrives already formatted with unit (e.g. "58 mg/dL" / "3.2 mmol/L").
+  Future<void> showGlucoseLow(String value) => _show(
     id: 2,
-    title: _l10n.notificationGlucoseLowTitle(value.toStringAsFixed(0)),
+    title: _l10n.notificationGlucoseLowTitle(value),
     body: _l10n.notificationGlucoseLowBody,
   );
 
-  Future<void> showGlucoseHigh(double value) => _show(
+  Future<void> showGlucoseHigh(String value) => _show(
     id: 3,
-    title: _l10n.notificationGlucoseHighTitle(value.toStringAsFixed(0)),
+    title: _l10n.notificationGlucoseHighTitle(value),
     body: _l10n.notificationGlucoseHighBody,
   );
 

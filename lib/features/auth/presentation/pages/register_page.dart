@@ -12,6 +12,8 @@ import 'package:glucore/l10n/localized_values.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../widgets/password_field.dart';
+import '../../../../core/preferences/app_preferences.dart';
+import '../../../../core/preferences/glucose_unit.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -44,14 +46,10 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  ({int min, int max})? _parseTargetRange(String value) {
-    final parts = value.split(RegExp(r'\s*-\s*'));
-    if (parts.length != 2) return null;
-    final min = int.tryParse(parts[0]);
-    final max = int.tryParse(parts[1]);
-    if (min == null || max == null || min >= max) return null;
-    return (min: min, max: max);
-  }
+  ({int min, int max})? _parseTargetRange(String value) =>
+      parseGlucoseRange(value, context.readGlucoseUnit());
+
+  bool get _monthFirst => usesMonthFirstDates(Localizations.localeOf(context));
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
@@ -62,7 +60,7 @@ class _RegisterPageState extends State<RegisterPage> {
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
       phone: phoneDigits.isEmpty ? null : phoneDigits,
-      birthDate: parseBrazilianDate(_birthController.text),
+      birthDate: parseBrazilianDate(_birthController.text, monthFirst: _monthFirst),
       weightKg: double.tryParse(
         _weightController.text.trim().replaceAll(',', '.'),
       ),
@@ -178,15 +176,19 @@ class _RegisterPageState extends State<RegisterPage> {
                       decoration: InputDecoration(
                         labelText: fieldLabel(
                           l10n,
-                          l10n.profileTargetRangeLabel,
+                          l10n.profileTargetRangeLabel(context.glucoseUnit.label),
                           required: true,
                         ),
-                        helperText: l10n.profileTargetRangeHelper,
+                        helperText: l10n.profileTargetRangeHelper(
+                          context.glucoseUnit.label,
+                          context.glucoseRangeExample(),
+                        ),
                       ),
                       validator: (value) =>
                           value == null ||
                               _parseTargetRange(value.trim()) == null
-                          ? l10n.profileTargetRangeFormatError
+                          ? l10n.profileTargetRangeFormatError(
+                                  context.glucoseRangeExample())
                           : null,
                     ),
                     const SizedBox(height: 12),
@@ -238,7 +240,7 @@ class _RegisterPageState extends State<RegisterPage> {
   /// Optional: empty is accepted, a filled value must be a real date.
   String? _validateBirthDate(String? value) {
     if (value == null || value.trim().isEmpty) return null;
-    return parseBrazilianDate(value) == null
+    return parseBrazilianDate(value, monthFirst: _monthFirst) == null
         ? context.l10n.genericInvalidDateError
         : null;
   }

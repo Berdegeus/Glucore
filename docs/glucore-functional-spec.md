@@ -14,7 +14,7 @@ O Glucore é um aplicativo móvel (Android) de **monitoramento contínuo de glic
 - funciona **offline-first**: todos os dados são gravados localmente no aparelho e sincronizados em segundo plano com um serviço remoto quando há rede;
 - exige conta de usuário (e-mail/senha) para uso.
 
-Idioma da interface: **português (pt/pt-BR)** exclusivamente. Unidade de glicose: **mg/dL** exclusivamente.
+Idioma da interface: **português (pt/pt-BR) e inglês (en)**, escolhido em Configurações (padrão: idioma do sistema). Em inglês, datas e horas seguem o padrão americano (mês/dia/ano, relógio de 12 horas). Unidade de glicose: **mg/dL ou mmol/L**, escolhida em Configurações; é só exibição e digitação — o que é gravado, sincronizado e enviado ao backend continua sempre em mg/dL (1 mmol/L = 18,0182 mg/dL).
 
 O modelo de dados remoto já reserva conceitos de perfis adicionais (profissional de saúde, administrador, compartilhamento de relatórios), mas **apenas o perfil Paciente é funcional hoje** (ver §14).
 

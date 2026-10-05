@@ -37,6 +37,7 @@ import 'package:glucore/features/sensor/domain/models.dart';
 import 'package:glucore/features/sensor/domain/sensor_repository.dart';
 import 'package:glucore/features/sensor/presentation/cubit/sensor_cubit.dart';
 import 'package:glucore/l10n/l10n.dart';
+import 'package:glucore/core/preferences/app_preferences.dart';
 
 /// Spec: TCC-04 — spec.md P1 "Identidade do usuário e saída visíveis em todas
 /// as telas" AC4 ("as páginas empilhadas... cada uma SHALL exibir o nome do
@@ -86,10 +87,14 @@ void main() {
           BlocProvider<PatientCubit>.value(value: patientCubit),
           BlocProvider<SensorCubit>.value(value: sensorCubit),
           BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+          BlocProvider<AppPreferencesCubit>(
+            create: (_) => AppPreferencesCubit(),
+          ),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('pt', 'BR'),
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(

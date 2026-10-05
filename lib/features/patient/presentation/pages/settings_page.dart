@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 
+import '../../../../core/preferences/app_preferences.dart';
+import '../../../../core/preferences/glucose_unit.dart';
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../../core/theme/theme_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -84,6 +86,10 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           const _ThemeSection(),
+          const SizedBox(height: 16),
+          const _LanguageSection(),
+          const SizedBox(height: 16),
+          const _GlucoseUnitSection(),
           const SizedBox(height: 32),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
@@ -183,6 +189,130 @@ class _ThemeSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Seletor de idioma. `null` segue o idioma do sistema.
+///
+/// Escreve no [AppPreferencesCubit]; o `MaterialApp` escuta o mesmo cubit e a
+/// interface troca de idioma na hora.
+class _LanguageSection extends StatelessWidget {
+  const _LanguageSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final options = <String?, String>{
+      null: l10n.settingsLanguageSystemLabel,
+      'pt': l10n.settingsLanguagePortugueseLabel,
+      'en': l10n.settingsLanguageEnglishLabel,
+    };
+
+    return BlocBuilder<AppPreferencesCubit, AppPreferences>(
+      buildWhen: (a, b) => a.locale != b.locale,
+      builder: (context, prefs) => _OptionsSection(
+        title: l10n.settingsLanguageSectionTitle,
+        options: [
+          for (final entry in options.entries)
+            _Option(
+              label: entry.value,
+              selected: entry.key == prefs.locale?.languageCode,
+              onTap: () => context.read<AppPreferencesCubit>().setLocale(
+                    entry.key == null ? null : Locale(entry.key!),
+                  ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Seletor da unidade de glicose. Só muda a exibição e a digitação: tudo que
+/// é gravado e sincronizado continua em mg/dL.
+class _GlucoseUnitSection extends StatelessWidget {
+  const _GlucoseUnitSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final labels = <GlucoseUnit, String>{
+      GlucoseUnit.mgDl: l10n.settingsUnitMgdlLabel,
+      GlucoseUnit.mmolL: l10n.settingsUnitMmolLabel,
+    };
+
+    return BlocBuilder<AppPreferencesCubit, AppPreferences>(
+      buildWhen: (a, b) => a.unit != b.unit,
+      builder: (context, prefs) => _OptionsSection(
+        title: l10n.settingsUnitSectionTitle,
+        options: [
+          for (final entry in labels.entries)
+            _Option(
+              label: entry.value,
+              selected: entry.key == prefs.unit,
+              onTap: () =>
+                  context.read<AppPreferencesCubit>().setUnit(entry.key),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Option {
+  const _Option({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+}
+
+class _OptionsSection extends StatelessWidget {
+  const _OptionsSection({required this.title, required this.options});
+
+  final String title;
+  final List<_Option> options;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: context.glucoreColors.inkMuted,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: context.glucoreColors.surfaceCanvas,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < options.length; i++) ...[
+                if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+                _ThemeOptionRow(
+                  label: options[i].label,
+                  selected: options[i].selected,
+                  onTap: options[i].onTap,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

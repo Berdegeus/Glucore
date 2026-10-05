@@ -7,6 +7,7 @@ import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/glucore_messenger.dart';
 import '../../../../l10n/l10n.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 /// FreeStyle Libre 2 pairing flow:
 /// 1. install Abbott's algorithm library (extracted from a LibreLink APK);
@@ -310,7 +311,7 @@ class _SessionCard extends StatelessWidget {
             if (state.reading != null) ...[
               const SizedBox(height: 8),
               Text(
-                '${state.reading!.value.toStringAsFixed(0)} mg/dL',
+                context.formatGlucoseWithUnit(state.reading!.value),
                 style: Theme.of(context)
                     .textTheme
                     .headlineMedium

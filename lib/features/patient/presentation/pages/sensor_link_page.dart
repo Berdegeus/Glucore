@@ -11,6 +11,7 @@ import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class SensorLinkPage extends StatefulWidget {
   const SensorLinkPage({super.key, this.brand = SensorBrand.sibionics});
@@ -194,7 +195,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
                 if (state.reading != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    '${state.reading!.value.toStringAsFixed(0)} mg/dL',
+                    context.formatGlucoseWithUnit(state.reading!.value),
                     style: Theme.of(context)
                         .textTheme
                         .headlineMedium

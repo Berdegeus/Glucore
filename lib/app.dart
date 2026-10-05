@@ -18,6 +18,7 @@ import 'features/patient/presentation/cubit/patient_cubit.dart';
 import 'features/patient/presentation/widgets/glucore_messenger.dart';
 import 'features/sensor/presentation/cubit/sensor_cubit.dart';
 import 'injection_container.dart';
+import 'core/preferences/app_preferences.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -32,6 +33,7 @@ class _AppState extends State<App> {
   // listener can log out without a BuildContext below the provider.
   final AuthCubit _authCubit = sl<AuthCubit>();
   final ThemeCubit _themeCubit = sl<ThemeCubit>();
+  final AppPreferencesCubit _prefsCubit = sl<AppPreferencesCubit>();
   final SessionExpiryNotifier _sessionExpiry = sl<SessionExpiryNotifier>();
   StreamSubscription<AuthState>? _authSubscription;
 
@@ -49,6 +51,7 @@ class _AppState extends State<App> {
     });
     _authCubit.checkAuthStatus();
     _themeCubit.load();
+    _prefsCubit.load();
     _loadOnboardingFlag();
   }
 
@@ -58,6 +61,7 @@ class _AppState extends State<App> {
     _authSubscription?.cancel();
     _authCubit.close();
     _themeCubit.close();
+    _prefsCubit.close();
     super.dispose();
   }
 
@@ -97,9 +101,12 @@ class _AppState extends State<App> {
       providers: [
         BlocProvider<AuthCubit>.value(value: _authCubit),
         BlocProvider<ThemeCubit>.value(value: _themeCubit),
+        BlocProvider<AppPreferencesCubit>.value(value: _prefsCubit),
       ],
-      child: BlocBuilder<ThemeCubit, ThemeMode>(
+      child: BlocBuilder<AppPreferencesCubit, AppPreferences>(
+        builder: (context, prefs) => BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) => MaterialApp(
+          locale: prefs.locale,
           navigatorKey: _navigatorKey,
           onGenerateTitle: (context) => context.l10n.appName,
           debugShowCheckedModeBanner: false,
@@ -140,6 +147,7 @@ class _AppState extends State<App> {
             );
           },
           home: _resolveInitialFlow(),
+        ),
         ),
       ),
     );

@@ -1,0 +1,564 @@
+{
+  "@@locale": "en",
+  "appName": "Glucore",
+  "appSensorMvpTitle": "Glucore Sensor MVP",
+  "splashSubtitle": "Clear and reliable glucose monitoring",
+  "onboardingQuickGlucoseTitle": "Quick glucose reading",
+  "onboardingQuickGlucoseText": "See your current glucose, trend and 15-minute prediction in seconds.",
+  "onboardingHelpfulAlertsTitle": "Useful, discreet alerts",
+  "onboardingHelpfulAlertsText": "Get warnings about low or high risk without alarmist language.",
+  "onboardingAllInOneTitle": "Everything in one place",
+  "onboardingAllInOneText": "Bring glucose, carbs, insulin and events together in a single flow.",
+  "onboardingSkipButton": "Skip",
+  "onboardingNextButton": "Next",
+  "onboardingStartButton": "Get started",
+  "genericStatusLabel": "Status: {status}",
+  "@genericStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "genericErrorLabel": "Error: {message}",
+  "@genericErrorLabel": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "genericEmailLabel": "Email",
+  "genericPasswordLabel": "Password",
+  "genericInvalidEmailError": "Enter a valid email",
+  "genericPasswordMinLengthError": "Password must be at least 8 characters",
+  "passwordPolicyMinLengthError": "Password must be at least 8 characters",
+  "passwordPolicyUppercaseError": "Password must contain at least one uppercase letter",
+  "passwordPolicyLowercaseError": "Password must contain at least one lowercase letter",
+  "passwordPolicyDigitError": "Password must contain at least one number",
+  "passwordPolicySpecialError": "Password must contain at least one special character",
+  "passwordPolicyHint": "At least 8 characters, with uppercase, lowercase, a number and a special character",
+  "fieldOptionalSuffix": "(optional)",
+  "genericNumericValueError": "Enter a numeric value",
+  "genericRequiredFieldError": "Required field",
+  "genericPhoneLabel": "Phone",
+  "genericPhoneHint": "(00) 00000-0000",
+  "genericPhoneIncompleteError": "Incomplete phone number",
+  "genericInvalidDateError": "Invalid date",
+  "genericResetButton": "Reset",
+  "genericCancelButton": "Cancel",
+  "genericDisconnectButton": "Disconnect",
+  "genericTimeLabel": "Time: {time}",
+  "@genericTimeLabel": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "genericUpdatedAtLabel": "Updated: {timestamp}",
+  "@genericUpdatedAtLabel": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "genericGlucoseUnit": "mg/dL",
+  "genericGlucoseValue": "{value}",
+  "@genericGlucoseValue": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "genericSensorSectionTitle": "Sensor",
+  "genericDataSectionTitle": "Data",
+  "loginTitle": "Sign in",
+  "loginWelcomeTitle": "Welcome to Glucore",
+  "loginSubtitle": "Follow your CGM data with clarity and confidence.",
+  "loginEmailRequiredError": "Enter an email",
+  "loginForgotPasswordButton": "Forgot my password",
+  "loginSubmitButton": "Sign in",
+  "loginSubmittingButton": "Signing in...",
+  "loginCreateAccountButton": "Create account",
+  "loginInvalidCredentialsError": "Invalid credentials. Use an email and a password with 4 or more characters.",
+  "forgotPasswordTitle": "Recover password",
+  "forgotPasswordRegisteredEmailLabel": "Registered email",
+  "forgotPasswordSubmitButton": "Send instructions",
+  "forgotPasswordSuccessMessage": "If the email is registered, the instructions have been sent.",
+  "forgotPasswordNetworkError": "No connection. Check your network and try again.",
+  "forgotPasswordTokenLabel": "Code received by email",
+  "forgotPasswordTokenHint": "The code arrives by email and expires in 6 hours",
+  "forgotPasswordNewPasswordLabel": "New password",
+  "forgotPasswordResetButton": "Reset password",
+  "forgotPasswordResetSuccess": "Password reset successfully. Sign in to continue.",
+  "forgotPasswordInvalidToken": "Invalid or expired code.",
+  "registerTitle": "Sign up",
+  "registerFullNameLabel": "Full name",
+  "registerFullNameError": "Enter your full name",
+  "registerSubmitButton": "Create account",
+  "registerSuccessMessage": "Account created. Sign in to continue.",
+  "homeTitle": "Home",
+  "homeLogoutTooltip": "Sign out",
+  "homeAuthenticatedMessage": "User authenticated successfully!",
+  "navigationMonitorLabel": "Monitor",
+  "navigationHistoryLabel": "History",
+  "navigationAlertsLabel": "Alerts",
+  "navigationSettingsLabel": "Settings",
+  "monitoringLinkSensorTooltip": "Link sensor",
+  "monitoringEmptyStateTitle": "No readings right now",
+  "monitoringEmptyStateMessage": "Connect a sensor to see glucose data.",
+  "monitoringCurrentGlucoseTitle": "Current glucose",
+  "monitoringTrendRising": "↑ Rising",
+  "monitoringTrendStable": "→ Steady",
+  "monitoringTrendFalling": "↓ Falling",
+  "monitoringLastReading": "Last reading: {time}",
+  "@monitoringLastReading": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "monitoringPredictionUnavailableTitle": "Prediction unavailable",
+  "monitoringPredictionUnavailableSubtitle": "We will try to update automatically soon.",
+  "monitoringPredictionIn15Minutes": "15 min prediction: {value}",
+  "@monitoringPredictionIn15Minutes": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "monitoringSensorConnectedTitle": "Sensor connected",
+  "monitoringSensorConnectedSubtitle": "Readings synced in good time.",
+  "monitoringSensorDisconnectedTitle": "Sensor disconnected",
+  "monitoringSensorDisconnectedSubtitle": "Check the connection to keep receiving current readings.",
+  "monitoringNoRecentReadingTitle": "No recent reading",
+  "monitoringNoRecentReadingSubtitle": "The data may be out of date right now.",
+  "monitoringSyncFailureTitle": "Temporary sync failure",
+  "monitoringSyncFailureSubtitle": "We are trying to sync again.",
+  "monitoringReceivingHistoryTitle": "Receiving stored values",
+  "monitoringReceivingHistorySubtitle": "{count} readings synced from the sensor.",
+  "@monitoringReceivingHistorySubtitle": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "monitoringCarbButton": "Carbs",
+  "monitoringInsulinButton": "Insulin",
+  "monitoringRecentReadingsTitle": "Recent readings",
+  "monitoringRecentReadingTime": "Time: {time}",
+  "@monitoringRecentReadingTime": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "historyTitle": "History",
+  "historyEmptyStateTitle": "No history yet",
+  "historyEmptyStateMessage": "Readings will appear here as soon as the sensor sends data.",
+  "historyCarbsSectionTitle": "Carbs",
+  "historyInsulinSectionTitle": "Insulin",
+  "historyCarbEntryTitle": "{grams} g - {description}",
+  "@historyCarbEntryTitle": {
+    "placeholders": {
+      "grams": {},
+      "description": {}
+    }
+  },
+  "historyInsulinEntryTitle": "{units} U - {type}",
+  "@historyInsulinEntryTitle": {
+    "placeholders": {
+      "units": {},
+      "type": {}
+    }
+  },
+  "alertsTitle": "Recent alerts",
+  "alertsEmptyStateTitle": "No recent alerts",
+  "alertsEmptyStateMessage": "When important events happen, they will show up here.",
+  "alertsItemSubtitle": "{message}\n{timestamp}",
+  "@alertsItemSubtitle": {
+    "placeholders": {
+      "message": {},
+      "timestamp": {}
+    }
+  },
+  "alertTypeImminentHypoTitle": "Imminent hypo risk",
+  "alertTypeImminentHypoMessage": "Falling trend in the next readings. Consider monitoring closely.",
+  "alertTypeGlucoseLowTitle": "Low glucose",
+  "alertTypeGlucoseLowMessage": "The current reading fell below the configured limit.",
+  "alertTypeGlucoseHighTitle": "High glucose",
+  "alertTypeGlucoseHighMessage": "The current reading went above the configured limit.",
+  "alertTypeSensorReconnectedTitle": "Sensor reconnected",
+  "alertTypeSensorReconnectedMessage": "Glucose collection is back to normal.",
+  "alertTypeSyncFailureTitle": "Sync failure",
+  "alertTypeSyncFailureMessage": "The app detected a temporary failure while syncing the sensor.",
+  "settingsTitle": "Settings",
+  "settingsProfileAndHealthTile": "Profile and health data",
+  "settingsSensorLinkTile": "CGM sensor pairing",
+  "settingsAlertSettingsTile": "Alert settings",
+  "settingsLogoutTile": "Sign out",
+  "settingsGlucoseSectionTitle": "Glucose",
+  "settingsGlucoseAlertsRowLabel": "Glucose alerts",
+  "settingsConfigureRowValue": "Configure",
+  "settingsManageSensorRowLabel": "Manage sensor",
+  "settingsSelectRowValue": "Select",
+  "settingsExportDataRowLabel": "Export data",
+  "settingsComingSoonRowValue": "Coming soon",
+  "settingsLogoutConfirmMessage": "Do you want to sign out of your account?",
+  "settingsNotificationsSectionTitle": "NOTIFICATIONS",
+  "settingsLowGlucoseAlertToggleLabel": "Low glucose alert",
+  "settingsHighGlucoseAlertToggleLabel": "High glucose alert",
+  "settingsSignalLossToggleLabel": "Signal loss",
+  "settingsAppearanceSectionTitle": "APPEARANCE",
+  "settingsThemeSystemLabel": "System default",
+  "settingsThemeLightLabel": "Light",
+  "settingsThemeDarkLabel": "Dark",
+  "sensorLinkTitle": "Link CGM sensor",
+  "sensorLinkRebindAttemptMessage": "Trying to relink sensor...",
+  "sensorLinkRebindButton": "Relink sensor",
+  "sensorLinkStatusSearchingLabel": "Searching",
+  "sensorLinkStatusPermissionPendingLabel": "Permission pending",
+  "sensorLinkStatusConnectedLabel": "Connected",
+  "sensorLinkStatusCompatibilityErrorLabel": "Compatibility",
+  "sensorLinkStatusReconnectingLabel": "Relinking",
+  "sensorLinkStatusUnavailableLabel": "Unavailable",
+  "sensorLinkStatusDisconnectedLabel": "Disconnected",
+  "sensorLinkSearchingTitle": "Searching for sensor",
+  "sensorLinkSearchingSubtitle": "Bring the sensor close to the device.",
+  "sensorLinkPermissionPendingTitle": "Permission pending",
+  "sensorLinkPermissionPendingSubtitle": "Allow Bluetooth to connect the sensor.",
+  "sensorLinkConnectedTitle": "Sensor connected",
+  "sensorLinkConnectedSubtitle": "Near real-time readings.",
+  "sensorLinkCompatibilityErrorTitle": "Compatibility error",
+  "sensorLinkCompatibilityErrorSubtitle": "Model not supported at the moment.",
+  "sensorLinkReconnectingTitle": "Relinking",
+  "sensorLinkReconnectingSubtitle": "Please wait, we are restoring the connection.",
+  "sensorLinkUnavailableTitle": "Sensor unavailable",
+  "sensorLinkUnavailableSubtitle": "Could not find a nearby sensor.",
+  "sensorLinkDisconnectedTitle": "Sensor disconnected",
+  "sensorLinkDisconnectedSubtitle": "Reconnect to resume up-to-date readings.",
+  "sensorLinkSyncingHistorySubtitle": "Receiving old readings from the sensor. {count} values processed.",
+  "@sensorLinkSyncingHistorySubtitle": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "alertSettingsTitle": "Alert settings",
+  "alertSettingsLowThresholdLabel": "Low limit ({unit})",
+  "@alertSettingsLowThresholdLabel": {
+    "placeholders": {
+      "unit": {}
+    }
+  },
+  "alertSettingsHighThresholdLabel": "High limit ({unit})",
+  "@alertSettingsHighThresholdLabel": {
+    "placeholders": {
+      "unit": {}
+    }
+  },
+  "alertSettingsLowMustBeLowerError": "The low limit must be lower than the high limit.",
+  "alertSettingsUpdatedSuccessMessage": "Alerts updated successfully.",
+  "alertSettingsSaveButton": "Save alerts",
+  "profileTitle": "Profile",
+  "profileDefaultName": "Glucore Patient",
+  "profileNameLabel": "Name",
+  "profileBirthDateLabel": "Date of birth",
+  "profileWeightLabel": "Weight (kg)",
+  "profileTargetRangeLabel": "Glucose target range ({unit})",
+  "@profileTargetRangeLabel": {
+    "placeholders": {
+      "unit": {}
+    }
+  },
+  "profileWeightHint": "kg",
+  "profileTargetRangeHelper": "Format min-max in {unit}, for example {example}",
+  "@profileTargetRangeHelper": {
+    "placeholders": {
+      "unit": {},
+      "example": {}
+    }
+  },
+  "profileTargetRangeFormatError": "Use the format {example}, with the minimum value lower than the maximum",
+  "@profileTargetRangeFormatError": {
+    "placeholders": {
+      "example": {}
+    }
+  },
+  "registerConfirmPasswordLabel": "Confirm password",
+  "profileUpdatedSuccessMessage": "Profile updated successfully.",
+  "profileSaveChangesButton": "Save changes",
+  "profileAccountSectionTitle": "Account",
+  "profileCurrentEmailLabel": "Current email",
+  "profileAccountCreatedAtLabel": "Account created on",
+  "profileCurrentPasswordLabel": "Current password",
+  "profileNewEmailLabel": "New email",
+  "profileNewPasswordLabel": "New password",
+  "profileConfirmNewPasswordLabel": "Confirm new password",
+  "profileEmailUpdatedSuccess": "Email updated successfully.",
+  "profilePasswordUpdatedSuccess": "Password updated successfully.",
+  "profileCurrentPasswordIncorrect": "Current password is incorrect.",
+  "profilePasswordMismatch": "Passwords do not match.",
+  "profileEmailSaveButton": "Update email",
+  "profilePasswordSaveButton": "Update password",
+  "profileChangePasswordLink": "Change password",
+  "profileEditProfileLink": "Edit profile",
+  "profileSensorIdRowLabel": "Sensor ID",
+  "profileLastReadingRowLabel": "Last reading",
+  "profileDaysLeftRowLabel": "Days left",
+  "profileDaysLeftValue": "{days} days",
+  "@profileDaysLeftValue": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "profileGlucoseTargetsSectionTitle": "Glucose targets",
+  "profileLowAlertRowLabel": "Low alert",
+  "profileHighAlertRowLabel": "High alert",
+  "profileReadingsHistoryRowLabel": "Readings history",
+  "profileReadingsCountValue": "{count} readings",
+  "@profileReadingsCountValue": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "profileSharedCareTitle": "Shared care",
+  "profileSharedCareSubtitle": "Coming soon — connect your doctor",
+  "changePasswordTitle": "Change password",
+  "carbEntryTitle": "Log carbs",
+  "carbEntryQuantityLabel": "Amount (g)",
+  "carbEntryDescriptionLabel": "Meal description",
+  "carbEntryQuantityError": "Enter a valid amount",
+  "carbEntryDescriptionError": "Enter a description",
+  "carbEntrySavedSuccessMessage": "Carbs logged successfully.",
+  "carbEntrySaveButton": "Save entry",
+  "insulinEntryTitle": "Log insulin",
+  "insulinEntryDoseTypeLabel": "Dose type",
+  "insulinTypeBolus": "Bolus",
+  "insulinTypeBasal": "Basal",
+  "insulinTypeCorrection": "Correction",
+  "insulinEntryQuantityLabel": "Amount (U)",
+  "insulinEntryQuantityError": "Enter a valid amount",
+  "insulinEntrySavedSuccessMessage": "Insulin dose logged.",
+  "insulinEntrySaveButton": "Save dose",
+  "carbEditTitle": "Edit carbs",
+  "carbEditSavedSuccessMessage": "Carbs updated.",
+  "carbEditDeletedSuccessMessage": "Entry deleted.",
+  "carbEditDeleteButton": "Delete",
+  "insulinEditTitle": "Edit insulin",
+  "insulinEditSavedSuccessMessage": "Insulin updated.",
+  "insulinEditDeletedSuccessMessage": "Dose deleted.",
+  "entryDeleteConfirmTitle": "Delete entry?",
+  "entryDeleteConfirmMessage": "This action cannot be undone.",
+  "entryDeleteConfirmButton": "Delete",
+  "entryEditButton": "Edit",
+  "entryCloseButton": "Close",
+  "entryTimePicker": "Change time",
+  "sensorPageTitle": "Glucore Sensor MVP",
+  "sensorPageNoActiveSessionMessage": "No active sensor session.",
+  "sensorPageBarcodeLabel": "Sensor barcode",
+  "sensorPageRegisterButton": "Register sensor",
+  "sensorPageRegisteredSensor": "Registered sensor: {sensorId}",
+  "@sensorPageRegisteredSensor": {
+    "placeholders": {
+      "sensorId": {}
+    }
+  },
+  "sensorPageStartMonitoringButton": "Start monitoring",
+  "sensorPageConnecting": "Connecting... ({status})",
+  "@sensorPageConnecting": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "sensorPageWarmupProgress": "Warm-up: {elapsed}/{total} s",
+  "@sensorPageWarmupProgress": {
+    "placeholders": {
+      "elapsed": {},
+      "total": {}
+    }
+  },
+  "sensorPageConnectedMessage": "Sensor connected. Waiting for warm-up and readings.",
+  "sensorPageBeginWarmupButton": "Start warm-up",
+  "sensorPageCurrentGlucose": "Current glucose: {value}",
+  "@sensorPageCurrentGlucose": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "sensorPageStopMonitoringButton": "Stop monitoring",
+  "sensorPageClearSessionButton": "Clear session",
+  "sensorStatusIdle": "Idle",
+  "sensorStatusScanning": "Searching",
+  "sensorStatusConnecting": "Connecting",
+  "sensorStatusPairing": "Pairing",
+  "sensorStatusConnected": "Connected",
+  "sensorStatusSyncingHistory": "Syncing history",
+  "sensorStatusWarmingUp": "Warming up",
+  "sensorStatusReadingAvailable": "Reading available",
+  "sensorStatusDisconnected": "Disconnected",
+  "sensorStatusError": "Error",
+  "sensorFailureInvalidSensorBarcode": "Invalid sensor barcode.",
+  "sensorFailureNoActiveSensor": "No active sensor.",
+  "sensorFailureNoSensorRegistered": "No sensor registered.",
+  "sensorFailureUnknown": "Could not complete the sensor operation.",
+  "registerEmailAlreadyExistsError": "This email is already registered.",
+  "authNetworkError": "No connection. Check your network.",
+  "authSessionExpiredWarning": "Your session has expired. Sign in again.",
+  "authServiceUnavailableError": "Service temporarily unavailable. Try again in a few minutes.",
+  "authTooManyRequestsError": "Too many attempts. Wait a few minutes and try again.",
+  "authServerError": "Server error. Try again.",
+  "monitoringStaleReadingBadge": "Disconnected · reading from {time}",
+  "@monitoringStaleReadingBadge": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "monitoringPairSensorTooltip": "Pair sensor",
+  "monitoringCarbPopupTitle": "{grams} g carbs",
+  "@monitoringCarbPopupTitle": {
+    "placeholders": {
+      "grams": {}
+    }
+  },
+  "monitoringInsulinPopupTitle": "{units} U · {type}",
+  "@monitoringInsulinPopupTitle": {
+    "placeholders": {
+      "units": {},
+      "type": {}
+    }
+  },
+  "monitoringChartSectionTitle": "Last 12 hours",
+  "monitoringTimeInTargetLabel": "Time in range",
+  "monitoringAverageLabel": "Average",
+  "monitoringGmiEstimateLabel": "Est. GMI",
+  "monitoringSensorDaysLeftLabel": "{days}d left · {sensorId}",
+  "@monitoringSensorDaysLeftLabel": {
+    "placeholders": {
+      "days": {},
+      "sensorId": {}
+    }
+  },
+  "monitoringNoSensorScanningTitle": "Looking for sensor…",
+  "monitoringNoSensorScanningSubtitle": "Waiting for Bluetooth signal",
+  "monitoringNoSensorConnectingTitle": "Connecting…",
+  "monitoringNoSensorConnectingSubtitle": "Establishing connection with the sensor",
+  "monitoringNoSensorPairingTitle": "Pairing required",
+  "monitoringNoSensorPairingSubtitle": "Enter the sensor PIN in the system dialog",
+  "monitoringNoSensorSyncingTitle": "Syncing history",
+  "monitoringNoSensorSyncingSubtitle": "Waiting for sensor readings",
+  "monitoringNoSensorWarmingTitle": "Sensor warming up",
+  "monitoringNoSensorWarmingSubtitle": "The sensor is calibrating",
+  "monitoringNoSensorErrorTitle": "Connection error",
+  "monitoringNoSensorErrorSubtitle": "Check the sensor and try again",
+  "monitoringNoSensorDefaultTitle": "No sensor connected",
+  "monitoringNoSensorDefaultSubtitle": "Tap the Bluetooth icon to pair",
+  "splashTagline": "Continuous glucose monitoring",
+  "shellTabMonitor": "Monitor",
+  "diaryTitle": "Diary",
+  "reportsTitle": "Reports",
+  "notificationsTitle": "Notifications",
+  "notificationsEmpty": "No notifications",
+  "sensorChoiceTitle": "Choose sensor",
+  "sensorChoiceSubtitle": "Select the brand of your CGM sensor",
+  "historyEmpty": "No readings recorded",
+  "historyTirLabel": "TIR {value}%",
+  "@historyTirLabel": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "dayToday": "Today",
+  "dayYesterday": "Yesterday",
+  "addObservationTitle": "Add observation",
+  "observationMeal": "Meal",
+  "observationInsulin": "Insulin",
+  "observationExercise": "Exercise",
+  "observationNote": "Free note",
+  "observationComingSoon": "{name} — coming soon",
+  "@observationComingSoon": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "diaryCarbDetail": "{grams} g carbs",
+  "@diaryCarbDetail": {
+    "placeholders": {
+      "grams": {}
+    }
+  },
+  "diaryInsulinBolus": "Bolus insulin",
+  "diaryInsulinBasal": "Basal insulin",
+  "diaryInsulinCorrection": "Correction",
+  "diaryEmptyTitle": "No observations yet",
+  "diaryEmptySubtitle": "Use the + button to log meals and insulin",
+  "reportsIndicatorsHeader": "INDICATORS",
+  "reportsAverageGlucoseLabel": "Average glucose",
+  "reportsGmiEstimatedLabel": "Estimated GMI",
+  "reportsTimeInTargetHeader": "TIME IN RANGE",
+  "reportsZoneUrgentLow": "Urgent low",
+  "reportsZoneLow": "Low",
+  "reportsZoneTarget": "In range",
+  "reportsZoneHigh": "High",
+  "reportsZoneUrgentHigh": "Urgent high",
+  "reportsEmptyPeriod": "No readings in this period",
+  "chartWaitingReadings": "Waiting for readings...",
+  "birthDateHint": "mm/dd/yyyy",
+  "notificationChannelName": "Sensor status",
+  "notificationChannelDescription": "CGM sensor connection alerts",
+  "notificationSensorDisconnectedBody": "The CGM sensor lost its connection. Tap to reconnect.",
+  "notificationGlucoseLowTitle": "Low glucose: {value}",
+  "@notificationGlucoseLowTitle": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "notificationGlucoseLowBody": "Attention: value below the configured limit.",
+  "notificationGlucoseHighTitle": "High glucose: {value}",
+  "@notificationGlucoseHighTitle": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "notificationGlucoseHighBody": "Attention: value above the configured limit.",
+  "libreTitle": "Libre 2 — Pair sensor",
+  "libreLibraryInstalledSuccess": "Library installed successfully",
+  "libreStep1Title": "1. Abbott library",
+  "libreLibraryInstalledBody": "Library installed. The device can decode Libre 2 sensors.",
+  "libreLibraryMissingBody": "Libre 2 requires the algorithm library from the LibreLink app. Select the LibreLink APK file (arm64) to extract it.",
+  "libreInstallingLabel": "Installing…",
+  "libreSelectApkButton": "Select LibreLink APK",
+  "libreResultActivated": "Sensor activated! Wait ~60 minutes for warm-up and bring the phone close again.",
+  "libreResultWarmup": "Sensor warming up. Wait for the 60-minute period to end.",
+  "libreResultReady": "Sensor linked! Start monitoring below.",
+  "libreResultEnded": "This sensor has reached the end of its life. Use a new sensor.",
+  "libreResultNeedsLibrary": "Install the Abbott library (step 1) before scanning.",
+  "libreResultUnsupportedLibre3": "Libre 3 sensor detected — only Libre 2 is supported.",
+  "libreResultUnsupportedUsGen2": "Libre 2 US (gen2) sensor is not supported in this version.",
+  "libreResultReadError": "NFC read failed. Hold the phone still over the sensor and try again.",
+  "libreResultError": "Failed to process the sensor. Try again.",
+  "libreStep2Title": "2. NFC scan",
+  "libreScanningBody": "Bring the back of the phone close to the sensor and wait for the vibration.",
+  "libreIdleBody": "Tap start and bring the phone close to the Libre 2 sensor to activate it and enable Bluetooth streaming.",
+  "libreStopScanButton": "Stop scan",
+  "libreStartScanButton": "Start NFC scan",
+  "libreStep3Title": "3. Linked sensor",
+  "libreStartMonitoringButton": "Start monitoring",
+  "libreStopMonitoringButton": "Stop monitoring",
+  "sensorLinkContinueButton": "Continue",
+  "sensorLinkScanBoxButton": "Scan box code",
+  "sensorLinkPasteManuallyLabel": "or paste manually:",
+  "sensorLinkCodeLabel": "Sensor code",
+  "sensorLinkAccuChekCodeHint": "Cap code (46 characters)",
+  "sensorLinkWaitingPinBody": "Waiting for connection. Confirm pairing when Android asks for the PIN.",
+  "sensorLinkWaitingBluetoothBody": "Waiting for Bluetooth connection…",
+  "sensorLinkLinkedTitle": "Linked sensor",
+  "sensorLinkPairingSubtitle": "Confirm pairing in the system dialog and enter the sensor PIN.",
+  "sensorLinkSibionicsStep1Title": "Take the sensor out of the box",
+  "sensorLinkSibionicsStep1Body": "Keep the barcode accessible.",
+  "sensorLinkScanBoxStepTitle": "Scan the box code",
+  "sensorLinkSibionicsStep2Body": "Point the camera at the data matrix code on the sensor box.",
+  "sensorLinkSibionicsStep3Title": "Wait for the Bluetooth connection",
+  "sensorLinkSibionicsStep3Body": "The sensor will be detected and linked automatically.",
+  "sensorLinkAccuChekStep1Title": "Apply the sensor and keep the cap",
+  "sensorLinkAccuChekStep1Body": "The data matrix code is on the blue cap of the applicator.",
+  "sensorLinkAccuChekStep2Title": "Scan the cap code",
+  "sensorLinkAccuChekStep2Body": "Point the camera at the data matrix code on the blue cap.",
+  "sensorLinkAccuChekStep3Title": "Pair when Android asks for the PIN",
+  "sensorLinkAccuChekStep3Body": "Enter the sensor PIN in the system pairing dialog.",
+  "settingsLanguageSectionTitle": "LANGUAGE",
+  "settingsLanguageSystemLabel": "System default",
+  "settingsLanguagePortugueseLabel": "Português",
+  "settingsLanguageEnglishLabel": "English",
+  "settingsUnitSectionTitle": "GLUCOSE UNIT",
+  "settingsUnitMgdlLabel": "mg/dL",
+  "settingsUnitMmolLabel": "mmol/L"
+}

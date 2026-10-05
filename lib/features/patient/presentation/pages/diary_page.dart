@@ -89,7 +89,7 @@ class DiaryPage extends StatelessWidget {
       if (dayKey != lastDay) {
         groups.add(
           _DayGroup(
-            label: context.formatDayLabel(item.time, pattern: 'EEEE, d MMM'),
+            label: context.formatDayLabel(item.time, withWeekday: true),
           ),
         );
         lastDay = dayKey;
@@ -271,7 +271,8 @@ class _DiaryItemTile extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  DateFormat.Hm().format(item.time),
+                  DateFormat.jm(Localizations.localeOf(context).toString())
+                      .format(item.time),
                   style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
                 ),
                 if (item.onTap != null) ...[

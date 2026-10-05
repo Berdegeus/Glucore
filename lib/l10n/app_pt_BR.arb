@@ -57,7 +57,7 @@
     }
   },
   "genericGlucoseUnit": "mg/dL",
-  "genericGlucoseValue": "{value} mg/dL",
+  "genericGlucoseValue": "{value}",
   "@genericGlucoseValue": {
     "placeholders": {
       "value": {}
@@ -112,7 +112,7 @@
   },
   "monitoringPredictionUnavailableTitle": "Previsão indisponível",
   "monitoringPredictionUnavailableSubtitle": "Tentaremos atualizar automaticamente em breve.",
-  "monitoringPredictionIn15Minutes": "Previsão 15 min: {value} mg/dL",
+  "monitoringPredictionIn15Minutes": "Previsão 15 min: {value}",
   "@monitoringPredictionIn15Minutes": {
     "placeholders": {
       "value": {}
@@ -233,8 +233,18 @@
     }
   },
   "alertSettingsTitle": "Configuração de alertas",
-  "alertSettingsLowThresholdLabel": "Limite baixo (mg/dL)",
-  "alertSettingsHighThresholdLabel": "Limite alto (mg/dL)",
+  "alertSettingsLowThresholdLabel": "Limite baixo ({unit})",
+  "@alertSettingsLowThresholdLabel": {
+    "placeholders": {
+      "unit": {}
+    }
+  },
+  "alertSettingsHighThresholdLabel": "Limite alto ({unit})",
+  "@alertSettingsHighThresholdLabel": {
+    "placeholders": {
+      "unit": {}
+    }
+  },
   "alertSettingsLowMustBeLowerError": "O limite baixo deve ser menor que o alto.",
   "alertSettingsUpdatedSuccessMessage": "Alertas atualizados com sucesso.",
   "alertSettingsSaveButton": "Salvar alertas",
@@ -243,10 +253,26 @@
   "profileNameLabel": "Nome",
   "profileBirthDateLabel": "Data de nascimento",
   "profileWeightLabel": "Peso (kg)",
-  "profileTargetRangeLabel": "Faixa alvo de glicose (mg/dL)",
+  "profileTargetRangeLabel": "Faixa alvo de glicose ({unit})",
+  "@profileTargetRangeLabel": {
+    "placeholders": {
+      "unit": {}
+    }
+  },
   "profileWeightHint": "kg",
-  "profileTargetRangeHelper": "Formato mín-máx em mg/dL, por exemplo 80-180",
-  "profileTargetRangeFormatError": "Use o formato 80-180, com o valor mínimo menor que o máximo",
+  "profileTargetRangeHelper": "Formato mín-máx em {unit}, por exemplo {example}",
+  "@profileTargetRangeHelper": {
+    "placeholders": {
+      "unit": {},
+      "example": {}
+    }
+  },
+  "profileTargetRangeFormatError": "Use o formato {example}, com o valor mínimo menor que o máximo",
+  "@profileTargetRangeFormatError": {
+    "placeholders": {
+      "example": {}
+    }
+  },
   "registerConfirmPasswordLabel": "Confirmar senha",
   "profileUpdatedSuccessMessage": "Perfil atualizado com sucesso.",
   "profileSaveChangesButton": "Salvar alterações",
@@ -342,7 +368,7 @@
   },
   "sensorPageConnectedMessage": "Sensor conectado. Aguardando aquecimento e leituras.",
   "sensorPageBeginWarmupButton": "Iniciar aquecimento",
-  "sensorPageCurrentGlucose": "Glicose atual: {value} mg/dL",
+  "sensorPageCurrentGlucose": "Glicose atual: {value}",
   "@sensorPageCurrentGlucose": {
     "placeholders": {
       "value": {}
@@ -469,14 +495,14 @@
   "notificationChannelName": "Status do Sensor",
   "notificationChannelDescription": "Alertas de conexão do sensor CGM",
   "notificationSensorDisconnectedBody": "O sensor CGM perdeu a conexão. Toque para reconectar.",
-  "notificationGlucoseLowTitle": "Glicose baixa: {value} mg/dL",
+  "notificationGlucoseLowTitle": "Glicose baixa: {value}",
   "@notificationGlucoseLowTitle": {
     "placeholders": {
       "value": {}
     }
   },
   "notificationGlucoseLowBody": "Atenção: valor abaixo do limite configurado.",
-  "notificationGlucoseHighTitle": "Glicose alta: {value} mg/dL",
+  "notificationGlucoseHighTitle": "Glicose alta: {value}",
   "@notificationGlucoseHighTitle": {
     "placeholders": {
       "value": {}
@@ -527,5 +553,12 @@
   "sensorLinkAccuChekStep2Title": "Escaneie o código da tampa",
   "sensorLinkAccuChekStep2Body": "Aponte a câmera para o código data matrix na tampa azul.",
   "sensorLinkAccuChekStep3Title": "Pareie quando o Android pedir o PIN",
-  "sensorLinkAccuChekStep3Body": "Digite o PIN do sensor no diálogo de pareamento do sistema."
+  "sensorLinkAccuChekStep3Body": "Digite o PIN do sensor no diálogo de pareamento do sistema.",
+  "settingsLanguageSectionTitle": "IDIOMA",
+  "settingsLanguageSystemLabel": "Padrão do sistema",
+  "settingsLanguagePortugueseLabel": "Português",
+  "settingsLanguageEnglishLabel": "English",
+  "settingsUnitSectionTitle": "UNIDADE DE GLICOSE",
+  "settingsUnitMgdlLabel": "mg/dL",
+  "settingsUnitMmolLabel": "mmol/L"
 }

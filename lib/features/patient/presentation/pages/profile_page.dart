@@ -16,6 +16,7 @@ import 'history_page.dart';
 import 'profile_edit_page.dart';
 import 'sensor_choice_page.dart';
 import 'settings_page.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -149,8 +150,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   GlucoreSectionRow(
                     label: l10n.profileLastReadingRowLabel,
                     value: state.currentReading != null
-                        ? l10n.genericGlucoseValue(
-                            state.currentReading!.value.toStringAsFixed(0),
+                        ? context.formatGlucoseWithUnit(
+                            state.currentReading!.value,
                           )
                         : '—',
                   ),
@@ -175,8 +176,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 rows: [
                   GlucoreSectionRow(
                     label: l10n.profileLowAlertRowLabel,
-                    value: l10n.genericGlucoseValue(
-                      state.alertSettings.lowThreshold,
+                    value: context.formatGlucoseWithUnit(
+                      state.alertSettings.lowThreshold.toDouble(),
                     ),
                     onTap: () => Navigator.of(context).push(
                       buildPatientScopedRoute(
@@ -187,8 +188,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   GlucoreSectionRow(
                     label: l10n.profileHighAlertRowLabel,
-                    value: l10n.genericGlucoseValue(
-                      state.alertSettings.highThreshold,
+                    value: context.formatGlucoseWithUnit(
+                      state.alertSettings.highThreshold.toDouble(),
                     ),
                     onTap: () => Navigator.of(context).push(
                       buildPatientScopedRoute(

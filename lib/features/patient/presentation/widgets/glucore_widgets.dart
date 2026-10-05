@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 enum GlucoseZone { urgentLow, low, target, high, urgentHigh }
 
@@ -100,7 +101,7 @@ class GlucoreStatusCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                value.toStringAsFixed(0),
+                context.formatGlucose(value),
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 64,
                   fontWeight: FontWeight.w700,
@@ -115,7 +116,7 @@ class GlucoreStatusCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'mg/dL',
+                      context.glucoseUnit.label,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,

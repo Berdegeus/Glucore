@@ -17,6 +17,7 @@ import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.
 import 'package:glucore/features/patient/presentation/pages/settings_page.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:glucore/core/preferences/app_preferences.dart';
 
 /// THEME-01 — "WHEN o usuário escolhe o tema escuro nas configurações THEN the
 /// system SHALL aplicar o tema imediatamente, sem reiniciar o app."
@@ -59,12 +60,16 @@ void main() {
         providers: [
           BlocProvider<AuthCubit>.value(value: authCubit),
           BlocProvider<UserIdentityCubit>.value(value: identity),
+          BlocProvider<AppPreferencesCubit>(
+            create: (_) => AppPreferencesCubit(),
+          ),
           BlocProvider<ThemeCubit>.value(value: themeCubit),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, mode) => MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('pt', 'BR'),
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
             themeMode: mode,
@@ -87,7 +92,7 @@ void main() {
   Future<void> tapOption(WidgetTester tester, String label) async {
     await tester.ensureVisible(find.text(label));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(label));
+    await tester.tap(find.text(label).first);
     await tester.pumpAndSettle();
   }
 
@@ -99,7 +104,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(l10n.settingsAppearanceSectionTitle), findsOneWidget);
-    expect(find.text(l10n.settingsThemeSystemLabel), findsOneWidget);
+    // "System default" is also an option of the language section.
+    expect(find.text(l10n.settingsThemeSystemLabel), findsNWidgets(2));
     expect(find.text(l10n.settingsThemeLightLabel), findsOneWidget);
     expect(find.text(l10n.settingsThemeDarkLabel), findsOneWidget);
   });
@@ -145,7 +151,9 @@ void main() {
 
     Finder markFor(String label) => find.descendant(
           of: find.ancestor(
-            of: find.text(label),
+            // `.first`: the theme section comes before the language one,
+            // which repeats "System default".
+            of: find.text(label).first,
             matching: find.byType(InkWell),
           ),
           matching: find.byIcon(Icons.check),

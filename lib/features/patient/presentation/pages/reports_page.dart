@@ -10,6 +10,7 @@ import '../widgets/glucore_form_layout.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import '../../../../l10n/l10n.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -234,7 +235,7 @@ class _GmiCard extends StatelessWidget {
                     Text.rich(
                       TextSpan(children: [
                         TextSpan(
-                          text: avg.toStringAsFixed(0),
+                          text: context.formatGlucose(avg),
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 32,
                             fontWeight: FontWeight.w700,
@@ -242,7 +243,7 @@ class _GmiCard extends StatelessWidget {
                           ),
                         ),
                         TextSpan(
-                          text: ' mg/dL',
+                          text: ' ${context.glucoseUnit.label}',
                           style: TextStyle(
                               fontSize: 12, color: context.glucoreColors.inkMuted),
                         ),
@@ -318,31 +319,31 @@ class _TirSection extends StatelessWidget {
           _ZoneLegendRow(
             color: context.glucoreColors.zoneUrgentLowBg,
             label: context.l10n.reportsZoneUrgentLow,
-            range: '< 54',
+            range: '< ${context.formatGlucose(54)}',
             pct: stats.urgentLowPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneLowBg,
             label: context.l10n.reportsZoneLow,
-            range: '54–70',
+            range: '${context.formatGlucose(54)}–${context.formatGlucose(70)}',
             pct: stats.lowPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneTargetBg,
             label: context.l10n.reportsZoneTarget,
-            range: '70–180',
+            range: '${context.formatGlucose(70)}–${context.formatGlucose(180)}',
             pct: stats.targetPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneHighBg,
             label: context.l10n.reportsZoneHigh,
-            range: '180–250',
+            range: '${context.formatGlucose(180)}–${context.formatGlucose(250)}',
             pct: stats.highPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneUrgentHighBg,
             label: context.l10n.reportsZoneUrgentHigh,
-            range: '> 250',
+            range: '> ${context.formatGlucose(250)}',
             pct: stats.urgentHighPct,
           ),
         ],
