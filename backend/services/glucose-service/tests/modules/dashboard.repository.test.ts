@@ -324,3 +324,147 @@ describe('getLastReadingAt', () => {
     expect(await repository.getLastReadingAt(patientId)).toBe('2026-08-05T08:00:00.000Z');
   });
 });
+
+describe('getDailyBuckets', () => {
+  let patientId: string;
+
+  // Four days around 2026-08-05, so the carb-only / insulin-only cases have room on both sides.
+  const WINDOW: DateRange = { from: day('2026-08-04'), toExclusive: day('2026-08-08') };
+
+  beforeEach(async () => {
+    await truncateAll();
+    patientId = (await signedInPatient()).userId;
+  });
+
+  const readingAt = (iso: string, valueMgDl: number, owner = patientId) =>
+    prisma.glucoseReading.create({ data: { patientId: owner, valueMgDl, recordedAt: new Date(iso) } });
+  const carbsAt = (iso: string, carbsGrams: number, owner = patientId) =>
+    prisma.carbEvent.create({ data: { patientId: owner, eventAt: new Date(iso), carbsGrams, description: '' } });
+  const insulinAt = (iso: string, doseUnits: number, owner = patientId) =>
+    prisma.insulinEvent.create({
+      data: { patientId: owner, eventAt: new Date(iso), insulinType: 'bolus', doseUnits, description: '' },
+    });
+  const buckets = (tz = 'UTC', low = 80, high = 180, range = WINDOW) =>
+    repository.getDailyBuckets(patientId, range, low, high, tz);
+
+  it('keeps the glucose fields of a day with readings and zeroes the diary sums when it has none', async () => {
+    await readingAt('2026-08-05T08:00:00.000Z', 100);
+    await readingAt('2026-08-05T08:05:00.000Z', 200);
+
+    expect(await buckets()).toEqual([
+      {
+        day: '2026-08-05',
+        avgGlucose: 150,
+        minGlucose: 100,
+        maxGlucose: 200,
+        timeInRangePercent: 50,
+        movingAvg7d: 150,
+        readingsCount: 2,
+        carbsGrams: 0,
+        insulinUnits: 0,
+      },
+    ]);
+  });
+
+  it('lists a day with only carbs, with null glucose fields and no readings', async () => {
+    await carbsAt('2026-08-06T12:00:00.000Z', 45.5);
+    await carbsAt('2026-08-06T19:00:00.000Z', 30);
+
+    expect(await buckets()).toEqual([
+      {
+        day: '2026-08-06',
+        avgGlucose: null,
+        minGlucose: null,
+        maxGlucose: null,
+        timeInRangePercent: null,
+        movingAvg7d: null,
+        readingsCount: 0,
+        carbsGrams: 75.5,
+        insulinUnits: 0,
+      },
+    ]);
+  });
+
+  it('lists a day with only insulin, with null glucose fields and no readings', async () => {
+    await insulinAt('2026-08-07T07:00:00.000Z', 4.5);
+    await insulinAt('2026-08-07T21:00:00.000Z', 20);
+
+    expect(await buckets()).toEqual([
+      {
+        day: '2026-08-07',
+        avgGlucose: null,
+        minGlucose: null,
+        maxGlucose: null,
+        timeInRangePercent: null,
+        movingAvg7d: null,
+        readingsCount: 0,
+        carbsGrams: 0,
+        insulinUnits: 24.5,
+      },
+    ]);
+  });
+
+  it('joins readings, carbs and insulin on the same day, ordered by day', async () => {
+    await insulinAt('2026-08-07T07:00:00.000Z', 6); // insulin-only, last
+    await readingAt('2026-08-05T08:00:00.000Z', 120);
+    await carbsAt('2026-08-05T09:00:00.000Z', 50);
+    await insulinAt('2026-08-05T09:00:00.000Z', 5);
+    await carbsAt('2026-08-04T09:00:00.000Z', 10); // carb-only, first
+
+    const result = await buckets();
+
+    expect(result.map((b) => b.day)).toEqual(['2026-08-04', '2026-08-05', '2026-08-07']);
+    expect(result[1]).toMatchObject({ readingsCount: 1, avgGlucose: 120, carbsGrams: 50, insulinUnits: 5 });
+  });
+
+  it('keeps the 7-day moving average over the days that have readings, skipping diary-only days', async () => {
+    await readingAt('2026-08-04T08:00:00.000Z', 100);
+    await carbsAt('2026-08-05T08:00:00.000Z', 40); // a row between the two glucose days
+    await readingAt('2026-08-06T08:00:00.000Z', 200);
+
+    const result = await buckets();
+
+    expect(result.map((b) => b.movingAvg7d)).toEqual([100, null, 150]);
+  });
+
+  it('computes time in range with the thresholds inclusive: 80 and 180 in, 79 and 181 out', async () => {
+    await readingAt('2026-08-05T08:00:00.000Z', 79);
+    await readingAt('2026-08-05T08:05:00.000Z', 80);
+    await readingAt('2026-08-05T08:10:00.000Z', 180);
+    await readingAt('2026-08-05T08:15:00.000Z', 181);
+
+    expect((await buckets())[0].timeInRangePercent).toBe(50);
+  });
+
+  it('cuts the days in the given zone: 02:30 UTC belongs to the previous evening in Sao Paulo', async () => {
+    await readingAt('2026-08-06T02:30:00.000Z', 100);
+    await carbsAt('2026-08-06T02:30:00.000Z', 20);
+    await insulinAt('2026-08-06T02:30:00.000Z', 3);
+
+    const utc = await buckets('UTC');
+    const local = await buckets('America/Sao_Paulo');
+
+    expect(utc.map((b) => b.day)).toEqual(['2026-08-06']);
+    expect(local.map((b) => b.day)).toEqual(['2026-08-05']);
+    expect(local[0]).toMatchObject({ readingsCount: 1, carbsGrams: 20, insulinUnits: 3 });
+  });
+
+  it('counts only rows inside [from, toExclusive) and from this patient', async () => {
+    const other = (await signedInPatient()).userId;
+    await carbsAt('2026-08-07T23:59:00.000Z', 10); // last minute: in
+    await carbsAt('2026-08-08T00:00:00.000Z', 99); // at toExclusive: out
+    await carbsAt('2026-08-03T23:59:00.000Z', 99); // before from: out
+    await carbsAt('2026-08-07T10:00:00.000Z', 99, other);
+    await readingAt('2026-08-07T10:00:00.000Z', 300, other);
+    await insulinAt('2026-08-07T10:00:00.000Z', 99, other);
+
+    const result = await buckets();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ day: '2026-08-07', readingsCount: 0, carbsGrams: 10, insulinUnits: 0 });
+  });
+
+  it('answers an empty list when nothing happened in the period', async () => {
+    expect(await buckets()).toEqual([]);
+  });
+});

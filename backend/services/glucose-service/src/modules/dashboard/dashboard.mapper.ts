@@ -138,6 +138,10 @@ export interface DailyBucketDto {
   timeInRangePercent: number | null;
   movingAvg7d: number | null;
   readingsCount: number;
+  /** Total carbohydrate logged that local day; 0 when none. */
+  carbsGrams: number;
+  /** Total insulin units logged that local day; 0 when none. */
+  insulinUnits: number;
 }
 
 export interface ExcursionDto {
@@ -193,6 +197,8 @@ export interface RawDailyBucketRow {
   readings_count: unknown;
   time_in_range_percent: unknown;
   moving_avg_7d: unknown;
+  carbs_grams: unknown;
+  insulin_units: unknown;
 }
 
 export function mapDailyBucketRow(row: RawDailyBucketRow): DailyBucketDto {
@@ -204,6 +210,8 @@ export function mapDailyBucketRow(row: RawDailyBucketRow): DailyBucketDto {
     timeInRangePercent: toNullableNumber(row.time_in_range_percent),
     movingAvg7d: toNullableNumber(row.moving_avg_7d),
     readingsCount: toNumber(row.readings_count),
+    carbsGrams: toNumber(row.carbs_grams),
+    insulinUnits: toNumber(row.insulin_units),
   };
 }
 

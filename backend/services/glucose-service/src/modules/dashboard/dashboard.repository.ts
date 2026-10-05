@@ -69,8 +69,18 @@ export interface IDashboardRepository {
   getAgp(patientId: string, range: DateRange, tz: string): Promise<AgpPointDto[]>;
   /** SQL cru (b) — mean and count per local weekday (0 = Sunday) × local hour; empty cells are absent. */
   getHeatmap(patientId: string, range: DateRange, tz: string): Promise<HeatCellDto[]>;
-  /** SQL cru, Q1 (b) — `date_trunc` + 7-day moving average window function. */
-  getDailyBuckets(patientId: string, range: DateRange, low: number, high: number): Promise<DailyBucketDto[]>;
+  /**
+   * SQL cru, Q1 (b) — `date_trunc` in `tz` + 7-day moving average window function,
+   * full-outer-joined with the daily carb and insulin sums so a day that has only
+   * diary entries still shows up (glucose fields `null`, `readingsCount` 0).
+   */
+  getDailyBuckets(
+    patientId: string,
+    range: DateRange,
+    low: number,
+    high: number,
+    tz: string,
+  ): Promise<DailyBucketDto[]>;
   /** SQL cru, Q2 (b) — gaps-and-islands over sustained hypo/hyper readings. */
   getExcursions(patientId: string, range: DateRange, low: number, high: number): Promise<ExcursionDto[]>;
 }
@@ -240,35 +250,75 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     { from, toExclusive }: DateRange,
     low: number,
     high: number,
+    tz: string,
   ): Promise<DailyBucketDto[]> {
+    // Each event table is read as UTC wall clock first and then shown as `tz`
+    // wall clock before `date_trunc`, so all three aggregates cut the same local
+    // days (see `getAgp`). The moving average is computed inside `glucose_days`,
+    // before the join: diary-only days must not take a slot in its 6-row window,
+    // or the average would reach back fewer glucose days than it always did.
     const rows = await this.prisma.$queryRaw<RawDailyBucketRow[]>`
-      WITH days AS (
+      WITH glucose_days AS (
         SELECT
-          date_trunc('day', "recordedAt") AS day,
-          AVG("valueMgDl") AS avg_glucose,
-          MIN("valueMgDl") AS min_glucose,
-          MAX("valueMgDl") AS max_glucose,
-          COUNT(*) AS readings_count,
-          COUNT(*) FILTER (WHERE "valueMgDl" BETWEEN ${low}::integer AND ${high}::integer) AS in_range_count
-        FROM "GlucoseReading"
+          day,
+          avg_glucose,
+          min_glucose,
+          max_glucose,
+          readings_count,
+          CASE WHEN readings_count > 0
+            THEN ROUND(100.0 * in_range_count / readings_count, 2)
+            ELSE NULL
+          END AS time_in_range_percent,
+          AVG(avg_glucose) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS moving_avg_7d
+        FROM (
+          SELECT
+            date_trunc('day', ("recordedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS day,
+            AVG("valueMgDl") AS avg_glucose,
+            MIN("valueMgDl") AS min_glucose,
+            MAX("valueMgDl") AS max_glucose,
+            COUNT(*) AS readings_count,
+            COUNT(*) FILTER (WHERE "valueMgDl" BETWEEN ${low}::integer AND ${high}::integer) AS in_range_count
+          FROM "GlucoseReading"
+          WHERE "patientId" = ${patientId}::uuid
+            AND "recordedAt" >= (${from} AT TIME ZONE 'UTC')
+            AND "recordedAt" < (${toExclusive} AT TIME ZONE 'UTC')
+          GROUP BY 1
+        ) AS per_day
+      ),
+      carb_days AS (
+        SELECT
+          date_trunc('day', ("eventAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS day,
+          SUM("carbsGrams")::float8 AS carbs_grams
+        FROM "CarbEvent"
         WHERE "patientId" = ${patientId}::uuid
-          AND "recordedAt" >= (${from} AT TIME ZONE 'UTC')
-          AND "recordedAt" < (${toExclusive} AT TIME ZONE 'UTC')
+          AND "eventAt" >= (${from} AT TIME ZONE 'UTC')
+          AND "eventAt" < (${toExclusive} AT TIME ZONE 'UTC')
+        GROUP BY 1
+      ),
+      insulin_days AS (
+        SELECT
+          date_trunc('day', ("eventAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS day,
+          SUM("doseUnits")::float8 AS insulin_units
+        FROM "InsulinEvent"
+        WHERE "patientId" = ${patientId}::uuid
+          AND "eventAt" >= (${from} AT TIME ZONE 'UTC')
+          AND "eventAt" < (${toExclusive} AT TIME ZONE 'UTC')
         GROUP BY 1
       )
       SELECT
-        day,
-        avg_glucose,
-        min_glucose,
-        max_glucose,
-        readings_count,
-        CASE WHEN readings_count > 0
-          THEN ROUND(100.0 * in_range_count / readings_count, 2)
-          ELSE NULL
-        END AS time_in_range_percent,
-        AVG(avg_glucose) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS moving_avg_7d
-      FROM days
-      ORDER BY day
+        COALESCE(g.day, c.day, i.day) AS day,
+        g.avg_glucose,
+        g.min_glucose,
+        g.max_glucose,
+        COALESCE(g.readings_count, 0) AS readings_count,
+        g.time_in_range_percent,
+        g.moving_avg_7d,
+        COALESCE(c.carbs_grams, 0) AS carbs_grams,
+        COALESCE(i.insulin_units, 0) AS insulin_units
+      FROM glucose_days g
+      FULL OUTER JOIN carb_days c ON c.day = g.day
+      FULL OUTER JOIN insulin_days i ON i.day = COALESCE(g.day, c.day)
+      ORDER BY 1
     `;
     return rows.map(mapDailyBucketRow);
   }

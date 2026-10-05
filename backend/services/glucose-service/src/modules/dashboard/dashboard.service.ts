@@ -32,7 +32,7 @@ export class DashboardService {
     const [totals, periodMetrics, byDay, insulinByType, alertsByType, excursions] = await Promise.all([
       this.dashboard.getTotals(patientId, range),
       this.dashboard.getPeriodMetrics(patientId, range, low, high),
-      this.dashboard.getDailyBuckets(patientId, range, low, high),
+      this.dashboard.getDailyBuckets(patientId, range, low, high, query.tz),
       this.dashboard.getInsulinByType(patientId, range),
       this.dashboard.getAlertsByType(patientId, range),
       this.dashboard.getExcursions(patientId, range, low, high),

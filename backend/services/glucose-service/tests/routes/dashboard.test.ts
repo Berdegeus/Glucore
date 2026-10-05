@@ -203,6 +203,8 @@ describe('GET /dashboard/summary', () => {
           // First row in the window: no preceding day, so it is its own average.
           movingAvg7d: expect.closeTo(DAY1_AVG, 3),
           readingsCount: DAY1.length,
+          carbsGrams: 105,
+          insulinUnits: 30,
         },
         {
           day: '2026-08-06',
@@ -214,6 +216,8 @@ describe('GET /dashboard/summary', () => {
           // reading count: (day1Avg + day2Avg) / 2.
           movingAvg7d: expect.closeTo((DAY1_AVG + DAY2_AVG) / 2, 3),
           readingsCount: DAY2.length,
+          carbsGrams: 30,
+          insulinUnits: 0,
         },
       ]);
     });

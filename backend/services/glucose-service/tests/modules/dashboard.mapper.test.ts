@@ -76,6 +76,8 @@ describe('mapDailyBucketRow', () => {
       readings_count: 288n,
       time_in_range_percent: new Prisma.Decimal('75.00'),
       moving_avg_7d: null,
+      carbs_grams: new Prisma.Decimal('75.5'),
+      insulin_units: 12,
     });
     expect(dto).toEqual({
       day: '2026-08-05',
@@ -85,6 +87,33 @@ describe('mapDailyBucketRow', () => {
       readingsCount: 288,
       timeInRangePercent: 75,
       movingAvg7d: null,
+      carbsGrams: 75.5,
+      insulinUnits: 12,
+    });
+  });
+
+  it('keeps the glucose fields null and counts zero for a day that only has diary entries', () => {
+    const dto = mapDailyBucketRow({
+      day: new Date('2026-08-06T00:00:00.000Z'),
+      avg_glucose: null,
+      min_glucose: null,
+      max_glucose: null,
+      readings_count: 0n,
+      time_in_range_percent: null,
+      moving_avg_7d: null,
+      carbs_grams: 30,
+      insulin_units: null,
+    });
+    expect(dto).toEqual({
+      day: '2026-08-06',
+      avgGlucose: null,
+      minGlucose: null,
+      maxGlucose: null,
+      readingsCount: 0,
+      timeInRangePercent: null,
+      movingAvg7d: null,
+      carbsGrams: 30,
+      insulinUnits: 0,
     });
   });
 });
