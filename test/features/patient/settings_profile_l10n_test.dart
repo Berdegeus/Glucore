@@ -29,6 +29,7 @@ import 'package:glucore/features/patient/presentation/pages/settings_page.dart';
 import 'package:glucore/features/sensor/domain/models.dart';
 import 'package:glucore/features/sensor/presentation/cubit/sensor_cubit.dart';
 import 'package:glucore/l10n/l10n.dart';
+import 'package:glucore/core/preferences/app_preferences.dart';
 
 /// Spec: TCC-14 / spec.md P3 "Identidade visual e responsividade consistentes"
 /// AC1 — every user-facing string in `settings_page.dart` and
@@ -69,10 +70,14 @@ void main() {
           BlocProvider<AuthCubit>.value(value: authCubit),
           BlocProvider<UserIdentityCubit>.value(value: identity),
           BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+          BlocProvider<AppPreferencesCubit>(
+            create: (_) => AppPreferencesCubit(),
+          ),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('pt', 'BR'),
           home: const SettingsPage(),
         ),
       ),
@@ -91,6 +96,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('pt', 'BR'),
           home: const ProfilePage(),
         ),
       ),
@@ -226,13 +232,13 @@ void main() {
       );
       expect(find.text(l10n.profileSensorIdRowLabel), findsOneWidget);
       expect(find.text(l10n.profileLastReadingRowLabel), findsOneWidget);
-      expect(find.text(l10n.genericGlucoseValue('120')), findsOneWidget);
+      expect(find.text('120 mg/dL'), findsOneWidget);
       expect(find.text(l10n.profileDaysLeftRowLabel), findsOneWidget);
       expect(find.text(l10n.profileDaysLeftValue(14)), findsOneWidget);
       expect(find.text(l10n.profileLowAlertRowLabel), findsOneWidget);
       expect(find.text(l10n.profileHighAlertRowLabel), findsOneWidget);
-      expect(find.text(l10n.genericGlucoseValue(80)), findsOneWidget);
-      expect(find.text(l10n.genericGlucoseValue(180)), findsOneWidget);
+      expect(find.text('80 mg/dL'), findsOneWidget);
+      expect(find.text('180 mg/dL'), findsOneWidget);
       expect(find.text(l10n.profileReadingsHistoryRowLabel), findsOneWidget);
       expect(find.text(l10n.profileReadingsCountValue(1)), findsOneWidget);
       expect(find.text(l10n.profileSharedCareTitle), findsOneWidget);

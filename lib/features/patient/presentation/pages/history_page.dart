@@ -10,6 +10,9 @@ import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
+import '../../../../l10n/l10n.dart';
+import '../../../../l10n/localized_values.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
@@ -17,7 +20,7 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Histórico')),
+      appBar: UserAppBar(title: Text(context.l10n.historyTitle)),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           if (state.readings.isEmpty) {
@@ -25,11 +28,18 @@ class HistoryPage extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.show_chart, size: 48, color: context.glucoreColors.inkMuted),
-                  SizedBox(height: 12),
+                  Icon(
+                    Icons.show_chart,
+                    size: 48,
+                    color: context.glucoreColors.inkMuted,
+                  ),
+                  const SizedBox(height: 12),
                   Text(
-                    'Sem leituras registradas',
-                    style: TextStyle(fontSize: 15, color: context.glucoreColors.inkMuted),
+                    context.l10n.historyEmpty,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: context.glucoreColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -95,8 +105,12 @@ class _DayRow extends StatelessWidget {
         .length;
     final tir = (inTarget / sorted.length * 100).round();
 
-    final zone = glucoseZoneOf(avg, settings.lowThreshold, settings.highThreshold);
-    final dayLabel = _formatDay(dayKey);
+    final zone = glucoseZoneOf(
+      avg,
+      settings.lowThreshold,
+      settings.highThreshold,
+    );
+    final dayLabel = context.formatDayLabel(DateTime.parse(dayKey));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -129,7 +143,7 @@ class _DayRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${avg.toStringAsFixed(0)} mg/dL',
+                context.formatGlucoseWithUnit(avg),
                 style: AppTheme.monoStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -138,24 +152,17 @@ class _DayRow extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'TIR $tir%',
-                style: TextStyle(fontSize: 11, color: context.glucoreColors.inkMuted),
+                context.l10n.historyTirLabel(tir),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: context.glucoreColors.inkMuted,
+                ),
               ),
             ],
           ),
         ],
       ),
     );
-  }
-
-  String _formatDay(String key) {
-    final dt = DateTime.parse(key);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final d = DateTime(dt.year, dt.month, dt.day);
-    if (d == today) return 'Hoje';
-    if (d == today.subtract(const Duration(days: 1))) return 'Ontem';
-    return DateFormat('d MMM', 'pt_BR').format(dt);
   }
 }
 

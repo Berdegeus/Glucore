@@ -55,6 +55,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('pt', 'BR'),
           home: Align(
             alignment: Alignment.topLeft,
             child: SizedBox(width: width, height: 900, child: page),

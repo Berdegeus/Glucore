@@ -41,6 +41,7 @@ void main() {
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('pt', 'BR'),
           builder: (context, child) {
             // Mirrors app.dart: read l10n in a normal build, capture the
             // value, then hand it to `create` — never touch `context.l10n`

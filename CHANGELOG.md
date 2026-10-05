@@ -14,6 +14,13 @@ o projeto segue versionamento semântico (ver [docs/guides/versioning-and-branch
 - O backlog do sensor passa a ser gravado no banco local aos poucos (debounce de 2 s), não só quando a leitura
   atual chega.
 
+### Added
+- **Inglês e mmol/L**: seletor de idioma (sistema / Português / English) e de unidade de glicose (mg/dL /
+  mmol/L) em Configurações, persistidos em `SharedPreferences` (`AppPreferencesCubit`). A unidade só muda a
+  exibição e a digitação (limites de alerta, faixa-alvo, gráfico, relatórios); o armazenamento e o sync seguem
+  em mg/dL. Em inglês, datas no padrão americano (mês/dia/ano, 12 h), inclusive no campo de nascimento.
+- 88 textos que estavam fixos nas telas e nas notificações foram para os `.arb`.
+
 ### Changed (UI)
 - Parear sensor: com um sensor já vinculado, a escolha de marca é pulada e abre o painel da marca dele.
 - Seta de tendência maior no card principal.

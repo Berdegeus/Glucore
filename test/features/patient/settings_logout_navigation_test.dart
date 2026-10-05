@@ -11,6 +11,7 @@ import 'package:glucore/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:glucore/features/auth/presentation/cubit/auth_state.dart';
 import 'package:glucore/features/patient/presentation/pages/settings_page.dart';
 import 'package:glucore/l10n/l10n.dart';
+import 'package:glucore/core/preferences/app_preferences.dart';
 
 /// Reproduces a real-device bug: logging out from `SettingsPage` left the
 /// user stuck on the settings screen instead of seeing the login page.
@@ -53,10 +54,14 @@ void main() {
         providers: [
           BlocProvider<AuthCubit>.value(value: cubit),
           BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+          BlocProvider<AppPreferencesCubit>(
+            create: (_) => AppPreferencesCubit(),
+          ),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('pt', 'BR'),
           home: BlocBuilder<AuthCubit, AuthState>(
             builder: (context, state) {
               if (state.status == AuthStatus.authenticated) {

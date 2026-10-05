@@ -9,6 +9,8 @@ import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_form_layout.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
+import '../../../../l10n/l10n.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -25,7 +27,7 @@ class _ReportsPageState extends State<ReportsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Relatórios')),
+      appBar: UserAppBar(title: Text(context.l10n.reportsTitle)),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           final cutoff = DateTime.now().subtract(Duration(days: _rangeDays));
@@ -207,7 +209,7 @@ class _GmiCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'INDICADORES',
+            context.l10n.reportsIndicatorsHeader,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -223,14 +225,17 @@ class _GmiCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Glicose média',
-                      style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
+                      context.l10n.reportsAverageGlucoseLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.glucoreColors.inkMuted,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text.rich(
                       TextSpan(children: [
                         TextSpan(
-                          text: avg.toStringAsFixed(0),
+                          text: context.formatGlucose(avg),
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 32,
                             fontWeight: FontWeight.w700,
@@ -238,7 +243,7 @@ class _GmiCard extends StatelessWidget {
                           ),
                         ),
                         TextSpan(
-                          text: ' mg/dL',
+                          text: ' ${context.glucoseUnit.label}',
                           style: TextStyle(
                               fontSize: 12, color: context.glucoreColors.inkMuted),
                         ),
@@ -253,9 +258,11 @@ class _GmiCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'GMI estimado',
-                        style:
-                            TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
+                        context.l10n.reportsGmiEstimatedLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.glucoreColors.inkMuted,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -273,7 +280,7 @@ class _GmiCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '$count leituras',
+            context.l10n.reportsReadingsCount(count),
             style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
           ),
         ],
@@ -298,7 +305,7 @@ class _TirSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'TEMPO NO ALVO',
+            context.l10n.reportsTimeInTargetHeader,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -311,32 +318,32 @@ class _TirSection extends StatelessWidget {
           const SizedBox(height: 16),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneUrgentLowBg,
-            label: 'Baixo urgente',
-            range: '< 54',
+            label: context.l10n.reportsZoneUrgentLow,
+            range: '< ${context.formatGlucose(54)}',
             pct: stats.urgentLowPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneLowBg,
-            label: 'Baixo',
-            range: '54–70',
+            label: context.l10n.reportsZoneLow,
+            range: '${context.formatGlucose(54)}–${context.formatGlucose(70)}',
             pct: stats.lowPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneTargetBg,
-            label: 'No alvo',
-            range: '70–180',
+            label: context.l10n.reportsZoneTarget,
+            range: '${context.formatGlucose(70)}–${context.formatGlucose(180)}',
             pct: stats.targetPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneHighBg,
-            label: 'Alto',
-            range: '180–250',
+            label: context.l10n.reportsZoneHigh,
+            range: '${context.formatGlucose(180)}–${context.formatGlucose(250)}',
             pct: stats.highPct,
           ),
           _ZoneLegendRow(
             color: context.glucoreColors.zoneUrgentHighBg,
-            label: 'Alto urgente',
-            range: '> 250',
+            label: context.l10n.reportsZoneUrgentHigh,
+            range: '> ${context.formatGlucose(250)}',
             pct: stats.urgentHighPct,
           ),
         ],
@@ -444,7 +451,7 @@ class _EmptyReports extends StatelessWidget {
             Icon(Icons.bar_chart_rounded, size: 48, color: context.glucoreColors.inkMuted),
             SizedBox(height: 12),
             Text(
-              'Sem leituras no período',
+              context.l10n.reportsEmptyPeriod,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

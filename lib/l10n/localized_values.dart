@@ -10,7 +10,30 @@ import 'l10n.dart';
 extension BuildContextFormatting on BuildContext {
   String formatShortDateTime(DateTime value) {
     final locale = Localizations.localeOf(this).toString();
-    return DateFormat.yMd(locale).add_Hm().format(value);
+    return DateFormat.yMd(locale).add_jm().format(value);
+  }
+
+  /// Day/month plus time in the app locale: `04/10 16:13` in pt_BR,
+  /// `10/4 4:13 PM` in en (US order and 12-hour clock).
+  String formatDayMonthTime(DateTime value) {
+    final locale = Localizations.localeOf(this).toString();
+    return DateFormat.Md(locale).add_jm().format(value);
+  }
+
+  /// "Today"/"Yesterday" for the last two days, otherwise the date in the app
+  /// locale (`Oct 4` / `Sunday, October 4`; `4 de out.` / `domingo, 4 de outubro`).
+  String formatDayLabel(DateTime dt, {bool withWeekday = false}) {
+    final l10n = AppLocalizations.of(this)!;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final d = DateTime(dt.year, dt.month, dt.day);
+    if (d == today) return l10n.dayToday;
+    if (d == today.subtract(const Duration(days: 1))) return l10n.dayYesterday;
+    final locale = Localizations.localeOf(this).toString();
+    return (withWeekday
+            ? DateFormat.MMMMEEEEd(locale)
+            : DateFormat.MMMd(locale))
+        .format(dt);
   }
 }
 

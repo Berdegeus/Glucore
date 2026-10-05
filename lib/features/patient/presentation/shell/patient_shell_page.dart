@@ -8,6 +8,7 @@ import '../pages/diary_page.dart';
 import '../pages/monitoring_home_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/reports_page.dart';
+import '../../../../l10n/l10n.dart';
 
 class PatientShellPage extends StatefulWidget {
   const PatientShellPage({super.key});
@@ -49,26 +50,26 @@ class _PatientShellPageState extends State<PatientShellPage> {
           children: [
             _TabItem(
               icon: Icons.monitor_heart_outlined,
-              label: 'Monitor',
+              label: context.l10n.shellTabMonitor,
               active: _currentIndex == 0,
               onTap: () => setState(() => _currentIndex = 0),
             ),
             _TabItem(
               icon: Icons.book_outlined,
-              label: 'Diário',
+              label: context.l10n.diaryTitle,
               active: _currentIndex == 1,
               onTap: () => setState(() => _currentIndex = 1),
             ),
             const Expanded(child: SizedBox()),
             _TabItem(
               icon: Icons.bar_chart_rounded,
-              label: 'Relatórios',
+              label: context.l10n.reportsTitle,
               active: _currentIndex == 2,
               onTap: () => setState(() => _currentIndex = 2),
             ),
             _TabItem(
               icon: Icons.person_outline,
-              label: 'Perfil',
+              label: context.l10n.profileTitle,
               active: _currentIndex == 3,
               onTap: () => setState(() => _currentIndex = 3),
             ),

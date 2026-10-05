@@ -8,6 +8,7 @@ import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import 'libre_nfc_page.dart';
 import 'sensor_link_page.dart';
+import '../../../../l10n/l10n.dart';
 
 class SensorChoicePage extends StatelessWidget {
   const SensorChoicePage({super.key});
@@ -29,13 +30,16 @@ class SensorChoicePage extends StatelessWidget {
 
   Widget _buildBrandList(BuildContext context) {
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Escolher sensor')),
+      appBar: UserAppBar(title: Text(context.l10n.sensorChoiceTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Selecione a marca do seu sensor CGM',
-            style: TextStyle(fontSize: 14, color: context.glucoreColors.inkMuted),
+            context.l10n.sensorChoiceSubtitle,
+            style: TextStyle(
+              fontSize: 14,
+              color: context.glucoreColors.inkMuted,
+            ),
           ),
           const SizedBox(height: 20),
           _BrandCard(

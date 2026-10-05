@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
-import 'package:intl/intl.dart';
 
 import '../cubit/patient_cubit.dart';
 import '../../domain/entities/patient_entities.dart';
@@ -100,9 +99,11 @@ class _InsulinEntryPageState extends State<InsulinEntryPage> {
               const SizedBox(height: 12),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(l10n.genericTimeLabel(
-                  DateFormat('dd/MM HH:mm').format(_selectedTime),
-                )),
+                title: Text(
+                  l10n.genericTimeLabel(
+                    context.formatDayMonthTime(_selectedTime),
+                  ),
+                ),
                 trailing: TextButton(
                   onPressed: _pickDateTime,
                   child: Text(l10n.entryTimePicker),

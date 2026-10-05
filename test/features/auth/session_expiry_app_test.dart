@@ -14,6 +14,7 @@ import 'package:glucore/features/auth/presentation/pages/login_page.dart';
 import 'package:glucore/features/auth/presentation/pages/register_page.dart';
 import 'package:glucore/injection_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:glucore/core/preferences/app_preferences.dart';
 
 /// Spec: TCC-12 — spec.md P2 (autorização) AC6 and the edge case "várias
 /// requisições recebem 401 TOKEN_INVALID simultaneamente": one logout, one
@@ -24,7 +25,7 @@ void main() {
   late AuthCubit cubit;
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({'onboarding_done': true});
+    SharedPreferences.setMockInitialValues({'onboarding_done': true, 'app_locale': 'pt'});
     repo = _FakeAuthRepository();
     notifier = SessionExpiryNotifier();
     cubit = AuthCubit(
@@ -39,6 +40,7 @@ void main() {
     sl.registerFactory<AuthCubit>(() => cubit);
     sl.registerLazySingleton<SessionExpiryNotifier>(() => notifier);
     sl.registerLazySingleton<ThemeCubit>(ThemeCubit.new);
+    sl.registerLazySingleton<AppPreferencesCubit>(AppPreferencesCubit.new);
   });
 
   tearDown(() async {

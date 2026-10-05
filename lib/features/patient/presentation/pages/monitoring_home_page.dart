@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../sensor/domain/models.dart';
@@ -17,6 +16,7 @@ import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
 import 'notifications_page.dart';
 import 'sensor_choice_page.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class MonitoringHomePage extends StatefulWidget {
   const MonitoringHomePage({super.key});
@@ -39,7 +39,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
           icon: Icons.restaurant_rounded,
           iconColor: context.glucoreColors.zoneTargetBg,
           title: l10n.monitoringCarbPopupTitle(entry.grams),
-          subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
+          subtitle: context.formatDayMonthTime(entry.time),
           onEdit: () {
             Navigator.pop(sheetCtx);
             Navigator.of(context).push(
@@ -93,7 +93,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
             entry.units.toStringAsFixed(1),
             entry.type.label(l10n),
           ),
-          subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
+          subtitle: context.formatDayMonthTime(entry.time),
           onEdit: () {
             Navigator.pop(sheetCtx);
             Navigator.of(context).push(
@@ -481,8 +481,8 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 8),
         GlucoreStatChip(
           label: l10n.monitoringAverageLabel,
-          value: avg.toStringAsFixed(0),
-          unit: l10n.genericGlucoseUnit,
+          value: context.formatGlucose(avg),
+          unit: context.glucoseUnit.label,
         ),
         if (gmi != null) ...[
           const SizedBox(width: 8),

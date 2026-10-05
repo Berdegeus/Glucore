@@ -49,6 +49,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('pt', 'BR'),
         // Mirrors app.dart: providers live ABOVE the root Navigator.
         builder: (context, child) => MultiBlocProvider(
           providers: [
@@ -118,6 +119,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('pt', 'BR'),
           home: const SensorChoicePage(),
         ),
       ),

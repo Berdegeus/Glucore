@@ -13,6 +13,8 @@ import '../widgets/glucore_messenger.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import 'change_password_page.dart';
+import '../../../../core/preferences/app_preferences.dart';
+import '../../../../core/preferences/glucose_unit.dart';
 
 class ProfileEditPage extends StatefulWidget {
   const ProfileEditPage({super.key});
@@ -61,27 +63,27 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     super.dispose();
   }
 
-  ({int min, int max})? _parseTargetRange(String value) {
-    final parts = value.split(RegExp(r'\s*-\s*'));
-    if (parts.length != 2) return null;
-    final min = int.tryParse(parts[0]);
-    final max = int.tryParse(parts[1]);
-    if (min == null || max == null || min >= max) return null;
-    return (min: min, max: max);
-  }
+  ({int min, int max})? _parseTargetRange(String value) =>
+      parseGlucoseRange(value, context.readGlucoseUnit());
+
+  bool get _monthFirst => usesMonthFirstDates(Localizations.localeOf(context));
 
   void _fillProfile(AccountProfile profile) {
     _nameController.text = profile.fullName;
     _birthController.text = profile.birthDate == null
         ? ''
-        : formatBrazilianDate(profile.birthDate!);
+        : formatBrazilianDate(profile.birthDate!, monthFirst: _monthFirst);
     _weightController.text =
         profile.weightKg == null ? '' : profile.weightKg!.toStringAsFixed(1);
     _phoneController.text = (profile.phone == null || profile.phone!.isEmpty)
         ? ''
         : formatBrazilianPhone(profile.phone!);
-    _targetController.text =
-        '${profile.targetRangeMin}-${profile.targetRangeMax}';
+    _targetController.text = formatGlucoseRange(
+      profile.targetRangeMin,
+      profile.targetRangeMax,
+      context.readGlucoseUnit(),
+      locale: Localizations.localeOf(context).toString(),
+    );
     _email = profile.email;
     _createdAt = profile.createdAt;
   }
@@ -128,7 +130,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     try {
       await GetIt.instance<AccountService>().updateProfile(
         fullName: _nameController.text.trim(),
-        birthDate: parseBrazilianDate(_birthController.text),
+        birthDate: parseBrazilianDate(_birthController.text, monthFirst: _monthFirst),
         weightKg:
             double.tryParse(_weightController.text.trim().replaceAll(',', '.')),
         targetRangeMin: targetRange.min,
@@ -184,7 +186,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   /// Optional: empty is accepted, a filled value must be a real date.
   String? _validateBirthDate(String? value) {
     if (value == null || value.trim().isEmpty) return null;
-    return parseBrazilianDate(value) == null
+    return parseBrazilianDate(value, monthFirst: _monthFirst) == null
         ? context.l10n.genericInvalidDateError
         : null;
   }
@@ -239,7 +241,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               l10n.profileBirthDateLabel,
                               required: false,
                             ),
-                            hintText: 'dd/mm/aaaa',
+                            hintText: l10n.birthDateHint,
                           ),
                           validator: _validateBirthDate,
                         ),
@@ -278,14 +280,18 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                           decoration: InputDecoration(
                             labelText: fieldLabel(
                               l10n,
-                              l10n.profileTargetRangeLabel,
+                              l10n.profileTargetRangeLabel(context.glucoseUnit.label),
                               required: true,
                             ),
-                            helperText: l10n.profileTargetRangeHelper,
+                            helperText: l10n.profileTargetRangeHelper(
+                          context.glucoseUnit.label,
+                          context.glucoseRangeExample(),
+                        ),
                           ),
                           validator: (v) =>
                               v == null || _parseTargetRange(v.trim()) == null
-                                  ? l10n.profileTargetRangeFormatError
+                                  ? l10n.profileTargetRangeFormatError(
+                                  context.glucoseRangeExample())
                                   : null,
                         ),
                         const SizedBox(height: 16),

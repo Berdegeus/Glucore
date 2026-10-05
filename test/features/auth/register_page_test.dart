@@ -50,6 +50,7 @@ void main() {
         theme: AppTheme.light(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('pt', 'BR'),
         home: BlocProvider<AuthCubit>.value(
           value: cubit,
           child: const RegisterPage(),

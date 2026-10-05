@@ -5,6 +5,7 @@ import 'package:glucore/l10n/l10n.dart';
 import '../cubit/patient_cubit.dart';
 import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class AlertSettingsPage extends StatefulWidget {
   const AlertSettingsPage({super.key});
@@ -26,8 +27,14 @@ class _AlertSettingsPageState extends State<AlertSettingsPage> {
       return;
     }
     final current = context.read<PatientCubit>().state.alertSettings;
-    _lowController = TextEditingController(text: '${current.lowThreshold}');
-    _highController = TextEditingController(text: '${current.highThreshold}');
+    final unit = context.readGlucoseUnit();
+    final locale = Localizations.localeOf(context).toString();
+    _lowController = TextEditingController(
+      text: unit.format(current.lowThreshold.toDouble(), locale: locale),
+    );
+    _highController = TextEditingController(
+      text: unit.format(current.highThreshold.toDouble(), locale: locale),
+    );
     _initialized = true;
   }
 
@@ -41,6 +48,7 @@ class _AlertSettingsPageState extends State<AlertSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final unit = context.glucoseUnit;
 
     return Scaffold(
       appBar: UserAppBar(title: Text(l10n.alertSettingsTitle)),
@@ -53,11 +61,11 @@ class _AlertSettingsPageState extends State<AlertSettingsPage> {
               TextFormField(
                 controller: _lowController,
                 decoration: InputDecoration(
-                  labelText: l10n.alertSettingsLowThresholdLabel,
+                  labelText: l10n.alertSettingsLowThresholdLabel(unit.label),
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) =>
-                    (value == null || int.tryParse(value) == null)
+                    (value == null || unit.parseToMgDl(value) == null)
                     ? l10n.genericNumericValueError
                     : null,
               ),
@@ -65,11 +73,11 @@ class _AlertSettingsPageState extends State<AlertSettingsPage> {
               TextFormField(
                 controller: _highController,
                 decoration: InputDecoration(
-                  labelText: l10n.alertSettingsHighThresholdLabel,
+                  labelText: l10n.alertSettingsHighThresholdLabel(unit.label),
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) =>
-                    (value == null || int.tryParse(value) == null)
+                    (value == null || unit.parseToMgDl(value) == null)
                     ? l10n.genericNumericValueError
                     : null,
               ),
@@ -79,8 +87,8 @@ class _AlertSettingsPageState extends State<AlertSettingsPage> {
                   if (!_formKey.currentState!.validate()) {
                     return;
                   }
-                  final low = int.parse(_lowController.text);
-                  final high = int.parse(_highController.text);
+                  final low = unit.parseToMgDl(_lowController.text)!.round();
+                  final high = unit.parseToMgDl(_highController.text)!.round();
                   if (low >= high) {
                     GlucoreMessenger.error(
                       context,

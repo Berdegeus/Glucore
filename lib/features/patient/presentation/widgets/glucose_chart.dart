@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../../../l10n/l10n.dart';
+import '../../../../core/preferences/app_preferences.dart';
 
 class GlucoseChart extends StatefulWidget {
   const GlucoseChart({
@@ -119,7 +121,7 @@ class _GlucoseChartState extends State<GlucoseChart> {
         height: 180,
         child: Center(
           child: Text(
-            'Aguardando leituras...',
+            context.l10n.chartWaitingReadings,
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
@@ -291,7 +293,7 @@ class _GlucoseChartState extends State<GlucoseChart> {
                                 axisSide: meta.axisSide,
                                 space: 6,
                                 child: Text(
-                                  value.toInt().toString(),
+                                  context.formatGlucose(value),
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -319,7 +321,8 @@ class _GlucoseChartState extends State<GlucoseChart> {
                                 axisSide: meta.axisSide,
                                 space: 8,
                                 child: Text(
-                                  DateFormat.Hm().format(t),
+                                  DateFormat.jm(Localizations.localeOf(context).toString())
+                                      .format(t),
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -455,7 +458,7 @@ class _GlucoseChartState extends State<GlucoseChart> {
                               Duration(minutes: s.x.toInt()),
                             );
                             return LineTooltipItem(
-                              '${s.y.toStringAsFixed(0)} mg/dL\n',
+                              '${context.formatGlucoseWithUnit(s.y)}\n',
                               const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -463,7 +466,8 @@ class _GlucoseChartState extends State<GlucoseChart> {
                               ),
                               children: [
                                 TextSpan(
-                                  text: DateFormat.Hm().format(t),
+                                  text: DateFormat.jm(Localizations.localeOf(context).toString())
+                                      .format(t),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w400,
@@ -492,7 +496,10 @@ class _GlucoseChartState extends State<GlucoseChart> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 icon: const Icon(Icons.zoom_out_map_rounded, size: 16),
-                label: const Text('Reset', style: TextStyle(fontSize: 12)),
+                label: Text(
+                  context.l10n.genericResetButton,
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             ),
         ],

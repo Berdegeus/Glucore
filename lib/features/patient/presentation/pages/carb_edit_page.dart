@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
 import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_messenger.dart';
 import '../widgets/user_app_bar.dart';
+import '../../../../l10n/localized_values.dart';
 
 class CarbEditPage extends StatefulWidget {
   const CarbEditPage({super.key, required this.entry});
@@ -116,9 +116,11 @@ class _CarbEditPageState extends State<CarbEditPage> {
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(l10n.genericTimeLabel(
-                  DateFormat('dd/MM HH:mm').format(_selectedTime),
-                )),
+                title: Text(
+                  l10n.genericTimeLabel(
+                    context.formatDayMonthTime(_selectedTime),
+                  ),
+                ),
                 trailing: TextButton(
                   onPressed: _pickDateTime,
                   child: Text(l10n.entryTimePicker),

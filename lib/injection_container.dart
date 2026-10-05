@@ -27,6 +27,7 @@ import 'features/sensor/data/platform/sensor_platform.dart';
 import 'features/sensor/data/repositories/android_sensor_repository.dart';
 import 'features/sensor/domain/sensor_repository.dart';
 import 'features/sensor/presentation/cubit/sensor_cubit.dart';
+import 'core/preferences/app_preferences.dart';
 
 final sl = GetIt.instance;
 
@@ -100,6 +101,10 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => const ThemePreferenceStore());
   // Single instance: the theme is app-wide state, not per-screen.
   sl.registerLazySingleton(() => ThemeCubit(store: sl<ThemePreferenceStore>()));
+  sl.registerLazySingleton(() => const AppPreferencesStore());
+  // Single instance: language and glucose unit are app-wide state.
+  sl.registerLazySingleton(
+      () => AppPreferencesCubit(store: sl<AppPreferencesStore>()));
   sl.registerFactory(() => SensorCubit(repository: sl()));
   sl.registerFactory(() => PatientCubit(useCases: sl()));
   sl.registerFactory(() => UserIdentityCubit(accountService: sl()));
