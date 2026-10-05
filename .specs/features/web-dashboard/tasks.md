@@ -4174,16 +4174,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `pro-redeem-code`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza o campo de código com envio a partir de `redeemInvite`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Código inválido mostra "Código inválido ou expirado"; sucesso inclui o paciente na lista sem recarregar
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proRedeemCode.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `pro-redeem-code`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza o campo de código com envio a partir de `redeemInvite`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Código inválido mostra "Código inválido ou expirado"; sucesso inclui o paciente na lista sem recarregar
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proRedeemCode.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add pro-redeem-code widget`
+**Status**: ✅ Done
 
 ---
 

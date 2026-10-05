@@ -16,6 +16,7 @@ import { PeriodProvider } from '../features/patient-dashboard/presentation/perio
 import { SummaryServicesProvider } from '../features/patient-dashboard/presentation/summaryServices';
 import { NO_READINGS_CAUSE } from '../features/patient-dashboard/presentation/widgets/summaryWidget';
 import { AppError } from '../shared/domain/appError';
+import type { Role } from '../shared/domain/role';
 import { TABLE_TOGGLE_LABEL } from '../shared/presentation/charts/chartFrame';
 import { ERROR_MESSAGE, RETRY_LABEL } from '../shared/presentation/ui/states';
 import { stubChartContainer } from './chartContainer';
@@ -85,7 +86,7 @@ export function expectSkeletonOfSize(size: WidgetSize): void {
 }
 
 /** The catalog contract of a widget (LAY-01): its roles and sizes are the ones of the JSON, and its default size is the one the default layout gives it. */
-export function describeCatalogDefinition(definition: WidgetDefinition) {
+export function describeCatalogDefinition(definition: WidgetDefinition, role: Role = 'PATIENT') {
   describe(`${definition.id} as a catalog widget (LAY-01)`, () => {
     it('declares the roles and sizes of contracts/widget-catalog.json', () => {
       expect(catalogRolesOf(definition.id)).toEqual([...definition.roles]);
@@ -93,7 +94,7 @@ export function describeCatalogDefinition(definition: WidgetDefinition) {
     });
 
     it('prefers a size it allows, the one the default layout gives it', () => {
-      const placed = defaultLayoutFor('PATIENT').widgets.find((item) => item.id === definition.id);
+      const placed = defaultLayoutFor(role).widgets.find((item) => item.id === definition.id);
 
       expect(definition.sizes).toContain(definition.defaultSize);
       expect(placed?.size).toBe(definition.defaultSize);
