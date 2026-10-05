@@ -3643,13 +3643,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com adaptador Dio falso: `201` vira `InviteCode`; erro de conexão vira falha `offline`; `403` vira falha de acesso
-- [ ] Gate `quick` passa: `flutter test --no-pub test/features/sharing/data/sharing_remote_datasource_test.dart`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com adaptador Dio falso: `201` vira `InviteCode`; erro de conexão vira falha `offline`; `403` vira falha de acesso
+- [x] Gate `quick` passa: `flutter test --no-pub test/features/sharing/data/sharing_remote_datasource_test.dart`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(app): add the sharing remote data source`
+**Status**: ✅ Done
 
 ---
 
