@@ -3,6 +3,47 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 o projeto segue versionamento semântico (ver [docs/guides/versioning-and-branches.md](docs/guides/versioning-and-branches.md)).
 
+## [Unreleased] — dashboard web por papel (branch `feat/web-dashboard`)
+
+Segundo cliente do backend: uma SPA React em `web/`, publicada na Vercel, com um dashboard para cada
+papel. O backend ganha os papéis de profissional e administrador, o consentimento por código e as
+rotas que alimentam os três dashboards. Contrato rota a rota em `backend/README.md`.
+
+### Added
+- **Dashboard web** (`web/`, Vite + React + TypeScript): paciente, profissional de saúde e administrador,
+  cada um com o seu catálogo de widgets (`contracts/widget-catalog.json`) e layout editável, salvo por
+  usuário em `GET/PUT/DELETE /preferences/dashboard` (`DashboardLayout` no auth-service; até 20 widgets,
+  `400 INVALID_LAYOUT`). Camadas `domain → application → infrastructure/presentation` checadas por
+  dependency-cruiser; job `web` no CI (typecheck, lint, lint:arch, cobertura, duplicação, build e
+  orçamento de bundle). Publicação em `docs/guides/deployment.md`, seção "Web (Vercel)".
+- **Cadastro de profissional**: `POST /api/v1/auth/register/professional`, saga no gateway (conta
+  `HEALTH_PROFESSIONAL` no auth + `HealthProfessional` no glucose, com compensação) e limiter próprio.
+- **Consentimento por código no app**: o paciente gera um código de 8 caracteres, válido por 24 h e de
+  uso único, vê os profissionais com acesso e revoga (`lib/features/sharing/`). O profissional resgata o
+  código na web. Rotas `/sharing/*`; tabela `PatientInvite` e `DashboardAccessGrant.revokedAt`. Resgate
+  limitado a 10 por usuário a cada 15 min (`429 RATE_LIMITED`).
+- **Carteira do profissional**: `GET /professional/patients` (paginado, com nomes compostos pelo gateway),
+  `GET /professional/patients/:id/summary` (`403 NO_ACTIVE_GRANT` sem vínculo ativo) e
+  `GET /professional/cohort/summary`. Toda leitura é auditada.
+- **Visão do administrador**: `GET /admin/overview` e `GET /admin/users`, compostos pelo gateway sobre os
+  dois bancos; os serviços repetem a checagem de papel com `requireInternalRole`.
+- **Seed do administrador** no boot do auth-service (`ADMIN_SEED_EMAIL`/`ADMIN_SEED_PASSWORD`): cria o
+  primeiro admin só quando não existe nenhum; em produção, variável ausente ou senha fraca impedem o boot.
+- Função `glucose_zones()` e índice BRIN em `GlucoseReading.recordedAt`.
+
+### Changed
+- **`GET /dashboard/summary`**: query `tz` (IANA, padrão `UTC`, `400 INVALID_TIMEZONE`) e campos novos
+  `tz`, `lastReadingAt`, `zoneDistribution`, `sensorUsePercent`, `agp`, `heatmap`,
+  `byDay[].carbsGrams` e `byDay[].insulinUnits`. Mudança aditiva: sem `tz` o corte segue em UTC.
+- `GET/PUT /me` e `DELETE /account` passam a ser por papel: o profissional recebe e apaga o seu bloco
+  `professional`; o administrador só tem a conta.
+- O CORS do gateway expõe `Retry-After` e `X-Degraded` para a web.
+- `HealthProfessional` e `DashboardAccessGrant` saem da lista de tabelas de roadmap.
+
+### Fixed
+- `services/auth-service/.env.test.example` usa `TEST_AUTH_DATABASE_URL`: com `TEST_DATABASE_URL`, o
+  mesmo nome do glucose-service, as duas suítes podiam apontar para o mesmo banco.
+
 ## [Unreleased] — app ligado ao gateway (branch `feat/app-to-gateway`)
 
 ### Changed
