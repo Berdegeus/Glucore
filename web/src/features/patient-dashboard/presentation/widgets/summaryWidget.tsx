@@ -8,6 +8,9 @@ import { useWidgetSummary } from '../useWidgetSummary';
 /** The cause every patient widget gives when the period has no readings (LAY-16). */
 export const NO_READINGS_CAUSE = 'Sem leituras no período';
 
+/** The test of a widget drawn from glucose readings: nothing to show once the period has none. */
+export const hasNoReadings = (summary: GlucoseSummary): boolean => summary.totals.readingsCount === 0;
+
 interface SummaryWidgetProps {
   /** Already resolved text of the card's title. */
   title: string;

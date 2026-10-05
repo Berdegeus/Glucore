@@ -16,7 +16,9 @@ import { PeriodProvider } from '../features/patient-dashboard/presentation/perio
 import { SummaryServicesProvider } from '../features/patient-dashboard/presentation/summaryServices';
 import { NO_READINGS_CAUSE } from '../features/patient-dashboard/presentation/widgets/summaryWidget';
 import { AppError } from '../shared/domain/appError';
+import { TABLE_TOGGLE_LABEL } from '../shared/presentation/charts/chartFrame';
 import { ERROR_MESSAGE, RETRY_LABEL } from '../shared/presentation/ui/states';
+import { stubChartContainer } from './chartContainer';
 import { summaryFixture } from './summaryFakes';
 
 export const TEST_RANGE: DateRange = { from: '2026-08-05', to: '2026-08-06' };
@@ -71,7 +73,7 @@ export const catalogRolesOf = (id: string): string[] =>
     .filter(([, ids]) => ids.includes(id))
     .map(([role]) => role);
 
-interface SummaryWidgetSpec {
+export interface SummaryWidgetSpec {
   Widget: ComponentType<WidgetProps>;
   definition: WidgetDefinition;
   title: string;
@@ -136,6 +138,47 @@ export function describeSummaryWidget({ Widget, definition, title, shown, emptyC
       await screen.findByText(shown);
 
       expect(await axe(container)).toHaveNoViolations();
+    });
+  });
+}
+
+interface ChartWidgetSpec extends Omit<SummaryWidgetSpec, 'shown'> {
+  /** The sentence the chart carries for screen readers, for the fixture summary. */
+  summary: string | RegExp;
+  /** The "Ver como tabela" header cells. */
+  columns: readonly string[];
+  /** The table body for the fixture summary, formatted as shown. */
+  rows: ReadonlyArray<readonly string[]>;
+}
+
+/**
+ * What every chart widget shares (RSP-07): the summary widget states, with the
+ * table toggle as proof the chart rendered, a text summary on the chart, and
+ * the same data as a table.
+ */
+export function describeChartWidget({ summary, columns, rows, ...widget }: ChartWidgetSpec) {
+  stubChartContainer();
+  describeSummaryWidget({ ...widget, shown: TABLE_TOGGLE_LABEL });
+
+  describe(`${widget.definition.id} alternatives (RSP-07)`, () => {
+    it('labels the chart with a one-sentence summary for screen readers', async () => {
+      renderWidget(<widget.Widget size="M" />);
+
+      const region = within(await screen.findByRole('region', { name: widget.title }));
+      expect(await region.findByRole('img', { name: summary })).toBeInTheDocument();
+    });
+
+    it('offers "Ver como tabela" with the same data, formatted in pt-BR', async () => {
+      renderWidget(<widget.Widget size="M" />);
+
+      await userEvent.setup().click(await screen.findByRole('button', { name: TABLE_TOGGLE_LABEL }));
+
+      const table = screen.getByRole('table', { name: widget.title });
+      const [header = [], ...body] = within(table)
+        .getAllByRole('row')
+        .map((row) => [...row.querySelectorAll('th, td')].map((cell) => cell.textContent));
+      expect(header).toEqual(columns);
+      expect(body).toEqual(rows);
     });
   });
 }

@@ -524,7 +524,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-03 | P1: Dashboard do paciente com os dados do app | T80, T85, T87 | Implementing |
 | PAC-04 | P1: Dashboard do paciente com os dados do app | T80, T85, T87 | Implementing |
 | PAC-05 | P1: Dashboard do paciente com os dados do app | T82, T88, T89, T90, T91, T92, T93 | Implementing |
-| PAC-06 | P1: Dashboard do paciente com os dados do app | T57 | Implementing |
+| PAC-06 | P1: Dashboard do paciente com os dados do app | T57, T95 | Implementing |
 | PAC-07 | P1: Dashboard do paciente com os dados do app | T58 | Implementing |
 | PAC-08 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-09 | P1: Dashboard do paciente com os dados do app | T58 | Implementing |

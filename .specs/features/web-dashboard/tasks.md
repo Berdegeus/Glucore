@@ -2370,16 +2370,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `chart-trend`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza a média diária com banda mínimo-máximo, média móvel de 7 dias e a faixa-alvo a partir de `summary.byDay` e os limiares
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Usa o adaptador `LineBandChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/chartTrend.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `chart-trend`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza a média diária com banda mínimo-máximo, média móvel de 7 dias e a faixa-alvo a partir de `summary.byDay` e os limiares
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Usa o adaptador `LineBandChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/chartTrend.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add chart-trend widget`
+**Status**: ✅ Done
 
 ---
 
