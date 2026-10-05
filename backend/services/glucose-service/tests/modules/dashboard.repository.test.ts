@@ -156,3 +156,73 @@ describe('getZoneDistribution', () => {
     expect(distribution).toEqual({ veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 });
   });
 });
+
+describe('getAgp', () => {
+  let patientId: string;
+
+  beforeEach(async () => {
+    await truncateAll();
+    patientId = (await signedInPatient()).userId;
+  });
+
+  const atUtc = (time: string, date = '2026-08-05') => new Date(`${date}T${time}:00.000Z`);
+
+  async function seedAt(owner: string, time: string, values: number[], date?: string): Promise<void> {
+    await prisma.glucoseReading.createMany({
+      data: values.map((valueMgDl, i) => ({
+        patientId: owner,
+        valueMgDl,
+        recordedAt: new Date(atUtc(time, date).getTime() + i * 60_000),
+      })),
+    });
+  }
+
+  it('computes P5/P25/P50/P75/P95 and the count for a known set of readings', async () => {
+    // Linear interpolation over [100,110,120,130,140]: P5 at index 0.2, P95 at index 3.8.
+    await seedAt(patientId, '08:00', [140, 100, 120, 110, 130]);
+
+    const agp = await repository.getAgp(patientId, RANGE, 'UTC');
+
+    expect(agp).toEqual([{ hour: 8, p5: 102, p25: 110, p50: 120, p75: 130, p95: 138, count: 5 }]);
+  });
+
+  it('groups by local hour: 08:00 UTC is 05:00 in America/Sao_Paulo', async () => {
+    await seedAt(patientId, '08:00', [100, 120]);
+
+    const agp = await repository.getAgp(patientId, RANGE, 'America/Sao_Paulo');
+
+    expect(agp.map((point) => point.hour)).toEqual([5]);
+  });
+
+  it('wraps to the previous evening: 02:30 UTC is 23:xx in America/Sao_Paulo', async () => {
+    await seedAt(patientId, '02:30', [90]);
+
+    const agp = await repository.getAgp(patientId, RANGE, 'America/Sao_Paulo');
+
+    expect(agp).toEqual([{ hour: 23, p5: 90, p25: 90, p50: 90, p75: 90, p95: 90, count: 1 }]);
+  });
+
+  it('leaves out hours without readings and orders the rest by hour', async () => {
+    await seedAt(patientId, '15:00', [150]);
+    await seedAt(patientId, '03:00', [90]);
+
+    const agp = await repository.getAgp(patientId, RANGE, 'UTC');
+
+    expect(agp.map((point) => point.hour)).toEqual([3, 15]);
+  });
+
+  it('ignores readings outside the range and from other patients', async () => {
+    const other = (await signedInPatient()).userId;
+    await seedAt(patientId, '08:00', [100]);
+    await seedAt(patientId, '08:00', [300], '2026-08-06'); // at toExclusive: out
+    await seedAt(other, '08:00', [400]);
+
+    const agp = await repository.getAgp(patientId, RANGE, 'UTC');
+
+    expect(agp).toEqual([{ hour: 8, p5: 100, p25: 100, p50: 100, p75: 100, p95: 100, count: 1 }]);
+  });
+
+  it('answers an empty list when the period has no readings', async () => {
+    expect(await repository.getAgp(patientId, RANGE, 'UTC')).toEqual([]);
+  });
+});

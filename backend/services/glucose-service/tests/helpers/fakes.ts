@@ -30,6 +30,7 @@ import type {
 import type { DateRange, IDashboardRepository } from '../../src/modules/dashboard/dashboard.repository';
 import type { TimeZoneChecker } from '../../src/modules/dashboard/dashboard.timezones';
 import type {
+  AgpPointDto,
   AlertsByTypeDto,
   DailyBucketDto,
   DashboardTotals,
@@ -257,6 +258,7 @@ export class FakeDashboardRepository implements IDashboardRepository {
     readingsCount: 0,
   };
   zoneDistribution: ZoneDistributionDto = { veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 };
+  agp: AgpPointDto[] = [];
   dailyBuckets: DailyBucketDto[] = [];
   insulinByType: InsulinByTypeDto[] = [];
   alertsByType: AlertsByTypeDto[] = [];
@@ -302,6 +304,10 @@ export class FakeDashboardRepository implements IDashboardRepository {
 
   async getZoneDistribution(): Promise<ZoneDistributionDto> {
     return this.zoneDistribution;
+  }
+
+  async getAgp(): Promise<AgpPointDto[]> {
+    return this.agp;
   }
 
   async getDailyBuckets(): Promise<DailyBucketDto[]> {

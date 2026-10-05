@@ -1821,13 +1821,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração: fixture com valores conhecidos devolve os percentis esperados; hora local respeita o fuso; hora sem dado não aparece
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Integração: fixture com valores conhecidos devolve os percentis esperados; hora local respeita o fuso; hora sem dado não aparece
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(glucose-service): add the ambulatory glucose profile`
+**Status**: ✅ Done
 
 ---
 

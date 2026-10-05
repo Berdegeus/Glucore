@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
 import {
+  mapAgpRow,
   mapAlertsByTypeRow,
   mapDailyBucketRow,
   mapExcursionRow,
@@ -152,5 +153,17 @@ describe('mapZonesRow', () => {
 
     expect(mapZonesRow(nulls)).toEqual(zeros);
     expect(mapZonesRow(undefined)).toEqual(zeros);
+  });
+});
+
+describe('mapAgpRow', () => {
+  it('names the five percentiles in order, rounds float noise and coerces the bigint count', () => {
+    expect(
+      mapAgpRow({
+        hour: 8,
+        percentiles: [102, 110, 100.80000000000001, 130.005, '138'],
+        readings_count: 5n,
+      }),
+    ).toEqual({ hour: 8, p5: 102, p25: 110, p50: 100.8, p75: 130.01, p95: 138, count: 5 });
   });
 });

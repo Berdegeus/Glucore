@@ -77,6 +77,32 @@ export function mapZonesRow(row: RawZonesRow | undefined): ZoneDistributionDto {
   };
 }
 
+/** Percentiles of the glucose readings taken at one local hour of the day (the AGP curve). */
+export interface AgpPointDto {
+  hour: number;
+  p5: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p95: number;
+  count: number;
+}
+
+/** Raw row shape from the AGP `$queryRaw`: the five percentiles arrive together, as a `float8[]`. */
+export interface RawAgpRow {
+  hour: unknown;
+  percentiles: unknown[];
+  readings_count: unknown;
+}
+
+const roundTo2 = (value: unknown): number => Math.round(toNumber(value) * 100) / 100;
+
+/** Percentiles come back as raw doubles (`100.80000000000001`); two decimals is plenty for mg/dL. */
+export function mapAgpRow(row: RawAgpRow): AgpPointDto {
+  const [p5, p25, p50, p75, p95] = row.percentiles.map(roundTo2);
+  return { hour: toNumber(row.hour), p5, p25, p50, p75, p95, count: toNumber(row.readings_count) };
+}
+
 export interface DailyBucketDto {
   day: string;
   avgGlucose: number | null;

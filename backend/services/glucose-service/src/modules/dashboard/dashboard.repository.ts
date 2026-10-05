@@ -1,18 +1,21 @@
 import type { PrismaClient } from '@prisma/client';
 
 import {
+  mapAgpRow,
   mapAlertsByTypeRow,
   mapDailyBucketRow,
   mapExcursionRow,
   mapInsulinByTypeRow,
   mapPeriodMetricsRow,
   mapZonesRow,
+  type AgpPointDto,
   type AlertsByTypeDto,
   type DailyBucketDto,
   type DashboardTotals,
   type ExcursionDto,
   type InsulinByTypeDto,
   type PeriodMetricsDto,
+  type RawAgpRow,
   type RawAlertsByTypeRow,
   type RawDailyBucketRow,
   type RawExcursionRow,
@@ -53,6 +56,8 @@ export interface IDashboardRepository {
     low: number,
     high: number,
   ): Promise<ZoneDistributionDto>;
+  /** SQL cru (b) — `percentile_cont` P5/P25/P50/P75/P95 per local hour; hours without readings are absent. */
+  getAgp(patientId: string, range: DateRange, tz: string): Promise<AgpPointDto[]>;
   /** SQL cru, Q1 (b) — `date_trunc` + 7-day moving average window function. */
   getDailyBuckets(patientId: string, range: DateRange, low: number, high: number): Promise<DailyBucketDto[]>;
   /** SQL cru, Q2 (b) — gaps-and-islands over sustained hypo/hyper readings. */
@@ -166,6 +171,26 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       )
     `;
     return mapZonesRow(rows[0]);
+  }
+
+  async getAgp(patientId: string, { from, toExclusive }: DateRange, tz: string): Promise<AgpPointDto[]> {
+    // Local hour: `recordedAt` is read as UTC wall clock first (-> timestamptz),
+    // then shown as `tz` wall clock (-> timestamp). See `getPeriodMetrics` for why
+    // the range bounds carry `AT TIME ZONE 'UTC'` too.
+    const rows = await this.prisma.$queryRaw<RawAgpRow[]>`
+      SELECT
+        EXTRACT(HOUR FROM ("recordedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz})::integer AS hour,
+        percentile_cont(ARRAY[0.05, 0.25, 0.5, 0.75, 0.95]::float8[])
+          WITHIN GROUP (ORDER BY "valueMgDl"::float8) AS percentiles,
+        COUNT(*) AS readings_count
+      FROM "GlucoseReading"
+      WHERE "patientId" = ${patientId}::uuid
+        AND "recordedAt" >= (${from} AT TIME ZONE 'UTC')
+        AND "recordedAt" < (${toExclusive} AT TIME ZONE 'UTC')
+      GROUP BY 1
+      ORDER BY 1
+    `;
+    return rows.map(mapAgpRow);
   }
 
   async getDailyBuckets(
