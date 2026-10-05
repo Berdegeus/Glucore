@@ -67,6 +67,7 @@ function RegistrationForm() {
     onChange: (value: string) => setValues((current) => ({ ...current, [name]: value })),
   });
   const flagged = (name: RegistrationField) => failure?.field === name;
+  const submitLabel = pending ? 'Criando conta…' : 'Criar conta';
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -118,8 +119,8 @@ function RegistrationForm() {
           {failure.message}
         </p>
       )}
-      <button className={styles.submit} type="submit" disabled={pending}>
-        {pending ? 'Criando conta…' : 'Criar conta'}
+      <button type="submit" className={styles.submit} disabled={pending}>
+        {submitLabel}
       </button>
     </form>
   );
@@ -134,18 +135,12 @@ function RegistrationForm() {
 export function RegisterProfessionalPage() {
   const { state, retryRestore } = useAuth();
 
-  switch (state.status) {
-    case 'restoring':
-      return <Skeleton height="100vh" />;
-    case 'failed':
-      return <ErrorState message={UNAVAILABLE_MESSAGE} onRetry={retryRestore} />;
-    case 'authenticated':
-      return <Navigate to={homePathFor(state.session.account.role)} replace />;
-    case 'anonymous':
-      return (
-        <main className={styles.page}>
-          <RegistrationForm />
-        </main>
-      );
-  }
+  if (state.status === 'restoring') return <Skeleton height="100vh" />;
+  if (state.status === 'failed') return <ErrorState message={UNAVAILABLE_MESSAGE} onRetry={retryRestore} />;
+  if (state.status === 'authenticated') return <Navigate to={homePathFor(state.session.account.role)} replace />;
+  return (
+    <main className={styles.page}>
+      <RegistrationForm />
+    </main>
+  );
 }

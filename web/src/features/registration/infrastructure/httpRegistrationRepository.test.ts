@@ -20,37 +20,37 @@ const repository = () => new HttpRegistrationRepository(createTestHttpClient().c
 
 afterEach(() => window.sessionStorage.clear());
 
+/** Answers the registration with `201`, and records the body it was sent. */
+function answerCreated(extra: Record<string, unknown> = {}) {
+  const received: { body?: unknown } = {};
+  server.use(
+    http.post(URL, async ({ request }) => {
+      received.body = await request.json();
+      return HttpResponse.json({ userId: 'u1', token: 'tok-1', ...extra }, { status: 201 });
+    }),
+  );
+  return received;
+}
+
 describe('HttpRegistrationRepository.registerProfessional (REG-01)', () => {
   it('posts the registration and turns 201 { userId, token } into the result', async () => {
-    let body: unknown;
-    server.use(
-      http.post(URL, async ({ request }) => {
-        body = await request.json();
-        return HttpResponse.json({ userId: 'u1', token: 'tok-1', ignored: true }, { status: 201 });
-      }),
-    );
+    const received = answerCreated({ ignored: true });
 
     const result = await repository().registerProfessional(REGISTRATION);
 
     expect(result).toEqual({ userId: 'u1', token: 'tok-1' });
-    expect(body).toEqual(REGISTRATION);
+    expect(received.body).toEqual(REGISTRATION);
   });
 
   it('leaves the phone out of the body when there is none', async () => {
-    let body: unknown;
-    server.use(
-      http.post(URL, async ({ request }) => {
-        body = await request.json();
-        return HttpResponse.json({ userId: 'u1', token: 'tok-1' }, { status: 201 });
-      }),
-    );
+    const received = answerCreated();
     const withoutPhone: ProfessionalRegistration = { ...REGISTRATION };
     delete withoutPhone.phone;
 
     await repository().registerProfessional(withoutPhone);
 
-    expect(body).toEqual(withoutPhone);
-    expect(body).not.toHaveProperty('phone');
+    expect(received.body).toEqual(withoutPhone);
+    expect(received.body).not.toHaveProperty('phone');
   });
 });
 

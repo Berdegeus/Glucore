@@ -6,13 +6,9 @@ import * as z from 'zod';
 
 const nullableNumber = z.number().nullable();
 
-const ZoneDistributionDtoSchema = z.object({
-  veryLow: z.number(),
-  low: z.number(),
-  target: z.number(),
-  high: z.number(),
-  veryHigh: z.number(),
-});
+const share = z.number();
+
+const ZoneDistributionDtoSchema = z.object({ veryLow: share, low: share, target: share, high: share, veryHigh: share });
 
 const PatientRowDtoSchema = z.object({
   patientId: z.string().min(1),

@@ -4151,13 +4151,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: troca de período refaz as duas consultas; resposta `NO_ACTIVE_GRANT` remove o paciente e mostra "O paciente revogou o acesso"
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/useCohort.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: troca de período refaz as duas consultas; resposta `NO_ACTIVE_GRANT` remove o paciente e mostra "O paciente revogou o acesso"
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/useCohort.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add professional query hooks`
+**Status**: ✅ Done
 
 ---
 
