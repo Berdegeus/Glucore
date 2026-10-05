@@ -2717,13 +2717,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Nenhum `POST`, `PUT` ou `DELETE` para esses caminhos em todo `web/src`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/readonly.test.ts`
-- [ ] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
+- [x] Nenhum `POST`, `PUT` ou `DELETE` para esses caminhos em todo `web/src`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/readonly.test.ts`
+- [x] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `test(web): guard clinical data as read-only`
+**Status**: ✅ Done
 
 ---
 
