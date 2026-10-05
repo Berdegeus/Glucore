@@ -3170,13 +3170,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de fronteira: 40 passa, 41 falha; 80 passa, 81 falha; vazio e só espaços falham
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/professionals.schema.test.ts`
-- [ ] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de fronteira: 40 passa, 41 falha; 80 passa, 81 falha; vazio e só espaços falham
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/professionals.schema.test.ts`
+- [x] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(glucose-service): validate professional profiles`
+**Status**: ✅ Done
 
 ---
 
