@@ -3127,14 +3127,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: `WEAK_PASSWORD`, `EMAIL_TAKEN`, linha de auditoria sem senha, token com papel certo e validade de 1 h
-- [ ] Cadastro de paciente inalterado
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: `WEAK_PASSWORD`, `EMAIL_TAKEN`, linha de auditoria sem senha, token com papel certo e validade de 1 h
+- [x] Cadastro de paciente inalterado
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): register health professionals`
+**Status**: ✅ Done
 
 ---
 
