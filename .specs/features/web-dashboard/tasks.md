@@ -2036,13 +2036,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: 90 dias passa, 91 falha; início depois do fim falha com "Escolha um período de até 90 dias"; presets calculados a partir de hoje
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/domain/period.test.ts`
-- [ ] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: 90 dias passa, 91 falha; início depois do fim falha com "Escolha um período de até 90 dias"; presets calculados a partir de hoje
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/domain/period.test.ts`
+- [x] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add period rules`
+**Status**: ✅ Done
 
 ---
 
