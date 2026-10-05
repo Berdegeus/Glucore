@@ -4068,12 +4068,13 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Só tipos; `npm run typecheck` passa
-- [ ] Gate `build` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size`
+- [x] Só tipos; `npm run typecheck` passa
+- [x] Gate `build` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(web): declare professional entities`
+**Status**: ✅ Done
 
 ---
 
