@@ -4109,13 +4109,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: `201` e `200` viram vínculo; `400 INVALID_INVITE` vira `validation` com o código; `429` vira `rate-limited`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/infrastructure/httpRedeemRepository.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: `201` e `200` viram vínculo; `400 INVALID_INVITE` vira `validation` com o código; `429` vira `rate-limited`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/infrastructure/httpRedeemRepository.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(web): add the HTTP redeem repository`
+**Status**: ✅ Done
 
 ---
 
