@@ -70,6 +70,9 @@ const catalog = JSON.parse(readFileSync(CATALOG_PATH, 'utf8')) as { roles: Recor
 /** The sizes `contracts/widget-catalog.json` allows every widget. */
 export const CATALOG_SIZES: readonly string[] = catalog.sizes;
 
+/** The widget ids `contracts/widget-catalog.json` lists for `role`, in catalog order. */
+export const catalogIdsOf = (role: string): string[] => catalog.roles[role] ?? [];
+
 /** The roles of `contracts/widget-catalog.json` that list `id`. */
 export const catalogRolesOf = (id: string): string[] =>
   Object.entries(catalog.roles)
