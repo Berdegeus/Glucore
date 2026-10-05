@@ -4,11 +4,12 @@ import type { Excursion } from '../../domain/summary';
 import { excursionCells, EXCURSIONS_COLUMNS } from './excursionsModel';
 import { SummaryWidget } from './summaryWidget';
 import styles from './tableExcursions.module.css';
+import { TABLE_EXCURSIONS_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { tableExcursionsDefinition } from './tableExcursions.definition';
 
-export const TABLE_EXCURSIONS_TITLE = 'Episódios de hipo e hiperglicemia';
+export { TABLE_EXCURSIONS_TITLE };
 
 /** The cause when the period has no episode, with or without readings: that is no failure. */
 export const NO_EXCURSIONS_CAUSE = 'Nenhum episódio no período';

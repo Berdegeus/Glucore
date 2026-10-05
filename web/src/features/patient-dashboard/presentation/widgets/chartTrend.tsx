@@ -3,11 +3,12 @@ import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { hasNoReadings } from './summaryWidget';
 import { DEFAULT_TARGET_RANGE, trendAlternative, trendRows } from './trendModel';
+import { CHART_TREND_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { chartTrendDefinition } from './chartTrend.definition';
 
-export const CHART_TREND_TITLE = 'Tendência da glicose';
+export { CHART_TREND_TITLE };
 
 const LINES = [
   { key: 'avg', label: 'Média diária' },

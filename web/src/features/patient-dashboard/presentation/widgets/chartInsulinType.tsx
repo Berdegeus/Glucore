@@ -3,11 +3,12 @@ import { formatNumber } from '../../../../shared/presentation/format';
 import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { insulinTypeAlternative, insulinTypeRows } from './insulinTypeModel';
+import { CHART_INSULIN_TYPE_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { chartInsulinTypeDefinition } from './chartInsulinType.definition';
 
-export const CHART_INSULIN_TYPE_TITLE = 'Insulina por tipo';
+export { CHART_INSULIN_TYPE_TITLE };
 
 /** The cause when the diary has no insulin in the period: readings do not matter to this card. */
 export const NO_INSULIN_CAUSE = 'Nenhum registro de insulina no período';

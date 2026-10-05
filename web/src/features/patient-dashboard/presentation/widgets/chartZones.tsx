@@ -4,11 +4,12 @@ import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { hasNoReadings } from './summaryWidget';
 import { ZONE_SEGMENTS, zonesAlternative, zonesRow } from './zonesModel';
+import { CHART_ZONES_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { chartZonesDefinition } from './chartZones.definition';
 
-export const CHART_ZONES_TITLE = 'Tempo por zona de glicose';
+export { CHART_ZONES_TITLE };
 
 const PERCENT_DOMAIN = [0, 100] as const;
 const BAR_HEIGHT = 140;

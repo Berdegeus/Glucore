@@ -7,11 +7,12 @@ import { useDayDetail } from '../useDayDetail';
 import styles from './chartDayDetail.module.css';
 import { CARBS_MARKER_SERIES, dayDetailAlternative, dayDetailRows, GLUCOSE_SERIES, INSULIN_MARKER_SERIES } from './dayDetailModel';
 import { fullDay } from './dayLabel';
+import { CHART_DAY_DETAIL_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { chartDayDetailDefinition } from './chartDayDetail.definition';
 
-export const CHART_DAY_DETAIL_TITLE = 'Dia detalhado';
+export { CHART_DAY_DETAIL_TITLE };
 
 /** The cause when the API has no reading to choose a day from: the period filter does not apply to this card. */
 export const NO_DAYS_CAUSE = 'Nenhuma leitura disponível para escolher um dia';

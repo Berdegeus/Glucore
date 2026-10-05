@@ -2,11 +2,12 @@ import { KpiCard } from '../../../../shared/presentation/ui/kpiCard';
 import type { WidgetProps } from '../../../dashboard-layout';
 import { weightedMean } from '../../domain/metrics';
 import { SummaryWidget } from './summaryWidget';
+import { KPI_MEAN_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { kpiMeanDefinition } from './kpiMean.definition';
 
-export const KPI_MEAN_TITLE = 'Glicose média';
+export { KPI_MEAN_TITLE };
 
 /** Mean glucose of the period in whole mg/dL, each day weighted by its readings (PAC-05). */
 export default function KpiMean({ size }: WidgetProps) {

@@ -3,11 +3,12 @@ import type { WidgetProps } from '../../../dashboard-layout';
 import { agpAlternative, agpRows } from './agpModel';
 import { ChartWidget } from './chartWidget';
 import { hasNoReadings } from './summaryWidget';
+import { CHART_AGP_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { chartAgpDefinition } from './chartAgp.definition';
 
-export const CHART_AGP_TITLE = 'Perfil ambulatorial (AGP)';
+export { CHART_AGP_TITLE };
 
 const OUTER = { minKey: 'p5', maxKey: 'p95', label: 'Percentis 5 a 95' };
 const INNER = { minKey: 'p25', maxKey: 'p75', label: 'Percentis 25 a 75' };

@@ -4,11 +4,12 @@ import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { dailyTirAlternative, dailyTirRows } from './dailyTirModel';
 import { hasNoReadings } from './summaryWidget';
+import { CHART_DAILY_TIR_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { chartDailyTirDefinition } from './chartDailyTir.definition';
 
-export const CHART_DAILY_TIR_TITLE = 'Tempo no alvo por dia';
+export { CHART_DAILY_TIR_TITLE };
 
 const SERIES = [{ key: 'tir', label: 'Tempo no alvo' }];
 const PERCENT_DOMAIN = [0, 100] as const;

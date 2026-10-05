@@ -1,4 +1,4 @@
-import { registerWidget } from '../../dashboard-layout';
+import { registerWidget, registerWidgetTitles } from '../../dashboard-layout';
 import { cardFreshnessDefinition } from './widgets/cardFreshness.definition';
 import { chartAgpDefinition } from './widgets/chartAgp.definition';
 import { chartAlertsTypeDefinition } from './widgets/chartAlertsType.definition';
@@ -15,10 +15,13 @@ import { kpiMeanDefinition } from './widgets/kpiMean.definition';
 import { kpiSensorUseDefinition } from './widgets/kpiSensorUse.definition';
 import { kpiTirDefinition } from './widgets/kpiTir.definition';
 import { tableExcursionsDefinition } from './widgets/tableExcursions.definition';
+import { PATIENT_WIDGET_TITLES } from './widgets/widgetTitles';
 
 // The patient's widgets, in the order of `contracts/widget-catalog.json`. A new
 // widget is one module under `widgets/` and one line here (ARQ-10); the grid
-// and the page never learn which widgets exist.
+// and the page never learn which widgets exist. The title of a widget is one
+// entry in `widgets/widgetTitles.ts`.
+registerWidgetTitles(PATIENT_WIDGET_TITLES);
 registerWidget(kpiTirDefinition, () => import('./widgets/kpiTir'));
 registerWidget(kpiGmiDefinition, () => import('./widgets/kpiGmi'));
 registerWidget(kpiMeanDefinition, () => import('./widgets/kpiMean'));

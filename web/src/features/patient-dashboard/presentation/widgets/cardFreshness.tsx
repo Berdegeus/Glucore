@@ -5,11 +5,12 @@ import type { WidgetProps } from '../../../dashboard-layout';
 import { isStale, STALE_MESSAGE } from '../../domain/freshness';
 import styles from './cardFreshness.module.css';
 import { SummaryWidget } from './summaryWidget';
+import { CARD_FRESHNESS_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { cardFreshnessDefinition } from './cardFreshness.definition';
 
-export const CARD_FRESHNESS_TITLE = 'Última leitura';
+export { CARD_FRESHNESS_TITLE };
 
 /** The cause when the app has never synced a reading: this card is not tied to the period. */
 export const NO_SYNC_CAUSE = 'Nenhuma leitura sincronizada pelo app';

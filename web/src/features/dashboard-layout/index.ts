@@ -8,5 +8,6 @@ export { SKELETON_HEIGHT, WidgetShell } from './presentation/widgetShell';
 export { DashboardGrid, GridItem } from './presentation/dashboardGrid';
 export { LayoutServicesProvider } from './presentation/layoutServices';
 export { useLayout } from './presentation/useLayout';
+export { registerWidgetTitles, widgetTitle } from './presentation/widgetTitles';
 export { UNAVAILABLE_WIDGET_TITLE, WidgetSlot } from './presentation/widgetSlot';
 export type { WidgetState } from './presentation/widgetShell';

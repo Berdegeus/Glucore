@@ -9,11 +9,12 @@ import {
   INSULIN_SERIES,
 } from './carbsInsulinModel';
 import { ChartWidget } from './chartWidget';
+import { CHART_CARBS_INSULIN_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
 export { chartCarbsInsulinDefinition } from './chartCarbsInsulin.definition';
 
-export const CHART_CARBS_INSULIN_TITLE = 'Carboidratos e insulina por dia';
+export { CHART_CARBS_INSULIN_TITLE };
 
 /** The cause when the diary has neither carbohydrate nor insulin in the period: readings do not matter to this card. */
 export const NO_DIARY_CAUSE = 'Nenhum registro de carboidrato ou insulina no período';
