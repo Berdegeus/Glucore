@@ -5,7 +5,9 @@ import {
   type DayCount,
 } from '@glucore/shared';
 
-import { UserRole, UserStatus, type PrismaClient } from '../../lib/prisma';
+import { UserRole, UserStatus, type Prisma, type PrismaClient } from '../../lib/prisma';
+
+import type { AdminUserSource } from './admin.mapper';
 
 export interface AccountStats {
   accounts: {
@@ -24,7 +26,35 @@ export interface AdminRepository {
    * ending with `now`'s day.
    */
   accountStats(days: number, now: Date): Promise<AccountStats>;
+  /**
+   * One page of accounts, newest first (ties broken by id so pages never
+   * overlap). `q` is plain text: the repository makes it literal.
+   */
+  listUsers(
+    filter: UserListFilter,
+    paging: { skip: number; take: number },
+  ): Promise<{ rows: AdminUserSource[]; total: number }>;
 }
+
+export interface UserListFilter {
+  role?: UserRole;
+  status?: UserStatus;
+  q?: string;
+}
+
+/** Makes `%`, `_` and `\` literal in a LIKE pattern, so a search for "50%" is not "50 anything". */
+export function escapeLikePattern(text: string): string {
+  return text.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+const LIST_FIELDS = {
+  id: true,
+  fullName: true,
+  email: true,
+  role: true,
+  status: true,
+  createdAt: true,
+} as const;
 
 const ROLES = Object.values(UserRole) as UserRole[];
 const STATUSES = Object.values(UserStatus) as UserStatus[];
@@ -69,5 +99,36 @@ export class PrismaAdminRepository implements AdminRepository {
       registrationsInPeriod: registrationsByDay.reduce((sum, row) => sum + row.count, 0),
       registrationsByDay,
     };
+  }
+
+  async listUsers(
+    filter: UserListFilter,
+    paging: { skip: number; take: number },
+  ): Promise<{ rows: AdminUserSource[]; total: number }> {
+    const where: Prisma.UserWhereInput = {
+      ...(filter.role ? { role: filter.role } : {}),
+      ...(filter.status ? { status: filter.status } : {}),
+    };
+    if (filter.q) {
+      // Prisma's `contains` wraps the value in `%…%` without escaping it, so the
+      // escape here is what keeps a literal `%` from acting as a wildcard.
+      const needle = escapeLikePattern(filter.q);
+      where.OR = [
+        { fullName: { contains: needle, mode: 'insensitive' } },
+        { email: { contains: needle, mode: 'insensitive' } },
+      ];
+    }
+
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        select: LIST_FIELDS,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: paging.skip,
+        take: paging.take,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+    return { rows, total };
   }
 }
