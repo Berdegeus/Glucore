@@ -494,7 +494,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | T126, T127 | Implementing |
 | LAY-01 | P1: Layout customizável por widgets | T1, T48, T49, T108, T189, T217 | Implementing |
 | LAY-02 | P1: Layout customizável por widgets | T48, T51, T54 | Implementing |
-| LAY-03 | P1: Layout customizável por widgets | T46, T113, T114, T119, T190 | Implementing |
+| LAY-03 | P1: Layout customizável por widgets | T46, T113, T114, T119, T190, T218 | Implementing |
 | LAY-04 | P1: Layout customizável por widgets | T19, T46, T113, T115, T119 | Implementing |
 | LAY-05 | P1: Layout customizável por widgets | T46, T113, T116 | Implementing |
 | LAY-06 | P1: Layout customizável por widgets | T46, T113, T117, T119 | Implementing |
@@ -592,13 +592,13 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-14 | P2: Dashboard do profissional de saúde | T163, T164 | Implementing |
 | PRO-15 | P2: Dashboard do profissional de saúde | T146, T147, T165, T166 | Implementing |
 | PRO-16 | P2: Dashboard do profissional de saúde | T161, T164, T184 | Implementing |
-| ADM-01 | P3: Dashboard do administrador | T202, T194, T197, T199, T200, T206, T207, T208, T209 | Implementing |
+| ADM-01 | P3: Dashboard do administrador | T202, T194, T197, T199, T200, T206, T207, T208, T209, T218 | Implementing |
 | ADM-02 | P3: Dashboard do administrador | T60, T194, T197, T210, T211, T212, T213, T214, T215 | Implementing |
 | ADM-03 | P3: Dashboard do administrador | T197, T198 | Implementing |
 | ADM-04 | P3: Dashboard do administrador | T202, T195, T199, T200, T203, T216 | Implementing |
 | ADM-05 | P3: Dashboard do administrador | T193, T196, T198, T200 | Implementing |
 | ADM-06 | P3: Dashboard do administrador | T195 | Implementing |
-| ADM-07 | P3: Dashboard do administrador | T200, T203, T204, T205 | Implementing |
+| ADM-07 | P3: Dashboard do administrador | T200, T203, T204, T205, T218 | Implementing |
 
 **Coverage:** 138 total, 0 mapped to tasks, 138 unmapped ⚠️
 <!-- TRACE:END -->

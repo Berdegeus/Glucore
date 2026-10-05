@@ -5079,13 +5079,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: abre com 30 dias; trocar para 90 recarrega todos os widgets; personalizar e salvar funciona
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/adminDashboardPage.test.tsx`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: abre com 30 dias; trocar para 90 recarrega todos os widgets; personalizar e salvar funciona
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/adminDashboardPage.test.tsx`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the admin dashboard page`
+**Status**: ✅ Done
 
 ---
 
