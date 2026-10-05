@@ -18,6 +18,8 @@ import { RegisterController } from './modules/register/register.controller';
 import { RegisterProfessionalController } from './modules/registerProfessional/registerProfessional.controller';
 import { createRegisterProfessionalRouter } from './modules/registerProfessional/registerProfessional.routes';
 import { createRegisterRouter } from './modules/register/register.routes';
+import { PatientsController } from './modules/professional/patients.controller';
+import { createPatientsRouter } from './modules/professional/professional.routes';
 import { GrantsController } from './modules/sharing/grants.controller';
 import { createGrantsRouter } from './modules/sharing/grants.routes';
 import { createProxyRoute } from './routes/routingTable';
@@ -143,6 +145,14 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use(
     '/api/v1/sharing/grants',
     createGrantsRouter(new GrantsController(container.authClient, container.glucoseClient), container.authenticate),
+  );
+
+  // The professional's portfolio, composed with the patients' names (PRO-03,
+  // PRO-15). Mounted before the `professional` proxy, which keeps everything
+  // else under that prefix, the single-patient summary included.
+  app.use(
+    '/api/v1/professional/patients',
+    createPatientsRouter(new PatientsController(container.authClient, container.glucoseClient), container.authenticate),
   );
 
   for (const [prefix, service] of Object.entries(AUTHENTICATED_PROXIES)) {

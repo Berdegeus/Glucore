@@ -3896,13 +3896,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: nomes e iniciais preenchidos; lookup falhando dá iniciais derivadas do id, `fullName: null` e `X-Degraded`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: nomes e iniciais preenchidos; lookup falhando dá iniciais derivadas do id, `fullName: null` e `X-Degraded`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(gateway): compose the patient list with names`
+**Status**: ✅ Done
 
 ---
 

@@ -11,6 +11,15 @@ export interface GrantSummary {
   grantedAt: string;
 }
 
+/** An entry of the professional's portfolio; only the patient id matters to the composition, the rest passes through. */
+export type PortfolioEntry = { patientId: string } & Record<string, unknown>;
+
+/** `GET /professional/patients` as glucose-service answers it: metrics only, no names. */
+export type PatientListResponse = { items: PortfolioEntry[] } & Record<string, unknown>;
+
+/** `GET /professional/cohort/summary` as glucose-service answers it: `perPatient` carries no names. */
+export type CohortSummaryResponse = { perPatient: PortfolioEntry[] } & Record<string, unknown>;
+
 /**
  * Every call this service makes into glucose-service: `/internal/*` with an
  * internal token, plus the one public route (`listGrants`) it composes on the
@@ -69,5 +78,19 @@ export class GlucoseClient {
    */
   listGrants(authorization: string): Promise<{ grants: GrantSummary[] }> {
     return this.http.forward('GET', '/sharing/grants', authorization);
+  }
+
+  /**
+   * The professional's portfolio, asked with the professional's own token like
+   * `listGrants`: glucose-service decides the role and the grants. `search` is
+   * the caller's query string (`?days=7&page=2`, or empty), passed on as it came
+   * so glucose-service stays the one place that validates it.
+   */
+  listPatients(authorization: string, search = ''): Promise<PatientListResponse> {
+    return this.http.forward('GET', `/professional/patients${search}`, authorization);
+  }
+
+  cohortSummary(authorization: string, search = ''): Promise<CohortSummaryResponse> {
+    return this.http.forward('GET', `/professional/cohort/summary${search}`, authorization);
   }
 }
