@@ -15,6 +15,30 @@ export interface RegisterAccountResult {
   token: string;
 }
 
+/** Query of the administrators' account list; auth-service is the one place that validates it. */
+export interface AdminUsersQuery {
+  role?: string;
+  status?: string;
+  q?: string;
+  page?: string;
+  limit?: string;
+}
+
+/** Account totals and sign-ups, as auth-service answers `GET /internal/admin/stats`. */
+export interface AccountStatsResponse {
+  accounts: Record<string, unknown>;
+  registrationsInPeriod: number;
+  registrationsByDay: { day: string; count: number }[];
+}
+
+/** One page of the account list, as auth-service answers `GET /internal/admin/users`. */
+export interface AdminUsersPage {
+  items: Record<string, unknown>[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
 /** The most ids auth-service accepts in one lookup; larger lists are split into chunks of this size. */
 export const LOOKUP_BATCH_SIZE = 200;
 
@@ -45,6 +69,25 @@ export class AuthClient {
 
   deleteAccount(userId: string): Promise<void> {
     return this.http.request('DELETE', `/internal/accounts/${userId}`, GATEWAY_SERVICE_IDENTITY);
+  }
+
+  /**
+   * The administrator's views of the identity database. `userId` is the admin
+   * the request came from: it travels as the internal token's `sub` with the
+   * role fixed here, so auth-service audits the right person and checks the
+   * role again on its side (ADM-05).
+   */
+  adminStats(userId: string, days: number): Promise<AccountStatsResponse> {
+    return this.http.request('GET', `/internal/admin/stats?days=${days}`, { sub: userId, role: 'ADMINISTRATOR' });
+  }
+
+  adminUsers(userId: string, query: AdminUsersQuery = {}): Promise<AdminUsersPage> {
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined) search.set(key, value);
+    }
+    const suffix = search.size > 0 ? `?${search.toString()}` : '';
+    return this.http.request('GET', `/internal/admin/users${suffix}`, { sub: userId, role: 'ADMINISTRATOR' });
   }
 
   /**
