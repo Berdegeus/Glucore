@@ -51,6 +51,15 @@ export function renderAdminWidget(widget: ReactElement, options: AdminHarnessOpt
   return { ...view, services };
 }
 
+/** Mounts a chart widget and waits for its picture: `all` selects inside it, `axisLabels` reads the category axis left to right. */
+export async function renderDrawnChart(widget: ReactElement, options: AdminHarnessOptions = {}) {
+  const view = renderAdminWidget(widget, options);
+  await screen.findByRole('img');
+  const all = (selector: string): Element[] => [...view.container.querySelectorAll(selector)];
+  const axisLabels = (): (string | null)[] => all('.recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value').map((label) => label.textContent);
+  return { ...view, all, axisLabels };
+}
+
 const using = (load: ReturnType<typeof vi.fn>): Partial<AdminUseCases> => ({ loadOverview: load as unknown as AdminUseCases['loadOverview'] });
 
 // No `empty`: a count of zero is a figure the administrator reads, so the KPIs have no empty state; the charts add one.
