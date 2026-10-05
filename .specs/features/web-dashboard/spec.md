@@ -578,18 +578,18 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | CON-13 | P2: Consentimento do paciente pelo app (código de convite) | T153, T154, T155, T156, T157 | Implementing |
 | PRO-01 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-02 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-03 | P2: Dashboard do profissional de saúde | T72, T160 | Implementing |
+| PRO-03 | P2: Dashboard do profissional de saúde | T72, T160, T163 | Implementing |
 | PRO-04 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-05 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-06 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-07 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-08 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-09 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-10 | P2: Dashboard do profissional de saúde | T59, T62, T162 | Implementing |
-| PRO-11 | P2: Dashboard do profissional de saúde | T149, T160, T161 | Implementing |
-| PRO-12 | P2: Dashboard do profissional de saúde | T144 | Implementing |
+| PRO-09 | P2: Dashboard do profissional de saúde | T163 | Implementing |
+| PRO-10 | P2: Dashboard do profissional de saúde | T59, T62, T162, T163 | Implementing |
+| PRO-11 | P2: Dashboard do profissional de saúde | T149, T160, T161, T163 | Implementing |
+| PRO-12 | P2: Dashboard do profissional de saúde | T144, T163 | Implementing |
 | PRO-13 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-14 | P2: Dashboard do profissional de saúde | - | Pending |
+| PRO-14 | P2: Dashboard do profissional de saúde | T163 | Implementing |
 | PRO-15 | P2: Dashboard do profissional de saúde | T146, T147 | Implementing |
 | PRO-16 | P2: Dashboard do profissional de saúde | T161 | Implementing |
 | ADM-01 | P3: Dashboard do administrador | - | Pending |

@@ -3854,13 +3854,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com fakes: histograma nas faixas < 50, 50–70, ≥ 70; pacientes sem leitura há mais de 24 h; paciente sem vínculo lança `NO_ACTIVE_GRANT`; auditoria sem valores de glicose
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/professional.service.test.ts`
-- [ ] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com fakes: histograma nas faixas < 50, 50–70, ≥ 70; pacientes sem leitura há mais de 24 h; paciente sem vínculo lança `NO_ACTIVE_GRANT`; auditoria sem valores de glicose
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/professional.service.test.ts`
+- [x] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(glucose-service): add the professional service`
+**Status**: ✅ Done
 
 ---
 

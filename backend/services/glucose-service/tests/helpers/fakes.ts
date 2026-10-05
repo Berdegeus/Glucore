@@ -35,6 +35,10 @@ import type {
   ThresholdValues,
 } from '../../src/modules/settings/settings.repository';
 import type { DateRange, IDashboardRepository } from '../../src/modules/dashboard/dashboard.repository';
+import type { HypoHourCount } from '../../src/modules/professional/professional.hypo';
+import type { GrantedPatientPage, PatientPageRequest } from '../../src/modules/professional/professional.listing';
+import type { PatientMetrics } from '../../src/modules/professional/professional.mapper';
+import type { ICohortRepository } from '../../src/modules/professional/professional.repository';
 import type { TimeZoneChecker } from '../../src/modules/dashboard/dashboard.timezones';
 import type {
   AgpPointDto,
@@ -461,4 +465,56 @@ export class FakeSharingRepository implements ISharingRepository {
   async isGrantActive(professionalId: string, patientId: string, now: Date): Promise<boolean> {
     return (await this.findActiveGrant(professionalId, patientId, now)) !== null;
   }
+}
+
+/**
+ * Scripted portfolio repository: the SQL is covered against Postgres, so this
+ * fake only answers what the test staged and records what the service asked.
+ * `granted` is the professional's active patients in grant order; paging is the
+ * real arithmetic so a test can see the page and cap the service requested.
+ */
+export class FakeCohortRepository implements ICohortRepository {
+  granted: string[] = [];
+  metrics: PatientMetrics[] = [];
+  hypoHours: HypoHourCount[] = [];
+
+  readonly listCalls: Array<{ professionalId: string; now: Date; request?: PatientPageRequest }> = [];
+  readonly metricsCalls: Array<{ ids: readonly string[]; range: DateRange }> = [];
+  readonly hypoCalls: Array<{ ids: readonly string[]; range: DateRange; tz: string }> = [];
+
+  async listGrantedPatientIds(
+    professionalId: string,
+    now: Date,
+    request?: PatientPageRequest,
+  ): Promise<GrantedPatientPage> {
+    this.listCalls.push({ professionalId, now, request });
+    const { page = 1, limit = 50 } = request ?? {};
+    return { ids: this.granted.slice((page - 1) * limit, page * limit), total: this.granted.length };
+  }
+
+  async getPatientMetrics(ids: readonly string[], range: DateRange): Promise<PatientMetrics[]> {
+    this.metricsCalls.push({ ids, range });
+    return this.metrics.filter((row) => ids.includes(row.patientId));
+  }
+
+  async getHypoStartHours(ids: readonly string[], range: DateRange, tz: string): Promise<HypoHourCount[]> {
+    this.hypoCalls.push({ ids, range, tz });
+    return this.hypoHours;
+  }
+}
+
+/** Builds the metrics of one patient; override only what the test is about. */
+export function metricsRow(patientId: string, overrides: Partial<PatientMetrics> = {}): PatientMetrics {
+  return {
+    patientId,
+    lastReadingAt: '2026-09-01T11:00:00.000Z',
+    timeInRangePercent: 70,
+    gmiPercent: 7,
+    cvPercent: 30,
+    readingsCount: 0,
+    zoneDistribution: { veryLow: 0, low: 0, target: 100, high: 0, veryHigh: 0 },
+    hypoEpisodes: 0,
+    alertsCount: 0,
+    ...overrides,
+  };
 }

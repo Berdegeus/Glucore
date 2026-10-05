@@ -41,7 +41,7 @@ function parseDateParam(value: unknown, name: string): Date | null {
   return date;
 }
 
-function parseTzParam(value: unknown): string {
+export function parseTzParam(value: unknown): string {
   if (value === undefined) return DEFAULT_TIMEZONE;
   if (typeof value !== 'string' || value.length > MAX_TZ_LENGTH || !TZ_RE.test(value)) {
     throw new BadRequestError('tz must be an IANA time zone name', INVALID_TIMEZONE);
