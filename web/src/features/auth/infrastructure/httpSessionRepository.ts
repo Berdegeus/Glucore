@@ -1,5 +1,4 @@
-import type { FetchHttpClient } from '../../../shared/infrastructure/http/fetchHttpClient';
-import { parseDto } from '../../../shared/infrastructure/http/parseDto';
+import { createRepository, type HttpGateway, type RepositoryHttp } from '../../../shared/infrastructure/http/createRepository';
 import type { Credentials, SessionRepository } from '../domain/ports';
 import { toAccessToken } from './mappers';
 import { TokenDtoSchema } from './schemas';
@@ -10,19 +9,21 @@ import { TokenDtoSchema } from './schemas';
  * client (`401` -> `invalid-credentials`, `429` -> `rate-limited`).
  */
 export class HttpSessionRepository implements SessionRepository {
-  constructor(private readonly http: Pick<FetchHttpClient, 'request'>) {}
+  private readonly api: RepositoryHttp;
+
+  constructor(http: HttpGateway) {
+    this.api = createRepository(http);
+  }
 
   async login(credentials: Credentials): Promise<string> {
-    const payload = await this.http.request({
-      method: 'POST',
-      path: '/auth/login',
-      body: { email: credentials.email, password: credentials.password },
-    });
-    return toAccessToken(parseDto(TokenDtoSchema, payload, 'POST /auth/login'));
+    const dto = await this.api.fetchDto(
+      { method: 'POST', path: '/auth/login', body: { email: credentials.email, password: credentials.password } },
+      TokenDtoSchema,
+    );
+    return toAccessToken(dto);
   }
 
   async refresh(): Promise<string> {
-    const payload = await this.http.request({ method: 'POST', path: '/auth/refresh' });
-    return toAccessToken(parseDto(TokenDtoSchema, payload, 'POST /auth/refresh'));
+    return toAccessToken(await this.api.fetchDto({ method: 'POST', path: '/auth/refresh' }, TokenDtoSchema));
   }
 }

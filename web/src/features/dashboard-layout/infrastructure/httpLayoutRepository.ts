@@ -1,5 +1,4 @@
-import type { FetchHttpClient } from '../../../shared/infrastructure/http/fetchHttpClient';
-import { parseDto } from '../../../shared/infrastructure/http/parseDto';
+import { createRepository, type HttpGateway, type RepositoryHttp } from '../../../shared/infrastructure/http/createRepository';
 import type { DashboardLayout } from '../domain/layout';
 import type { LayoutRepository } from '../domain/ports';
 import { toLayout, toLayoutDto } from './mappers';
@@ -13,20 +12,22 @@ const PATH = '/preferences/dashboard';
  * `400 INVALID_LAYOUT` surfaces as a `validation` error carrying that code (LAY-11).
  */
 export class HttpLayoutRepository implements LayoutRepository {
-  constructor(private readonly http: Pick<FetchHttpClient, 'request'>) {}
+  private readonly api: RepositoryHttp;
+
+  constructor(http: HttpGateway) {
+    this.api = createRepository(http);
+  }
 
   async load(): Promise<DashboardLayout | null> {
-    const payload = await this.http.request({ path: PATH });
-    const dto = parseDto(LoadedLayoutDtoSchema, payload, `GET ${PATH}`);
+    const dto = await this.api.fetchDto({ path: PATH }, LoadedLayoutDtoSchema);
     return dto.widgets === null ? null : toLayout({ widgets: dto.widgets });
   }
 
   async save(layout: DashboardLayout): Promise<DashboardLayout> {
-    const payload = await this.http.request({ method: 'PUT', path: PATH, body: toLayoutDto(layout) });
-    return toLayout(parseDto(SavedLayoutDtoSchema, payload, `PUT ${PATH}`));
+    return toLayout(await this.api.fetchDto({ method: 'PUT', path: PATH, body: toLayoutDto(layout) }, SavedLayoutDtoSchema));
   }
 
   async reset(): Promise<void> {
-    await this.http.request({ method: 'DELETE', path: PATH });
+    await this.api.send({ method: 'DELETE', path: PATH });
   }
 }

@@ -3059,15 +3059,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Antes de mexer, registrar a saída do `npm run dup` e a contagem de testes
-- [ ] Repositórios passam a usar o helper; nenhum teste é alterado e a contagem não cai
-- [ ] Se a duplicação real for outra, refatorar a mais relevante e registrar a escolha no commit
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/http/createRepository.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Antes de mexer, registrar a saída do `npm run dup` e a contagem de testes
+- [x] Repositórios passam a usar o helper; nenhum teste é alterado e a contagem não cai
+- [x] Se a duplicação real for outra, refatorar a mais relevante e registrar a escolha no commit
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/infrastructure/http/createRepository.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `refactor(web): extract the HTTP repository helper`
+**Status**: ✅ Done
 
 ---
 

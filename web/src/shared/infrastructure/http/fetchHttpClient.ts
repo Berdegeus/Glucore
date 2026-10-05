@@ -6,7 +6,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 export interface HttpRequest {
   method?: HttpMethod;
-  /** Path below the base URL, query string included, e.g. `/api/v1/me`. */
+  /** Path below the base URL, query string included, e.g. `/me`; the base URL already carries `/api/v1`. */
   path: string;
   /** Serialized as JSON when present. */
   body?: unknown;

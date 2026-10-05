@@ -1,5 +1,4 @@
-import type { FetchHttpClient } from '../../../shared/infrastructure/http/fetchHttpClient';
-import { parseDto } from '../../../shared/infrastructure/http/parseDto';
+import { createRepository, type HttpGateway, type RepositoryHttp } from '../../../shared/infrastructure/http/createRepository';
 import type { Account } from '../domain/account';
 import type { AccountRepository } from '../domain/ports';
 import { toAccount } from './mappers';
@@ -7,10 +6,13 @@ import { AccountDtoSchema } from './schemas';
 
 /** `GET /me` over HTTP (ACC-01): the account and its role, whatever extra blocks come with it. */
 export class HttpAccountRepository implements AccountRepository {
-  constructor(private readonly http: Pick<FetchHttpClient, 'request'>) {}
+  private readonly api: RepositoryHttp;
+
+  constructor(http: HttpGateway) {
+    this.api = createRepository(http);
+  }
 
   async current(): Promise<Account> {
-    const payload = await this.http.request({ path: '/me' });
-    return toAccount(parseDto(AccountDtoSchema, payload, 'GET /me'));
+    return toAccount(await this.api.fetchDto({ path: '/me' }, AccountDtoSchema));
   }
 }

@@ -1,5 +1,4 @@
-import type { FetchHttpClient } from '../../../shared/infrastructure/http/fetchHttpClient';
-import { parseDto } from '../../../shared/infrastructure/http/parseDto';
+import { createRepository, type HttpGateway, type RepositoryHttp } from '../../../shared/infrastructure/http/createRepository';
 import type { GlucoseSummary, SummaryQuery, SummaryRepository } from '../domain/summary';
 import { toSummary } from './mappers';
 import { SummaryDtoSchema } from './schemas';
@@ -16,14 +15,17 @@ const professionalPath = (patientId: string) => `/professional/patients/${encode
  * errors that carry the code.
  */
 export class HttpSummaryRepository implements SummaryRepository {
-  constructor(private readonly http: Pick<FetchHttpClient, 'request'>) {}
+  private readonly api: RepositoryHttp;
+
+  constructor(http: HttpGateway) {
+    this.api = createRepository(http);
+  }
 
   async load({ range, timeZone, patientId }: SummaryQuery): Promise<GlucoseSummary> {
     const path = patientId === undefined ? OWN_PATH : professionalPath(patientId);
     const query = new URLSearchParams({ from: range.from, to: range.to, tz: timeZone });
-    const payload = await this.http.request({ path: `${path}?${query.toString()}` });
-    // The endpoint label leaves the id and the query out: they name a patient.
+    // The endpoint label leaves the id out: it names a patient.
     const label = patientId === undefined ? OWN_PATH : '/professional/patients/:id/summary';
-    return toSummary(parseDto(SummaryDtoSchema, payload, `GET ${label}`));
+    return toSummary(await this.api.fetchDto({ path: `${path}?${query.toString()}` }, SummaryDtoSchema, `GET ${label}`));
   }
 }

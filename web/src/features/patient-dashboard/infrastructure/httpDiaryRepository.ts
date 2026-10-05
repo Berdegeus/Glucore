@@ -1,6 +1,5 @@
 import * as z from 'zod';
-import type { FetchHttpClient } from '../../../shared/infrastructure/http/fetchHttpClient';
-import { parseDto } from '../../../shared/infrastructure/http/parseDto';
+import { createRepository, type HttpGateway, type RepositoryHttp } from '../../../shared/infrastructure/http/createRepository';
 import type { CarbEntry, DiaryRepository, InsulinEntry, Reading } from '../domain/diary';
 import { toCarbEntry, toInsulinEntry, toReading } from './diaryMappers';
 import { CarbDtoSchema, InsulinDtoSchema, ReadingDtoSchema } from './diarySchemas';
@@ -20,20 +19,21 @@ const PAGE = '?limit=500';
  * values, which are health data.
  */
 export class HttpDiaryRepository implements DiaryRepository {
-  constructor(private readonly http: Pick<FetchHttpClient, 'request'>) {}
+  private readonly api: RepositoryHttp;
+
+  constructor(http: HttpGateway) {
+    this.api = createRepository(http);
+  }
 
   async listReadings(): Promise<Reading[]> {
-    const payload = await this.http.request({ path: '/readings' });
-    return parseDto(z.array(ReadingDtoSchema), payload, 'GET /readings').map(toReading);
+    return (await this.api.fetchDto({ path: '/readings' }, z.array(ReadingDtoSchema))).map(toReading);
   }
 
   async listCarbs(): Promise<CarbEntry[]> {
-    const payload = await this.http.request({ path: `/carbs${PAGE}` });
-    return parseDto(z.array(CarbDtoSchema), payload, 'GET /carbs').map(toCarbEntry);
+    return (await this.api.fetchDto({ path: `/carbs${PAGE}` }, z.array(CarbDtoSchema))).map(toCarbEntry);
   }
 
   async listInsulin(): Promise<InsulinEntry[]> {
-    const payload = await this.http.request({ path: `/insulin${PAGE}` });
-    return parseDto(z.array(InsulinDtoSchema), payload, 'GET /insulin').map(toInsulinEntry);
+    return (await this.api.fetchDto({ path: `/insulin${PAGE}` }, z.array(InsulinDtoSchema))).map(toInsulinEntry);
   }
 }
