@@ -4267,15 +4267,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `pro-kpi-hypo`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza quantos pacientes tiveram hipo no período a partir de `cohort.patientsWithHypo`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proKpiHypo.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `pro-kpi-hypo`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza quantos pacientes tiveram hipo no período a partir de `cohort.patientsWithHypo`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proKpiHypo.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add pro-kpi-hypo widget`
+**Status**: ✅ Done
 
 ---
 
