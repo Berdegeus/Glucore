@@ -523,7 +523,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-02 | P1: Dashboard do paciente com os dados do app | T80, T85, T87 | Implementing |
 | PAC-03 | P1: Dashboard do paciente com os dados do app | T80, T85, T87 | Implementing |
 | PAC-04 | P1: Dashboard do paciente com os dados do app | T80, T85, T87 | Implementing |
-| PAC-05 | P1: Dashboard do paciente com os dados do app | T82, T88, T89, T90, T91, T92 | Implementing |
+| PAC-05 | P1: Dashboard do paciente com os dados do app | T82, T88, T89, T90, T91, T92, T93 | Implementing |
 | PAC-06 | P1: Dashboard do paciente com os dados do app | T57 | Implementing |
 | PAC-07 | P1: Dashboard do paciente com os dados do app | T58 | Implementing |
 | PAC-08 | P1: Dashboard do paciente com os dados do app | - | Pending |
@@ -547,7 +547,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67, T73, T74, T75, T84 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66, T75 | Implementing |
 | API-03 | P2: Ajustes de backend para os gráficos novos | T68, T74 | Implementing |
-| API-04 | P2: Ajustes de backend para os gráficos novos | T69, T74 | Implementing |
+| API-04 | P2: Ajustes de backend para os gráficos novos | T69, T74, T93 | Implementing |
 | API-05 | P2: Ajustes de backend para os gráficos novos | T70, T74 | Implementing |
 | API-06 | P2: Ajustes de backend para os gráficos novos | T71, T74 | Implementing |
 | API-07 | P2: Ajustes de backend para os gráficos novos | T73 | Implementing |
