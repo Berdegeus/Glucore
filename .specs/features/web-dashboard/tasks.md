@@ -4047,13 +4047,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: busca "joao" encontra "João"; filtro ALTO; ordenação por TIR e por última leitura nos dois sentidos, nulos no fim
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/domain/patientList.test.ts`
-- [ ] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: busca "joao" encontra "João"; filtro ALTO; ordenação por TIR e por última leitura nos dois sentidos, nulos no fim
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/domain/patientList.test.ts`
+- [x] Pelo menos 6 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): filter and sort the patient list`
+**Status**: ✅ Done
 
 ---
 
