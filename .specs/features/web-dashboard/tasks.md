@@ -2298,15 +2298,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `kpi-cv`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza o CV em % com meta de até 36 % a partir de `summary.coefficientOfVariationPercent`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/kpiCv.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `kpi-cv`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza o CV em % com meta de até 36 % a partir de `summary.coefficientOfVariationPercent`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/kpiCv.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add kpi-cv widget`
+**Status**: ✅ Done
 
 ---
 

@@ -1,0 +1,25 @@
+import { KpiCard, type KpiTarget } from '../../../../shared/presentation/ui/kpiCard';
+import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import { SummaryWidget } from './summaryWidget';
+
+export const KPI_CV_TITLE = 'Variabilidade (CV)';
+
+/** A coefficient of variation up to 36 % counts as stable glucose (PAC-05). */
+export const CV_TARGET: KpiTarget = { kind: 'atMost', value: 36, unit: '%' };
+
+export const kpiCvDefinition: WidgetDefinition = {
+  id: 'kpi-cv',
+  titleKey: 'widget.kpi-cv',
+  roles: ['PATIENT'],
+  sizes: WIDGET_SIZES,
+  defaultSize: 'S',
+};
+
+/** Coefficient of variation of the period, in percent, against the 36 % ceiling. */
+export default function KpiCv({ size }: WidgetProps) {
+  return (
+    <SummaryWidget title={KPI_CV_TITLE} size={size} isEmpty={(summary) => summary.coefficientOfVariationPercent === null}>
+      {(summary) => <KpiCard value={summary.coefficientOfVariationPercent} unit="%" target={CV_TARGET} />}
+    </SummaryWidget>
+  );
+}
