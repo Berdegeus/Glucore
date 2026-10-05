@@ -1,18 +1,13 @@
 import { LineBandChart } from '../../../../shared/presentation/charts/lineBandChart';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { hasNoReadings } from './summaryWidget';
 import { DEFAULT_TARGET_RANGE, trendAlternative, trendRows } from './trendModel';
 
-export const CHART_TREND_TITLE = 'Tendência da glicose';
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { chartTrendDefinition } from './chartTrend.definition';
 
-export const chartTrendDefinition: WidgetDefinition = {
-  id: 'chart-trend',
-  titleKey: 'widget.chart-trend',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'L',
-};
+export const CHART_TREND_TITLE = 'Tendência da glicose';
 
 const LINES = [
   { key: 'avg', label: 'Média diária' },

@@ -3,5 +3,8 @@
 import './presentation/widgetCatalog';
 
 export { DiaryServicesProvider } from './presentation/diaryServices';
-export { PatientDashboardPage } from './presentation/patientDashboardPage';
 export { SummaryServicesProvider } from './presentation/summaryServices';
+
+/** The page as a module for `React.lazy`: the app loads it with its route, not with the login screen. */
+export const loadPatientDashboardPage = () =>
+  import('./presentation/patientDashboardPage').then((module) => ({ default: module.PatientDashboardPage }));

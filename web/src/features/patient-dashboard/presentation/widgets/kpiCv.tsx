@@ -1,19 +1,14 @@
 import { KpiCard, type KpiTarget } from '../../../../shared/presentation/ui/kpiCard';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { SummaryWidget } from './summaryWidget';
+
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { kpiCvDefinition } from './kpiCv.definition';
 
 export const KPI_CV_TITLE = 'Variabilidade (CV)';
 
 /** A coefficient of variation up to 36 % counts as stable glucose (PAC-05). */
 export const CV_TARGET: KpiTarget = { kind: 'atMost', value: 36, unit: '%' };
-
-export const kpiCvDefinition: WidgetDefinition = {
-  id: 'kpi-cv',
-  titleKey: 'widget.kpi-cv',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'S',
-};
 
 /** Coefficient of variation of the period, in percent, against the 36 % ceiling. */
 export default function KpiCv({ size }: WidgetProps) {

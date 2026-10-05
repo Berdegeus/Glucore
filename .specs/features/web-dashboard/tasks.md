@@ -2738,13 +2738,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de navegação: login de paciente cai em `/paciente`; anônimo em `/paciente` vai ao login e volta
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/app/routes.test.tsx`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de navegação: login de paciente cai em `/paciente`; anônimo em `/paciente` vai ao login e volta
+- [x] Gate `quick` passa: `cd web && npx vitest run src/app/routes.test.tsx`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): wire routes and providers`
+**Status**: ✅ Done
 
 ---
 

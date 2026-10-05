@@ -462,9 +462,9 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
 | ACC-01 | P1: Login único e acesso por papel | T29, T30, T33, T34, T43 | Implementing |
-| ACC-02 | P1: Login único e acesso por papel | T18, T42 | Implementing |
-| ACC-03 | P1: Login único e acesso por papel | T42 | Implementing |
-| ACC-04 | P1: Login único e acesso por papel | T30, T42 | Implementing |
+| ACC-02 | P1: Login único e acesso por papel | T18, T42, T111 | Implementing |
+| ACC-03 | P1: Login único e acesso por papel | T42, T111 | Implementing |
+| ACC-04 | P1: Login único e acesso por papel | T30, T42, T111 | Implementing |
 | ACC-05 | P1: Login único e acesso por papel | T17, T23, T39, T40 | Implementing |
 | ACC-06 | P1: Login único e acesso por papel | T75 | Implementing |
 | ACC-07 | P1: Login único e acesso por papel | T23, T29, T43 | Implementing |

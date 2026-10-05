@@ -1,20 +1,20 @@
 import { registerWidget } from '../../dashboard-layout';
-import { cardFreshnessDefinition } from './widgets/cardFreshness';
-import { chartAgpDefinition } from './widgets/chartAgp';
-import { chartAlertsTypeDefinition } from './widgets/chartAlertsType';
-import { chartCarbsInsulinDefinition } from './widgets/chartCarbsInsulin';
-import { chartDailyTirDefinition } from './widgets/chartDailyTir';
-import { chartDayDetailDefinition } from './widgets/chartDayDetail';
-import { chartHeatmapDefinition } from './widgets/chartHeatmap';
-import { chartInsulinTypeDefinition } from './widgets/chartInsulinType';
-import { chartTrendDefinition } from './widgets/chartTrend';
-import { chartZonesDefinition } from './widgets/chartZones';
-import { kpiCvDefinition } from './widgets/kpiCv';
-import { kpiGmiDefinition } from './widgets/kpiGmi';
-import { kpiMeanDefinition } from './widgets/kpiMean';
-import { kpiSensorUseDefinition } from './widgets/kpiSensorUse';
-import { kpiTirDefinition } from './widgets/kpiTir';
-import { tableExcursionsDefinition } from './widgets/tableExcursions';
+import { cardFreshnessDefinition } from './widgets/cardFreshness.definition';
+import { chartAgpDefinition } from './widgets/chartAgp.definition';
+import { chartAlertsTypeDefinition } from './widgets/chartAlertsType.definition';
+import { chartCarbsInsulinDefinition } from './widgets/chartCarbsInsulin.definition';
+import { chartDailyTirDefinition } from './widgets/chartDailyTir.definition';
+import { chartDayDetailDefinition } from './widgets/chartDayDetail.definition';
+import { chartHeatmapDefinition } from './widgets/chartHeatmap.definition';
+import { chartInsulinTypeDefinition } from './widgets/chartInsulinType.definition';
+import { chartTrendDefinition } from './widgets/chartTrend.definition';
+import { chartZonesDefinition } from './widgets/chartZones.definition';
+import { kpiCvDefinition } from './widgets/kpiCv.definition';
+import { kpiGmiDefinition } from './widgets/kpiGmi.definition';
+import { kpiMeanDefinition } from './widgets/kpiMean.definition';
+import { kpiSensorUseDefinition } from './widgets/kpiSensorUse.definition';
+import { kpiTirDefinition } from './widgets/kpiTir.definition';
+import { tableExcursionsDefinition } from './widgets/tableExcursions.definition';
 
 // The patient's widgets, in the order of `contracts/widget-catalog.json`. A new
 // widget is one module under `widgets/` and one line here (ARQ-10); the grid

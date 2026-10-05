@@ -1,19 +1,14 @@
 import { BarChart } from '../../../../shared/presentation/charts/barChart';
 import { formatPercent } from '../../../../shared/presentation/format';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { dailyTirAlternative, dailyTirRows } from './dailyTirModel';
 import { hasNoReadings } from './summaryWidget';
 
-export const CHART_DAILY_TIR_TITLE = 'Tempo no alvo por dia';
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { chartDailyTirDefinition } from './chartDailyTir.definition';
 
-export const chartDailyTirDefinition: WidgetDefinition = {
-  id: 'chart-daily-tir',
-  titleKey: 'widget.chart-daily-tir',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'M',
-};
+export const CHART_DAILY_TIR_TITLE = 'Tempo no alvo por dia';
 
 const SERIES = [{ key: 'tir', label: 'Tempo no alvo' }];
 const PERCENT_DOMAIN = [0, 100] as const;

@@ -1,21 +1,16 @@
 import { BarChart } from '../../../../shared/presentation/charts/barChart';
 import { formatNumber } from '../../../../shared/presentation/format';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { insulinTypeAlternative, insulinTypeRows } from './insulinTypeModel';
+
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { chartInsulinTypeDefinition } from './chartInsulinType.definition';
 
 export const CHART_INSULIN_TYPE_TITLE = 'Insulina por tipo';
 
 /** The cause when the diary has no insulin in the period: readings do not matter to this card. */
 export const NO_INSULIN_CAUSE = 'Nenhum registro de insulina no período';
-
-export const chartInsulinTypeDefinition: WidgetDefinition = {
-  id: 'chart-insulin-type',
-  titleKey: 'widget.chart-insulin-type',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'M',
-};
 
 const SERIES = [{ key: 'units', label: 'Insulina total (U)' }];
 const formatUnitsTick = (value: number) => formatNumber(value, 1);

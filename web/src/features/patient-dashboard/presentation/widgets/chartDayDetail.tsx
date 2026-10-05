@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { ChartFrame } from '../../../../shared/presentation/charts/chartFrame';
 import { LineBandChart } from '../../../../shared/presentation/charts/lineBandChart';
-import { WIDGET_SIZES, WidgetShell, type WidgetDefinition, type WidgetProps, type WidgetState } from '../../../dashboard-layout';
+import { WidgetShell, type WidgetProps, type WidgetState } from '../../../dashboard-layout';
 import type { DiaryDays } from '../../application/loadDayDetail';
 import { useDayDetail } from '../useDayDetail';
 import styles from './chartDayDetail.module.css';
 import { CARBS_MARKER_SERIES, dayDetailAlternative, dayDetailRows, GLUCOSE_SERIES, INSULIN_MARKER_SERIES } from './dayDetailModel';
 import { fullDay } from './dayLabel';
+
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { chartDayDetailDefinition } from './chartDayDetail.definition';
 
 export const CHART_DAY_DETAIL_TITLE = 'Dia detalhado';
 
@@ -14,14 +17,6 @@ export const CHART_DAY_DETAIL_TITLE = 'Dia detalhado';
 export const NO_DAYS_CAUSE = 'Nenhuma leitura disponível para escolher um dia';
 
 export const DAY_SELECT_LABEL = 'Dia';
-
-export const chartDayDetailDefinition: WidgetDefinition = {
-  id: 'chart-day-detail',
-  titleKey: 'widget.chart-day-detail',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'L',
-};
 
 const LINES = [GLUCOSE_SERIES, CARBS_MARKER_SERIES, INSULIN_MARKER_SERIES];
 

@@ -1,19 +1,14 @@
 import { KpiCard, type KpiTarget } from '../../../../shared/presentation/ui/kpiCard';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { SummaryWidget } from './summaryWidget';
+
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { kpiTirDefinition } from './kpiTir.definition';
 
 export const KPI_TIR_TITLE = 'Tempo no alvo';
 
 /** At least 70 % of the readings inside the target range (PAC-05). */
 export const TIR_TARGET: KpiTarget = { kind: 'atLeast', value: 70, unit: '%' };
-
-export const kpiTirDefinition: WidgetDefinition = {
-  id: 'kpi-tir',
-  titleKey: 'widget.kpi-tir',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'S',
-};
 
 /** Time in range of the period, in percent, against the 70 % goal. */
 export default function KpiTir({ size }: WidgetProps) {

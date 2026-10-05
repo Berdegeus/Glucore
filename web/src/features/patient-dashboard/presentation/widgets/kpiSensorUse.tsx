@@ -1,19 +1,14 @@
 import { KpiCard, type KpiTarget } from '../../../../shared/presentation/ui/kpiCard';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { SummaryWidget } from './summaryWidget';
+
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { kpiSensorUseDefinition } from './kpiSensorUse.definition';
 
 export const KPI_SENSOR_USE_TITLE = 'Uso do sensor';
 
 /** Wearing the sensor for at least 70 % of the period (PAC-05). */
 export const SENSOR_USE_TARGET: KpiTarget = { kind: 'atLeast', value: 70, unit: '%' };
-
-export const kpiSensorUseDefinition: WidgetDefinition = {
-  id: 'kpi-sensor-use',
-  titleKey: 'widget.kpi-sensor-use',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'S',
-};
 
 /**
  * Share of the period the sensor delivered readings, in percent (API-04),

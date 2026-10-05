@@ -1,18 +1,13 @@
 import { RangeAreaChart } from '../../../../shared/presentation/charts/rangeAreaChart';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { agpAlternative, agpRows } from './agpModel';
 import { ChartWidget } from './chartWidget';
 import { hasNoReadings } from './summaryWidget';
 
-export const CHART_AGP_TITLE = 'Perfil ambulatorial (AGP)';
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { chartAgpDefinition } from './chartAgp.definition';
 
-export const chartAgpDefinition: WidgetDefinition = {
-  id: 'chart-agp',
-  titleKey: 'widget.chart-agp',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'L',
-};
+export const CHART_AGP_TITLE = 'Perfil ambulatorial (AGP)';
 
 const OUTER = { minKey: 'p5', maxKey: 'p95', label: 'Percentis 5 a 95' };
 const INNER = { minKey: 'p25', maxKey: 'p75', label: 'Percentis 25 a 75' };

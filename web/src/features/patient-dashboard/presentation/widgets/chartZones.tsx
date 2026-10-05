@@ -1,19 +1,14 @@
 import { StackedBarChart } from '../../../../shared/presentation/charts/stackedBarChart';
 import { formatPercent } from '../../../../shared/presentation/format';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { hasNoReadings } from './summaryWidget';
 import { ZONE_SEGMENTS, zonesAlternative, zonesRow } from './zonesModel';
 
-export const CHART_ZONES_TITLE = 'Tempo por zona de glicose';
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { chartZonesDefinition } from './chartZones.definition';
 
-export const chartZonesDefinition: WidgetDefinition = {
-  id: 'chart-zones',
-  titleKey: 'widget.chart-zones',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'M',
-};
+export const CHART_ZONES_TITLE = 'Tempo por zona de glicose';
 
 const PERCENT_DOMAIN = [0, 100] as const;
 const BAR_HEIGHT = 140;

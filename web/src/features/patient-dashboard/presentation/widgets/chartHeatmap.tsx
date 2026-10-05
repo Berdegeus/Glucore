@@ -1,19 +1,14 @@
 import { HeatmapChart } from '../../../../shared/presentation/charts/heatmapChart';
 import { formatMgdl } from '../../../../shared/presentation/format';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import { ChartWidget } from './chartWidget';
 import { heatmapAlternative, heatmapCells, WEEKDAY_LABELS } from './heatmapCells';
 import { hasNoReadings } from './summaryWidget';
 
-export const CHART_HEATMAP_TITLE = 'Glicose por dia da semana e hora';
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { chartHeatmapDefinition } from './chartHeatmap.definition';
 
-export const chartHeatmapDefinition: WidgetDefinition = {
-  id: 'chart-heatmap',
-  titleKey: 'widget.chart-heatmap',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'L',
-};
+export const CHART_HEATMAP_TITLE = 'Glicose por dia da semana e hora';
 
 /** Mean glucose of each weekday and hour of the period, darker where it is higher (PAC-10). */
 export default function ChartHeatmap({ size }: WidgetProps) {

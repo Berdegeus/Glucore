@@ -1,9 +1,12 @@
 import { browserTimeZone } from '../../../../shared/presentation/browserTimeZone';
-import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
+import type { WidgetProps } from '../../../dashboard-layout';
 import type { Excursion } from '../../domain/summary';
 import { excursionCells, EXCURSIONS_COLUMNS } from './excursionsModel';
 import { SummaryWidget } from './summaryWidget';
 import styles from './tableExcursions.module.css';
+
+// The definition lives in a light module so the catalog can list the widget without loading its chart code.
+export { tableExcursionsDefinition } from './tableExcursions.definition';
 
 export const TABLE_EXCURSIONS_TITLE = 'Episódios de hipo e hiperglicemia';
 
@@ -12,14 +15,6 @@ export const NO_EXCURSIONS_CAUSE = 'Nenhum episódio no período';
 
 /** Accessible name of the part that scrolls, so a keyboard user can focus and scroll it. */
 export const EXCURSIONS_SCROLL_LABEL = 'Tabela de episódios, role para ver todas as colunas';
-
-export const tableExcursionsDefinition: WidgetDefinition = {
-  id: 'table-excursions',
-  titleKey: 'widget.table-excursions',
-  roles: ['PATIENT'],
-  sizes: WIDGET_SIZES,
-  defaultSize: 'L',
-};
 
 const KIND_CLASS = { HYPO: styles.hypo, HYPER: styles.hyper } as const;
 
