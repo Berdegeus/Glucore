@@ -2057,13 +2057,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: 60 min não é desatualizado, 61 é; sem leitura é desatualizado
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/domain/freshness.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: 60 min não é desatualizado, 61 é; sem leitura é desatualizado
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/domain/freshness.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add data freshness rule`
+**Status**: ✅ Done
 
 ---
 
