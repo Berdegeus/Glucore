@@ -11,14 +11,23 @@ import {
 
 import { AccountController } from './modules/account/account.controller';
 import { createAccountRouter } from './modules/account/account.routes';
+import { AdminController } from './modules/admin/admin.controller';
+import { createAdminRouter } from './modules/admin/admin.routes';
 import { createContainer, type Container } from './container';
 import { createDocsRouter } from './modules/docs/docs.routes';
 import { MeController } from './modules/me/me.controller';
 import { createMeRouter } from './modules/me/me.routes';
 import { RegisterController } from './modules/register/register.controller';
+import { RegisterProfessionalController } from './modules/registerProfessional/registerProfessional.controller';
+import { createRegisterProfessionalRouter } from './modules/registerProfessional/registerProfessional.routes';
 import { createRegisterRouter } from './modules/register/register.routes';
+import { CohortController } from './modules/professional/cohort.controller';
+import { PatientsController } from './modules/professional/patients.controller';
+import { createCohortRouter, createPatientsRouter } from './modules/professional/professional.routes';
+import { GrantsController } from './modules/sharing/grants.controller';
+import { createGrantsRouter } from './modules/sharing/grants.routes';
 import { createProxyRoute } from './routes/routingTable';
-import { registerLimiter, strictAuthLimiter } from './middleware/rateLimiters';
+import { redeemLimiter, registerLimiter, strictAuthLimiter } from './middleware/rateLimiters';
 import { upstreamClassifier } from './middleware/upstreamClassifier';
 
 export interface BuildAppOptions {
@@ -29,6 +38,25 @@ export interface BuildAppOptions {
   /** Wired dependencies. Defaults to the production composition root. */
   container?: Container;
 }
+
+/**
+ * Pure proxies behind the end-user token: prefix → the service that owns it.
+ * The clinical prefixes live in glucose (consent and the professional's
+ * portfolio included); the dashboard layout is identity-side data and lives in
+ * auth. A composed route of the same prefix is mounted before this loop, so the
+ * proxy only sees what no composition claimed.
+ */
+const AUTHENTICATED_PROXIES: Readonly<Record<string, 'glucose' | 'auth'>> = {
+  readings: 'glucose',
+  carbs: 'glucose',
+  insulin: 'glucose',
+  alerts: 'glucose',
+  settings: 'glucose',
+  dashboard: 'glucose',
+  sharing: 'glucose',
+  professional: 'glucose',
+  preferences: 'auth',
+};
 
 const errorHandler = createErrorHandler([upstreamClassifier, appErrorClassifier, httpContractClassifier]);
 
@@ -44,11 +72,12 @@ const noopHealthCheck: HealthCheckable = {
  * drive it in-process, the same as the other two services.
  *
  * Unlike them, `express.json()` is never mounted globally here: everything
- * under `/api/v1/{auth,readings,carbs,insulin,alerts,settings,dashboard}` is a pure
- * proxy, and a global body parser would consume the request stream before
+ * under `/api/v1/{auth,readings,carbs,insulin,alerts,settings,dashboard,sharing,professional,preferences}`
+ * is a pure proxy, and a global body parser would consume the request stream before
  * `http-proxy-middleware` can forward it — silently sending an empty body
- * downstream on every POST. The three composition routers below
- * (`/api/v1/auth/register`, `/api/v1/me`, `/api/v1/account`) each mount their
+ * downstream on every POST. The composition routers below
+ * (`/api/v1/auth/register`, `/api/v1/auth/register/professional`, `/api/v1/me`,
+ * `/api/v1/account`) each mount their
  * own `express.json()`, scoped to just that router.
  */
 export function buildApp(options: BuildAppOptions = {}): Express {
@@ -63,12 +92,27 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   // page resolves against `/api/v1/docs/`, hence the trailing-slash redirect Express adds.
   app.use('/api/v1/docs', createDocsRouter());
 
-  app.use(corsOrigins.length > 0 ? cors({ origin: corsOrigins }) : cors());
+  // The browser hides every response header outside the safelist from the web's
+  // scripts. `Retry-After` (429 wait) and `X-Degraded` (partial composition) are
+  // read by the dashboard, so they are exposed explicitly (ACC-08, PRO-15).
+  const corsOptions = { exposedHeaders: ['Retry-After', 'X-Degraded'] };
+  app.use(cors(corsOrigins.length > 0 ? { ...corsOptions, origin: corsOrigins } : corsOptions));
   if (requestLogging) app.use(morgan('dev'));
 
   // Composition, mounted before the generic auth proxy: a router only
   // handles the methods it declares (POST '/' here), so anything else under
   // /api/v1/auth/register falls through to the proxy below unchanged.
+  //
+  // The professional registration is mounted first, on its own longer path:
+  // it must never be reachable through the patient router, whose saga would
+  // create a Patient row for a professional.
+  app.use(
+    '/api/v1/auth/register/professional',
+    createRegisterProfessionalRouter(
+      new RegisterProfessionalController(container.registerProfessionalSaga),
+      registerLimiter(),
+    ),
+  );
   app.use(
     '/api/v1/auth/register',
     createRegisterRouter(new RegisterController(container.registerSaga), registerLimiter()),
@@ -98,11 +142,43 @@ export function buildApp(options: BuildAppOptions = {}): Express {
     createAccountRouter(new AccountController(container.authClient, container.glucoseClient), container.authenticate),
   );
 
-  for (const prefix of ['readings', 'carbs', 'insulin', 'alerts', 'settings', 'dashboard']) {
+  // Per-user limit on invite redemption (CON-06). After `authenticate`, because
+  // the key is the user id; before the `sharing` proxy below, which forwards the
+  // request once the limiter lets it through. POST only: nothing else under
+  // `sharing` is a guessing surface.
+  app.post('/api/v1/sharing/redeem', container.authenticate, redeemLimiter());
+
+  // The patient's grants, composed with the professionals' names (CON-08).
+  // Mounted before the `sharing` proxy for the same reason as the routers above.
+  app.use(
+    '/api/v1/sharing/grants',
+    createGrantsRouter(new GrantsController(container.authClient, container.glucoseClient), container.authenticate),
+  );
+
+  // The professional's portfolio and its aggregates, composed with the patients'
+  // names (PRO-03, PRO-10, PRO-15). Mounted before the `professional` proxy, which keeps everything
+  // else under that prefix, the single-patient summary included.
+  app.use(
+    '/api/v1/professional/patients',
+    createPatientsRouter(new PatientsController(container.authClient, container.glucoseClient), container.authenticate),
+  );
+  app.use(
+    '/api/v1/professional/cohort/summary',
+    createCohortRouter(new CohortController(container.authClient, container.glucoseClient), container.authenticate),
+  );
+
+  // The administrator's overview and account list, composed over both services
+  // (ADM-01, ADM-04). No proxy prefix exists for `admin`, so this is the only way in.
+  app.use(
+    '/api/v1/admin',
+    createAdminRouter(new AdminController(container.authClient, container.glucoseClient), container.authenticate),
+  );
+
+  for (const [prefix, service] of Object.entries(AUTHENTICATED_PROXIES)) {
     app.use(
       `/api/v1/${prefix}`,
       container.authenticate,
-      createProxyRoute(prefix, 'glucose', container.registry),
+      createProxyRoute(prefix, service, container.registry),
     );
   }
 

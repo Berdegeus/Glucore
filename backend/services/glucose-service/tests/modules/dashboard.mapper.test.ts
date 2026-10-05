@@ -2,11 +2,14 @@ import { Prisma } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
 import {
+  mapAgpRow,
   mapAlertsByTypeRow,
   mapDailyBucketRow,
   mapExcursionRow,
+  mapHeatCellRow,
   mapInsulinByTypeRow,
   mapPeriodMetricsRow,
+  mapZonesRow,
   toNullableNumber,
   toNumber,
 } from '../../src/modules/dashboard/dashboard.mapper';
@@ -73,6 +76,8 @@ describe('mapDailyBucketRow', () => {
       readings_count: 288n,
       time_in_range_percent: new Prisma.Decimal('75.00'),
       moving_avg_7d: null,
+      carbs_grams: new Prisma.Decimal('75.5'),
+      insulin_units: 12,
     });
     expect(dto).toEqual({
       day: '2026-08-05',
@@ -82,6 +87,33 @@ describe('mapDailyBucketRow', () => {
       readingsCount: 288,
       timeInRangePercent: 75,
       movingAvg7d: null,
+      carbsGrams: 75.5,
+      insulinUnits: 12,
+    });
+  });
+
+  it('keeps the glucose fields null and counts zero for a day that only has diary entries', () => {
+    const dto = mapDailyBucketRow({
+      day: new Date('2026-08-06T00:00:00.000Z'),
+      avg_glucose: null,
+      min_glucose: null,
+      max_glucose: null,
+      readings_count: 0n,
+      time_in_range_percent: null,
+      moving_avg_7d: null,
+      carbs_grams: 30,
+      insulin_units: null,
+    });
+    expect(dto).toEqual({
+      day: '2026-08-06',
+      avgGlucose: null,
+      minGlucose: null,
+      maxGlucose: null,
+      readingsCount: 0,
+      timeInRangePercent: null,
+      movingAvg7d: null,
+      carbsGrams: 30,
+      insulinUnits: 0,
     });
   });
 });
@@ -123,5 +155,58 @@ describe('mapInsulinByTypeRow / mapAlertsByTypeRow — Prisma groupBy aggregates
       alertType: 'HYPO_RISK',
       count: 7,
     });
+  });
+});
+
+describe('mapZonesRow', () => {
+  it('coerces Decimal percents into numbers per zone', () => {
+    expect(
+      mapZonesRow({
+        very_low_percent: new Prisma.Decimal('12.50'),
+        low_percent: new Prisma.Decimal('25.00'),
+        target_percent: '25.00',
+        high_percent: new Prisma.Decimal('25.00'),
+        very_high_percent: new Prisma.Decimal('12.50'),
+      }),
+    ).toEqual({ veryLow: 12.5, low: 25, target: 25, high: 25, veryHigh: 12.5 });
+  });
+
+  it('turns the NULL percents of an empty period, or a missing row, into zeros', () => {
+    const zeros = { veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 };
+    const nulls = {
+      very_low_percent: null,
+      low_percent: null,
+      target_percent: null,
+      high_percent: null,
+      very_high_percent: null,
+    };
+
+    expect(mapZonesRow(nulls)).toEqual(zeros);
+    expect(mapZonesRow(undefined)).toEqual(zeros);
+  });
+});
+
+describe('mapAgpRow', () => {
+  it('names the five percentiles in order, rounds float noise and coerces the bigint count', () => {
+    expect(
+      mapAgpRow({
+        hour: 8,
+        percentiles: [102, 110, 100.80000000000001, 130.005, '138'],
+        readings_count: 5n,
+      }),
+    ).toEqual({ hour: 8, p5: 102, p25: 110, p50: 100.8, p75: 130.01, p95: 138, count: 5 });
+  });
+});
+
+describe('mapHeatCellRow', () => {
+  it('coerces the Decimal mean, rounds it to two decimals and coerces the bigint count', () => {
+    expect(
+      mapHeatCellRow({
+        day_of_week: 6,
+        hour: 22,
+        avg_glucose: new Prisma.Decimal('140.33333333333333'),
+        readings_count: 3n,
+      }),
+    ).toEqual({ dayOfWeek: 6, hour: 22, avgGlucose: 140.33, count: 3 });
   });
 });

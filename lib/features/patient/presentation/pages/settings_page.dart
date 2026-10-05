@@ -4,7 +4,10 @@ import 'package:glucore/l10n/l10n.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../../core/theme/theme_cubit.dart';
+import '../../../../injection_container.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../sharing/presentation/cubit/sharing_cubit.dart';
+import '../../../sharing/presentation/pages/sharing_page.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
@@ -84,6 +87,23 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           const _ThemeSection(),
+          const SizedBox(height: 16),
+          GlucoreSectionCard(
+            rows: [
+              GlucoreSectionRow(
+                label: l10n.sharingTitle,
+                value: '',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => BlocProvider<SharingCubit>(
+                      create: (_) => sl<SharingCubit>(),
+                      child: const SharingPage(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 32),
           OutlinedButton(
             style: OutlinedButton.styleFrom(

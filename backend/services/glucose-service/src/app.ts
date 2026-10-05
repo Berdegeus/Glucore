@@ -5,8 +5,10 @@ import { createHealthRouter, type HealthCheckable } from '@glucore/shared';
 import { createAlertsRouter } from './modules/alerts/alerts.routes';
 import { createCarbsRouter } from './modules/carbs/carbs.routes';
 import { createDashboardRouter } from './modules/dashboard/dashboard.routes';
+import { createProfessionalRouter } from './modules/professional/professional.routes';
 import { createInsulinRouter } from './modules/insulin/insulin.routes';
 import { createReadingsRouter } from './modules/readings/readings.routes';
+import { createSharingRouter } from './modules/sharing/sharing.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
 import { prismaErrorHandler } from './middleware/prismaError';
 import { createContainer, type Container } from './container';
@@ -58,7 +60,13 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use('/alerts', createAlertsRouter(container.alerts));
   app.use('/settings', createSettingsRouter(container.settings));
   app.use('/dashboard', createDashboardRouter(container.dashboard));
+  app.use('/sharing', createSharingRouter(container.sharing));
+  app.use('/professional', createProfessionalRouter(container.professional));
+  // Ahead of the two below: they gate every `/internal` path on the token alone,
+  // and `/internal/admin` also needs the role check.
+  app.use('/internal/admin', container.internalAdminRouter);
   app.use('/internal', container.internalPatientRouter);
+  app.use('/internal', container.internalProfessionalsRouter);
 
   // Classifies known failures into `{ error, code }`; the handler below is the
   // last-resort net for anything it delegates (response already started).

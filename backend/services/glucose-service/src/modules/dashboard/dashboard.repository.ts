@@ -1,22 +1,31 @@
 import type { PrismaClient } from '@prisma/client';
 
 import {
+  mapAgpRow,
   mapAlertsByTypeRow,
   mapDailyBucketRow,
   mapExcursionRow,
+  mapHeatCellRow,
   mapInsulinByTypeRow,
   mapPeriodMetricsRow,
+  mapZonesRow,
+  type AgpPointDto,
   type AlertsByTypeDto,
   type DailyBucketDto,
   type DashboardTotals,
   type ExcursionDto,
+  type HeatCellDto,
   type InsulinByTypeDto,
   type PeriodMetricsDto,
+  type RawAgpRow,
   type RawAlertsByTypeRow,
   type RawDailyBucketRow,
   type RawExcursionRow,
+  type RawHeatCellRow,
   type RawInsulinByTypeRow,
   type RawPeriodMetricsRow,
+  type RawZonesRow,
+  type ZoneDistributionDto,
 } from './dashboard.mapper';
 
 /** A closed-open range: `[from, toExclusive)`. Callers add a day to an inclusive calendar "to". */
@@ -26,6 +35,11 @@ export interface DateRange {
 }
 
 export interface IDashboardRepository {
+  /**
+   * The `[from, toExclusive)` window, in UTC, covering the calendar days
+   * `fromDate`..`toDate` (both inclusive) as lived in `tz`.
+   */
+  resolveBounds(fromDate: Date, toDate: Date, tz: string): Promise<DateRange>;
   /** The patient's configured thresholds, if any — `AlertThresholdConfig` is an optional relation. */
   getThresholdConfig(
     patientId: string,
@@ -38,14 +52,61 @@ export interface IDashboardRepository {
   getAlertsByType(patientId: string, range: DateRange): Promise<AlertsByTypeDto[]>;
   /** `glucose_metrics()` stored procedure (c) — GMI/CV/TIR for the whole period. */
   getPeriodMetrics(patientId: string, range: DateRange, low: number, high: number): Promise<PeriodMetricsDto>;
-  /** SQL cru, Q1 (b) — `date_trunc` + 7-day moving average window function. */
-  getDailyBuckets(patientId: string, range: DateRange, low: number, high: number): Promise<DailyBucketDto[]>;
+  /** `glucose_zones()` stored function (c) — the five CGM zones, as percentages summing to 100. */
+  getZoneDistribution(
+    patientId: string,
+    range: DateRange,
+    low: number,
+    high: number,
+  ): Promise<ZoneDistributionDto>;
+  /**
+   * ISO timestamp of the patient's most recent reading, `null` if there is none.
+   * Deliberately not bounded by the requested period: "when did the app last sync"
+   * is about the patient, not about the window being charted.
+   */
+  getLastReadingAt(patientId: string): Promise<string | null>;
+  /** SQL cru (b) — `percentile_cont` P5/P25/P50/P75/P95 per local hour; hours without readings are absent. */
+  getAgp(patientId: string, range: DateRange, tz: string): Promise<AgpPointDto[]>;
+  /** SQL cru (b) — mean and count per local weekday (0 = Sunday) × local hour; empty cells are absent. */
+  getHeatmap(patientId: string, range: DateRange, tz: string): Promise<HeatCellDto[]>;
+  /**
+   * SQL cru, Q1 (b) — `date_trunc` in `tz` + 7-day moving average window function,
+   * full-outer-joined with the daily carb and insulin sums so a day that has only
+   * diary entries still shows up (glucose fields `null`, `readingsCount` 0).
+   */
+  getDailyBuckets(
+    patientId: string,
+    range: DateRange,
+    low: number,
+    high: number,
+    tz: string,
+  ): Promise<DailyBucketDto[]>;
   /** SQL cru, Q2 (b) — gaps-and-islands over sustained hypo/hyper readings. */
   getExcursions(patientId: string, range: DateRange, low: number, high: number): Promise<ExcursionDto[]>;
 }
 
+/** `YYYY-MM-DD` of a UTC-midnight `Date` — the calendar day the caller meant. */
+function isoDay(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 export class PrismaDashboardRepository implements IDashboardRepository {
   constructor(private readonly prisma: PrismaClient) {}
+
+  async resolveBounds(fromDate: Date, toDate: Date, tz: string): Promise<DateRange> {
+    // The calendar day is read as a `date` and turned into local midnight of
+    // `tz` by the first `AT TIME ZONE`; the second renders that instant as the
+    // naive UTC wall clock `recordedAt` is stored in. Doing the "+ 1 day" on the
+    // date, before localizing, is what keeps a daylight-saving day 23 or 25 hours
+    // long instead of a flat 24. With `tz = 'UTC'` both steps are identities,
+    // so the answer is the same midnight-to-midnight window the endpoint always used.
+    const rows = await this.prisma.$queryRaw<Array<{ from_utc: Date; to_exclusive_utc: Date }>>`
+      SELECT
+        ((${isoDay(fromDate)}::date)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC' AS from_utc,
+        (((${isoDay(toDate)}::date + 1)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC') AS to_exclusive_utc
+    `;
+    return { from: rows[0].from_utc, toExclusive: rows[0].to_exclusive_utc };
+  }
 
   async getThresholdConfig(
     patientId: string,
@@ -53,6 +114,15 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     const config = await this.prisma.alertThresholdConfig.findUnique({ where: { patientId } });
     if (!config) return null;
     return { lowGlucoseMgDl: config.lowGlucoseMgDl, highGlucoseMgDl: config.highGlucoseMgDl };
+  }
+
+  async getLastReadingAt(patientId: string): Promise<string | null> {
+    // `MAX("recordedAt")` for one patient — served by the (patientId, recordedAt) index.
+    const { _max } = await this.prisma.glucoseReading.aggregate({
+      where: { patientId },
+      _max: { recordedAt: true },
+    });
+    return _max.recordedAt?.toISOString() ?? null;
   }
 
   async getTotals(patientId: string, { from, toExclusive }: DateRange): Promise<DashboardTotals> {
@@ -114,40 +184,141 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     return mapPeriodMetricsRow(rows[0]);
   }
 
+  async getZoneDistribution(
+    patientId: string,
+    { from, toExclusive }: DateRange,
+    low: number,
+    high: number,
+  ): Promise<ZoneDistributionDto> {
+    // Same `AT TIME ZONE 'UTC'` binding as `getPeriodMetrics`; see the comment there.
+    const rows = await this.prisma.$queryRaw<RawZonesRow[]>`
+      SELECT * FROM glucose_zones(
+        ${patientId}::uuid,
+        ${from} AT TIME ZONE 'UTC',
+        ${toExclusive} AT TIME ZONE 'UTC',
+        ${low}::integer,
+        ${high}::integer
+      )
+    `;
+    return mapZonesRow(rows[0]);
+  }
+
+  async getAgp(patientId: string, { from, toExclusive }: DateRange, tz: string): Promise<AgpPointDto[]> {
+    // Local hour: `recordedAt` is read as UTC wall clock first (-> timestamptz),
+    // then shown as `tz` wall clock (-> timestamp). See `getPeriodMetrics` for why
+    // the range bounds carry `AT TIME ZONE 'UTC'` too.
+    const rows = await this.prisma.$queryRaw<RawAgpRow[]>`
+      SELECT
+        EXTRACT(HOUR FROM ("recordedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz})::integer AS hour,
+        percentile_cont(ARRAY[0.05, 0.25, 0.5, 0.75, 0.95]::float8[])
+          WITHIN GROUP (ORDER BY "valueMgDl"::float8) AS percentiles,
+        COUNT(*) AS readings_count
+      FROM "GlucoseReading"
+      WHERE "patientId" = ${patientId}::uuid
+        AND "recordedAt" >= (${from} AT TIME ZONE 'UTC')
+        AND "recordedAt" < (${toExclusive} AT TIME ZONE 'UTC')
+      GROUP BY 1
+      ORDER BY 1
+    `;
+    return rows.map(mapAgpRow);
+  }
+
+  async getHeatmap(patientId: string, { from, toExclusive }: DateRange, tz: string): Promise<HeatCellDto[]> {
+    // The local wall clock is computed once in a subquery so weekday and hour
+    // come from the same instant; see `getAgp` for the two-step conversion.
+    const rows = await this.prisma.$queryRaw<RawHeatCellRow[]>`
+      SELECT
+        EXTRACT(DOW FROM local_at)::integer AS day_of_week,
+        EXTRACT(HOUR FROM local_at)::integer AS hour,
+        AVG("valueMgDl") AS avg_glucose,
+        COUNT(*) AS readings_count
+      FROM (
+        SELECT "valueMgDl", ("recordedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz} AS local_at
+        FROM "GlucoseReading"
+        WHERE "patientId" = ${patientId}::uuid
+          AND "recordedAt" >= (${from} AT TIME ZONE 'UTC')
+          AND "recordedAt" < (${toExclusive} AT TIME ZONE 'UTC')
+      ) AS readings
+      GROUP BY 1, 2
+      ORDER BY 1, 2
+    `;
+    return rows.map(mapHeatCellRow);
+  }
+
   async getDailyBuckets(
     patientId: string,
     { from, toExclusive }: DateRange,
     low: number,
     high: number,
+    tz: string,
   ): Promise<DailyBucketDto[]> {
+    // Each event table is read as UTC wall clock first and then shown as `tz`
+    // wall clock before `date_trunc`, so all three aggregates cut the same local
+    // days (see `getAgp`). The moving average is computed inside `glucose_days`,
+    // before the join: diary-only days must not take a slot in its 6-row window,
+    // or the average would reach back fewer glucose days than it always did.
     const rows = await this.prisma.$queryRaw<RawDailyBucketRow[]>`
-      WITH days AS (
+      WITH glucose_days AS (
         SELECT
-          date_trunc('day', "recordedAt") AS day,
-          AVG("valueMgDl") AS avg_glucose,
-          MIN("valueMgDl") AS min_glucose,
-          MAX("valueMgDl") AS max_glucose,
-          COUNT(*) AS readings_count,
-          COUNT(*) FILTER (WHERE "valueMgDl" BETWEEN ${low}::integer AND ${high}::integer) AS in_range_count
-        FROM "GlucoseReading"
+          day,
+          avg_glucose,
+          min_glucose,
+          max_glucose,
+          readings_count,
+          CASE WHEN readings_count > 0
+            THEN ROUND(100.0 * in_range_count / readings_count, 2)
+            ELSE NULL
+          END AS time_in_range_percent,
+          AVG(avg_glucose) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS moving_avg_7d
+        FROM (
+          SELECT
+            date_trunc('day', ("recordedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS day,
+            AVG("valueMgDl") AS avg_glucose,
+            MIN("valueMgDl") AS min_glucose,
+            MAX("valueMgDl") AS max_glucose,
+            COUNT(*) AS readings_count,
+            COUNT(*) FILTER (WHERE "valueMgDl" BETWEEN ${low}::integer AND ${high}::integer) AS in_range_count
+          FROM "GlucoseReading"
+          WHERE "patientId" = ${patientId}::uuid
+            AND "recordedAt" >= (${from} AT TIME ZONE 'UTC')
+            AND "recordedAt" < (${toExclusive} AT TIME ZONE 'UTC')
+          GROUP BY 1
+        ) AS per_day
+      ),
+      carb_days AS (
+        SELECT
+          date_trunc('day', ("eventAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS day,
+          SUM("carbsGrams")::float8 AS carbs_grams
+        FROM "CarbEvent"
         WHERE "patientId" = ${patientId}::uuid
-          AND "recordedAt" >= (${from} AT TIME ZONE 'UTC')
-          AND "recordedAt" < (${toExclusive} AT TIME ZONE 'UTC')
+          AND "eventAt" >= (${from} AT TIME ZONE 'UTC')
+          AND "eventAt" < (${toExclusive} AT TIME ZONE 'UTC')
+        GROUP BY 1
+      ),
+      insulin_days AS (
+        SELECT
+          date_trunc('day', ("eventAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS day,
+          SUM("doseUnits")::float8 AS insulin_units
+        FROM "InsulinEvent"
+        WHERE "patientId" = ${patientId}::uuid
+          AND "eventAt" >= (${from} AT TIME ZONE 'UTC')
+          AND "eventAt" < (${toExclusive} AT TIME ZONE 'UTC')
         GROUP BY 1
       )
       SELECT
-        day,
-        avg_glucose,
-        min_glucose,
-        max_glucose,
-        readings_count,
-        CASE WHEN readings_count > 0
-          THEN ROUND(100.0 * in_range_count / readings_count, 2)
-          ELSE NULL
-        END AS time_in_range_percent,
-        AVG(avg_glucose) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS moving_avg_7d
-      FROM days
-      ORDER BY day
+        COALESCE(g.day, c.day, i.day) AS day,
+        g.avg_glucose,
+        g.min_glucose,
+        g.max_glucose,
+        COALESCE(g.readings_count, 0) AS readings_count,
+        g.time_in_range_percent,
+        g.moving_avg_7d,
+        COALESCE(c.carbs_grams, 0) AS carbs_grams,
+        COALESCE(i.insulin_units, 0) AS insulin_units
+      FROM glucose_days g
+      FULL OUTER JOIN carb_days c ON c.day = g.day
+      FULL OUTER JOIN insulin_days i ON i.day = COALESCE(g.day, c.day)
+      ORDER BY 1
     `;
     return rows.map(mapDailyBucketRow);
   }

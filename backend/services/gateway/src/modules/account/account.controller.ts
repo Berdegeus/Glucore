@@ -11,14 +11,19 @@ export class AccountController {
   ) {}
 
   /**
-   * Glucose first, then auth: a failure here leaves an account with no data
-   * (recoverable — the row is gone, nothing points at it) rather than
-   * clinical data with no owner. Both deletes are idempotent, so a retry
-   * after a partial failure is safe either way.
+   * Clinical profile first (by role), then auth: a failure here leaves an
+   * account with no data (recoverable — the row is gone, nothing points at it)
+   * rather than clinical data with no owner. Every delete is idempotent, so a
+   * retry after a partial failure is safe either way. An administrator has no
+   * clinical profile in glucose-service, so only the account goes.
    */
   remove = async (req: GatewayRequest, res: Response): Promise<void> => {
     const userId = req.userId as string;
-    await this.glucoseClient.deletePatient(userId);
+    const role = req.userRole!;
+
+    if (role === 'PATIENT') await this.glucoseClient.deletePatient(userId);
+    else if (role === 'HEALTH_PROFESSIONAL') await this.glucoseClient.deleteProfessional(userId);
+
     await this.authClient.deleteAccount(userId);
     res.status(204).send();
   };

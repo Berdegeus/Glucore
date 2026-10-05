@@ -14,7 +14,7 @@ import { recordAudit } from '../../lib/audit';
 import type { SessionsService } from '../sessions/sessions.service';
 
 import { toAccountDto, type AccountDto } from './accounts.mapper';
-import type { AccountRepository } from './accounts.repository';
+import type { AccountRepository, CreatableRole } from './accounts.repository';
 import type { RegisterInput, UpdateAccountInput } from './accounts.schema';
 
 export interface RegisterResult {
@@ -50,6 +50,26 @@ export class AccountsService {
    * design always assumed. Registering does not silently fail; it stores less.
    */
   async register(input: RegisterInput, audit: AuditContext): Promise<RegisterResult> {
+    return this.createAccount(input, 'PATIENT', 'REGISTER', audit);
+  }
+
+  /**
+   * Same account creation as `register`, for a health professional. The role is
+   * an argument of the service, never a field of the input (REG-06), and the
+   * token it returns lives an hour instead of thirty days (see `jwt.ts`). The
+   * professional profile itself is glucose-service's; the gateway saga calls
+   * that leg next and removes this account if it fails (REG-04).
+   */
+  registerProfessional(input: RegisterInput, audit: AuditContext): Promise<RegisterResult> {
+    return this.createAccount(input, 'HEALTH_PROFESSIONAL', 'REGISTER_PROFESSIONAL', audit);
+  }
+
+  private async createAccount(
+    input: RegisterInput,
+    role: CreatableRole,
+    auditAction: string,
+    audit: AuditContext,
+  ): Promise<RegisterResult> {
     // Throws WeakPasswordError, which the error chain answers as 400
     // WEAK_PASSWORD. Checked before touching the database so a rejected
     // password costs nothing.
@@ -65,6 +85,7 @@ export class AccountsService {
       fullName: input.fullName,
       phone: input.phone,
       passwordHash,
+      role,
     });
 
     await this.sessions.open(user.id, audit.userAgent ?? null);
@@ -73,14 +94,14 @@ export class AccountsService {
     await recordAudit({
       userId: user.id,
       entity: 'User',
-      action: 'REGISTER',
+      action: auditAction,
       entityId: user.id,
       metadata: { email: input.email },
       ...audit,
     });
 
     return {
-      token: signAccessToken({ sub: user.id, role: user.role as 'PATIENT' }, getJwtSecret()),
+      token: signAccessToken({ sub: user.id, role }, getJwtSecret()),
       userId: user.id,
     };
   }
@@ -140,6 +161,16 @@ export class AccountsService {
    */
   async deleteAccount(userId: string): Promise<void> {
     await this.accounts.delete(userId);
+  }
+
+  /**
+   * Display names for other services to show next to an id (the patient's list
+   * of professionals). Deliberately id and name only: no email, phone or role
+   * leaves through this door.
+   */
+  async lookupNames(ids: string[]): Promise<{ id: string; fullName: string }[]> {
+    if (ids.length === 0) return [];
+    return this.accounts.findNamesByIds(ids);
   }
 
   private async assertCurrentPassword(

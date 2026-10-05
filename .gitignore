@@ -91,3 +91,10 @@ backend/services/*/.env.test
 # node_modules/.prisma/client is shared and the two services would overwrite
 # each other there — see services/auth-service/prisma/schema.prisma.
 backend/services/*/generated/
+
+# Web dashboard (web/)
+web/node_modules/
+web/dist/
+web/coverage/
+web/.env
+web/.env.local

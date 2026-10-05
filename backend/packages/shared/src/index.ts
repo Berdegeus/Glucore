@@ -15,6 +15,7 @@ export {
   createRequireInternalAuth,
   type InternalAuthRequest,
 } from './auth/requireInternalAuth';
+export { requireInternalRole } from './auth/requireInternalRole';
 export { type ServiceRegistry } from './discovery/ServiceRegistry';
 export { EnvServiceRegistry } from './discovery/EnvServiceRegistry';
 export { ConsulServiceRegistry } from './discovery/ConsulServiceRegistry';
@@ -34,6 +35,27 @@ export {
   INVALID_PAGINATION,
   type PageQuery,
 } from './util/pageQuery';
+export {
+  ADMIN_RANGE_DAYS,
+  DEFAULT_ADMIN_RANGE_DAYS,
+  parseAdminRangeDays,
+} from './util/adminRange';
+export {
+  fillDayCounts,
+  utcDayKey,
+  utcDayStart,
+  utcPeriodDayKeys,
+  utcPeriodStart,
+  utcPeriodWeekKeys,
+  utcWeekStart,
+  type DayCount,
+} from './util/utcDays';
+export {
+  MAX_LAYOUT_WIDGETS,
+  WIDGET_IDS_BY_ROLE,
+  WIDGET_SIZES,
+  type WidgetSize,
+} from './dashboard/widgetCatalog';
 export {
   auditRequestContext,
   recordAudit,

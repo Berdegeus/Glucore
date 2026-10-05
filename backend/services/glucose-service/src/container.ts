@@ -4,6 +4,10 @@ import type { Router } from 'express';
 
 import { getInternalJwtSecret } from './lib/env';
 import { prisma as defaultPrisma } from './lib/prisma';
+import { AdminController } from './modules/admin/admin.controller';
+import { PrismaAdminRepository } from './modules/admin/admin.repository';
+import { createInternalAdminRouter } from './modules/admin/admin.routes';
+import { AdminService } from './modules/admin/admin.service';
 import { AlertsController } from './modules/alerts/alerts.controller';
 import { PrismaAlertRepository } from './modules/alerts/alerts.repository';
 import { AlertsService } from './modules/alerts/alerts.service';
@@ -13,6 +17,7 @@ import { CarbsService } from './modules/carbs/carbs.service';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { PrismaDashboardRepository } from './modules/dashboard/dashboard.repository';
 import { DashboardService } from './modules/dashboard/dashboard.service';
+import { prismaTimeZoneLoader, TimeZoneValidator } from './modules/dashboard/dashboard.timezones';
 import { InsulinController } from './modules/insulin/insulin.controller';
 import { PrismaInsulinRepository } from './modules/insulin/insulin.repository';
 import { InsulinService } from './modules/insulin/insulin.service';
@@ -20,6 +25,17 @@ import { PatientController } from './modules/patient/patient.controller';
 import { createInternalPatientRouter } from './modules/patient/patient.routes';
 import { PrismaPatientRepository } from './modules/patient/patient.repository';
 import { PatientService } from './modules/patient/patient.service';
+import { ProfessionalController } from './modules/professional/professional.controller';
+import { PrismaCohortRepository } from './modules/professional/professional.repository';
+import { ProfessionalService } from './modules/professional/professional.service';
+import { ProfessionalsController } from './modules/professionals/professionals.controller';
+import { PrismaProfessionalRepository } from './modules/professionals/professionals.repository';
+import { createInternalProfessionalsRouter } from './modules/professionals/professionals.routes';
+import { ProfessionalsService } from './modules/professionals/professionals.service';
+import { GrantPolicy } from './modules/sharing/grantPolicy';
+import { SharingController } from './modules/sharing/sharing.controller';
+import { PrismaSharingRepository } from './modules/sharing/sharing.repository';
+import { SharingService } from './modules/sharing/sharing.service';
 import { ReadingsController } from './modules/readings/readings.controller';
 import { PrismaReadingRepository } from './modules/readings/readings.repository';
 import { SettingsController } from './modules/settings/settings.controller';
@@ -40,7 +56,13 @@ export interface Container {
   alerts: AlertsController;
   settings: SettingsController;
   dashboard: DashboardController;
+  sharing: SharingController;
+  professional: ProfessionalController;
+  /** Read by the professional module: every patient read goes through `assertActive` (PRO-12). */
+  grantPolicy: GrantPolicy;
   internalPatientRouter: Router;
+  internalProfessionalsRouter: Router;
+  internalAdminRouter: Router;
 }
 
 /**
@@ -56,6 +78,11 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
   const recordAudit = (entry: AuditEntry): Promise<void> => recordAuditWith(entry, prisma);
 
   const patients = new PrismaPatientRepository(prisma);
+  const sharing = new PrismaSharingRepository(prisma);
+  const dashboardRepository = new PrismaDashboardRepository(prisma);
+  const timeZones = new TimeZoneValidator(prismaTimeZoneLoader(prisma));
+  const dashboardService = new DashboardService(dashboardRepository, patients, timeZones);
+  const grantPolicy = new GrantPolicy(sharing);
 
   return {
     readings: new ReadingsController(
@@ -73,11 +100,29 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
     settings: new SettingsController(
       new SettingsService(new PrismaSettingsRepository(prisma), patients, recordAudit),
     ),
-    dashboard: new DashboardController(
-      new DashboardService(new PrismaDashboardRepository(prisma), patients),
+    dashboard: new DashboardController(dashboardService),
+    sharing: new SharingController(new SharingService(sharing, patients, recordAudit)),
+    professional: new ProfessionalController(
+      new ProfessionalService(
+        new PrismaCohortRepository(prisma),
+        dashboardRepository,
+        dashboardService,
+        grantPolicy,
+        timeZones,
+        recordAudit,
+      ),
     ),
+    grantPolicy,
     internalPatientRouter: createInternalPatientRouter(
       new PatientController(new PatientService(patients, recordAudit)),
+      createRequireInternalAuth(getInternalJwtSecret),
+    ),
+    internalProfessionalsRouter: createInternalProfessionalsRouter(
+      new ProfessionalsController(new ProfessionalsService(new PrismaProfessionalRepository(prisma))),
+      createRequireInternalAuth(getInternalJwtSecret),
+    ),
+    internalAdminRouter: createInternalAdminRouter(
+      new AdminController(new AdminService(new PrismaAdminRepository(prisma))),
       createRequireInternalAuth(getInternalJwtSecret),
     ),
   };

@@ -8,6 +8,7 @@ import { buildApp } from '../../src/app';
 import { AuthClient } from '../../src/clients/authClient';
 import { GlucoseClient } from '../../src/clients/glucoseClient';
 import { createAuthenticate } from '../../src/middleware/authenticate';
+import { RegisterProfessionalSaga } from '../../src/modules/registerProfessional/registerProfessional.saga';
 import { RegisterSaga } from '../../src/modules/register/register.saga';
 import { TEST_INTERNAL_JWT_SECRET, TEST_JWT_SECRET } from '../helpers/testEnv';
 
@@ -21,6 +22,7 @@ const app = buildApp({
     authClient,
     glucoseClient,
     registerSaga: new RegisterSaga(authClient, glucoseClient),
+    registerProfessionalSaga: new RegisterProfessionalSaga(authClient, glucoseClient),
   },
 });
 

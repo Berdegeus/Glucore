@@ -19,6 +19,7 @@
 **Contexto**: O TTL do JWT é de 30 dias (item 5.2 ficou fora de escopo), então um claim de papel dentro do token ficaria obsoleto por até um mês.
 **Decisão**: `requireRole` resolve `user.role` via Prisma em cada requisição protegida.
 **Consequência**: Uma query extra nas rotas de dados; rebaixamento de papel vale imediatamente.
+**Status**: superseded by AD-012
 
 ### AD-004 — Auditoria é best-effort
 **Data**: 2026-08-10
@@ -70,36 +71,52 @@
 **Decisão**: Decisão explícita do usuário entre três ordens possíveis (esta primeiro, a Fase 3 primeiro, ou reconciliar as duas): **reconciliar num branch só e abrir uma PR só**. Base `feat/arch-phases-3-5`, merge de `refactor/auth-service` por cima. O `auth.test.ts` e o `db.ts` antigo saíram pelo merge automático (a Fase 3 os removeu e esta branch não os tocou); restou converter à mão as duas chamadas de `registerUser` nos casos novos de alerts para `signedInPatient()`, que semeia o `Patient` e assina o token em vez de passar por uma rota que não existe mais.
 **Consequência**: **382 testes de backend** (357 desta branch + a suíte do `auth-service`, menos os 44 de `/auth` que deixaram de rodar contra o `glucose-service`), cobertura 96,23% statements / 91,52% branches, acima do limiar de 90%. 345 testes Flutter e `flutter analyze` limpos, sem regressão. O fix de portabilidade Windows do `globalSetup.ts` (`shell: true`, ver `AD-010`) foi replicado no `globalSetup.ts` do `auth-service`, que nasceu como cópia do anterior e teria reintroduzido o mesmo `EINVAL`. **Herdadas da Fase 3, e válidas até o gateway existir**: o cadastro grava só a conta (os campos de paciente do `register` não têm destino, e o `Patient` nasce com os defaults 80/180 no primeiro acesso a dados); `GET/PUT /auth/profile` respondem só o bloco de conta; e não há endereço único — cadastro e login em :3002, resto em :3001 —, então o app não roda ponta a ponta até a Fase 4.
 
+### AD-012 — O papel viaja no JWT e o backend o lê do token, não do banco
+**Data**: 2026-10-04
+**Contexto**: O AD-003 mandava `requireRole` ler `user.role` no banco a cada requisição. Com a separação em auth-service e glucose-service, isso custaria uma chamada de rede por requisição, inclusive no sync de leituras. O código já mudou: `packages/shared/src/auth/claims.ts` e `middleware.ts` leem `role` do claim, e `jwt.ts` dá 1 h de validade ao profissional e ao administrador (paciente mantém 30 dias).
+**Decisão**: O papel vem do claim do JWT. A web nunca autoriza pelo claim: usa `GET /api/v1/me` para saber o papel e só decodifica o `exp` para agendar a renovação. A revogação por `AuthSession.isRevoked` vale só no `refresh` dos papéis web.
+**Consequência**: Rebaixar um usuário só vale quando o token expira (até 1 h para profissional e admin, até 30 dias para paciente). O login continua sem checar `User.status`; bloquear usuário é uma feature própria.
+
+### AD-013 — A web é feature-first com quatro camadas e a regra de dependência é verificada por ferramenta
+**Data**: 2026-10-04
+**Contexto**: A rubrica 37 pede padrões, princípios de design e arquitetura limpa no frontend. Uma convenção só escrita em documento se perde; o app Flutter já provou o valor de uma guarda estrutural (`domain_layering_test.dart`).
+**Decisão**: `web/src/features/<feature>/{domain,application,infrastructure,presentation}`, mais `shared/` e um composition root. `dependency-cruiser` (`npm run lint:arch`) falha o CI quando `domain` importa qualquer pacote ou outra camada, quando `presentation` importa `infrastructure`, ou quando `recharts` e `@dnd-kit` aparecem fora dos seus diretórios. Features só se enxergam pelo `index.ts` público.
+**Consequência**: Cada violação vira um teste vermelho no CI. O custo é mais pastas e um adaptador por biblioteca externa. Detalhes em `.specs/features/web-dashboard/design.md`.
+
+### AD-014 — Endpoints novos ficam no serviço dono do domínio e o gateway compõe o que cruza bancos
+**Data**: 2026-10-04
+**Contexto**: O dashboard por papel precisa de preferências, convites e vínculos, carteira do profissional e visão do admin. Os dados de identidade estão em `glucore_auth` e os clínicos em `glucore_dev`.
+**Decisão**: Preferências de layout no auth-service (FK para `User`, a conta apaga em cascata). Convites, vínculos, carteira e agregados clínicos no glucose-service. Nomes e a visão do admin são compostos no gateway por rotas `/internal` com token interno, no mesmo padrão do `/me`. Nenhum serviço chama o outro.
+**Consequência**: A composição do gateway ganha rotas, mas os bancos continuam separados. A perna de nomes é degradável (`X-Degraded`); a visão do admin falha se um dos serviços falhar.
+
+### AD-015 — Consentimento por código de convite gerado no app, vínculo revogável pelo paciente
+**Data**: 2026-10-04
+**Contexto**: `DashboardAccessGrant` existia só no schema. O cadastro do profissional é aberto e o CRM não é validado, então a barreira de privacidade é o consentimento do paciente.
+**Decisão**: O paciente gera no app um código de 8 caracteres, uso único e 24 h de validade, gravado como sha256. O profissional o resgata na web e cria o vínculo `READ`. Só o paciente revoga; `expiresAt` não é usado na v1. Toda leitura de dado de paciente por profissional e todo evento de convite ou vínculo vai para a trilha de auditoria, sem valores clínicos.
+**Consequência**: Sem código, o profissional não vê nenhum dado. Um vínculo ativo não expira sozinho, então o app precisa deixar a revogação à vista.
+
 ---
 
 ## Handoff
 
-**Feature ativa**: `arch-phases-3-5` (Fases 3, 4 e 5 do `docs/ARCHITECTURE_FIX_PLAN.md`) — **concluída, verificada, e reconciliada com o `origin/main`**.
-**Fase**: Execute + verificação independente concluídos (34/34 tarefas). Depois disso, dois bugs reportados pelo usuário no app real foram corrigidos (logout não redirecionava; senha errada não mostrava mensagem), e a branch foi mesclada com `origin/main` — ver `AD-010`.
-**Branch**: `feat/auth-service-and-app-phases-3-5` — `feat/arch-phases-3-5` (PR #33, aberta 2026-08-31) com a Fase 3 do backend mesclada por cima; ver `AD-011`. As duas frentes passam a sair numa PR só, e a #33 fica superada por ela.
-**Veredito do Verificador**: **PASS**, mas anterior ao merge — `.specs/features/arch-phases-3-5/validation.md` cobre a faixa `037a8bc..94a2afb`, antes do `origin/main` entrar. Os números de teste desse relatório (146 backend) estão desatualizados; o estado real pós-merge é o da linha "Gates depois do merge" abaixo. Não houve nova rodada de verificação sobre o resultado da reconciliação.
-**Decisões registradas**: `AD-009` (op-log) e `AD-010` (adoção da estrutura de microsserviços do `main`, descarte do backend em camadas das Fases 2–3) — ambas na seção Decisions acima.
+**Feature ativa**: `web-dashboard` (spec, design e tasks em `.specs/features/web-dashboard/`). Dashboard web por papel (paciente, profissional, admin), publicado na Vercel, mais consentimento por código no app, backend por domínio e rubrica 37.
+**Branch**: `feat/web-dashboard`, publicada em `origin` por decisão do usuário (2026-10-05). Nenhum PR aberto, nenhum merge na `main`, nenhum deploy.
+**Fase**: Execute encerrado por ordem do usuário, **sem Verificador**. As 226 tarefas estão commitadas e marcadas (T1–T224, T225 e T226). **A feature NÃO está fechada**: não existe `validation.md`, então `validate_state.py web-dashboard` falha. Na rastreabilidade da spec nenhum requisito está `Verified`.
 
-**Dois bugs de produção corrigidos após o PASS, direto no app rodando no celular do usuário:**
-- `9693563` — logout não redirecionava para a tela de login (`SettingsPage` fica numa rota empilhada sobre `AuthGate`; faltava `Navigator.popUntil` antes do `logout()`, no mesmo padrão de `_handleSessionExpired`).
-- `3860bb8` — senha errada não mostrava mensagem de erro (`AuthGate` trocava para spinner de tela cheia durante `AuthStatus.loading`, inclusive durante login, destruindo o estado da `LoginPage` antes da mensagem de falha chegar). Ambos com teste de regressão que falha sem o fix (confirmado revertendo cada um).
+**O que falta (ordem sugerida)**
+1. **Gate completo da web nunca rodou sobre a Fase 29** (T210–T219, admin: seis gráficos, tabela, catálogo, página, rota). A Fase 29 foi escrita sem rodar nenhum teste, por pedido do usuário. Rodar `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size` e corrigir o que aparecer. Também não foi rodado o commit `e30e3df` (ajuste de `adminDashboardPage.test.tsx`, deixado aberto na parada).
+2. **Verificador independente** (`.claude/skills/tlc-spec-driven/references/validate.md` e `sub-agents.md`): spec-anchored check (cada AC com `arquivo:linha`), sensor de discriminação, `validation.md`, depois `validate_state.py`. Fix loop limitado a 3 rodadas.
+3. **Flutter e backend**: o backend passou inteiro depois da mescla do admin (92 arquivos, 1269 testes) e o Flutter passou na T159 (466 testes); as documentações mescladas depois não rodaram testes. Reconfirmar com `cd backend && npm run build && npm run test:coverage` e `flutter analyze && flutter test --no-pub`.
+4. **Lighthouse (RSP-11, acessibilidade ≥ 90)**: config e script de login existem (`web/lighthouserc.json`, `web/scripts/lighthouseLogin.mjs`), mas nunca foram executados; só o axe cobre a parte automática. Passos em `web/README.md`.
+5. **Deploy** (nada feito; ações manuais do usuário em `docs/guides/deployment.md`): criar e conectar o projeto na Vercel, `VITE_API_URL`, acrescentar a origem da Vercel em `CORS_ORIGIN` na VM, e só depois publicar a web. A CSP nunca foi testada contra um deploy real. O backend novo precisa ir antes: merge na `main` publica as imagens e as migrations rodam no boot (`20261004220354_add_dashboard_layout`, `20261004120000_add_glucose_zones_function`, `20261005152139_add_invite_and_grant_revocation`, `20261006090000_add_reading_recordedat_brin_index`): revisar o SQL antes. O `prisma migrate dev` propõe apagar o índice DESC `GlucoseReading_patientId_recordedAt_desc_idx`: nunca aplicar migration gerada sem revisar.
 
-**Gates depois da reconciliação com a Fase 3 do backend** (ver `AD-011`): 345 testes Flutter, `flutter analyze` limpo, **382 testes de backend** em dois serviços (Vitest + Postgres real; era 357 nesta branch e 312 no `main`), cobertura 96,23% statements sobre o limiar de 90%. Não rodei Kotlin nem `:app:assembleDebug` de novo — nada em `android/` mudou desde a última execução.
+**Escopo e desvios conhecidos**
+- Os quatro gráficos do admin que o usuário mandou cortar (`adm-active-patients`, `adm-readings-volume`, `adm-grants`, `adm-alerts`; tarefas T212–T215) já tinham sido commitados quando o corte chegou. Foram mantidos. Se o corte valer, remover as quatro tarefas, os widgets e as linhas do catálogo da web.
+- `SPEC_DEVIATION` no código: T106 (assinatura de `createLoadDayDetail`), T127 (fábrica de widgets em `patient-dashboard`, não em `shared`), T171 (regra de risco usa `veryLow + low` no lugar de "< 70 mg/dL"), KPIs do admin sem estado vazio (`defineOverviewWidget.tsx`).
+- Limitações aceitas: o detalhe do paciente vinculado exclui `chart-day-detail` (falta um endpoint de diário para o profissional, ex.: `/professional/patients/:id/diary`); a faixa-alvo do gráfico de tendência usa 80–180 até o `summary` expor os limiares do paciente; filtro e ordenação da tabela da carteira valem só para a página atual; o cliente HTTP da web descarta status e cabeçalhos (não distingue `201` de `200` no resgate nem lê `X-Degraded`).
+- Teste instável conhecido: `web/src/features/auth/presentation/loginPage.test.tsx` (axe) falhou 3 vezes sob carga e passou ao repetir; `asyncUtilTimeout` já foi subido (T226).
+- Outros achados sem ação: a skill `.claude/skills/glucore-backend` descreve o monolito antigo; o model `Administrator` ainda tem comentário "sem rota nesta release"; o commit da T126 diz "10 → 0" quando o real é 9 `parseDto` + 1 `send`; o commit da T141 foi emendado localmente uma vez.
 
-**A suíte de backend agora exige dois bancos**: `glucore_test` e `glucore_auth_test`, cada URL vindo do `.env.test` do respectivo serviço. E precisa rodar **da raiz de `backend/`**: de dentro de um serviço o Vitest perde `fileParallelism: false`/`maxWorkers: 1`, que são opções de raiz, e as duas suítes truncam o mesmo banco em paralelo — falha aleatória, longe da causa.
-
-**O que a reconciliação com o `main` trouxe e o que esta branch acrescentou** (detalhe em `AD-010`): o `main` já tinha o backend inteiro reestruturado em workspace npm (`backend/services/glucose-service/src/modules/`) com CRUD por item em carbs e insulin. Esta branch descartou seu próprio backend em camadas (T6–T13, estrutura antiga) e acrescentou, em cima da estrutura do `main`: paginação `before`/`limit` (compartilhada via `packages/shared/src/util/pageQuery.ts`) nas três listagens, e o CRUD por item completo de alerts (que no `main` ainda era só replace-all, sem `id` no DTO).
-
-**Achados registrados, sem ação — valem uma decisão futura:**
-- O gate Android engana: `./gradlew :app:testDebugUnitTest` volta `BUILD SUCCESSFUL` com a task `UP-TO-DATE` e **zero testes executados**. Só `--rerun-tasks` produz os 34 de verdade. Quem ler o primeiro verde está lendo nada — vale registrar isso em `docs/guides/qa-process.md`.
-- `AppTheme` mantém 27 constantes `Color` que nenhum código de `lib/` usa; o único consumidor é `glucore_colors_test.dart`, como âncora de fidelidade da migração de tema.
-- PLAN-04 pede doc de contrato atualizado **no mesmo commit** da mudança; os docs vieram num commit final (`edeebb0`). Conteúdo correto, cadência divergente.
-- `sensor_link_page.dart:437` usa `Colors.grey.shade600` direto (fora do THEME-05 como escrito, mas lê errado no escuro); `GlucoseZoneX.label` devolve português hardcoded, furando o l10n.
-- `docs/reference/platform-channels.md` não documenta os métodos NFC do Libre 2 nem o campo `nfc` do evento — lacuna anterior a esta feature, e o `CLAUDE.md` diz que esse doc vence em conflito.
-- **`docs/backend-features-a-portar.patch` foi perdido** durante a reconciliação (ver `AD-010`) — conteúdo desconhecido, não recuperado. Se fizer falta, não há como restaurar por git.
-- `.agents/`, `.cursor/`, `.windsurf/` (cópias do skill `tlc-spec-driven`) também foram apagados no mesmo incidente; prováveis de regenerar sozinhos na próxima sincronização de skills, mas não confirmado.
-
-**Pendências conhecidas, fora do escopo desta feature**: validação em device físico arm64 com sensor real (sem hardware neste ambiente); remoção dos `POST` de coleção deprecated e, junto com eles, das escritas de coleção do diário no cliente (`saveCarbs`/`saveInsulin`/`saveAlerts` e `mark*Synced`), hoje mantidas de propósito como caminho de rollback e documentadas como tal; P28 segue parcial no caminho de coleção.
-**Próximo passo**: decisão do usuário — abrir PR (exige autorização para `git push`) ou seguir para outra frente. Considerar uma nova rodada do Verificador sobre o `dcfbee1..8d5e8f9` antes do PR, já que a rodada anterior não cobre o merge.
-**Sem trabalho não commitado desta feature**: a árvore está limpa fora dos arquivos alheios.
-**Arquivos sujos preexistentes, alheios a este trabalho**: `.claude/settings.local.json`, `CHANGELOG.md`, alterações em `.specs/features/checklist-tcc-compliance/`, a deleção de `TCC I - Checklist - Avaliacao.md`.
+**Worktrees e branches locais deixados**: `.claude/worktrees/agent-*` e branches `worktree-agent-*` (todas já mescladas em `feat/web-dashboard`); podem ser removidas com `git worktree remove` e `git branch -d`.
+**Arquivos sujos preexistentes e alheios**: nenhum conhecido; `.specs/LESSONS.md` e `lessons.json` foram restaurados do git (não rodar `lessons.py list`: ele poda lições com mais de 45 dias).
+**Próximo passo**: rodar o gate da web (item 1) e corrigir; depois o Verificador (item 2).

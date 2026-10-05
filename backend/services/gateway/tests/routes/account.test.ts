@@ -9,6 +9,7 @@ import { AuthClient } from '../../src/clients/authClient';
 import { GlucoseClient } from '../../src/clients/glucoseClient';
 import { createAuthenticate } from '../../src/middleware/authenticate';
 import { RegisterSaga } from '../../src/modules/register/register.saga';
+import { RegisterProfessionalSaga } from '../../src/modules/registerProfessional/registerProfessional.saga';
 import { startFakeDownstream, type FakeDownstream } from '../helpers/fakeDownstream';
 import { TEST_INTERNAL_JWT_SECRET, TEST_JWT_SECRET } from '../helpers/testEnv';
 
@@ -36,6 +37,7 @@ beforeAll(async () => {
       authClient,
       glucoseClient,
       registerSaga: new RegisterSaga(authClient, glucoseClient),
+      registerProfessionalSaga: new RegisterProfessionalSaga(authClient, glucoseClient),
     },
   });
 });

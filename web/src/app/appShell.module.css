@@ -1,0 +1,119 @@
+.skip {
+  position: absolute;
+  left: var(--space-2);
+  top: -4rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-1);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+
+.skip:focus {
+  top: var(--space-2);
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  line-height: var(--line-height);
+}
+
+.header {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.brand {
+  font-size: var(--font-size-3);
+  font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-2);
+  margin-right: auto;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-size);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-1);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.link[aria-current='page'] {
+  background: var(--color-surface-sunken);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.menuButton {
+  display: none;
+  margin-left: auto;
+}
+
+.person {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--font-size-1);
+}
+
+.role {
+  color: var(--color-text-muted);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.select,
+.signOut,
+.menuButton {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-1);
+  background: var(--color-canvas);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.content {
+  flex: 1;
+  padding: var(--space-4);
+}
+
+/* RSP-03: below 640 px the navigation collapses into a menu. */
+@media (max-width: 639px) {
+  .menuButton {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .nav {
+    display: none;
+    order: 10;
+    flex-basis: 100%;
+    flex-direction: column;
+    margin-right: 0;
+  }
+
+  .nav[data-open='true'] {
+    display: flex;
+  }
+}

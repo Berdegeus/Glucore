@@ -45,6 +45,91 @@ export interface PeriodMetricsDto {
   readingsCount: number;
 }
 
+/** Share of readings in each CGM zone, in percent; the five add up to 100 (0 each with no readings). */
+export interface ZoneDistributionDto {
+  veryLow: number;
+  low: number;
+  target: number;
+  high: number;
+  veryHigh: number;
+}
+
+/** Raw row shape from the `glucose_zones()` stored function via `$queryRaw`. */
+export interface RawZonesRow {
+  very_low_percent: unknown;
+  low_percent: unknown;
+  target_percent: unknown;
+  high_percent: unknown;
+  very_high_percent: unknown;
+}
+
+/**
+ * The function answers NULL percents for a period with no readings; the
+ * contract is a number per zone, so they become 0 here (`toNumber`).
+ */
+export function mapZonesRow(row: RawZonesRow | undefined): ZoneDistributionDto {
+  return {
+    veryLow: toNumber(row?.very_low_percent),
+    low: toNumber(row?.low_percent),
+    target: toNumber(row?.target_percent),
+    high: toNumber(row?.high_percent),
+    veryHigh: toNumber(row?.very_high_percent),
+  };
+}
+
+/** Percentiles of the glucose readings taken at one local hour of the day (the AGP curve). */
+export interface AgpPointDto {
+  hour: number;
+  p5: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p95: number;
+  count: number;
+}
+
+/** Raw row shape from the AGP `$queryRaw`: the five percentiles arrive together, as a `float8[]`. */
+export interface RawAgpRow {
+  hour: unknown;
+  percentiles: unknown[];
+  readings_count: unknown;
+}
+
+/** Two decimals is plenty for mg/dL, and keeps raw doubles (`100.80000000000001`) out of the JSON. */
+const roundTo2 = (value: unknown): number => Math.round(toNumber(value) * 100) / 100;
+
+/** The percentiles come back as raw doubles, hence `roundTo2`. */
+export function mapAgpRow(row: RawAgpRow): AgpPointDto {
+  const [p5, p25, p50, p75, p95] = row.percentiles.map(roundTo2);
+  return { hour: toNumber(row.hour), p5, p25, p50, p75, p95, count: toNumber(row.readings_count) };
+}
+
+/** Mean glucose and reading count for one weekday × local-hour cell of the heatmap. */
+export interface HeatCellDto {
+  /** 0 = Sunday .. 6 = Saturday, as Postgres' `EXTRACT(DOW ...)` numbers them. */
+  dayOfWeek: number;
+  hour: number;
+  avgGlucose: number;
+  count: number;
+}
+
+/** Raw row shape from the heatmap `$queryRaw`. */
+export interface RawHeatCellRow {
+  day_of_week: unknown;
+  hour: unknown;
+  avg_glucose: unknown;
+  readings_count: unknown;
+}
+
+export function mapHeatCellRow(row: RawHeatCellRow): HeatCellDto {
+  return {
+    dayOfWeek: toNumber(row.day_of_week),
+    hour: toNumber(row.hour),
+    avgGlucose: roundTo2(row.avg_glucose),
+    count: toNumber(row.readings_count),
+  };
+}
+
 export interface DailyBucketDto {
   day: string;
   avgGlucose: number | null;
@@ -53,6 +138,10 @@ export interface DailyBucketDto {
   timeInRangePercent: number | null;
   movingAvg7d: number | null;
   readingsCount: number;
+  /** Total carbohydrate logged that local day; 0 when none. */
+  carbsGrams: number;
+  /** Total insulin units logged that local day; 0 when none. */
+  insulinUnits: number;
 }
 
 export interface ExcursionDto {
@@ -67,11 +156,19 @@ export interface ExcursionDto {
 export interface DashboardSummaryDto {
   from: string;
   to: string;
+  /** The zone the days and hours below were cut in; `UTC` when the caller sent none. */
+  tz: string;
+  /** The patient's most recent reading in any period, `null` with no readings at all. */
+  lastReadingAt: string | null;
   totals: DashboardTotals;
   timeInRangePercent: number | null;
   gmiPercent: number | null;
   coefficientOfVariationPercent: number | null;
+  sensorUsePercent: number;
+  zoneDistribution: ZoneDistributionDto;
   byDay: DailyBucketDto[];
+  agp: AgpPointDto[];
+  heatmap: HeatCellDto[];
   insulinByType: InsulinByTypeDto[];
   alertsByType: AlertsByTypeDto[];
   excursions: ExcursionDto[];
@@ -108,6 +205,8 @@ export interface RawDailyBucketRow {
   readings_count: unknown;
   time_in_range_percent: unknown;
   moving_avg_7d: unknown;
+  carbs_grams: unknown;
+  insulin_units: unknown;
 }
 
 export function mapDailyBucketRow(row: RawDailyBucketRow): DailyBucketDto {
@@ -119,6 +218,8 @@ export function mapDailyBucketRow(row: RawDailyBucketRow): DailyBucketDto {
     timeInRangePercent: toNullableNumber(row.time_in_range_percent),
     movingAvg7d: toNullableNumber(row.moving_avg_7d),
     readingsCount: toNumber(row.readings_count),
+    carbsGrams: toNumber(row.carbs_grams),
+    insulinUnits: toNumber(row.insulin_units),
   };
 }
 

@@ -1,4 +1,4 @@
-import { BadRequestError } from '@glucore/shared';
+import { BadRequestError, isUuid } from '@glucore/shared';
 
 /**
  * Parsing and validation for the account slice of the request body.
@@ -121,4 +121,18 @@ export function parseUpdateAccount(body: UpdateAccountBody): UpdateAccountInput 
   if (updatesPassword) input.newPassword = body.newPassword;
 
   return input;
+}
+
+/** The most ids one lookup may carry; the gateway splits larger lists. */
+export const MAX_LOOKUP_IDS = 200;
+
+/**
+ * The ids of a name lookup: a bounded list of UUIDs, de-duplicated. Anything
+ * else is a 400 rather than a partial answer, so a caller bug is loud.
+ */
+export function parseLookupIds(body: { ids?: unknown }): string[] {
+  const { ids } = body;
+  if (!Array.isArray(ids) || ids.length > MAX_LOOKUP_IDS) throw new BadRequestError('Invalid input');
+  if (!ids.every(isUuid)) throw new BadRequestError('Invalid input');
+  return [...new Set(ids.map((id) => id.toLowerCase()))];
 }

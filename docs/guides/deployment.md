@@ -1,6 +1,6 @@
 # Deploy em produção
 
-> Quando usar: para saber onde o backend roda hoje, como uma mudança chega lá, como operar a VM e o que ainda falta. O passo a passo de montar a VM do zero está em [`backend/deploy/README.md`](../../backend/deploy/README.md); este guia é o estado e a operação.
+> Quando usar: para saber onde o backend roda hoje, como uma mudança chega lá, como operar a VM, como publicar a web na Vercel e o que ainda falta. O passo a passo de montar a VM do zero está em [`backend/deploy/README.md`](../../backend/deploy/README.md); este guia é o estado e a operação.
 
 ## Estado em 2026-10-04
 
@@ -45,6 +45,72 @@ docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod log
 - Restaurar um backup: comando no fim de `backup.sh`. Teste sempre em um banco descartável antes.
 - A VM não tem o repositório clonado: só `~/glucore/deploy/` e `~/glucore/docker/postgres/init-auth-db.sql`, copiados por `scp`. Mudou o compose ou o Caddyfile no repo? Copie de novo para a VM.
 - O IP da VM e os OCIDs dos recursos ficam fora do git (repositório público).
+
+## Web (Vercel)
+
+A SPA em `web/` é publicada na Vercel e chama a API direto, sem proxy da Vercel: o limite de login do gateway é por IP, e um proxy faria todos os usuários compartilharem o IP da Vercel. Por isso o gateway precisa aceitar a origem da web no CORS.
+
+**Configuração do projeto** (Vercel, Settings):
+
+| Campo | Valor |
+|---|---|
+| Root Directory | `web` |
+| Framework Preset | Vite |
+| Install Command | `npm ci` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Production Branch | `main` |
+| Node.js Version | 22.x (o `engines` de `web/package.json` aceita `^22.13.0` ou 24+) |
+
+**Variável de ambiente (Production):** `VITE_API_URL=https://glucore.duckdns.org`, só o host do gateway: **sem** `/api/v1` e **sem** barra final (a web acrescenta o prefixo `/api/v1` sozinha; ver `web/src/composition/container.ts` e `web/src/composition/env.ts`). A variável é lida no build e vai para o bundle, então nunca leva segredo. Exemplo de desenvolvimento em `web/.env.example`. Mudou a variável? Faça um novo deploy: o valor é embutido na hora do build.
+
+**O que o `web/vercel.json` faz** (testado em `web/tests/deploy/vercelConfig.test.ts`):
+
+- Fallback de SPA: qualquer rota sem extensão (`/paciente`, `/profissional/pacientes/abc`) responde `index.html` com `200`. `/assets/*` e caminhos com extensão **não** são reescritos, então um arquivo que sumiu é um `404` de verdade e não um HTML no lugar de um `.js`.
+- Cabeçalhos em todas as respostas: `Content-Security-Policy` (`default-src 'self'`, `script-src 'self'` sem `unsafe-inline`, `style-src 'self'` com `style-src-attr 'unsafe-inline'` para os atributos `style` do Recharts, `frame-ancestors 'none'`), `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` e `Permissions-Policy` sem câmera, microfone e geolocalização.
+- **Acoplamento com a API:** o `connect-src` da CSP lista `https://glucore.duckdns.org`. Esse é o mesmo host do `VITE_API_URL` (e o `API_URL` padrão do app em `lib/core/api/api_client.dart`). **Trocou o domínio da API (item 5 de "O que falta")? Mude o `connect-src` em `web/vercel.json`, o `VITE_API_URL` na Vercel e o `CORS_ORIGIN` na VM juntos.** Se só um mudar, o navegador bloqueia as chamadas e a web mostra erro de rede.
+- Se uma tela futura precisar de mais estilo, relaxe só `style-src`; nunca `script-src`.
+
+**Orçamento de peso:** `npm run size` (`web/scripts/checkBundleSize.mjs`) falha se o JavaScript da primeira carga passar de 250 kB gzip ou se trouxer Recharts/dnd-kit, que ficam em chunks sob demanda. Roda no job `web` do CI.
+
+**Pular build quando `web/` não mudou (opcional).** Em Settings → Git → Ignored Build Step, ou como `ignoreCommand` em `web/vercel.json`:
+
+```bash
+git diff --quiet HEAD^ HEAD -- .
+```
+
+O comando roda dentro do Root Directory (`web`). Código de saída `0` pula o build, `1` builda. Sem esse passo, todo commit na `main` gera um deploy, inclusive os que só tocam o backend.
+
+**CORS na VM.** A web só fala com a API se a origem dela estiver em `CORS_ORIGIN`. Na VM, em `~/glucore/deploy/.env.prod`:
+
+```bash
+CORS_ORIGIN=https://glucore.duckdns.org,https://<projeto>.vercel.app
+```
+
+Lista separada por vírgula, cada origem sem barra final (modelo em `backend/deploy/.env.prod.example`). O app mobile não envia `Origin` e não precisa constar. As URLs de preview da Vercel (`https://<projeto>-<hash>-<time>.vercel.app`) ficam **fora de propósito**: um preview carrega, mas o navegador bloqueia as chamadas à API. Para aplicar:
+
+```bash
+cd ~/glucore
+docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d
+```
+
+O `up -d` recria só os serviços cuja configuração mudou (o gateway e os dois serviços internos recebem `CORS_ORIGIN`; ver `backend/deploy/docker-compose.prod.yml`). Confira com `curl -i -X OPTIONS https://glucore.duckdns.org/api/v1/me -H 'Origin: https://<projeto>.vercel.app' -H 'Access-Control-Request-Method: GET' -H 'Access-Control-Request-Headers: authorization'`: a resposta deve trazer `Access-Control-Allow-Origin` com a origem da web e `authorization` em `Access-Control-Allow-Headers`.
+
+**Rollback da web.** Vercel, aba Deployments: abra o último deploy bom e use "Promote to Production" (ou "Instant Rollback" no deploy de produção atual). Não precisa de commit. Para desfazer o CORS, volte `CORS_ORIGIN` ao valor anterior e rode o `up -d` acima. O rollback do backend segue o `TAG=<sha>` descrito em "Como uma mudança chega à produção".
+
+### AÇÃO MANUAL DO USUÁRIO (o agente não faz isto)
+
+Criar e conectar o projeto na Vercel exige a conta do dono; o agente não conecta contas, não faz deploy e não mexe na VM de produção. Checklist:
+
+- [ ] Em vercel.com, **Add New → Project**, importar o repositório do GitHub (autorizar o app da Vercel só neste repositório).
+- [ ] **Root Directory** `web`; **Framework Preset** Vite; **Install Command** `npm ci`; **Build Command** `npm run build`; **Output Directory** `dist`.
+- [ ] Settings → General → **Node.js Version** 22.x.
+- [ ] Settings → Environment Variables → `VITE_API_URL=https://glucore.duckdns.org` (Production; sem `/api/v1`, sem barra final).
+- [ ] Settings → Git → **Production Branch** `main`. Opcional: **Ignored Build Step** com o comando acima.
+- [ ] Anotar a URL de produção que a Vercel gerou (por exemplo `https://glucore-web.vercel.app`).
+- [ ] Na VM, acrescentar essa origem em `CORS_ORIGIN` no `deploy/.env.prod` e rodar o `docker compose ... up -d` acima.
+- [ ] Abrir a URL de produção, entrar com uma conta de paciente e conferir no console do navegador que não há erro de CSP nem de CORS; abrir `/paciente` direto (recarregar a página) e ver a SPA, não um `404`.
+- [ ] Depois do primeiro deploy bom, ligar a proteção de branch na `main` exigindo o job `web` do CI (se ainda não estiver).
 
 ## Riscos conhecidos
 

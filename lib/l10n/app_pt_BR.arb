@@ -414,5 +414,46 @@
   "monitoringNoSensorErrorTitle": "Erro de conexão",
   "monitoringNoSensorErrorSubtitle": "Verifique o sensor e tente novamente",
   "monitoringNoSensorDefaultTitle": "Sem sensor conectado",
-  "monitoringNoSensorDefaultSubtitle": "Toque no ícone Bluetooth para parear"
+  "monitoringNoSensorDefaultSubtitle": "Toque no ícone Bluetooth para parear",
+  "sharingTitle": "Compartilhar com profissional",
+  "sharingExplanationTitle": "O que o profissional vai ver",
+  "sharingExplanationData": "O profissional poderá ver as suas leituras de glicose, as métricas diárias, os gráficos, a insulina, os carboidratos e os alertas.",
+  "sharingExplanationCode": "O compartilhamento é feito por um código de uso único, válido por 24 horas.",
+  "sharingExplanationRevoke": "Você pode revogar o acesso a qualquer momento.",
+  "sharingGenerateButton": "Gerar código",
+  "sharingCodeLabel": "Seu código",
+  "sharingCopyButton": "Copiar",
+  "sharingCodeCopied": "Código copiado.",
+  "sharingExpiresIn": "Expira em {time}",
+  "@sharingExpiresIn": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "sharingCodeExpired": "Código expirado. Gere um novo código.",
+  "sharingOfflineMessage": "Sem conexão. Conecte-se para gerar o código.",
+  "sharingGrantsTitle": "Profissionais vinculados",
+  "sharingGrantsEmpty": "Nenhum profissional vinculado",
+  "sharingGrantedOn": "Vinculado em {date}",
+  "@sharingGrantedOn": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "sharingUnknownProfessional": "Profissional de saúde",
+  "sharingRevokeButton": "Revogar",
+  "sharingRevokeConfirmTitle": "Revogar acesso?",
+  "sharingRevokeConfirmBody": "{name} deixa de ver os seus dados imediatamente. Você pode gerar um novo código depois.",
+  "@sharingRevokeConfirmBody": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "sharingRevokeConfirmButton": "Revogar",
+  "sharingRevokeCancelButton": "Cancelar",
+  "sharingRevoked": "Acesso revogado.",
+  "sharingErrorOffline": "Sem conexão. Tente novamente quando estiver online.",
+  "sharingErrorForbidden": "Somente contas de paciente podem compartilhar dados.",
+  "sharingErrorNotFound": "Vínculo não encontrado. Atualize a lista.",
+  "sharingErrorUnknown": "Não foi possível concluir. Tente novamente."
 }

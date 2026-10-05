@@ -1,15 +1,16 @@
+import { BadRequestError } from '@glucore/shared';
 import { describe, expect, it } from 'vitest';
 
 import { DashboardService } from '../../src/modules/dashboard/dashboard.service';
 import type { DashboardQuery } from '../../src/modules/dashboard/dashboard.schema';
-import { FakeDashboardRepository, FakePatientRepository } from '../helpers/fakes';
+import { FakeDashboardRepository, FakePatientRepository, FakeTimeZoneChecker } from '../helpers/fakes';
 
 const USER = 'user-1';
 
 function build() {
   const dashboard = new FakeDashboardRepository();
   const patients = new FakePatientRepository();
-  return { dashboard, patients, service: new DashboardService(dashboard, patients) };
+  return { dashboard, patients, service: new DashboardService(dashboard, patients, new FakeTimeZoneChecker()) };
 }
 
 function query(overrides: Partial<DashboardQuery> = {}): DashboardQuery {
@@ -17,6 +18,7 @@ function query(overrides: Partial<DashboardQuery> = {}): DashboardQuery {
     from: new Date('2026-08-01T00:00:00.000Z'),
     to: new Date('2026-08-14T00:00:00.000Z'),
     bucket: 'day',
+    tz: 'UTC',
     ...overrides,
   };
 }
@@ -101,6 +103,12 @@ describe('DashboardService — response shape', () => {
     expect(result).toEqual({
       from: '2026-08-01',
       to: '2026-08-14',
+      tz: 'UTC',
+      lastReadingAt: null,
+      sensorUsePercent: expect.any(Number),
+      zoneDistribution: dashboard.zoneDistribution,
+      agp: [],
+      heatmap: [],
       totals: dashboard.totals,
       timeInRangePercent: 72.5,
       gmiPercent: 6.6,
@@ -110,5 +118,117 @@ describe('DashboardService — response shape', () => {
       alertsByType: dashboard.alertsByType,
       excursions: dashboard.excursions,
     });
+  });
+});
+
+describe('DashboardService — time zone check', () => {
+  it('answers 400 INVALID_TIMEZONE for a zone the database does not know, before touching any data', async () => {
+    const { dashboard, patients, service } = build();
+
+    const failure = await service.getSummaryForUser(USER, query({ tz: 'Mars/Phobos' })).catch((e) => e);
+
+    expect(failure).toBeInstanceOf(BadRequestError);
+    expect(failure.status).toBe(400);
+    expect(failure.code).toBe('INVALID_TIMEZONE');
+    expect(patients.ensured).toEqual([]);
+    expect(dashboard.rangesSeen).toEqual([]);
+  });
+
+  it('lets a known zone through', async () => {
+    const { dashboard, service } = build();
+
+    await service.getSummaryForUser(USER, query({ tz: 'America/Sao_Paulo' }));
+
+    expect(dashboard.rangesSeen).toHaveLength(1);
+  });
+});
+
+describe('DashboardService — extended summary', () => {
+  it('adds tz, lastReadingAt, zoneDistribution, agp and heatmap as the repository answered them', async () => {
+    const { dashboard, service } = build();
+    dashboard.lastReadingAt = '2026-09-20T08:05:00.000Z';
+    dashboard.zoneDistribution = { veryLow: 1, low: 4, target: 70, high: 20, veryHigh: 5 };
+    dashboard.agp = [{ hour: 8, p5: 90, p25: 100, p50: 120, p75: 140, p95: 170, count: 30 }];
+    dashboard.heatmap = [{ dayOfWeek: 1, hour: 9, avgGlucose: 105.5, count: 2 }];
+
+    const result = await service.getSummaryForUser(USER, query({ tz: 'America/Sao_Paulo' }));
+
+    expect(result).toMatchObject({
+      tz: 'America/Sao_Paulo',
+      lastReadingAt: '2026-09-20T08:05:00.000Z',
+      zoneDistribution: { veryLow: 1, low: 4, target: 70, high: 20, veryHigh: 5 },
+      agp: dashboard.agp,
+      heatmap: dashboard.heatmap,
+    });
+  });
+
+  it('passes the zone to every zone-aware repository call', async () => {
+    const { dashboard, service } = build();
+
+    await service.getSummaryForUser(USER, query({ tz: 'America/Sao_Paulo' }));
+
+    expect(dashboard.tzSeen).toEqual({
+      resolveBounds: ['America/Sao_Paulo'],
+      getAgp: ['America/Sao_Paulo'],
+      getHeatmap: ['America/Sao_Paulo'],
+      getDailyBuckets: ['America/Sao_Paulo'],
+    });
+  });
+
+  it('queries the window the repository resolved for the zone, not its own UTC arithmetic', async () => {
+    const { dashboard, service } = build();
+    dashboard.bounds = {
+      from: new Date('2026-08-01T03:00:00.000Z'),
+      toExclusive: new Date('2026-08-15T03:00:00.000Z'),
+    };
+
+    await service.getSummaryForUser(USER, query({ tz: 'America/Sao_Paulo' }));
+
+    expect(dashboard.rangesSeen).toEqual([dashboard.bounds]);
+  });
+
+  // [readings, from, to, expected percent]: the period counts elapsed calendar days, both ends included.
+  it.each([
+    [0, '2026-08-01', '2026-08-14', 0],
+    [2016, '2026-08-01', '2026-08-14', 50], // 14 days * 288 = 4032 expected
+    [144, '2026-08-05', '2026-08-05', 50], // a single day is 1 day, not 0
+    [287, '2026-08-05', '2026-08-05', 99.65],
+    [288, '2026-08-05', '2026-08-05', 100],
+    [500, '2026-08-05', '2026-08-05', 100], // capped
+  ])('sensorUsePercent for %i readings from %s to %s is %d', async (readingsCount, from, to, expected) => {
+    const { dashboard, service } = build();
+    dashboard.periodMetrics = { ...dashboard.periodMetrics, readingsCount };
+
+    const result = await service.getSummaryForUser(
+      USER,
+      query({ from: new Date(`${from}T00:00:00.000Z`), to: new Date(`${to}T00:00:00.000Z`) }),
+    );
+
+    expect(result.sensorUsePercent).toBe(expected);
+  });
+
+  it('getSummary takes the patient id as is, without creating a patient row', async () => {
+    const { dashboard, patients, service } = build();
+
+    await service.getSummary('patient-9', query());
+
+    expect(patients.ensured).toEqual([]);
+    expect(dashboard.patientIdsSeen).toEqual(['patient-9']);
+  });
+
+  it('getSummary answers 400 INVALID_TIMEZONE too, so any caller is covered', async () => {
+    const { dashboard, service } = build();
+
+    const failure = await service.getSummary('patient-9', query({ tz: 'Mars/Phobos' })).catch((e) => e);
+
+    expect(failure).toBeInstanceOf(BadRequestError);
+    expect(failure.code).toBe('INVALID_TIMEZONE');
+    expect(dashboard.patientIdsSeen).toEqual([]);
+  });
+
+  it('getSummaryForUser gives the same answer as getSummary for the ensured patient id', async () => {
+    const { service } = build();
+
+    expect(await service.getSummaryForUser(USER, query())).toEqual(await service.getSummary(USER, query()));
   });
 });

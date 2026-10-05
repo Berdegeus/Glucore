@@ -22,21 +22,44 @@ export class InternalHttpClient {
     identity: InternalTokenClaims,
     body?: unknown,
   ): Promise<T> {
-    const baseUrl = await this.registry.resolve(this.serviceName);
     const token = signInternalToken(identity, this.internalJwtSecret);
+
+    return this.send<T>(
+      method,
+      path,
+      {
+        'x-internal-token': token,
+        // Observability only — the receiving service must never trust these
+        // over the verified token (see requireInternalAuth).
+        'x-user-id': identity.sub,
+        'x-user-role': identity.role,
+      },
+      body,
+    );
+  }
+
+  /**
+   * A call to a public route of the downstream, on behalf of the end user: their
+   * own `Authorization` header goes through untouched and the service verifies it
+   * itself. No internal token, because the route is not an internal one.
+   */
+  forward<T>(method: 'GET', path: string, authorization: string): Promise<T> {
+    return this.send<T>(method, path, { authorization });
+  }
+
+  private async send<T>(
+    method: string,
+    path: string,
+    headers: Record<string, string>,
+    body?: unknown,
+  ): Promise<T> {
+    const baseUrl = await this.registry.resolve(this.serviceName);
 
     let response: Response;
     try {
       response = await fetch(`${baseUrl}${path}`, {
         method,
-        headers: {
-          'content-type': 'application/json',
-          'x-internal-token': token,
-          // Observability only — the receiving service must never trust these
-          // over the verified token (see requireInternalAuth).
-          'x-user-id': identity.sub,
-          'x-user-role': identity.role,
-        },
+        headers: { 'content-type': 'application/json', ...headers },
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch {

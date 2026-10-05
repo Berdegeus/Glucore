@@ -17,7 +17,9 @@ export function createInternalAccountsRouter(
   router.use(requireInternalAuth);
 
   router.post('/accounts', asyncHandler(controller.register));
+  router.post('/accounts/professional', asyncHandler(controller.registerProfessional));
   router.get('/accounts/me', asyncHandler(controller.getMe));
+  router.post('/accounts/lookup', asyncHandler(controller.lookup));
   router.put('/accounts/me', asyncHandler(controller.updateMe));
   router.delete('/accounts/:id', asyncHandler(controller.deleteById));
 

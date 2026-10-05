@@ -2,11 +2,20 @@ import { Prisma, type PrismaClient } from '../../lib/prisma';
 
 import type { AccountSource } from './accounts.mapper';
 
+/**
+ * Roles an account can be created with. ADMINISTRATOR is deliberately absent:
+ * the only way to get one is the seed, never a request.
+ */
+export type CreatableRole = 'PATIENT' | 'HEALTH_PROFESSIONAL';
+
+const CREATABLE_ROLES: readonly string[] = ['PATIENT', 'HEALTH_PROFESSIONAL'];
+
 export interface CreateAccountData {
   email: string;
   fullName: string;
   phone: string | null | undefined;
   passwordHash: string;
+  role: CreatableRole;
 }
 
 export interface AccountWithCredential extends AccountSource {
@@ -41,6 +50,8 @@ export interface AccountRepository {
   ): Promise<void>;
   /** Idempotent: deleting an id that no longer exists is a success, not a 404. */
   delete(id: string): Promise<void>;
+  /** Id and display name only; ids with no account are simply absent. */
+  findNamesByIds(ids: string[]): Promise<{ id: string; fullName: string }[]>;
 }
 
 const ACCOUNT_FIELDS = {
@@ -81,13 +92,24 @@ export class PrismaAccountRepository implements AccountRepository {
     });
   }
 
-  create(data: CreateAccountData): Promise<AccountSource> {
+  findNamesByIds(ids: string[]): Promise<{ id: string; fullName: string }[]> {
+    return this.prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, fullName: true },
+    });
+  }
+
+  async create(data: CreateAccountData): Promise<AccountSource> {
+    // The type already forbids it; this is for a caller that got past the type.
+    if (!CREATABLE_ROLES.includes(data.role)) {
+      throw new Error(`Role ${data.role} cannot be created through this path`);
+    }
     return this.prisma.user.create({
       data: {
         email: data.email,
         fullName: data.fullName,
         phone: data.phone,
-        role: 'PATIENT',
+        role: data.role,
         authCredential: { create: { passwordHash: data.passwordHash } },
       },
       select: ACCOUNT_FIELDS,
