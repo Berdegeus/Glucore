@@ -2490,16 +2490,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `table-excursions`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza a tabela de episódios com início, duração, mínimo e máximo a partir de `summary.excursions`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Tabela com rolagem horizontal interna abaixo de 640 px
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/tableExcursions.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `table-excursions`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza a tabela de episódios com início, duração, mínimo e máximo a partir de `summary.excursions`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Tabela com rolagem horizontal interna abaixo de 640 px
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/tableExcursions.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add table-excursions widget`
+**Status**: ✅ Done
 
 ---
 

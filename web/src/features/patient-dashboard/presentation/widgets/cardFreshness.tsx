@@ -1,3 +1,4 @@
+import { browserTimeZone } from '../../../../shared/presentation/browserTimeZone';
 import { formatDateTime } from '../../../../shared/presentation/format';
 import { useNow } from '../../../../shared/presentation/useNow';
 import { WIDGET_SIZES, type WidgetDefinition, type WidgetProps } from '../../../dashboard-layout';
@@ -17,9 +18,6 @@ export const cardFreshnessDefinition: WidgetDefinition = {
   sizes: WIDGET_SIZES,
   defaultSize: 'S',
 };
-
-/** The clock the browser shows, so the time of the reading matches the patient's wall clock. */
-const browserTimeZone = (): string => new Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 function Freshness({ lastReadingAt, stale }: { lastReadingAt: string | null; stale: boolean }) {
   return (

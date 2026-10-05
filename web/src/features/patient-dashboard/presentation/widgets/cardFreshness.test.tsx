@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { summaryFixture } from '../../../../test/summaryFakes';
+import { withTimeZone } from '../../../../test/browserTimeZone';
 import { describeSummaryWidget, renderWidget } from '../../../../test/widgetHarness';
 import CardFreshness, { cardFreshnessDefinition, CARD_FRESHNESS_TITLE, NO_SYNC_CAUSE } from './cardFreshness';
 
@@ -28,9 +29,6 @@ function clockAt(minutesAfter: number, ticking = false) {
   vi.useFakeTimers({ toFake: ticking ? ['Date', 'setInterval', 'clearInterval'] : ['Date'] });
   vi.setSystemTime(Date.parse(LAST_READING) + minutesAfter * MINUTE_MS);
 }
-
-const withTimeZone = (timeZone: string) =>
-  vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({ timeZone } as Intl.ResolvedDateTimeFormatOptions);
 
 describe('card-freshness time (PAC-12)', () => {
   it.each([

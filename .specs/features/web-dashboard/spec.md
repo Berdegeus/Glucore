@@ -510,7 +510,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-16 | P1: Layout customizável por widgets | T39, T53 | Implementing |
 | RSP-01 | P1: Responsivo, acessível e com tema | T52 | Implementing |
 | RSP-02 | P1: Responsivo, acessível e com tema | T52 | Implementing |
-| RSP-03 | P1: Responsivo, acessível e com tema | T45 | Implementing |
+| RSP-03 | P1: Responsivo, acessível e com tema | T45, T100 | Implementing |
 | RSP-04 | P1: Responsivo, acessível e com tema | T36, T87 | Implementing |
 | RSP-05 | P1: Responsivo, acessível e com tema | T64 | Implementing |
 | RSP-06 | P1: Responsivo, acessível e com tema | T39, T43, T45, T56 | Implementing |
@@ -526,7 +526,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-05 | P1: Dashboard do paciente com os dados do app | T82, T88, T89, T90, T91, T92, T93 | Implementing |
 | PAC-06 | P1: Dashboard do paciente com os dados do app | T57, T95 | Implementing |
 | PAC-07 | P1: Dashboard do paciente com os dados do app | T58, T96 | Implementing |
-| PAC-08 | P1: Dashboard do paciente com os dados do app | - | Pending |
+| PAC-08 | P1: Dashboard do paciente com os dados do app | T100 | Implementing |
 | PAC-09 | P1: Dashboard do paciente com os dados do app | T58 | Implementing |
 | PAC-10 | P1: Dashboard do paciente com os dados do app | T59, T61, T63, T79, T97, T98, T99 | Implementing |
 | PAC-11 | P1: Dashboard do paciente com os dados do app | - | Pending |
