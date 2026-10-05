@@ -44,7 +44,7 @@ afterAll(async () => {
 describe('POST /api/v1/sharing/redeem rate limit', () => {
   it('lets the first 10 attempts of a user through and answers 429 on the 11th', async () => {
     const statuses = await redeemMany('pro-1', LIMIT);
-    expect(statuses).not.toContain(429);
+    expect(statuses).toEqual(Array<number>(LIMIT).fill(200));
 
     const limited = await redeem('pro-1');
     expect(limited.status).toBe(429);
@@ -58,6 +58,13 @@ describe('POST /api/v1/sharing/redeem rate limit', () => {
     const other = await redeem('pro-2');
 
     expect(other.status).not.toBe(429);
+  });
+
+  it('forwards the first 10 attempts downstream and not the limited one', async () => {
+    await redeemMany('pro-1', LIMIT + 1);
+
+    const redeemCalls = glucoseFake.requests.filter((r) => r.path === '/sharing/redeem');
+    expect(redeemCalls).toHaveLength(LIMIT);
   });
 
   it('answers 401 when there is no token, before any counting', async () => {

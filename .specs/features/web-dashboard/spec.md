@@ -566,7 +566,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | CON-01 | P2: Consentimento do paciente pelo app (código de convite) | T143, T145 | Implementing |
 | CON-02 | P2: Consentimento do paciente pelo app (código de convite) | T141 | Implementing |
 | CON-03 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142 | Implementing |
-| CON-04 | P2: Consentimento do paciente pelo app (código de convite) | T142, T143, T145 | Implementing |
+| CON-04 | P2: Consentimento do paciente pelo app (código de convite) | T142, T143, T145, T149 | Implementing |
 | CON-05 | P2: Consentimento do paciente pelo app (código de convite) | T143 | Implementing |
 | CON-06 | P2: Consentimento do paciente pelo app (código de convite) | T148 | Implementing |
 | CON-07 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142, T143 | Implementing |
@@ -586,7 +586,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-08 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-09 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-10 | P2: Dashboard do profissional de saúde | T59, T62 | Implementing |
-| PRO-11 | P2: Dashboard do profissional de saúde | - | Pending |
+| PRO-11 | P2: Dashboard do profissional de saúde | T149 | Implementing |
 | PRO-12 | P2: Dashboard do profissional de saúde | T144 | Implementing |
 | PRO-13 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-14 | P2: Dashboard do profissional de saúde | - | Pending |

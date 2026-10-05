@@ -33,8 +33,10 @@ export interface BuildAppOptions {
 
 /**
  * Pure proxies behind the end-user token: prefix → the service that owns it.
- * The clinical prefixes live in glucose; the dashboard layout is identity-side
- * data and lives in auth.
+ * The clinical prefixes live in glucose (consent and the professional's
+ * portfolio included); the dashboard layout is identity-side data and lives in
+ * auth. A composed route of the same prefix is mounted before this loop, so the
+ * proxy only sees what no composition claimed.
  */
 const AUTHENTICATED_PROXIES: Readonly<Record<string, 'glucose' | 'auth'>> = {
   readings: 'glucose',
@@ -43,6 +45,8 @@ const AUTHENTICATED_PROXIES: Readonly<Record<string, 'glucose' | 'auth'>> = {
   alerts: 'glucose',
   settings: 'glucose',
   dashboard: 'glucose',
+  sharing: 'glucose',
+  professional: 'glucose',
   preferences: 'auth',
 };
 
@@ -60,7 +64,7 @@ const noopHealthCheck: HealthCheckable = {
  * drive it in-process, the same as the other two services.
  *
  * Unlike them, `express.json()` is never mounted globally here: everything
- * under `/api/v1/{auth,readings,carbs,insulin,alerts,settings,dashboard,preferences}`
+ * under `/api/v1/{auth,readings,carbs,insulin,alerts,settings,dashboard,sharing,professional,preferences}`
  * is a pure proxy, and a global body parser would consume the request stream before
  * `http-proxy-middleware` can forward it — silently sending an empty body
  * downstream on every POST. The composition routers below
