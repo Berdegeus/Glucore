@@ -3982,13 +3982,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: `201` vira `{ userId, token }`; `409 EMAIL_TAKEN` vira `conflict`; `400 WEAK_PASSWORD` vira `validation`; `429` vira `rate-limited`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/registration/infrastructure/httpRegistrationRepository.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: `201` vira `{ userId, token }`; `409 EMAIL_TAKEN` vira `conflict`; `400 WEAK_PASSWORD` vira `validation`; `429` vira `rate-limited`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/registration/infrastructure/httpRegistrationRepository.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(web): add the HTTP registration repository`
+**Status**: ✅ Done
 
 ---
 
