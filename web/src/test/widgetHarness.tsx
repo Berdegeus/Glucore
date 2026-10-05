@@ -128,9 +128,8 @@ type StatesSpec = Pick<SummaryWidgetSpec, 'Widget' | 'definition' | 'title' | 's
 
 /**
  * The states every widget shares (LAY-15, LAY-16): a skeleton of the height
- * of its size, the cause of an empty source (for a family that has one), an
- * isolated error with retry and no axe violation with data. `scenario` says
- * how the widget's family is fed.
+ * of its size, the cause of an empty source (when the family has one), an
+ * isolated error with retry and no axe violation. `scenario` feeds the family.
  */
 export function describeWidgetStates({ Widget, definition, title, shown, emptyCause }: StatesSpec, scenario: StatesScenario) {
   const card = () => screen.findByRole('region', { name: title });
@@ -146,7 +145,6 @@ export function describeWidgetStates({ Widget, definition, title, shown, emptyCa
     if (empty && emptyCause !== undefined) {
       it('shows the cause, not a figure, when there is nothing to show', async () => {
         empty(<Widget size="S" />);
-
         expect(await within(await card()).findByText(emptyCause)).toBeInTheDocument();
         expect(screen.queryByText(shown)).not.toBeInTheDocument();
       });
