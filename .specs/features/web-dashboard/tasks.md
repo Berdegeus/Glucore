@@ -1800,13 +1800,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: 0 leituras, período completo (288 por dia) dá 100, acima de 100 é limitado, período de 1 dia
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/dashboard.metrics.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: 0 leituras, período completo (288 por dia) dá 100, acima de 100 é limitado, período de 1 dia
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/dashboard.metrics.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(glucose-service): compute sensor use`
+**Status**: ✅ Done
 
 ---
 

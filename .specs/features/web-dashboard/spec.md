@@ -547,7 +547,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66 | Implementing |
 | API-03 | P2: Ajustes de backend para os gráficos novos | T68 | Implementing |
-| API-04 | P2: Ajustes de backend para os gráficos novos | - | Pending |
+| API-04 | P2: Ajustes de backend para os gráficos novos | T69 | Implementing |
 | API-05 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-06 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-07 | P2: Ajustes de backend para os gráficos novos | - | Pending |
