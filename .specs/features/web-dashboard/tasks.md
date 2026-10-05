@@ -1949,14 +1949,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Casos com médias 80, 120, 154, 183, 250 e o GMI esperado `3,31 + 0,02392 × média` com 2 casas
-- [ ] O teste lê o JSON e passa contra o banco
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Casos com médias 80, 120, 154, 183, 250 e o GMI esperado `3,31 + 0,02392 × média` com 2 casas
+- [x] O teste lê o JSON e passa contra o banco
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `test(glucose-service): pin GMI to the shared contract`
+**Status**: ✅ Done
 
 ---
 
