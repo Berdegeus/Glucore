@@ -2207,13 +2207,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: valor nulo mostra `—`; estado dentro e fora da meta com texto; axe sem violações
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/ui/kpiCard.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: valor nulo mostra `—`; estado dentro e fora da meta com texto; axe sem violações
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/ui/kpiCard.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the KPI card`
+**Status**: ✅ Done
 
 ---
 
