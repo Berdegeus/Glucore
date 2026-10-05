@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
+import { loadAdminDashboardPage } from '../features/admin';
 import { LoginPage, RequireRole } from '../features/auth';
 import { loadPatientDashboardPage } from '../features/patient-dashboard';
 import { loadPatientDetailPage, loadProfessionalDashboardPage, RevokedAccessProvider } from '../features/professional';
@@ -13,6 +14,7 @@ import { NotFoundPage } from './notFoundPage';
 const PatientDashboardPage = lazy(loadPatientDashboardPage);
 const ProfessionalDashboardPage = lazy(loadProfessionalDashboardPage);
 const PatientDetailPage = lazy(loadPatientDetailPage);
+const AdminDashboardPage = lazy(loadAdminDashboardPage);
 const RegisterProfessionalPage = lazy(loadRegisterProfessionalPage);
 
 /** A page that loads on demand, with a skeleton until its chunk arrives. */
@@ -36,9 +38,8 @@ export interface AppRoute {
 }
 
 /**
- * The routes inside the app shell, one entry per role home. A later phase adds
- * `/admin` here; until then a signed-in administrator is redirected to a path
- * that shows the not-found page.
+ * The routes inside the app shell, one entry per role home: a signed-in person
+ * with another role is redirected to the home of their own.
  */
 export const APP_ROUTES: readonly AppRoute[] = [
   { path: '/paciente', requiredRole: 'PATIENT', page: lazyPage(<PatientDashboardPage />) },
@@ -49,6 +50,7 @@ export const APP_ROUTES: readonly AppRoute[] = [
     subpages: [{ path: 'pacientes/:id', page: lazyPage(<PatientDetailPage />) }],
     Provider: RevokedAccessProvider,
   },
+  { path: '/admin', requiredRole: 'ADMINISTRATOR', page: lazyPage(<AdminDashboardPage />) },
 ];
 
 function protectedRoute({ path, requiredRole, page, subpages = [], Provider }: AppRoute) {

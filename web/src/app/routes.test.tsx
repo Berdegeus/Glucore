@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { SESSION_EXPIRED_MESSAGE } from '../features/auth';
 import type { Role } from '../shared/domain/role';
+import { mockAdmin } from '../test/adminHarness';
 import { mockApi } from '../test/apiMocks';
 import { renderApp, where } from '../test/appHarness';
 import { stubChartContainer } from '../test/chartContainer';
@@ -31,6 +32,8 @@ function mockProfessional(role: Role | null = 'HEALTH_PROFESSIONAL') {
 const PATIENT_ID = '3f2b8c1e-5d4a-4e6f-9a7b-0c1d2e3f4a5b';
 const PATIENT_PATH = `/profissional/pacientes/${PATIENT_ID}`;
 const portfolioHeading = () => screen.findByRole('heading', { level: 1, name: 'Meus pacientes' }, SLOW);
+
+const adminHeading = () => screen.findByRole('heading', { level: 1, name: 'Painel da plataforma' }, SLOW);
 
 const dashboardHeading = () => screen.findByRole('heading', { level: 1, name: 'Meu painel' }, SLOW);
 
@@ -75,10 +78,11 @@ describe('routes: sign in (ACC-02, ACC-04)', () => {
 describe('routes: the home of each role (ACC-02, ACC-03)', () => {
   it.each<[Role, string, string]>([
     ['HEALTH_PROFESSIONAL', '/profissional', 'Meus pacientes'],
-    ['ADMINISTRATOR', '/admin', NOT_FOUND_TITLE],
+    ['ADMINISTRATOR', '/admin', 'Painel da plataforma'],
   ])('redirects %s from /paciente to %s without drawing the patient dashboard', async (role, home, landing) => {
     const api = mockPatient(role);
     mockPortfolio();
+    mockAdmin();
     renderApp('/paciente', { token: 'token-1' });
 
     expect(await screen.findByRole('heading', { level: 1, name: landing }, SLOW)).toBeInTheDocument();
@@ -238,5 +242,48 @@ describe('routes: the professional registration (ACC-02)', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Criar conta de profissional' }, SLOW)).toBeInTheDocument();
     expect(where()).toBe('/cadastro-profissional');
+  });
+});
+
+/** An administrator's account over the gateway: one widget is enough to prove the page renders. */
+function mockAdministrator(role: Role | null = 'ADMINISTRATOR') {
+  mockApi({ role });
+  mockLayoutStore([{ id: 'adm-kpi-accounts', size: 'S' }]);
+  return mockAdmin();
+}
+
+describe('routes: the administrator area (ACC-02, ACC-03)', () => {
+  it('lands an administrator on /admin with the dashboard', async () => {
+    const admin = mockAdministrator();
+    renderApp('/login');
+    await signIn();
+
+    expect(await adminHeading()).toBeInTheDocument();
+    expect(where()).toBe('/admin');
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument();
+    await waitFor(() => expect(admin.overviewRequests).toHaveLength(1), SLOW);
+  });
+
+  it.each<[Role, string, () => Promise<HTMLElement>]>([
+    ['PATIENT', '/paciente', dashboardHeading],
+    ['HEALTH_PROFESSIONAL', '/profissional', portfolioHeading],
+  ])('takes a %s from /admin to %s without asking the platform anything', async (role, home, heading) => {
+    const admin = mockAdministrator(role);
+    mockPortfolio();
+    renderApp('/admin', { token: 'token-1' });
+
+    expect(await heading()).toBeInTheDocument();
+    expect(where()).toBe(home);
+    expect(screen.queryByRole('heading', { name: 'Painel da plataforma' })).not.toBeInTheDocument();
+    expect(admin.overviewRequests).toHaveLength(0);
+    expect(admin.usersRequests).toHaveLength(0);
+  });
+
+  it('takes an anonymous visitor of /admin to the login, remembering the page', async () => {
+    mockAdministrator();
+    renderApp('/admin');
+
+    expect(await screen.findByLabelText('E-mail')).toBeInTheDocument();
+    expect(where()).toBe('/login?next=%2Fadmin');
   });
 });

@@ -5100,13 +5100,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: admin entra em `/admin`; profissional em `/admin` volta a `/profissional`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/app/routes.test.tsx`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: admin entra em `/admin`; profissional em `/admin` volta a `/profissional`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/app/routes.test.tsx`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): route the admin area`
+**Status**: ✅ Done
 
 ---
 
