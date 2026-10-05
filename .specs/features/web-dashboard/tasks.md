@@ -3298,13 +3298,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: `getPatient` não é chamado para profissional nem admin (evita criar `Patient`); bloco `professional` presente; perna do perfil profissional falhando degrada com `X-Degraded`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: `getPatient` não é chamado para profissional nem admin (evita criar `Patient`); bloco `professional` presente; perna do perfil profissional falhando degrada com `X-Degraded`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `fix(gateway): compose /me by role`
+**Status**: ✅ Done
 
 ---
 
