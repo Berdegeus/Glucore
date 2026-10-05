@@ -1,7 +1,5 @@
 import { LineBandChart } from '../../../../shared/presentation/charts/lineBandChart';
-import type { WidgetProps } from '../../../dashboard-layout';
-import { ChartWidget } from './chartWidget';
-import { hasNoReadings } from './summaryWidget';
+import { defineChartWidget } from './defineSummaryWidget';
 import { DEFAULT_TARGET_RANGE, trendAlternative, trendRows } from './trendModel';
 import { CHART_TREND_TITLE } from './widgetTitles';
 
@@ -18,10 +16,8 @@ const BAND = { minKey: 'min', maxKey: 'max', label: 'Mínimo a máximo' };
 const TARGET = { ...DEFAULT_TARGET_RANGE, label: `Faixa-alvo (${DEFAULT_TARGET_RANGE.low} a ${DEFAULT_TARGET_RANGE.high} mg/dL)` };
 
 /** Daily mean with its min-max band, the 7-day moving average and the target range (PAC-06). */
-export default function ChartTrend({ size }: WidgetProps) {
-  return (
-    <ChartWidget title={CHART_TREND_TITLE} size={size} isEmpty={hasNoReadings} alternative={(summary) => trendAlternative(summary.byDay)}>
-      {(summary) => <LineBandChart data={trendRows(summary.byDay)} xKey="day" lines={LINES} band={BAND} targetRange={TARGET} />}
-    </ChartWidget>
-  );
-}
+export default defineChartWidget({
+  title: CHART_TREND_TITLE,
+  alternative: (summary) => trendAlternative(summary.byDay),
+  chart: (summary) => <LineBandChart data={trendRows(summary.byDay)} xKey="day" lines={LINES} band={BAND} targetRange={TARGET} />,
+});

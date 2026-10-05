@@ -1,7 +1,6 @@
 import { KpiCard } from '../../../../shared/presentation/ui/kpiCard';
-import type { WidgetProps } from '../../../dashboard-layout';
 import { hasEnoughDaysForGmi } from '../../domain/metrics';
-import { SummaryWidget } from './summaryWidget';
+import { defineSummaryWidget } from './defineSummaryWidget';
 import { KPI_GMI_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
@@ -13,12 +12,10 @@ export { KPI_GMI_TITLE };
 export const FEW_DAYS_NOTE = 'Poucos dados no período';
 
 /** The glucose management indicator of the period, in percent, with a warning when the period is too thin for it. */
-export default function KpiGmi({ size }: WidgetProps) {
-  return (
-    <SummaryWidget title={KPI_GMI_TITLE} size={size} isEmpty={(summary) => summary.gmiPercent === null}>
-      {(summary) => (
-        <KpiCard value={summary.gmiPercent} unit="%" note={hasEnoughDaysForGmi(summary.byDay) ? undefined : FEW_DAYS_NOTE} />
-      )}
-    </SummaryWidget>
-  );
-}
+export default defineSummaryWidget({
+  title: KPI_GMI_TITLE,
+  isEmpty: (summary) => summary.gmiPercent === null,
+  render: (summary) => (
+    <KpiCard value={summary.gmiPercent} unit="%" note={hasEnoughDaysForGmi(summary.byDay) ? undefined : FEW_DAYS_NOTE} />
+  ),
+});

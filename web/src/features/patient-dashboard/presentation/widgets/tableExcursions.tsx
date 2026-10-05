@@ -1,8 +1,7 @@
 import { browserTimeZone } from '../../../../shared/presentation/browserTimeZone';
-import type { WidgetProps } from '../../../dashboard-layout';
 import type { Excursion } from '../../domain/summary';
+import { defineSummaryWidget } from './defineSummaryWidget';
 import { excursionCells, EXCURSIONS_COLUMNS } from './excursionsModel';
-import { SummaryWidget } from './summaryWidget';
 import styles from './tableExcursions.module.css';
 import { TABLE_EXCURSIONS_TITLE } from './widgetTitles';
 
@@ -53,10 +52,9 @@ function ExcursionsTable({ excursions }: { excursions: readonly Excursion[] }) {
 }
 
 /** Every hypo and hyperglycemia episode of the period, with start, duration, minimum and maximum (PAC-08). */
-export default function TableExcursions({ size }: WidgetProps) {
-  return (
-    <SummaryWidget title={TABLE_EXCURSIONS_TITLE} size={size} isEmpty={(summary) => summary.excursions.length === 0} emptyCause={NO_EXCURSIONS_CAUSE}>
-      {(summary) => <ExcursionsTable excursions={summary.excursions} />}
-    </SummaryWidget>
-  );
-}
+export default defineSummaryWidget({
+  title: TABLE_EXCURSIONS_TITLE,
+  isEmpty: (summary) => summary.excursions.length === 0,
+  emptyCause: NO_EXCURSIONS_CAUSE,
+  render: (summary) => <ExcursionsTable excursions={summary.excursions} />,
+});

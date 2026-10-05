@@ -1,6 +1,5 @@
 import { KpiCard, type KpiTarget } from '../../../../shared/presentation/ui/kpiCard';
-import type { WidgetProps } from '../../../dashboard-layout';
-import { SummaryWidget } from './summaryWidget';
+import { defineSummaryWidget } from './defineSummaryWidget';
 import { KPI_CV_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
@@ -12,10 +11,8 @@ export { KPI_CV_TITLE };
 export const CV_TARGET: KpiTarget = { kind: 'atMost', value: 36, unit: '%' };
 
 /** Coefficient of variation of the period, in percent, against the 36 % ceiling. */
-export default function KpiCv({ size }: WidgetProps) {
-  return (
-    <SummaryWidget title={KPI_CV_TITLE} size={size} isEmpty={(summary) => summary.coefficientOfVariationPercent === null}>
-      {(summary) => <KpiCard value={summary.coefficientOfVariationPercent} unit="%" target={CV_TARGET} />}
-    </SummaryWidget>
-  );
-}
+export default defineSummaryWidget({
+  title: KPI_CV_TITLE,
+  isEmpty: (summary) => summary.coefficientOfVariationPercent === null,
+  render: (summary) => <KpiCard value={summary.coefficientOfVariationPercent} unit="%" target={CV_TARGET} />,
+});

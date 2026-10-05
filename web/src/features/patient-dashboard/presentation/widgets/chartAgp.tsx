@@ -1,8 +1,6 @@
 import { RangeAreaChart } from '../../../../shared/presentation/charts/rangeAreaChart';
-import type { WidgetProps } from '../../../dashboard-layout';
 import { agpAlternative, agpRows } from './agpModel';
-import { ChartWidget } from './chartWidget';
-import { hasNoReadings } from './summaryWidget';
+import { defineChartWidget } from './defineSummaryWidget';
 import { CHART_AGP_TITLE } from './widgetTitles';
 
 // The definition lives in a light module so the catalog can list the widget without loading its chart code.
@@ -15,10 +13,8 @@ const INNER = { minKey: 'p25', maxKey: 'p75', label: 'Percentis 25 a 75' };
 const MEDIAN = { key: 'p50', label: 'Mediana' };
 
 /** The glucose of the period folded onto one day: percentile bands and the median by hour (PAC-10). */
-export default function ChartAgp({ size }: WidgetProps) {
-  return (
-    <ChartWidget title={CHART_AGP_TITLE} size={size} isEmpty={hasNoReadings} alternative={(summary) => agpAlternative(summary.agp)}>
-      {(summary) => <RangeAreaChart data={agpRows(summary.agp)} xKey="hour" outer={OUTER} inner={INNER} median={MEDIAN} />}
-    </ChartWidget>
-  );
-}
+export default defineChartWidget({
+  title: CHART_AGP_TITLE,
+  alternative: (summary) => agpAlternative(summary.agp),
+  chart: (summary) => <RangeAreaChart data={agpRows(summary.agp)} xKey="hour" outer={OUTER} inner={INNER} median={MEDIAN} />,
+});

@@ -3082,14 +3082,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Widgets do paciente passam a usar a fábrica sem mudar comportamento; nenhum teste de widget é alterado
-- [ ] `npm run dup` mostra queda da duplicação em relação ao registro inicial
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/widgets/defineSummaryWidget.test.tsx`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Widgets do paciente passam a usar a fábrica sem mudar comportamento; nenhum teste de widget é alterado
+- [x] `npm run dup` mostra queda da duplicação em relação ao registro inicial
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/widgets/defineSummaryWidget.test.tsx`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `refactor(web): extract the summary widget factory`
+**Status**: ✅ Done
 
 ---
 

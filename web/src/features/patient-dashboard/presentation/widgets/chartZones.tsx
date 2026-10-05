@@ -1,8 +1,6 @@
 import { StackedBarChart } from '../../../../shared/presentation/charts/stackedBarChart';
 import { formatPercent } from '../../../../shared/presentation/format';
-import type { WidgetProps } from '../../../dashboard-layout';
-import { ChartWidget } from './chartWidget';
-import { hasNoReadings } from './summaryWidget';
+import { defineChartWidget } from './defineSummaryWidget';
 import { ZONE_SEGMENTS, zonesAlternative, zonesRow } from './zonesModel';
 import { CHART_ZONES_TITLE } from './widgetTitles';
 
@@ -16,20 +14,18 @@ const BAR_HEIGHT = 140;
 const formatTick = (value: number) => formatPercent(value, 0);
 
 /** The share of readings in each of the five zones, as one horizontal stacked bar (PAC-10). */
-export default function ChartZones({ size }: WidgetProps) {
-  return (
-    <ChartWidget title={CHART_ZONES_TITLE} size={size} isEmpty={hasNoReadings} alternative={(summary) => zonesAlternative(summary.zoneDistribution)}>
-      {(summary) => (
-        <StackedBarChart
-          data={[zonesRow(summary.zoneDistribution)]}
-          categoryKey="period"
-          segments={ZONE_SEGMENTS}
-          orientation="horizontal"
-          domain={PERCENT_DOMAIN}
-          height={BAR_HEIGHT}
-          formatValue={formatTick}
-        />
-      )}
-    </ChartWidget>
-  );
-}
+export default defineChartWidget({
+  title: CHART_ZONES_TITLE,
+  alternative: (summary) => zonesAlternative(summary.zoneDistribution),
+  chart: (summary) => (
+    <StackedBarChart
+      data={[zonesRow(summary.zoneDistribution)]}
+      categoryKey="period"
+      segments={ZONE_SEGMENTS}
+      orientation="horizontal"
+      domain={PERCENT_DOMAIN}
+      height={BAR_HEIGHT}
+      formatValue={formatTick}
+    />
+  ),
+});
