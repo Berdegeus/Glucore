@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { http, HttpResponse, type JsonBodyType } from 'msw';
 import { afterEach, describe, expect, it } from 'vitest';
 import { accountPageDto, accountRowDto, overviewDto, overviewOf } from '../../../test/adminFakes';
 import { API_BASE, createTestHttpClient, rejectionOf } from '../../../test/httpClient';
@@ -18,7 +18,7 @@ function setup(token: string | null = 'tok-1'): AdminRepository {
 }
 
 /** Answers `body` on `url` and records the query string and the bearer of the request. */
-function capture(url: string, body: unknown) {
+function capture(url: string, body: JsonBodyType) {
   const seen: { params?: Record<string, string>; authorization?: string | null } = {};
   server.use(
     http.get(url, ({ request }) => {
