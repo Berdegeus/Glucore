@@ -481,17 +481,17 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34, T84, T105, T174, T202 | Implementing |
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33, T84 | Implementing |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
-| ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
+| ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49, T220, T221 | Implementing |
 | ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | T49, T52, T108, T120, T127, T189, T217 | Implementing |
 | ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13, T57, T58, T59, T60, T61, T62, T122 | Implementing |
 | ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | T10, T11 | Implementing |
 | ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | T15, T16, T226 | Implementing |
-| ARQ-14 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
+| ARQ-14 | P1: Arquitetura limpa verificável (rubrica 37) | T220, T221 | Implementing |
 | ARQ-15 | P1: Arquitetura limpa verificável (rubrica 37) | T13 | Implementing |
 | ARQ-16 | P1: Arquitetura limpa verificável (rubrica 37) | T11, T16 | Implementing |
 | ARQ-17 | P1: Arquitetura limpa verificável (rubrica 37) | T14, T16, T126 | Implementing |
-| ARQ-18 | P1: Arquitetura limpa verificável (rubrica 37) | T224 | Implementing |
-| ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | T126, T127 | Implementing |
+| ARQ-18 | P1: Arquitetura limpa verificável (rubrica 37) | T224, T220, T221 | Implementing |
+| ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | T126, T127, T220, T221 | Implementing |
 | LAY-01 | P1: Layout customizável por widgets | T1, T48, T49, T108, T189, T217 | Implementing |
 | LAY-02 | P1: Layout customizável por widgets | T48, T51, T54 | Implementing |
 | LAY-03 | P1: Layout customizável por widgets | T46, T113, T114, T119, T190, T218 | Implementing |
@@ -518,7 +518,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | RSP-08 | P1: Responsivo, acessível e com tema | T36, T55, T88 | Implementing |
 | RSP-09 | P1: Responsivo, acessível e com tema | T26, T37 | Implementing |
 | RSP-10 | P1: Responsivo, acessível e com tema | T36, T38, T45 | Implementing |
-| RSP-11 | P1: Responsivo, acessível e com tema | T112 | Implementing |
+| RSP-11 | P1: Responsivo, acessível e com tema | T112, T222 | Implementing |
 | PAC-01 | P1: Dashboard do paciente com os dados do app | T83, T84, T85, T109 | Implementing |
 | PAC-02 | P1: Dashboard do paciente com os dados do app | T80, T85, T87 | Implementing |
 | PAC-03 | P1: Dashboard do paciente com os dados do app | T80, T85, T87 | Implementing |

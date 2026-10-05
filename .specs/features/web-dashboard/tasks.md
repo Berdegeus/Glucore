@@ -10,7 +10,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design**: `.specs/features/web-dashboard/design.md`
 **Spec**: `.specs/features/web-dashboard/spec.md`
-**Status**: Approved
+**Status**: In Progress (feito, falta verificar: ver `.specs/STATE.md`, seção Handoff)
 
 **Tamanho**: 224 tarefas em 30 fases, cobrindo os 138 requisitos da spec (conferido por script: nenhum ID sem tarefa).
 
@@ -5123,13 +5123,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Seis ADRs: camadas, estado de servidor, biblioteca de gráficos, estilos e tema, armazenamento do token, arrastar e soltar
-- [ ] Refatorações com motivo, o que mudou e o hash do commit `refactor:`
-- [ ] Gate `build` passa: `cd web && npm run test:coverage && cd ../backend && npm run build`
+- [x] Seis ADRs: camadas, estado de servidor, biblioteca de gráficos, estilos e tema, armazenamento do token, arrastar e soltar
+- [x] Refatorações com motivo, o que mudou e o hash do commit `refactor:`
+- [x] Gate `build` passa: `cd web && npm run test:coverage && cd ../backend && npm run build`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs(web): document the dashboard architecture`
+**Status**: ✅ Done
 
 ---
 
@@ -5143,13 +5144,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Cada `arquivo:linha` existe e a linha está dentro do arquivo; há 4 padrões, as 5 letras do SOLID e 6 ADRs; os hashes de refatoração existem no `git log` com prefixo `refactor`
-- [ ] Gate `quick` passa: `cd web && npx vitest run tests/docs/architectureDoc.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Cada `arquivo:linha` existe e a linha está dentro do arquivo; há 4 padrões, as 5 letras do SOLID e 6 ADRs; os hashes de refatoração existem no `git log` com prefixo `refactor`
+- [x] Gate `quick` passa: `cd web && npx vitest run tests/docs/architectureDoc.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `test(web): verify the architecture document`
+**Status**: ✅ Done
 
 ---
 
@@ -5163,12 +5165,13 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] `npx lhci autorun` documentado em `web/README.md`; meta de acessibilidade ≥ 90 nas duas URLs (medida na validação)
-- [ ] Gate `build` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size`
+- [x] `npx lhci autorun` documentado em `web/README.md`; meta de acessibilidade ≥ 90 nas duas URLs (medida na validação)
+- [x] Gate `build` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `chore(web): configure Lighthouse CI`
+**Status**: ✅ Done
 
 ---
 
