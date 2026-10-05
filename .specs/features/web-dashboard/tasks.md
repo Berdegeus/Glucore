@@ -4962,16 +4962,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `adm-readings-volume`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza a área de leituras ingeridas por dia a partir de `overview.readingsByDay`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Usa o adaptador `LineBandChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admReadingsVolume.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `adm-readings-volume`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza a área de leituras ingeridas por dia a partir de `overview.readingsByDay`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Usa o adaptador `LineBandChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admReadingsVolume.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add adm-readings-volume widget`
+**Status**: ✅ Done
 
 ---
 
