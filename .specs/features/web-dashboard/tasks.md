@@ -3016,12 +3016,13 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exemplo com duas origens e comentário explicando que o app móvel não envia `Origin`
-- [ ] Gate `build` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Exemplo com duas origens e comentário explicando que o app móvel não envia `Origin`
+- [x] Gate `build` passa: `cd backend && npm run build && npm run test:coverage`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs(deploy): list the web origin in CORS_ORIGIN`
+**Status**: ✅ Done
 
 ---
 

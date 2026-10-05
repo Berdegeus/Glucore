@@ -30,7 +30,8 @@ git clone <url-do-repo> Glucore && cd Glucore/backend
 cp deploy/.env.prod.example deploy/.env.prod
 # Gere cada valor com: openssl rand -hex 32
 #   POSTGRES_PASSWORD, JWT_SECRET, INTERNAL_JWT_SECRET (os dois JWT precisam ser diferentes)
-# Preencha API_HOST=<sub>.duckdns.org e CORS_ORIGIN=https://<sub>.duckdns.org
+# Preencha API_HOST=<sub>.duckdns.org e CORS_ORIGIN=https://<sub>.duckdns.org,<origem-da-vercel>
+#   (lista separada por vírgula; o app mobile não envia Origin e não entra nela)
 chmod 600 deploy/.env.prod
 ```
 `deploy/.env.prod` está no `.gitignore`. Guarde uma cópia dos segredos num gerenciador de senhas: perder `JWT_SECRET` desloga todos; perder a senha do banco após criado exige reset dentro do Postgres.
