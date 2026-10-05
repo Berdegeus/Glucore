@@ -11,6 +11,8 @@ import {
 
 import { AccountController } from './modules/account/account.controller';
 import { createAccountRouter } from './modules/account/account.routes';
+import { AdminController } from './modules/admin/admin.controller';
+import { createAdminRouter } from './modules/admin/admin.routes';
 import { createContainer, type Container } from './container';
 import { MeController } from './modules/me/me.controller';
 import { createMeRouter } from './modules/me/me.routes';
@@ -158,6 +160,13 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use(
     '/api/v1/professional/cohort/summary',
     createCohortRouter(new CohortController(container.authClient, container.glucoseClient), container.authenticate),
+  );
+
+  // The administrator's overview and account list, composed over both services
+  // (ADM-01, ADM-04). No proxy prefix exists for `admin`, so this is the only way in.
+  app.use(
+    '/api/v1/admin',
+    createAdminRouter(new AdminController(container.authClient, container.glucoseClient), container.authenticate),
   );
 
   for (const [prefix, service] of Object.entries(AUTHENTICATED_PROXIES)) {

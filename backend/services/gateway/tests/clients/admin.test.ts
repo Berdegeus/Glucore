@@ -100,6 +100,11 @@ describe('AuthClient.adminUsers', () => {
     expect(queries).toEqual([{ q: '50% & ç' }]);
   });
 
+  it('keeps a repeated parameter repeated instead of choosing one value', async () => {
+    await auth.adminUsers(ADMIN_ID, { role: ['PATIENT', 'ADMINISTRATOR'] });
+    expect(queries).toEqual([{ role: ['PATIENT', 'ADMINISTRATOR'] }]);
+  });
+
   it('calls the route bare when there is no query', async () => {
     await auth.adminUsers(ADMIN_ID);
     expect(queries).toEqual([{}]);

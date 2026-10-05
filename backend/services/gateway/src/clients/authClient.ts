@@ -17,11 +17,11 @@ export interface RegisterAccountResult {
 
 /** Query of the administrators' account list; auth-service is the one place that validates it. */
 export interface AdminUsersQuery {
-  role?: string;
-  status?: string;
-  q?: string;
-  page?: string;
-  limit?: string;
+  role?: string | string[];
+  status?: string | string[];
+  q?: string | string[];
+  page?: string | string[];
+  limit?: string | string[];
 }
 
 /** Account totals and sign-ups, as auth-service answers `GET /internal/admin/stats`. */
@@ -84,7 +84,11 @@ export class AuthClient {
   adminUsers(userId: string, query: AdminUsersQuery = {}): Promise<AdminUsersPage> {
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined) search.set(key, value);
+      // A repeated parameter stays repeated, so auth-service rejects it as malformed
+      // instead of the gateway silently picking one of the values.
+      for (const item of [value].flat()) {
+        if (item !== undefined) search.append(key, item);
+      }
     }
     const suffix = search.size > 0 ? `?${search.toString()}` : '';
     return this.http.request('GET', `/internal/admin/users${suffix}`, { sub: userId, role: 'ADMINISTRATOR' });
