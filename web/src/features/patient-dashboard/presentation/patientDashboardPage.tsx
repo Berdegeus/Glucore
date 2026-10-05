@@ -1,8 +1,7 @@
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import { browserTimeZone } from '../../../shared/presentation/browserTimeZone';
-import { Skeleton } from '../../../shared/presentation/ui/states';
-import { componentFor, DashboardGrid, GridItem, useLayout, WidgetSlot } from '../../dashboard-layout';
+import { LayoutBoard, LayoutEditorProvider, LayoutToolbar } from '../../dashboard-layout';
 import { localDayOf } from '../application/loadDayDetail';
 import { DEFAULT_PRESET, toRange, type DateRange } from '../domain/period';
 import { PeriodProvider } from './periodContext';
@@ -18,26 +17,6 @@ export const SYNC_GUIDANCE = 'Abra o aplicativo para sincronizar os dados.';
 
 /** Every summary, whatever its period; the prefix of `summaryQueryKey`. */
 const SUMMARIES = ['summary'] as const;
-
-/** The grid of the patient's layout, one cell per widget the catalog knows (LAY-02, LAY-10). */
-function LayoutGrid() {
-  const { layout } = useLayout('PATIENT');
-  if (!layout) return <Skeleton height="12rem" />;
-  return (
-    <DashboardGrid>
-      {layout.widgets.map((item) => {
-        const component = componentFor(item.id);
-        return (
-          component && (
-            <GridItem key={item.id} size={item.size}>
-              <WidgetSlot component={component} size={item.size} />
-            </GridItem>
-          )
-        );
-      })}
-    </DashboardGrid>
-  );
-}
 
 /**
  * Says a period without readings has nothing to draw and where the data comes
@@ -80,8 +59,8 @@ function RefreshButton() {
 const todayInBrowserZone = (): string => localDayOf(Date.now(), browserTimeZone());
 
 /**
- * The patient's dashboard (PAC-01): the period filter, "Atualizar" and the
- * grid of the widgets the layout lists. It opens on the last 14 days; the
+ * The patient's dashboard (PAC-01): the period filter, "Atualizar", "Personalizar"
+ * and the grid of the widgets the layout lists. It opens on the last 14 days; the
  * period lives here and reaches the widgets through `PeriodProvider`, so all of
  * them share one summary request per period (PAC-17).
  */
@@ -90,15 +69,18 @@ export function PatientDashboardPage() {
   const [range, setRange] = useState<DateRange>(() => toRange(DEFAULT_PRESET, today));
   return (
     <PeriodProvider range={range}>
-      <div className={styles.page}>
-        <h1 className={styles.title}>{PAGE_TITLE}</h1>
-        <div className={styles.toolbar}>
-          <PeriodFilter value={range} today={today} onChange={setRange} />
-          <RefreshButton />
+      <LayoutEditorProvider forRole="PATIENT">
+        <div className={styles.page}>
+          <h1 className={styles.title}>{PAGE_TITLE}</h1>
+          <div className={styles.toolbar}>
+            <PeriodFilter value={range} today={today} onChange={setRange} />
+            <RefreshButton />
+            <LayoutToolbar />
+          </div>
+          <NoReadingsNotice range={range} />
+          <LayoutBoard />
         </div>
-        <NoReadingsNotice range={range} />
-        <LayoutGrid />
-      </div>
+      </LayoutEditorProvider>
     </PeriodProvider>
   );
 }

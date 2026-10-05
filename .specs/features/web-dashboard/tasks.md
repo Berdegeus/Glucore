@@ -2760,7 +2760,7 @@ T220 → T221 → T222 → T223 → T224
 **Done when**:
 
 - [x] Zero violações nas duas páginas; navegação por `Tab` alcança filtro, "Personalizar" e "Sair"
-  - Nota: o botão "Personalizar" só existe na Fase 14; até lá o teste de teclado cobre o filtro, "Atualizar" e "Sair", e a Fase 14 deve estendê-lo com "Personalizar".
+  - Nota: o botão "Personalizar" só existe na Fase 14; até lá o teste de teclado cobre o filtro, "Atualizar" e "Sair", e a Fase 14 deve estendê-lo com "Personalizar". Estendido na T119: o teste de teclado alcança "Personalizar" e há uma varredura axe com o modo ativo.
 - [x] Gate `quick` passa: `cd web && npx vitest run src/app/a11y.test.tsx`
 - [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
@@ -2909,13 +2909,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW com armazenamento em memória: remover dois, mover um, salvar, remontar a aplicação e ver o mesmo layout
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/patientDashboardPage.test.tsx`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] MSW com armazenamento em memória: remover dois, mover um, salvar, remontar a aplicação e ver o mesmo layout
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/patientDashboardPage.test.tsx`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): enable layout customization on the patient page`
+**Status**: ✅ Done
 
 ---
 

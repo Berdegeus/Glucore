@@ -2,14 +2,14 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '../../../test/apiMocks';
+import { mockLayoutStore } from '../../../test/layoutStore';
 import { stubChartContainer } from '../../../test/chartContainer';
 import { withTimeZone } from '../../../test/browserTimeZone';
 import { renderOnContainer } from '../../../test/pageHarness';
 import { emptyPeriodSummary } from '../../../test/widgetHarness';
 import { summaryFixture } from '../../../test/summaryFakes';
 import { PatientDashboardPage, NO_READINGS_TITLE, PAGE_TITLE, REFRESH_LABEL, SYNC_GUIDANCE } from './patientDashboardPage';
-import { KPI_GMI_TITLE } from './widgets/kpiGmi';
-import { KPI_TIR_TITLE } from './widgets/kpiTir';
+import { KPI_CV_TITLE, KPI_GMI_TITLE, KPI_MEAN_TITLE, KPI_TIR_TITLE } from './widgets/widgetTitles';
 
 stubChartContainer();
 // The first test to render all 16 widgets loads every chunk, which can pass the default 5 s on a busy machine.
@@ -141,5 +141,95 @@ describe('PatientDashboardPage "Atualizar" and the period (PAC-15, PAC-17)', () 
     await waitFor(() => expect(api.summaryRequests).toHaveLength(2), SLOW);
     expect(Object.fromEntries(api.summaryRequests[1]?.searchParams ?? [])).toMatchObject({ from: '2026-07-08', to: '2026-08-06' });
     expect(regionNames()).toEqual([KPI_TIR_TITLE, KPI_GMI_TITLE]);
+  });
+});
+
+const FOUR_KPIS = [
+  { id: 'kpi-tir', size: 'S' },
+  { id: 'kpi-gmi', size: 'S' },
+  { id: 'kpi-mean', size: 'S' },
+  { id: 'kpi-cv', size: 'S' },
+] as const;
+
+/** Mounts the page over an in-memory layout store holding `saved`, and opens the "Personalizar" mode. */
+async function customizing(saved: readonly { id: string; size: 'S' | 'M' | 'L' }[] = FOUR_KPIS) {
+  mockApi();
+  const store = mockLayoutStore(saved.map((item) => ({ ...item })));
+  const first = renderOnContainer(<PatientDashboardPage />);
+  const user = userEvent.setup();
+  await kpi(KPI_TIR_TITLE);
+  await user.click(screen.getByRole('button', { name: 'Personalizar' }));
+  // The editor is its own chunk: wait for it before touching its controls.
+  await screen.findByRole('region', { name: 'Adicionar ao painel' }, SLOW);
+  return { user, store, first };
+}
+
+describe('PatientDashboardPage customizing the layout (LAY-03, LAY-04, LAY-06, LAY-07, LAY-08)', () => {
+  it('removes two widgets, moves one, saves, and a fresh mount of the app shows the same layout', async () => {
+    const { user, store, first } = await customizing();
+
+    await user.click(screen.getByRole('button', { name: `Remover ${KPI_GMI_TITLE}` }));
+    await user.click(screen.getByRole('button', { name: `Remover ${KPI_CV_TITLE}` }));
+    await user.click(screen.getByRole('button', { name: `Mover para antes: ${KPI_MEAN_TITLE}` }));
+    await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(await screen.findByText('Layout salvo')).toBeInTheDocument();
+    expect(store.widgets).toEqual([
+      { id: 'kpi-mean', size: 'S' },
+      { id: 'kpi-tir', size: 'S' },
+    ]);
+    await waitFor(() => expect(regionNames()).toEqual([KPI_MEAN_TITLE, KPI_TIR_TITLE]), SLOW);
+
+    first.unmount();
+    renderOnContainer(<PatientDashboardPage />);
+
+    await kpi(KPI_TIR_TITLE);
+    expect(regionNames()).toEqual([KPI_MEAN_TITLE, KPI_TIR_TITLE]);
+    expect(screen.queryByText('Layout salvo')).not.toBeInTheDocument();
+  });
+
+  it('keeps the draft and shows the error when the save fails, then saves on "Tentar novamente"', async () => {
+    const { user, store } = await customizing();
+    store.failSaveWith = 503;
+
+    await user.click(screen.getByRole('button', { name: `Remover ${KPI_GMI_TITLE}` }));
+    await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(await screen.findByText('Não foi possível salvar o layout.')).toBeInTheDocument();
+    expect(store.widgets).toHaveLength(4);
+    expect(screen.queryByRole('button', { name: `Remover ${KPI_GMI_TITLE}` })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeEnabled();
+
+    store.failSaveWith = null;
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+
+    expect(await screen.findByText('Layout salvo')).toBeInTheDocument();
+    expect(store.widgets?.map((item) => item.id)).toEqual(['kpi-tir', 'kpi-mean', 'kpi-cv']);
+  });
+
+  it('adds a widget from the picker at its default size and resizes another, in the draft only until saved', async () => {
+    const { user, store } = await customizing([{ id: 'kpi-tir', size: 'S' }]);
+
+    await user.click(screen.getByRole('button', { name: `Adicionar ${KPI_GMI_TITLE}` }));
+    await user.click(within(screen.getByRole('group', { name: `Tamanho: ${KPI_TIR_TITLE}` })).getByRole('radio', { name: 'L' }));
+
+    expect(store.puts).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: 'Salvar' }));
+    await screen.findByText('Layout salvo');
+    expect(store.widgets).toEqual([
+      { id: 'kpi-tir', size: 'L' },
+      { id: 'kpi-gmi', size: 'S' },
+    ]);
+  });
+
+  it('puts the widgets back as they were on "Cancelar", without a request', async () => {
+    const { user, store } = await customizing();
+
+    await user.click(screen.getByRole('button', { name: `Remover ${KPI_GMI_TITLE}` }));
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    await waitFor(() => expect(regionNames()).toEqual([KPI_TIR_TITLE, KPI_GMI_TITLE, KPI_MEAN_TITLE, KPI_CV_TITLE]), SLOW);
+    expect(store.puts).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Personalizar' })).toBeInTheDocument();
   });
 });

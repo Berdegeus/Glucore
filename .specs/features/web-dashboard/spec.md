@@ -494,12 +494,12 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
 | LAY-01 | P1: Layout customizável por widgets | T1, T48, T49, T108 | Implementing |
 | LAY-02 | P1: Layout customizável por widgets | T48, T51, T54 | Implementing |
-| LAY-03 | P1: Layout customizável por widgets | T46, T113, T114 | Implementing |
-| LAY-04 | P1: Layout customizável por widgets | T19, T46, T113, T115 | Implementing |
+| LAY-03 | P1: Layout customizável por widgets | T46, T113, T114, T119 | Implementing |
+| LAY-04 | P1: Layout customizável por widgets | T19, T46, T113, T115, T119 | Implementing |
 | LAY-05 | P1: Layout customizável por widgets | T46, T113, T116 | Implementing |
-| LAY-06 | P1: Layout customizável por widgets | T46, T113, T117 | Implementing |
-| LAY-07 | P1: Layout customizável por widgets | T3, T5, T6, T7, T8, T50, T51, T118 | Implementing |
-| LAY-08 | P1: Layout customizável por widgets | T5, T6, T7, T8, T50, T51, T54 | Implementing |
+| LAY-06 | P1: Layout customizável por widgets | T46, T113, T117, T119 | Implementing |
+| LAY-07 | P1: Layout customizável por widgets | T3, T5, T6, T7, T8, T50, T51, T118, T119 | Implementing |
+| LAY-08 | P1: Layout customizável por widgets | T5, T6, T7, T8, T50, T51, T54, T119 | Implementing |
 | LAY-09 | P1: Layout customizável por widgets | T5, T6, T7, T50, T51, T118 | Implementing |
 | LAY-10 | P1: Layout customizável por widgets | T47, T51, T54 | Implementing |
 | LAY-11 | P1: Layout customizável por widgets | T1, T2, T4, T7, T50 | Implementing |

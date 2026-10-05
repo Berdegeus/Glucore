@@ -37,18 +37,36 @@ describe('accessibility of the pages (RSP-06, RSP-11)', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('reaches the period filter, "Atualizar" and "Sair" with Tab alone', async () => {
+  it('has no axe violations on the patient dashboard in "Personalizar" mode', async () => {
+    mockApi({
+      layout: [
+        { id: 'kpi-tir', size: 'S' },
+        { id: 'chart-zones', size: 'M' },
+        { id: 'table-excursions', size: 'L' },
+      ],
+    });
+    const container = await patientPageLoaded(renderApp('/paciente', { token: 'token-1' }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Personalizar' }));
+
+    await screen.findByRole('region', { name: 'Adicionar ao painel' }, SLOW);
+    await waitFor(() => expect(screen.queryAllByRole('status', { name: LOADING_LABEL })).toHaveLength(0), SLOW);
+    // The editor adds a drag handle, the move buttons, the size group and "Remover" to each of the 3 widgets.
+    expect(screen.getAllByRole('button', { name: /^Arrastar / })).toHaveLength(3);
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it('reaches the period filter, "Atualizar", "Personalizar" and "Sair" with Tab alone', async () => {
     mockApi({ layout: [{ id: 'kpi-tir', size: 'S' }] });
     await patientPageLoaded(renderApp('/paciente', { token: 'token-1' }));
     const user = userEvent.setup();
 
     const reached: string[] = [];
-    for (let stop = 0; stop < 40 && !['Sair', 'Atualizar'].every((name) => reached.includes(name)); stop += 1) {
+    for (let stop = 0; stop < 40 && !['Sair', 'Atualizar', 'Personalizar'].every((name) => reached.includes(name)); stop += 1) {
       await user.tab();
       reached.push(nameOf(document.activeElement ?? document.body));
     }
 
-    expect(reached).toEqual(expect.arrayContaining(['Sair', '14 dias', 'Atualizar']));
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Atualizar' }));
+    expect(reached).toEqual(expect.arrayContaining(['Sair', '14 dias', 'Atualizar', 'Personalizar']));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Personalizar' }));
   });
 });
