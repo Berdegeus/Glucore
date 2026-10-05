@@ -1,7 +1,7 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { ServiceProviders } from '../app/serviceProviders';
 import { createContainer } from '../composition/container';
 import { RevokedAccessProvider } from '../features/professional/presentation/revokedAccess';
@@ -14,6 +14,16 @@ interface ProfessionalPageOptions {
   initialEntry?: string;
   /** Other pages the router can reach, by path, for a redirect to land on. */
   routes?: Readonly<Record<string, ReactElement>>;
+  /** A client to start from, e.g. with a list already cached. */
+  client?: QueryClient;
+}
+
+/** Where the router is, as text; read it with `screen.getByTestId(LOCATION_TEST_ID)`. */
+export const LOCATION_TEST_ID = 'location';
+
+function LocationProbe() {
+  const { pathname } = useLocation();
+  return <p data-testid={LOCATION_TEST_ID}>{pathname}</p>;
 }
 
 /**
@@ -21,9 +31,11 @@ interface ProfessionalPageOptions {
  * revoked-access notice both pages of the professional share, inside a router with
  * the registered widgets. Pair it with `mockPortfolio()` and `mockLayoutStore()`.
  */
-export function renderProfessionalPage(page: ReactElement, { path = '/profissional', initialEntry = path, routes = {} }: ProfessionalPageOptions = {}) {
+export function renderProfessionalPage(
+  page: ReactElement,
+  { path = '/profissional', initialEntry = path, routes = {}, client = testQueryClient() }: ProfessionalPageOptions = {},
+) {
   const container = createContainer({ apiUrl: TEST_API_URL });
-  const client = testQueryClient();
   const view = render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <QueryClientProvider client={client}>
@@ -35,6 +47,7 @@ export function renderProfessionalPage(page: ReactElement, { path = '/profission
                 <Route key={routePath} path={routePath} element={element} />
               ))}
             </Routes>
+            <LocationProbe />
           </RevokedAccessProvider>
         </ServiceProviders>
       </QueryClientProvider>

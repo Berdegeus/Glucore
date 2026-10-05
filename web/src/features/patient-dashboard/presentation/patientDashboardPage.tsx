@@ -1,12 +1,11 @@
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
-import { browserTimeZone } from '../../../shared/presentation/browserTimeZone';
 import { LayoutBoard, LayoutEditorProvider, LayoutToolbar } from '../../dashboard-layout';
-import { localDayOf } from '../application/loadDayDetail';
 import { DEFAULT_PRESET, toRange, type DateRange } from '../domain/period';
 import { PeriodProvider } from './periodContext';
 import styles from './patientDashboardPage.module.css';
 import { PeriodFilter } from './periodFilter';
+import { todayInBrowserZone } from './today';
 import { diaryQueryKey } from './useDayDetail';
 import { useSummary } from './useSummary';
 
@@ -55,8 +54,6 @@ function RefreshButton() {
     </button>
   );
 }
-
-const todayInBrowserZone = (): string => localDayOf(Date.now(), browserTimeZone());
 
 /**
  * The patient's dashboard (PAC-01): the period filter, "Atualizar", "Personalizar"

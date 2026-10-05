@@ -8,6 +8,7 @@ import { API_BASE } from './httpClient';
 import { TEST_API_URL } from './pageHarness';
 import { cohortDto, patientPageDto, patientRowDto } from './professionalFakes';
 import { server } from './server';
+import { summaryFixture } from './summaryFakes';
 
 /** A query client that does not retry, so a failure shows at once. */
 export const plainQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -55,6 +56,26 @@ export function mockPortfolio({ list, cohort }: PortfolioAnswers = {}): Portfoli
     http.get(`${API_BASE}/professional/cohort/summary`, ({ request }) => {
       mock.cohortRequests.push(new URL(request.url));
       return cohort ? cohort(mock.cohortRequests.length) : HttpResponse.json(cohortDto());
+    }),
+  );
+  return mock;
+}
+
+interface LinkedPatientMock {
+  /** Every `GET /professional/patients/:id/summary` received, in order. */
+  requests: URL[];
+}
+
+/**
+ * `GET /professional/patients/:id/summary` over MSW, for any patient: the fixture summary, or whatever
+ * `answer` returns for the n-th request (1 for the first), e.g. a `403 NO_ACTIVE_GRANT`.
+ */
+export function mockLinkedPatientSummary(answer?: (request: number) => Response): LinkedPatientMock {
+  const mock: LinkedPatientMock = { requests: [] };
+  server.use(
+    http.get(`${API_BASE}/professional/patients/:id/summary`, ({ request }) => {
+      mock.requests.push(new URL(request.url));
+      return answer ? answer(mock.requests.length) : HttpResponse.json(summaryFixture());
     }),
   );
   return mock;

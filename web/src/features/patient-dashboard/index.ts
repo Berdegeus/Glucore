@@ -8,3 +8,13 @@ export { SummaryServicesProvider } from './presentation/summaryServices';
 /** The page as a module for `React.lazy`: the app loads it with its route, not with the login screen. */
 export const loadPatientDashboardPage = () =>
   import('./presentation/patientDashboardPage').then((module) => ({ default: module.PatientDashboardPage }));
+
+// What a page that shows a linked patient's summary reuses (the professional's patient detail, PRO-08):
+// the period filter and its provider, the scope that points the widgets at a patient, and the summary query.
+export { PeriodFilter } from './presentation/periodFilter';
+export { PeriodProvider } from './presentation/periodContext';
+export { SummaryScopeProvider } from './presentation/summaryScope';
+export { todayInBrowserZone } from './presentation/today';
+export { useSummary } from './presentation/useSummary';
+export { DEFAULT_PRESET, toRange } from './domain/period';
+export type { DateRange } from './domain/period';

@@ -4478,13 +4478,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: carrega `/professional/patients/:id/summary`; `NO_ACTIVE_GRANT` volta à carteira com "O paciente revogou o acesso"
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/patientDetailPage.test.tsx`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: carrega `/professional/patients/:id/summary`; `NO_ACTIVE_GRANT` volta à carteira com "O paciente revogou o acesso"
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/patientDetailPage.test.tsx`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the linked patient detail page`
+**Status**: ✅ Done
 
 ---
 
