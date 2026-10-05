@@ -4026,13 +4026,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Fronteiras: TIR 49,99/50 e 69,99/70; abaixo de 54 em 1,00/1,01 %; abaixo de 70 em 4,00/4,01 %; CV 36,00/36,01; uso do sensor 69,99/70
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/domain/risk.test.ts`
-- [ ] Pelo menos 11 testes novos passam e a contagem total da suíte não cai
+- [x] Fronteiras: TIR 49,99/50 e 69,99/70; abaixo de 54 em 1,00/1,01 %; abaixo de 70 em 4,00/4,01 %; CV 36,00/36,01; uso do sensor 69,99/70
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/domain/risk.test.ts`
+- [x] Pelo menos 11 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the patient risk rule`
+**Status**: ✅ Done
 
 ---
 
