@@ -27,6 +27,13 @@ import 'features/sensor/data/platform/sensor_platform.dart';
 import 'features/sensor/data/repositories/android_sensor_repository.dart';
 import 'features/sensor/domain/sensor_repository.dart';
 import 'features/sensor/presentation/cubit/sensor_cubit.dart';
+import 'features/sharing/data/sharing_remote_datasource.dart';
+import 'features/sharing/data/sharing_repository_impl.dart';
+import 'features/sharing/domain/repositories/sharing_repository.dart';
+import 'features/sharing/domain/usecases/generate_invite.dart';
+import 'features/sharing/domain/usecases/list_grants.dart';
+import 'features/sharing/domain/usecases/revoke_grant.dart';
+import 'features/sharing/presentation/cubit/sharing_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -89,6 +96,16 @@ Future<void> initDependencies() async {
     () => PatientUseCases.fromRepository(sl<PatientRepository>()),
   );
 
+  sl.registerLazySingleton<SharingRemoteDataSource>(
+    () => SharingRemoteDataSource(dio),
+  );
+  sl.registerLazySingleton<SharingRepository>(
+    () => SharingRepositoryImpl(sl<SharingRemoteDataSource>()),
+  );
+  sl.registerLazySingleton(() => GenerateInvite(sl<SharingRepository>()));
+  sl.registerLazySingleton(() => ListGrants(sl<SharingRepository>()));
+  sl.registerLazySingleton(() => RevokeGrant(sl<SharingRepository>()));
+
   sl.registerFactory(
     () => AuthCubit(
       loginUseCase: sl(),
@@ -103,4 +120,11 @@ Future<void> initDependencies() async {
   sl.registerFactory(() => SensorCubit(repository: sl()));
   sl.registerFactory(() => PatientCubit(useCases: sl()));
   sl.registerFactory(() => UserIdentityCubit(accountService: sl()));
+  sl.registerFactory(
+    () => SharingCubit(
+      generateInvite: sl(),
+      listGrants: sl(),
+      revokeGrant: sl(),
+    ),
+  );
 }

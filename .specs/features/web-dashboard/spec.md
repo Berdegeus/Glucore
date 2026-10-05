@@ -563,7 +563,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | REG-08 | P2: Cadastro do profissional de saúde | T129 | Implementing |
 | REG-09 | P2: Cadastro do profissional de saúde | T139 | Implementing |
 | REG-10 | P2: Cadastro do profissional de saúde | T139 | Implementing |
-| CON-01 | P2: Consentimento do paciente pelo app (código de convite) | T143, T145, T152, T153, T155, T157 | Implementing |
+| CON-01 | P2: Consentimento do paciente pelo app (código de convite) | T143, T145, T152, T153, T155, T157, T158 | Implementing |
 | CON-02 | P2: Consentimento do paciente pelo app (código de convite) | T141 | Implementing |
 | CON-03 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142 | Implementing |
 | CON-04 | P2: Consentimento do paciente pelo app (código de convite) | T142, T143, T145, T149 | Implementing |

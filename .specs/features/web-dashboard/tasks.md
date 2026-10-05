@@ -3747,13 +3747,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: `sl<SharingCubit>()` resolve depois de `initDependencies()`
-- [ ] Gate `full` passa: `flutter analyze && flutter test --no-pub`
-- [ ] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: `sl<SharingCubit>()` resolve depois de `initDependencies()`
+- [x] Gate `full` passa: `flutter analyze && flutter test --no-pub`
+- [x] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(app): register sharing dependencies`
+**Status**: ✅ Done
 
 ---
 
