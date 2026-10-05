@@ -74,7 +74,7 @@ export class PrismaAdminRepository implements AdminRepository {
       this.prisma.$queryRaw<{ day: string; count: number }[]>`
         SELECT to_char("createdAt", 'YYYY-MM-DD') AS day, COUNT(*)::int AS count
         FROM "User"
-        WHERE "createdAt" >= ${start}
+        WHERE "createdAt" >= (${start}::timestamptz AT TIME ZONE 'UTC')
         GROUP BY 1
       `,
     ]);

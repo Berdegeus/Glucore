@@ -46,6 +46,8 @@ export {
   utcDayStart,
   utcPeriodDayKeys,
   utcPeriodStart,
+  utcPeriodWeekKeys,
+  utcWeekStart,
   type DayCount,
 } from './util/utcDays';
 export {

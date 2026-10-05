@@ -36,6 +36,25 @@ export function utcPeriodDayKeys(days: number, now: Date): string[] {
   return Array.from({ length: days }, (_, i) => utcDayKey(new Date(start + i * DAY_MS)));
 }
 
+/** 00:00 UTC of the Monday that starts the ISO week the instant falls in. */
+export function utcWeekStart(date: Date): Date {
+  const day = utcDayStart(date);
+  const sinceMonday = (day.getUTCDay() + 6) % 7;
+  return new Date(day.getTime() - sinceMonday * DAY_MS);
+}
+
+/**
+ * `YYYY-MM-DD` of every Monday whose week overlaps the period, oldest first. A
+ * 7-day period spans 1 or 2 weeks depending on the weekday it ends on.
+ */
+export function utcPeriodWeekKeys(days: number, now: Date): string[] {
+  const first = utcWeekStart(utcPeriodStart(days, now)).getTime();
+  const last = utcWeekStart(now).getTime();
+  const keys: string[] = [];
+  for (let at = first; at <= last; at += 7 * DAY_MS) keys.push(utcDayKey(new Date(at)));
+  return keys;
+}
+
 /**
  * Lays sparse `{ day, count }` rows over every day of the period. Rows outside
  * the period are dropped; a day missing from the rows is 0.
