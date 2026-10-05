@@ -36,6 +36,11 @@ export {
   type PageQuery,
 } from './util/pageQuery';
 export {
+  ADMIN_RANGE_DAYS,
+  DEFAULT_ADMIN_RANGE_DAYS,
+  parseAdminRangeDays,
+} from './util/adminRange';
+export {
   fillDayCounts,
   utcDayKey,
   utcDayStart,

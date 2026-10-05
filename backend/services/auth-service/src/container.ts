@@ -9,6 +9,10 @@ import { AccountsController } from './modules/accounts/accounts.controller';
 import { PrismaAccountRepository } from './modules/accounts/accounts.repository';
 import { createAccountsRouter } from './modules/accounts/accounts.routes';
 import { AccountsService } from './modules/accounts/accounts.service';
+import { AdminController } from './modules/admin/admin.controller';
+import { PrismaAdminRepository } from './modules/admin/admin.repository';
+import { createAdminRouter } from './modules/admin/admin.routes';
+import { AdminService } from './modules/admin/admin.service';
 import { InternalAccountsController } from './modules/internal/internal.controller';
 import { createInternalAccountsRouter } from './modules/internal/internal.routes';
 import { PasswordController } from './modules/password/password.controller';
@@ -70,9 +74,19 @@ export function createContainer(env: Env = loadEnv(), overrides: ContainerOverri
   authRouter.use(createPasswordRouter(new PasswordController(passwords)));
 
   const requireInternalAuth: RequestHandler = createRequireInternalAuth(() => env.internalJwtSecret);
-  const internalRouter = createInternalAccountsRouter(
-    new InternalAccountsController(accounts),
-    requireInternalAuth,
+  // `/internal/admin` is mounted first and carries its own token and role
+  // checks; the accounts router behind it applies the token check to every
+  // other `/internal` path.
+  const internalRouter = Router();
+  internalRouter.use(
+    '/admin',
+    createAdminRouter(
+      new AdminController(new AdminService(new PrismaAdminRepository(prisma))),
+      requireInternalAuth,
+    ),
+  );
+  internalRouter.use(
+    createInternalAccountsRouter(new InternalAccountsController(accounts), requireInternalAuth),
   );
 
   const preferencesRouter = createPreferencesRouter(

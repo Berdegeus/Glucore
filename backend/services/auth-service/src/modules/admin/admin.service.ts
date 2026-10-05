@@ -3,7 +3,7 @@ import type { AuditContext, RecordAudit } from '@glucore/shared';
 import { recordAudit } from '../../lib/audit';
 
 import { toAdminUserDto, type AdminUsersPageDto } from './admin.mapper';
-import type { AdminRepository } from './admin.repository';
+import type { AccountStats, AdminRepository } from './admin.repository';
 import type { UserListQuery } from './admin.schema';
 
 /**
@@ -15,7 +15,13 @@ export class AdminService {
   constructor(
     private readonly admin: AdminRepository,
     private readonly audit: RecordAudit = recordAudit,
+    private readonly now: () => Date = () => new Date(),
   ) {}
+
+  /** Account totals and sign-ups over the last `days` UTC days (ADM-01, ADM-02). */
+  stats(days: number): Promise<AccountStats> {
+    return this.admin.accountStats(days, this.now());
+  }
 
   /**
    * One page of accounts. Every read is audited (ADM-06), with the filters and
