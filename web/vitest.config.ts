@@ -20,6 +20,9 @@ export default defineConfig({
           exclude: [...configDefaults.exclude, CORE_LAYERS],
           environment: 'jsdom',
           setupFiles: ['src/test/setup.ts'],
+          // The first axe run of a file takes about a second alone and several when the whole suite shares the CPU;
+          // the 5 s default made `loginPage.test.tsx` flake once under load. Raising it weakens no assertion.
+          testTimeout: 15_000,
         },
       },
       {

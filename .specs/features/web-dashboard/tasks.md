@@ -2759,13 +2759,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Zero violações nas duas páginas; navegação por `Tab` alcança filtro, "Personalizar" e "Sair"
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/app/a11y.test.tsx`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Zero violações nas duas páginas; navegação por `Tab` alcança filtro, "Personalizar" e "Sair"
+  - Nota: o botão "Personalizar" só existe na Fase 14; até lá o teste de teclado cobre o filtro, "Atualizar" e "Sair", e a Fase 14 deve estendê-lo com "Personalizar".
+- [x] Gate `quick` passa: `cd web && npx vitest run src/app/a11y.test.tsx`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `test(web): scan pages for accessibility violations`
+**Status**: ✅ Done
 
 ---
 
