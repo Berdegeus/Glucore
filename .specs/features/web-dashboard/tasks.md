@@ -3149,13 +3149,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest: sem token interno `401`; com corpo contendo `"role":"ADMINISTRATOR"` cria profissional; resposta `201 { userId, token }`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest: sem token interno `401`; com corpo contendo `"role":"ADMINISTRATOR"` cria profissional; resposta `201 { userId, token }`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): add the internal professional registration route`
+**Status**: ✅ Done
 
 ---
 

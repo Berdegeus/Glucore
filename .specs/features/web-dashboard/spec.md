@@ -558,7 +558,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | REG-03 | P2: Cadastro do profissional de saúde | T129 | Implementing |
 | REG-04 | P2: Cadastro do profissional de saúde | - | Pending |
 | REG-05 | P2: Cadastro do profissional de saúde | - | Pending |
-| REG-06 | P2: Cadastro do profissional de saúde | T128 | Implementing |
+| REG-06 | P2: Cadastro do profissional de saúde | T128, T130 | Implementing |
 | REG-07 | P2: Cadastro do profissional de saúde | - | Pending |
 | REG-08 | P2: Cadastro do profissional de saúde | T129 | Implementing |
 | REG-09 | P2: Cadastro do profissional de saúde | - | Pending |

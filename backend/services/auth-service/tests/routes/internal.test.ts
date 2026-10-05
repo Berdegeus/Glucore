@@ -2,11 +2,11 @@ import type { Express } from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { signInternalToken } from '@glucore/shared';
+import { signInternalToken, verifyAccessToken } from '@glucore/shared';
 
 import { buildTestApp } from '../helpers/app';
 import { disconnect, prisma, truncateAll } from '../helpers/db';
-import { TEST_INTERNAL_JWT_SECRET } from '../helpers/testEnv';
+import { TEST_INTERNAL_JWT_SECRET, TEST_JWT_SECRET } from '../helpers/testEnv';
 
 /**
  * `/internal/*` is the gateway's only path into this service's identity data.
@@ -65,6 +65,62 @@ describe('POST /internal/accounts', () => {
     expect(res.status).toBe(201);
     expect(typeof res.body.userId).toBe('string');
     expect(typeof res.body.token).toBe('string');
+  });
+});
+
+async function registerProfessionalViaInternal(body: Record<string, unknown>) {
+  return request(app)
+    .post('/internal/accounts/professional')
+    .set('x-internal-token', internalToken('gateway'))
+    .send(body);
+}
+
+describe('POST /internal/accounts/professional', () => {
+  const professional = () => ({ email: uniqueEmail(), password: STRONG, fullName: 'Dra. Ana Souza' });
+
+  it('rejects a request with no internal token', async () => {
+    const res = await request(app).post('/internal/accounts/professional').send(professional());
+    expect(res.status).toBe(401);
+    expect(await prisma.user.count()).toBe(0);
+  });
+
+  it('ignores a role in the body, creates a HEALTH_PROFESSIONAL and answers 201 { userId, token } (REG-06)', async () => {
+    const email = uniqueEmail();
+    const res = await registerProfessionalViaInternal({ ...professional(), email, role: 'ADMINISTRATOR' });
+
+    expect(res.status).toBe(201);
+    expect(Object.keys(res.body).sort()).toEqual(['token', 'userId']);
+    expect((await prisma.user.findUnique({ where: { email } }))?.role).toBe('HEALTH_PROFESSIONAL');
+    expect(verifyAccessToken(res.body.token as string, TEST_JWT_SECRET)).toEqual({
+      sub: res.body.userId,
+      role: 'HEALTH_PROFESSIONAL',
+    });
+  });
+
+  it('keeps the patient route creating PATIENT even when the body asks for another role (REG-06)', async () => {
+    const email = uniqueEmail();
+    const res = await registerViaInternal({ ...professional(), email, role: 'HEALTH_PROFESSIONAL' });
+
+    expect(res.status).toBe(201);
+    expect((await prisma.user.findUnique({ where: { email } }))?.role).toBe('PATIENT');
+  });
+
+  it('answers 400 WEAK_PASSWORD and 409 EMAIL_TAKEN like the patient registration', async () => {
+    const weak = await registerProfessionalViaInternal({ ...professional(), password: 'fraca' });
+    expect(weak.status).toBe(400);
+    expect(weak.body.code).toBe('WEAK_PASSWORD');
+
+    const first = professional();
+    await registerProfessionalViaInternal(first);
+    const taken = await registerProfessionalViaInternal(first);
+    expect(taken.status).toBe(409);
+    expect(taken.body.code).toBe('EMAIL_TAKEN');
+  });
+
+  it('answers 400 for a body that is not a valid registration', async () => {
+    const res = await registerProfessionalViaInternal({ email: 'not-an-email', password: STRONG, fullName: 'Dra. Ana' });
+    expect(res.status).toBe(400);
+    expect(await prisma.user.count()).toBe(0);
   });
 });
 

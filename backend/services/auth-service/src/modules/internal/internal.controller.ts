@@ -19,6 +19,16 @@ export class InternalAccountsController {
     res.status(201).json({ userId, token });
   };
 
+  /**
+   * The role is the route's, not the body's (REG-06): `parseRegister` only reads
+   * the fields it knows, so a `role` in the body never reaches the service.
+   */
+  registerProfessional = async (req: Request, res: Response): Promise<void> => {
+    const input = parseRegister(req.body ?? {});
+    const { userId, token } = await this.accounts.registerProfessional(input, auditRequestContext(req));
+    res.status(201).json({ userId, token });
+  };
+
   getMe = async (req: InternalAuthRequest, res: Response): Promise<void> => {
     res.json(await this.accounts.getAccount(req.internalUserId as string));
   };
