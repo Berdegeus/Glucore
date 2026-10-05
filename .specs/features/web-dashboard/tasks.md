@@ -4412,16 +4412,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `pro-hypo-by-hour`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza episódios de hipo por hora do dia a partir de `cohort.hypoByHour`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Usa o adaptador `BarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proHypoByHour.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `pro-hypo-by-hour`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza episódios de hipo por hora do dia a partir de `cohort.hypoByHour`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Usa o adaptador `BarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proHypoByHour.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add pro-hypo-by-hour widget`
+**Status**: ✅ Done
 
 ---
 

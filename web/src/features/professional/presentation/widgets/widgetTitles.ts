@@ -12,6 +12,7 @@ export const PRO_PATIENTS_TABLE_TITLE = 'Pacientes';
 export const PRO_TIR_BY_PATIENT_TITLE = 'Zonas por paciente';
 export const PRO_RISK_SCATTER_TITLE = 'TIR × CV por paciente';
 export const PRO_TIR_HISTOGRAM_TITLE = 'Pacientes por faixa de TIR';
+export const PRO_HYPO_BY_HOUR_TITLE = 'Hipos por hora do dia';
 export const PRO_REDEEM_CODE_TITLE = 'Vincular paciente por código';
 
 /** Title of each professional widget by its `titleKey`. */
@@ -25,5 +26,6 @@ export const PROFESSIONAL_WIDGET_TITLES: Readonly<Record<string, string>> = {
   'widget.pro-tir-by-patient': PRO_TIR_BY_PATIENT_TITLE,
   'widget.pro-risk-scatter': PRO_RISK_SCATTER_TITLE,
   'widget.pro-tir-histogram': PRO_TIR_HISTOGRAM_TITLE,
+  'widget.pro-hypo-by-hour': PRO_HYPO_BY_HOUR_TITLE,
   'widget.pro-redeem-code': PRO_REDEEM_CODE_TITLE,
 };
