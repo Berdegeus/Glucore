@@ -2930,13 +2930,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] O widget falso aparece com um módulo novo e uma linha de registro; nenhum arquivo de grade ou página é tocado
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/openClosed.test.tsx`
-- [ ] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
+- [x] O widget falso aparece com um módulo novo e uma linha de registro; nenhum arquivo de grade ou página é tocado
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/openClosed.test.tsx`
+- [x] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `test(web): prove widgets are open for extension`
+**Status**: ✅ Done
 
 ---
 
