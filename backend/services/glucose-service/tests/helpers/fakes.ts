@@ -267,13 +267,26 @@ export class FakeDashboardRepository implements IDashboardRepository {
   alertsByType: AlertsByTypeDto[] = [];
   excursions: ExcursionDto[] = [];
 
+  /** Stage this to make `resolveBounds` answer a window that is not plain UTC midnight-to-midnight. */
+  bounds: DateRange | null = null;
+
   /** Every range this fake was called with, in call order — asserts what the service built. */
   readonly rangesSeen: DateRange[] = [];
   readonly thresholdsSeen: Array<{ low: number; high: number }> = [];
+  /** The patient id each `getTotals` call came with. */
+  readonly patientIdsSeen: string[] = [];
+  /** The zone each zone-aware method was called with, keyed by method name. */
+  readonly tzSeen: Record<'resolveBounds' | 'getAgp' | 'getHeatmap' | 'getDailyBuckets', string[]> = {
+    resolveBounds: [],
+    getAgp: [],
+    getHeatmap: [],
+    getDailyBuckets: [],
+  };
 
-  /** Plain UTC arithmetic; the real window-in-zone logic is covered against Postgres. */
-  async resolveBounds(fromDate: Date, toDate: Date): Promise<DateRange> {
-    return { from: fromDate, toExclusive: new Date(toDate.getTime() + 24 * 60 * 60 * 1000) };
+  /** Plain UTC arithmetic unless `bounds` is staged; the real window-in-zone logic is covered against Postgres. */
+  async resolveBounds(fromDate: Date, toDate: Date, tz: string): Promise<DateRange> {
+    this.tzSeen.resolveBounds.push(tz);
+    return this.bounds ?? { from: fromDate, toExclusive: new Date(toDate.getTime() + 24 * 60 * 60 * 1000) };
   }
 
   async getThresholdConfig(
@@ -282,7 +295,8 @@ export class FakeDashboardRepository implements IDashboardRepository {
     return this.thresholdConfig;
   }
 
-  async getTotals(_patientId: string, range: DateRange): Promise<DashboardTotals> {
+  async getTotals(patientId: string, range: DateRange): Promise<DashboardTotals> {
+    this.patientIdsSeen.push(patientId);
     this.rangesSeen.push(range);
     return this.totals;
   }
@@ -313,15 +327,24 @@ export class FakeDashboardRepository implements IDashboardRepository {
     return this.lastReadingAt;
   }
 
-  async getAgp(): Promise<AgpPointDto[]> {
+  async getAgp(_patientId: string, _range: DateRange, tz: string): Promise<AgpPointDto[]> {
+    this.tzSeen.getAgp.push(tz);
     return this.agp;
   }
 
-  async getHeatmap(): Promise<HeatCellDto[]> {
+  async getHeatmap(_patientId: string, _range: DateRange, tz: string): Promise<HeatCellDto[]> {
+    this.tzSeen.getHeatmap.push(tz);
     return this.heatmap;
   }
 
-  async getDailyBuckets(): Promise<DailyBucketDto[]> {
+  async getDailyBuckets(
+    _patientId: string,
+    _range: DateRange,
+    _low: number,
+    _high: number,
+    tz: string,
+  ): Promise<DailyBucketDto[]> {
+    this.tzSeen.getDailyBuckets.push(tz);
     return this.dailyBuckets;
   }
 

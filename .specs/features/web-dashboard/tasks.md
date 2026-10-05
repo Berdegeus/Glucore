@@ -1907,13 +1907,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com fakes: campos novos presentes (`tz`, `lastReadingAt`, `zoneDistribution`, `sensorUsePercent`, `agp`, `heatmap`); campos antigos iguais; fuso desconhecido `400 INVALID_TIMEZONE`
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/dashboard.service.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com fakes: campos novos presentes (`tz`, `lastReadingAt`, `zoneDistribution`, `sensorUsePercent`, `agp`, `heatmap`); campos antigos iguais; fuso desconhecido `400 INVALID_TIMEZONE`
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/dashboard.service.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(glucose-service): make the summary reusable by patient id`
+**Status**: ✅ Done
 
 ---
 

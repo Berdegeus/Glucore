@@ -156,11 +156,19 @@ export interface ExcursionDto {
 export interface DashboardSummaryDto {
   from: string;
   to: string;
+  /** The zone the days and hours below were cut in; `UTC` when the caller sent none. */
+  tz: string;
+  /** The patient's most recent reading in any period, `null` with no readings at all. */
+  lastReadingAt: string | null;
   totals: DashboardTotals;
   timeInRangePercent: number | null;
   gmiPercent: number | null;
   coefficientOfVariationPercent: number | null;
+  sensorUsePercent: number;
+  zoneDistribution: ZoneDistributionDto;
   byDay: DailyBucketDto[];
+  agp: AgpPointDto[];
+  heatmap: HeatCellDto[];
   insulinByType: InsulinByTypeDto[];
   alertsByType: AlertsByTypeDto[];
   excursions: ExcursionDto[];
