@@ -477,7 +477,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-02 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-03 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-04 | P1: Arquitetura limpa verificável (rubrica 37) | T17, T18, T28, T46, T79 | Implementing |
-| ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | T20, T28 | Implementing |
+| ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | T20, T28, T83 | Implementing |
 | ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34 | Implementing |
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33 | Implementing |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
@@ -519,7 +519,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | RSP-09 | P1: Responsivo, acessível e com tema | T26, T37 | Implementing |
 | RSP-10 | P1: Responsivo, acessível e com tema | T36, T38, T45 | Implementing |
 | RSP-11 | P1: Responsivo, acessível e com tema | - | Pending |
-| PAC-01 | P1: Dashboard do paciente com os dados do app | - | Pending |
+| PAC-01 | P1: Dashboard do paciente com os dados do app | T83 | Implementing |
 | PAC-02 | P1: Dashboard do paciente com os dados do app | T80 | Implementing |
 | PAC-03 | P1: Dashboard do paciente com os dados do app | T80 | Implementing |
 | PAC-04 | P1: Dashboard do paciente com os dados do app | T80 | Implementing |
