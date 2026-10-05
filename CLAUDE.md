@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project objective
 
-Glucore is an Android-first Flutter MVP for CGM sensors: Sibionics, Accu-Chek SmartGuide and FreeStyle Libre 2. Four layers: Flutter UI → Kotlin session/BLE → C++/JNI bridge → proprietary vendor `.so` files (arm64-v8a only).
+Glucore is an Android-first Flutter MVP for CGM sensors: Sibionics, Accu-Chek SmartGuide and FreeStyle Libre 2. Four layers: Flutter UI → Kotlin session/BLE → C++/JNI bridge → proprietary vendor `.so` files (arm64-v8a only). A second client, the React web dashboard in `web/` (patient, health professional, administrator), is deployed on Vercel; both clients consume the same backend gateway.
 
-**Current state (v1.1.0):** BLE connection live. Full GATT + Sibionics EU protocol (auth → time-sync → activation → history sync → glucose). **Multi-sensor**: Sibionics + Accu-Chek SmartGuide (PIN) + FreeStyle Libre 2 (NFC + Abbott lib) over a brand-agnostic `BrandBleManager`; app-scoped stack (`SensorCore` + `CgmForegroundService`). Flutter shell with Bloc/Cubit. **Offline-first** local SQLite (primary) + background sync; JWT auth tolerant of offline launch (P18) and scoped per-user (P19); nav providers above the root Navigator (P17). Backend: three services (gateway + auth-service + glucose-service) with JWT auth, CRUD for carb/insulin/alerts and a dashboard summary; the app talks to it through `/api/v1` (see Backend).
+**Current state (v1.1.0):** BLE connection live. Full GATT + Sibionics EU protocol (auth → time-sync → activation → history sync → glucose). **Multi-sensor**: Sibionics + Accu-Chek SmartGuide (PIN) + FreeStyle Libre 2 (NFC + Abbott lib) over a brand-agnostic `BrandBleManager`; app-scoped stack (`SensorCore` + `CgmForegroundService`). Flutter shell with Bloc/Cubit. **Offline-first** local SQLite (primary) + background sync; JWT auth tolerant of offline launch (P18) and scoped per-user (P19); nav providers above the root Navigator (P17). Backend: three services (gateway + auth-service + glucose-service) with role-based JWT auth (patient, health professional, administrator), CRUD for carb/insulin/alerts, a dashboard summary, patient→professional consent by invite code, the professional's portfolio and an admin overview; the app and the web talk to it through `/api/v1` (see Backend).
 
 **Versioning:** `dev` = integration branch for the in-progress version; `main` = tagged releases, device-regression-tested. See `docs/guides/versioning-and-branches.md` and `CHANGELOG.md`.
 
 **Docs:** detailed docs live in `docs/` (index: `docs/README.md`; multi-brand sensor stack: `docs/reference/multi-sensor-architecture.md`; QA gates and PR checklist: `docs/guides/qa-process.md`; architecture review & known issues: `docs/ARCHITECTURE_REVIEW.md`; fix plan: `docs/ARCHITECTURE_FIX_PLAN.md`). Domain skills in `.claude/skills/`. When CLAUDE.md and `docs/` conflict, `docs/` wins.
 
-**CI/review reference:** `.github/workflows/ci.yml` (GitHub Actions) is the source of truth for whether a PR is ready — not a local run by the author. It gates `flutter analyze`/`flutter test`, the Kotlin JVM unit tests, and the backend typecheck/test on every PR and push to `main`/`dev`. Full APK build/deploy stays out of CI until the vendor `.so` distribution problem is solved (`docs/ARCHITECTURE_FIX_PLAN.md`, item 2.4). The **backend** is deployed from CI: `.github/workflows/publish-images.yml` publishes the three images to GHCR after CI is green on `main`, and the production VM pulls them (`docs/guides/deployment.md`).
+**CI/review reference:** `.github/workflows/ci.yml` (GitHub Actions) is the source of truth for whether a PR is ready — not a local run by the author. It gates `flutter analyze`/`flutter test`, the Kotlin JVM unit tests, the backend typecheck/test and the web gates (typecheck, lint, lint:arch, test:coverage, dup, build, size) on every PR and push to `main`/`dev`. Full APK build/deploy stays out of CI until the vendor `.so` distribution problem is solved (`docs/ARCHITECTURE_FIX_PLAN.md`, item 2.4). The **backend** is deployed from CI: `.github/workflows/publish-images.yml` publishes the three images to GHCR after CI is green on `main`, and the production VM pulls them (`docs/guides/deployment.md`).
 
 This file holds stable invariants (native constraints, commands, layer map). Anything that changes sprint to sprint — data flow detail, screen inventory, feature status — belongs in `docs/`, not here.
 
@@ -28,6 +28,9 @@ cd android && ./gradlew app:assembleDebug
 cd backend && npm install && npm run migrate:dev   # migrates both services (glucose + auth)
 cd backend && npm run dev:glucose                  # :3001   (npm run dev:auth for :3002, npm run dev:gateway for :3000)
 cd backend && npm run build && npm test            # ALWAYS from backend/ root, never from a service
+cd web && npm run dev                              # Vite dev server; API host from VITE_API_URL (web/.env.example)
+cd web && npm run typecheck | lint | lint:arch     # tsc -b; eslint (0 warnings); dependency-cruiser layer rules
+cd web && npm run test:coverage | dup | build | size   # vitest + coverage gate; jscpd; production build; bundle budget
 ```
 
 ## Architecture
@@ -46,7 +49,7 @@ State: Bloc/Cubit — no external state packages.
 
 - **`SensorCubit`** — restores session, subscribes to Android event stream, auto-starts monitoring when session restored, exposes connection state to shell
 - **`PatientCubit`** — reacts to `SensorCubit` stream and writes readings/alerts/carbs/insulin/thresholds **locally first**, never through the network on the UI path.
-  - `PatientRepository` (`data/repositories/patient_repository.dart`) is the entry point: `load()` returns the local snapshot, `refreshFromRemote()` reconciles in the background, `ensureOwner()` wipes local data when the logged-in account changes.
+  - `PatientRepository` (`domain/repositories/patient_repository.dart`, implemented by `PatientRepositoryImpl` in `data/repositories/patient_repository_impl.dart`) is the entry point: `load()` returns the local snapshot, `refreshFromRemote()` reconciles in the background, `ensureOwner()` wipes local data when the logged-in account changes.
   - `LocalPatientDataSource` (`data/datasources/patient_local_datasource.dart`) is the primary source: sqflite, `glucore_patient.db`, a `synced` flag per row.
   - `RemotePatientDataSource` (`data/datasources/patient_remote_datasource.dart`, Dio) is only reached through the sync path.
   - `PatientSyncService` (`data/sync/patient_sync_service.dart`) pushes pending rows with a ~2 s debounce, exponential retry, and a re-push when connectivity returns.
@@ -60,14 +63,22 @@ DI in `lib/injection_container.dart` — calls `sl.reset()` before registering t
 
 Node/Express + Prisma/PostgreSQL. `backend/` is an npm workspace with **three services** (two databases):
 
-- **`gateway`** (:3000, no database) — the single public entry point, everything under `/api/v1`. Proxies `/api/v1/auth/*` to auth-service and `/api/v1/{readings,carbs,insulin,alerts,settings,dashboard}` to glucose-service (JWT checked at the gateway); composes `GET/PUT /api/v1/me`, `DELETE /api/v1/account` and the registration saga (`POST /api/v1/auth/register`); owns login/register rate limiting. Resolves the other services through a `ServiceRegistry` (env or Consul) and calls them with an internal service token (`INTERNAL_JWT_SECRET`).
-- **`auth-service`** (:3002, `glucore_auth`) — identity. `User`, `AuthCredential`, `PasswordResetToken`, `AuthSession`. Serves `/auth/*` (including `/auth/refresh`) and `/internal/accounts`.
-- **`glucose-service`** (:3001, `glucore_dev`) — clinical data. `Patient`, sensors, readings, carbs, insulin, alerts. Serves `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`, `/dashboard/summary` and `/internal/patients`.
+- **`gateway`** (:3000, no database) — the single public entry point, everything under `/api/v1`. Proxies `/api/v1/auth/*` and `/api/v1/preferences` to auth-service and `/api/v1/{readings,carbs,insulin,alerts,settings,dashboard,sharing,professional}` to glucose-service (JWT checked at the gateway); runs the registration sagas (patient and professional) and the compositions that need both databases (`/me` and `DELETE /account` by role, names on grants and on the professional's portfolio, `/admin/*`); owns rate limiting. Resolves the other services through a `ServiceRegistry` (env or Consul) and calls their `/internal/*` routes with an internal service token (`INTERNAL_JWT_SECRET`).
+- **`auth-service`** (:3002, `glucore_auth`) — identity. `User`, `AuthCredential`, `PasswordResetToken`, `AuthSession`, `DashboardLayout`. Serves `/auth/*` (including `/auth/refresh`), `/preferences/dashboard` and `/internal/*`. The only administrator account is created by a boot seed (`ADMIN_SEED_EMAIL`/`ADMIN_SEED_PASSWORD`), never by a route.
+- **`glucose-service`** (:3001, `glucore_dev`) — clinical data. `Patient`, `HealthProfessional`, grants and invites, sensors, readings, carbs, insulin, alerts. Serves `/readings`, `/carbs`, `/insulin`, `/alerts`, `/settings/alerts`, `/dashboard/summary`, `/sharing/*`, `/professional/*` and `/internal/*`.
 - **`packages/shared`** — errors, asyncHandler, audit, health, service discovery, and `auth/` (claims, JWT sign/verify, verifyJwt/requireRole). No Prisma dependency.
 
 Each domain sits in `src/modules/<name>/` as `routes · controller · service · repository · schema · mapper`, wired in that service's `src/container.ts`. Auth via JWT Bearer, `{sub, role}`; the role comes from the claim, not a database read. **All three services share `JWT_SECRET`**; gateway ↔ service calls additionally use `INTERNAL_JWT_SECRET`. `docker compose up --build` in `backend/` brings up Postgres, Consul and the three services; only the gateway publishes a port. **Never expose auth-service directly** — the login rate limiter lives in the gateway. Production is a single Oracle Always Free VM (x86_64) behind Caddy at `https://glucore.duckdns.org`; its compose is `backend/deploy/docker-compose.prod.yml` (no Consul, `SERVICE_DISCOVERY=env`), not the dev `docker-compose.yml`.
 
 The Flutter app talks only to the gateway: `ApiClient` (`lib/core/api/api_client.dart`) builds `baseUrl` as `<API_URL>/api/v1` via `gatewayBaseUrl`, so datasources keep relative paths (`/auth/login`, `/carbs/item`, ...). Run with `--dart-define=API_URL=http://<ip>:3000` (host only; emulator `http://10.0.2.2:3000`). The profile goes through the composed `GET/PUT /me`; `DELETE /account` has a client method (`AccountService.deleteAccount`) but no screen yet.
+
+Full route contract, error codes and env vars: `backend/README.md`. Generated Prisma migrations in glucose-service must be reviewed by hand: `migrate dev` proposes dropping the hand-written DESC index `GlucoseReading_patientId_recordedAt_desc_idx`.
+
+### Web layer
+
+`web/` is a React SPA (Vite, TypeScript, TanStack Query, Recharts) deployed on Vercel. It calls the gateway directly (`VITE_API_URL`, host only; the SPA appends `/api/v1`), so the gateway's `CORS_ORIGIN` must list the web origin. One dashboard per role: patient, health professional, administrator; the widget catalog per role is `contracts/widget-catalog.json`, shared with the backend.
+
+`web/src/features/*` follows four layers — `domain` (pure, no npm) → `application` (use cases) → `infrastructure` (adapters) / `presentation` (React) — wired in the composition root `web/src/composition/container.ts`. The dependency rules are enforced by dependency-cruiser (`web/.dependency-cruiser.cjs`, `npm run lint:arch`), not by convention. Architecture: `docs/architecture/web-dashboard.md`; Vercel setup: `docs/guides/deployment.md`.
 
 ### Debug panel / mock sensor
 
@@ -138,7 +149,7 @@ Juggluco declares three more (`strGlucose`, `nums.item`, `NightPost`) that this 
 | `lib/features/patient/presentation/shell/patient_shell_page.dart` | Main shell |
 | `lib/features/sensor/presentation/cubit/sensor_cubit.dart` | Sensor state, event stream |
 | `lib/features/patient/presentation/cubit/patient_cubit.dart` | Patient data, local-first writes |
-| `lib/features/patient/data/repositories/patient_repository.dart` | Local snapshot + remote reconciliation + owner guard |
+| `lib/features/patient/data/repositories/patient_repository_impl.dart` | Local snapshot + remote reconciliation + owner guard |
 | `lib/features/patient/data/sync/patient_sync_service.dart` | Debounced background push of pending rows |
 | `lib/features/sensor/data/platform/sensor_platform.dart` | Platform channel wrapper |
 | `lib/core/api/api_client.dart` | Dio + `API_URL` config |
@@ -158,6 +169,10 @@ Juggluco declares three more (`strGlucose`, `nums.item`, `NightPost`) that this 
 | `backend/services/auth-service/src/container.ts` | Composition root; picks password hasher and mailer |
 | `backend/services/auth-service/src/lib/prisma.ts` | The only file that knows where auth's client is generated |
 | `backend/packages/shared/src/auth/` | Claims, token signing/verification, verifyJwt/requireRole |
+| `backend/services/gateway/src/app.ts` | Gateway routing: sagas, compositions, proxies, rate limits, CORS |
+| `contracts/widget-catalog.json` | Dashboard widget ids per role; source of truth for web and backend |
+| `web/src/composition/container.ts` | Web composition root |
+| `web/.dependency-cruiser.cjs` | Web layer rules |
 
 `Juggluco/` — reference copy of open-source Juggluco. **Not in this working tree** (never committed); if you clone it locally for reference, do not modify it and do not index the whole repo.
 
