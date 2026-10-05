@@ -21,6 +21,13 @@ import type {
   UpdatePatientInput,
 } from '../../src/modules/patient/patient.repository';
 import type { PatientSource } from '../../src/modules/patient/patient.mapper';
+import type {
+  ActiveGrantListItem,
+  CreatedInvite,
+  GrantSource,
+  ISharingRepository,
+  RedeemOutcome,
+} from '../../src/modules/sharing/sharing.repository';
 import type { IReadingRepository } from '../../src/modules/readings/readings.repository';
 import type { ReadingInput } from '../../src/modules/readings/readings.schema';
 import type {
@@ -391,4 +398,67 @@ export function alertRow(patientId: string, alertType: AlertType, triggeredAt: D
     message: '',
     acknowledged: false,
   } as AlertEvent;
+}
+
+/**
+ * Scripted sharing repository: the SQL (atomic redeem, partial indexes) is
+ * covered against Postgres, so this fake only records what the service asked
+ * for and answers what the test staged. `grants` is the one piece of state it
+ * keeps, with the real active rule, so the grant policy can be exercised at the
+ * boundaries of `expiresAt`.
+ */
+export class FakeSharingRepository implements ISharingRepository {
+  readonly createCalls: Array<{ patientId: string; codeHash: string; expiresAt: Date; now?: Date }> = [];
+  readonly redeemCalls: Array<{ codeHash: string; professionalId: string; now: Date }> = [];
+  readonly revokeCalls: Array<{ patientId: string; grantId: string; now: Date }> = [];
+  readonly listCalls: Array<{ patientId: string; now: Date }> = [];
+
+  created: CreatedInvite = { inviteId: nextId(), invalidatedInviteId: null };
+  redeemOutcome: RedeemOutcome = { redeemed: false };
+  /** Thrown by `redeemInvite` when set. */
+  redeemError: Error | null = null;
+  listed: ActiveGrantListItem[] = [];
+  revoked: { professionalId: string } | null = null;
+  grants: GrantSource[] = [];
+
+  async createInvite(patientId: string, codeHash: string, expiresAt: Date, now?: Date): Promise<CreatedInvite> {
+    this.createCalls.push({ patientId, codeHash, expiresAt, now });
+    return this.created;
+  }
+
+  async redeemInvite(codeHash: string, professionalId: string, now: Date): Promise<RedeemOutcome> {
+    this.redeemCalls.push({ codeHash, professionalId, now });
+    if (this.redeemError) throw this.redeemError;
+    return this.redeemOutcome;
+  }
+
+  async findActiveGrant(professionalId: string, patientId: string, now: Date): Promise<GrantSource | null> {
+    return (
+      this.grants.find(
+        (grant) =>
+          grant.healthProfessionalId === professionalId &&
+          grant.patientId === patientId &&
+          grant.revokedAt === null &&
+          (grant.expiresAt === null || grant.expiresAt > now),
+      ) ?? null
+    );
+  }
+
+  async listActiveGrants(patientId: string, now: Date): Promise<ActiveGrantListItem[]> {
+    this.listCalls.push({ patientId, now });
+    return this.listed;
+  }
+
+  async revokeGrant(
+    patientId: string,
+    grantId: string,
+    now: Date,
+  ): Promise<{ professionalId: string } | null> {
+    this.revokeCalls.push({ patientId, grantId, now });
+    return this.revoked;
+  }
+
+  async isGrantActive(professionalId: string, patientId: string, now: Date): Promise<boolean> {
+    return (await this.findActiveGrant(professionalId, patientId, now)) !== null;
+  }
 }

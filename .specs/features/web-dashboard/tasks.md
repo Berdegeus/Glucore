@@ -3428,14 +3428,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com fakes: validade de 24 h; resgate novo `201`, existente `200`; desconhecido, expirado, usado e invalidado dão o mesmo `400 INVALID_INVITE`
-- [ ] Auditoria de gerar, resgatar, invalidar e revogar sem o código em claro nem dado clínico
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/sharing.service.test.ts`
-- [ ] Pelo menos 8 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com fakes: validade de 24 h; resgate novo `201`, existente `200`; desconhecido, expirado, usado e invalidado dão o mesmo `400 INVALID_INVITE`
+- [x] Auditoria de gerar, resgatar, invalidar e revogar sem o código em claro nem dado clínico
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/sharing.service.test.ts`
+- [x] Pelo menos 8 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(glucose-service): add the sharing service`
+**Status**: ✅ Done
 
 ---
 
