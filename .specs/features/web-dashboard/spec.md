@@ -510,7 +510,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-16 | P1: Layout customizável por widgets | T39, T53 | Implementing |
 | RSP-01 | P1: Responsivo, acessível e com tema | T52 | Implementing |
 | RSP-02 | P1: Responsivo, acessível e com tema | T52 | Implementing |
-| RSP-03 | P1: Responsivo, acessível e com tema | T45, T100 | Implementing |
+| RSP-03 | P1: Responsivo, acessível e com tema | T45, T100, T184 | Implementing |
 | RSP-04 | P1: Responsivo, acessível e com tema | T36, T87 | Implementing |
 | RSP-05 | P1: Responsivo, acessível e com tema | T64 | Implementing |
 | RSP-06 | P1: Responsivo, acessível e com tema | T39, T43, T45, T56, T112, T170 | Implementing |
@@ -578,11 +578,11 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | CON-13 | P2: Consentimento do paciente pelo app (código de convite) | T153, T154, T155, T156, T157 | Implementing |
 | PRO-01 | P2: Dashboard do profissional de saúde | T178 | Implementing |
 | PRO-02 | P2: Dashboard do profissional de saúde | T176, T178 | Implementing |
-| PRO-03 | P2: Dashboard do profissional de saúde | T72, T160, T163, T165, T174 | Implementing |
+| PRO-03 | P2: Dashboard do profissional de saúde | T72, T160, T163, T165, T174, T184 | Implementing |
 | PRO-04 | P2: Dashboard do profissional de saúde | T171 | Implementing |
 | PRO-05 | P2: Dashboard do profissional de saúde | T176, T177 | Implementing |
-| PRO-06 | P2: Dashboard do profissional de saúde | T172 | Implementing |
-| PRO-07 | P2: Dashboard do profissional de saúde | T172 | Implementing |
+| PRO-06 | P2: Dashboard do profissional de saúde | T172, T184 | Implementing |
+| PRO-07 | P2: Dashboard do profissional de saúde | T172, T184 | Implementing |
 | PRO-08 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-09 | P2: Dashboard do profissional de saúde | T163, T174, T179, T180, T181, T182, T183 | Implementing |
 | PRO-10 | P2: Dashboard do profissional de saúde | T59, T62, T162, T163, T166, T174 | Implementing |
@@ -591,7 +591,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-13 | P2: Dashboard do profissional de saúde | T177 | Implementing |
 | PRO-14 | P2: Dashboard do profissional de saúde | T163, T164 | Implementing |
 | PRO-15 | P2: Dashboard do profissional de saúde | T146, T147, T165, T166 | Implementing |
-| PRO-16 | P2: Dashboard do profissional de saúde | T161, T164 | Implementing |
+| PRO-16 | P2: Dashboard do profissional de saúde | T161, T164, T184 | Implementing |
 | ADM-01 | P3: Dashboard do administrador | - | Pending |
 | ADM-02 | P3: Dashboard do administrador | T60 | Implementing |
 | ADM-03 | P3: Dashboard do administrador | - | Pending |

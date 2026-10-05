@@ -14,3 +14,4 @@ export { LayoutToolbar } from './presentation/layoutToolbar';
 export { registerWidgetTitles, widgetTitle } from './presentation/widgetTitles';
 export { UNAVAILABLE_WIDGET_TITLE, WidgetSlot } from './presentation/widgetSlot';
 export type { WidgetState } from './presentation/widgetShell';
+export { QueryWidget, queryWidgetState } from './presentation/queryWidget';

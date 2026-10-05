@@ -74,6 +74,21 @@ describe('usePatients and useCohort (PRO-05)', () => {
     expect(cohortQueryKey(14)).toContain(Intl.DateTimeFormat().resolvedOptions().timeZone);
   });
 
+  it.each([
+    { keepPrevious: true, shownWhileLoading: ['p1', 'p2'] },
+    { keepPrevious: false, shownWhileLoading: undefined },
+  ])('usePatients with keepPrevious $keepPrevious shows $shownWhileLoading while the next page loads', async ({ keepPrevious, shownWhileLoading }) => {
+    mockPortfolio({ list: (request) => HttpResponse.json(patientPageDto(request === 1 ? TWO_PATIENTS : [patientRowDto({ patientId: 'p3' })])) });
+    const { wrapper } = professionalWrapper();
+    const { result, rerender } = renderHook(({ page }) => ({ ...usePatients(14, page, 50, keepPrevious) }), { wrapper, initialProps: { page: 1 } });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    rerender({ page: 2 });
+
+    expect(ids(result.current.data)).toEqual(shownWhileLoading);
+    await waitFor(() => expect(ids(result.current.data)).toEqual(['p3']));
+  });
+
   it('share one cohort request between widgets that ask for the same period', async () => {
     const mock = mockPortfolio();
     const { wrapper } = professionalWrapper();

@@ -8,9 +8,10 @@ import { usePortfolioQuery } from './usePortfolioQuery';
 
 /**
  * The professional's patients over `days` (PRO-03, PRO-05). A new period, page
- * or page size is a new cache entry and so a new request.
+ * or page size is a new cache entry and so a new request; with `keepPrevious`
+ * the page already on screen stays there until the next one arrives.
  */
-export function usePatients(days: number, page = 1, limit = DEFAULT_PAGE_LIMIT): UseQueryResult<PatientPage, AppError> {
+export function usePatients(days: number, page = 1, limit = DEFAULT_PAGE_LIMIT, keepPrevious = false): UseQueryResult<PatientPage, AppError> {
   const { loadPatients } = useProfessionalServices();
-  return usePortfolioQuery(patientsQueryKey(days, page, limit), () => loadPatients({ days, page, limit }));
+  return usePortfolioQuery(patientsQueryKey(days, page, limit), () => loadPatients({ days, page, limit }), keepPrevious);
 }

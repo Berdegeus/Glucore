@@ -5,11 +5,11 @@ import userEvent from '@testing-library/user-event';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ComponentType, ReactElement } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, type Mock } from 'vitest';
 import { axe } from 'vitest-axe';
 import type { LoadPatientSummary } from '../features/patient-dashboard/application/loadPatientSummary';
 import { defaultLayoutFor } from '../features/dashboard-layout/domain/defaultLayout';
-import { SKELETON_HEIGHT, type WidgetDefinition, type WidgetProps, type WidgetSize } from '../features/dashboard-layout';
+import { SKELETON_HEIGHT, WIDGET_SIZES, type WidgetDefinition, type WidgetProps, type WidgetSize } from '../features/dashboard-layout';
 import type { DateRange } from '../features/patient-dashboard/domain/period';
 import type { GlucoseSummary } from '../features/patient-dashboard/domain/summary';
 import { PeriodProvider } from '../features/patient-dashboard/presentation/periodContext';
@@ -112,34 +112,44 @@ export interface SummaryWidgetSpec {
   emptyCause?: string;
 }
 
+/** How a family of widgets is mounted over each state of its data, for the state tests they share. */
+export interface StatesScenario {
+  /** A source that never answers. */
+  loading(widget: ReactElement): void;
+  /** A source with nothing to show. */
+  empty(widget: ReactElement): void;
+  /** A source that fails once and then answers; `load` counts its calls. */
+  failsOnce(widget: ReactElement): { load: Mock };
+  /** A source with the fixture data. */
+  loaded(widget: ReactElement): { container: HTMLElement };
+}
+
+type StatesSpec = Pick<SummaryWidgetSpec, 'Widget' | 'definition' | 'title' | 'shown'> & { emptyCause: string };
+
 /**
- * The behavior every widget that reads the page's summary shares (LAY-01,
- * LAY-15, LAY-16): its definition matches the catalog contract, and it shows a
- * skeleton, the cause of an empty period and an isolated error with retry.
- * Each widget's own test adds what its figure shows.
+ * The states every widget shares (LAY-15, LAY-16): a skeleton of the height
+ * of its size, the cause of an empty source, an isolated error with retry and
+ * no axe violation with data. `scenario` says how the widget's family is fed.
  */
-export function describeSummaryWidget({ Widget, definition, title, shown, emptyCause = NO_READINGS_CAUSE }: SummaryWidgetSpec) {
+export function describeWidgetStates({ Widget, definition, title, shown, emptyCause }: StatesSpec, scenario: StatesScenario) {
   const card = () => screen.findByRole('region', { name: title });
 
-  describeCatalogDefinition(definition);
-
   describe(`${definition.id} states (LAY-15, LAY-16)`, () => {
-    it('shows the skeleton at the height of its size while the summary loads', () => {
-      renderWidget(<Widget size="L" />, { load: () => new Promise(() => undefined) });
+    it.each(WIDGET_SIZES)('shows the skeleton at the height of size %s while the data loads', (size) => {
+      scenario.loading(<Widget size={size} />);
 
-      expectSkeletonOfSize('L');
+      expectSkeletonOfSize(size);
     });
 
-    it('shows the cause, not a number, when the period has no readings', async () => {
-      renderWidget(<Widget size="S" />, { summary: emptyPeriodSummary() });
+    it('shows the cause, not a figure, when there is nothing to show', async () => {
+      scenario.empty(<Widget size="S" />);
 
       expect(await within(await card()).findByText(emptyCause)).toBeInTheDocument();
       expect(screen.queryByText(shown)).not.toBeInTheDocument();
     });
 
     it('keeps an error inside its own card and reloads on "Tentar novamente"', async () => {
-      const load = vi.fn<LoadPatientSummary>().mockRejectedValueOnce(new AppError('unavailable')).mockResolvedValue(summaryFixture());
-      renderWidget(<Widget size="S" />, { load });
+      const { load } = scenario.failsOnce(<Widget size="S" />);
 
       const region = await card();
       expect(await within(region).findByRole('alert')).toHaveTextContent(ERROR_MESSAGE);
@@ -151,12 +161,34 @@ export function describeSummaryWidget({ Widget, definition, title, shown, emptyC
     });
 
     it('has no axe violations with data', async () => {
-      const { container } = renderWidget(<Widget size="S" />);
+      const { container } = scenario.loaded(<Widget size="S" />);
       await screen.findByText(shown);
 
       expect(await axe(container)).toHaveNoViolations();
     });
   });
+}
+
+const summaryScenario: StatesScenario = {
+  loading: (widget) => void renderWidget(widget, { load: () => new Promise(() => undefined) }),
+  empty: (widget) => void renderWidget(widget, { summary: emptyPeriodSummary() }),
+  failsOnce: (widget) => {
+    const load = vi.fn<LoadPatientSummary>().mockRejectedValueOnce(new AppError('unavailable')).mockResolvedValue(summaryFixture());
+    renderWidget(widget, { load });
+    return { load };
+  },
+  loaded: (widget) => renderWidget(widget),
+};
+
+/**
+ * The behavior every widget that reads the page's summary shares (LAY-01,
+ * LAY-15, LAY-16): its definition matches the catalog contract, and it shows a
+ * skeleton, the cause of an empty period and an isolated error with retry.
+ * Each widget's own test adds what its figure shows.
+ */
+export function describeSummaryWidget({ definition, emptyCause = NO_READINGS_CAUSE, ...spec }: SummaryWidgetSpec) {
+  describeCatalogDefinition(definition);
+  describeWidgetStates({ ...spec, definition, emptyCause }, summaryScenario);
 }
 
 interface ChartWidgetSpec extends Omit<SummaryWidgetSpec, 'shown'> {

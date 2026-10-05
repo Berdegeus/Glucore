@@ -4313,17 +4313,18 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `pro-patients-table`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza a tabela ordenável e filtrável com indicador de risco em texto e cor a partir de `usePatients`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Filtro de risco, busca por nome, ordenação por coluna e página de 50
-- [ ] Linha leva a `/profissional/pacientes/:id`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proPatientsTable.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `pro-patients-table`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza a tabela ordenável e filtrável com indicador de risco em texto e cor a partir de `usePatients`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Filtro de risco, busca por nome, ordenação por coluna e página de 50
+- [x] Linha leva a `/profissional/pacientes/:id`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proPatientsTable.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add pro-patients-table widget`
+**Status**: ✅ Done
 
 ---
 
