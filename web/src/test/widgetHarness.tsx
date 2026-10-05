@@ -116,20 +116,21 @@ export interface SummaryWidgetSpec {
 export interface StatesScenario {
   /** A source that never answers. */
   loading(widget: ReactElement): void;
-  /** A source with nothing to show. */
-  empty(widget: ReactElement): void;
+  /** A source with nothing to show; absent for a family that never shows an empty state (a count of zero is a figure). */
+  empty?: (widget: ReactElement) => void;
   /** A source that fails once and then answers; `load` counts its calls. */
   failsOnce(widget: ReactElement): { load: Mock };
   /** A source with the fixture data. */
   loaded(widget: ReactElement): { container: HTMLElement };
 }
 
-type StatesSpec = Pick<SummaryWidgetSpec, 'Widget' | 'definition' | 'title' | 'shown'> & { emptyCause: string };
+type StatesSpec = Pick<SummaryWidgetSpec, 'Widget' | 'definition' | 'title' | 'shown'> & { emptyCause?: string };
 
 /**
  * The states every widget shares (LAY-15, LAY-16): a skeleton of the height
- * of its size, the cause of an empty source, an isolated error with retry and
- * no axe violation with data. `scenario` says how the widget's family is fed.
+ * of its size, the cause of an empty source (for a family that has one), an
+ * isolated error with retry and no axe violation with data. `scenario` says
+ * how the widget's family is fed.
  */
 export function describeWidgetStates({ Widget, definition, title, shown, emptyCause }: StatesSpec, scenario: StatesScenario) {
   const card = () => screen.findByRole('region', { name: title });
@@ -141,12 +142,15 @@ export function describeWidgetStates({ Widget, definition, title, shown, emptyCa
       expectSkeletonOfSize(size);
     });
 
-    it('shows the cause, not a figure, when there is nothing to show', async () => {
-      scenario.empty(<Widget size="S" />);
+    const { empty } = scenario;
+    if (empty && emptyCause !== undefined) {
+      it('shows the cause, not a figure, when there is nothing to show', async () => {
+        empty(<Widget size="S" />);
 
-      expect(await within(await card()).findByText(emptyCause)).toBeInTheDocument();
-      expect(screen.queryByText(shown)).not.toBeInTheDocument();
-    });
+        expect(await within(await card()).findByText(emptyCause)).toBeInTheDocument();
+        expect(screen.queryByText(shown)).not.toBeInTheDocument();
+      });
+    }
 
     it('keeps an error inside its own card and reloads on "Tentar novamente"', async () => {
       const { load } = scenario.failsOnce(<Widget size="S" />);

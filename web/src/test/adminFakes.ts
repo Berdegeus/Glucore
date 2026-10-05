@@ -66,3 +66,21 @@ export function accountPageDto(items: unknown[] = [accountRowDto()]) {
 export function accountPageOf(items: AccountRow[] = [accountRowDto() as AccountRow]): AccountPage {
   return { items, page: 1, limit: 25, total: items.length };
 }
+
+/** A platform where nothing happened: every count zero, every role and status still listed. */
+export function zeroOverviewOf(): AdminOverview {
+  const base = overviewOf();
+  return {
+    accounts: {
+      total: 0,
+      byRole: base.accounts.byRole.map(({ role }) => ({ role, count: 0 })),
+      byStatus: base.accounts.byStatus.map(({ status }) => ({ status, count: 0 })),
+    },
+    registrationsInPeriod: 0,
+    registrationsByDay: base.registrationsByDay.map(({ day }) => ({ day, count: 0 })),
+    activePatients: { last24h: 0, last7d: 0, registered: 0 },
+    readingsByDay: base.readingsByDay.map(({ day }) => ({ day, count: 0 })),
+    grants: { active: 0, createdByWeek: base.grants.createdByWeek.map(({ weekStart }) => ({ weekStart, count: 0 })) },
+    alertsByType: base.alertsByType.map(({ alertType }) => ({ alertType, count: 0 })),
+  };
+}
