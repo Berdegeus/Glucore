@@ -2015,13 +2015,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Tabela de fronteira: 53, 54, low-1, low, high, high+1, 250, 251 e limiar baixo de 50
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/domain/zones.test.ts`
-- [ ] Pelo menos 9 testes novos passam e a contagem total da suíte não cai
+- [x] Tabela de fronteira: 53, 54, low-1, low, high, high+1, 250, 251 e limiar baixo de 50
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/domain/zones.test.ts`
+- [x] Pelo menos 9 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add glucose zone rules`
+**Status**: ✅ Done
 
 ---
 
