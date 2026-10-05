@@ -61,6 +61,23 @@ describe('LineBandChart', () => {
     expect(shapes.size).toBe(LINES.length);
   });
 
+  it('draws a marker-only series as points with no curve and its own shape (RSP-08, PAC-11)', () => {
+    const data = DATA.map((row) => ({ ...row, events: row.day === '02/10' ? 140 : null }));
+    const lines = [...LINES.slice(0, 1), { key: 'events', label: 'Registros', markerOnly: true }];
+    const { all } = drawChart({ data, lines });
+
+    expect(all('.recharts-line-curve')[1]).toHaveAttribute('stroke-width', '0');
+    expect(all('.recharts-line-dots .recharts-symbols')).toHaveLength(1);
+    expect(all('.recharts-line-curve')[0]).toHaveAttribute('stroke-width', '2');
+  });
+
+  it('shows the marker shape of a marker-only series in the legend, and a plain swatch for the others', () => {
+    const { container } = drawChart({ lines: [...LINES.slice(0, 1), { key: 'events', label: 'Registros', markerOnly: true }] });
+
+    const swatches = [...container.querySelectorAll('li svg')].map((svg) => svg.querySelector('rect') === null);
+    expect(swatches).toEqual([false, true]);
+  });
+
   it('fills under each line when asked', () => {
     const { all } = drawChart({ filled: true });
     expect(all('.recharts-area-area')).toHaveLength(LINES.length);

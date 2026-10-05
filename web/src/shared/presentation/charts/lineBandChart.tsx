@@ -9,6 +9,12 @@ import { seriesColor, seriesMarker } from './palette';
 
 export interface LineSpec extends SeriesSpec {
   dashed?: boolean;
+  /**
+   * Draws the series as its marker shape on each point, with no line between
+   * them and no entry in the tooltip (the hover shows the curve it sits on): for events laid over a curve, such as a
+   * meal on a day of readings.
+   */
+  markerOnly?: boolean;
 }
 
 export interface BandSpec {
@@ -56,9 +62,10 @@ function renderSeries(spec: LineSpec, index: number, { filled, markers }: Pick<L
     name: spec.label,
     type: 'monotone' as const,
     stroke: color,
-    strokeWidth: 2,
+    strokeWidth: spec.markerOnly ? 0 : 2,
     strokeDasharray: spec.dashed ? '6 4' : undefined,
-    dot: markers ? markerDot(seriesMarker(index), color) : false,
+    tooltipType: spec.markerOnly ? ('none' as const) : undefined,
+    dot: markers || spec.markerOnly ? markerDot(seriesMarker(index), color) : false,
     activeDot: { r: 5 },
     connectNulls: false,
     ...NO_ANIMATION,
@@ -70,7 +77,7 @@ function legendOf({ lines, band, targetRange, markers }: LineBandChartProps): Le
   const items: LegendItem[] = lines.map((line, index) => ({
     label: line.label,
     color: seriesColor(index),
-    marker: markers ? seriesMarker(index) : undefined,
+    marker: markers || line.markerOnly ? seriesMarker(index) : undefined,
   }));
   if (band) items.push({ label: band.label, color: seriesColor(0), opacity: 0.2 });
   if (targetRange) items.push({ label: targetRange.label, color: 'var(--zone-target)', opacity: 0.2 });

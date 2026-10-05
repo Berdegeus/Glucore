@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import type { LoadPatientSummary } from '../features/patient-dashboard/application/loadPatientSummary';
 import { defaultLayoutFor } from '../features/dashboard-layout/domain/defaultLayout';
-import { SKELETON_HEIGHT, type WidgetDefinition, type WidgetProps } from '../features/dashboard-layout';
+import { SKELETON_HEIGHT, type WidgetDefinition, type WidgetProps, type WidgetSize } from '../features/dashboard-layout';
 import type { DateRange } from '../features/patient-dashboard/domain/period';
 import type { GlucoseSummary } from '../features/patient-dashboard/domain/summary';
 import { PeriodProvider } from '../features/patient-dashboard/presentation/periodContext';
@@ -67,11 +67,36 @@ export function renderWidget(widget: ReactElement, { summary = summaryFixture(),
 const CATALOG_PATH = join(import.meta.dirname, '../../../contracts/widget-catalog.json');
 const catalog = JSON.parse(readFileSync(CATALOG_PATH, 'utf8')) as { roles: Record<string, string[]>; sizes: string[] };
 
+/** The sizes `contracts/widget-catalog.json` allows every widget. */
+export const CATALOG_SIZES: readonly string[] = catalog.sizes;
+
 /** The roles of `contracts/widget-catalog.json` that list `id`. */
 export const catalogRolesOf = (id: string): string[] =>
   Object.entries(catalog.roles)
     .filter(([, ids]) => ids.includes(id))
     .map(([role]) => role);
+
+/** The skeleton on screen has the height the grid reserves for a widget of `size` (LAY-16). */
+export function expectSkeletonOfSize(size: WidgetSize): void {
+  expect(screen.getByRole('status', { name: 'Carregando' })).toHaveStyle({ height: SKELETON_HEIGHT[size] });
+}
+
+/** The catalog contract of a widget (LAY-01): its roles and sizes are the ones of the JSON, and its default size is the one the default layout gives it. */
+export function describeCatalogDefinition(definition: WidgetDefinition) {
+  describe(`${definition.id} as a catalog widget (LAY-01)`, () => {
+    it('declares the roles and sizes of contracts/widget-catalog.json', () => {
+      expect(catalogRolesOf(definition.id)).toEqual([...definition.roles]);
+      expect([...definition.sizes]).toEqual([...CATALOG_SIZES]);
+    });
+
+    it('prefers a size it allows, the one the default layout gives it', () => {
+      const placed = defaultLayoutFor('PATIENT').widgets.find((item) => item.id === definition.id);
+
+      expect(definition.sizes).toContain(definition.defaultSize);
+      expect(placed?.size).toBe(definition.defaultSize);
+    });
+  });
+}
 
 export interface SummaryWidgetSpec {
   Widget: ComponentType<WidgetProps>;
@@ -92,25 +117,13 @@ export interface SummaryWidgetSpec {
 export function describeSummaryWidget({ Widget, definition, title, shown, emptyCause = NO_READINGS_CAUSE }: SummaryWidgetSpec) {
   const card = () => screen.findByRole('region', { name: title });
 
-  describe(`${definition.id} as a catalog widget (LAY-01)`, () => {
-    it('declares the roles and sizes of contracts/widget-catalog.json', () => {
-      expect(catalogRolesOf(definition.id)).toEqual([...definition.roles]);
-      expect([...definition.sizes]).toEqual(catalog.sizes);
-    });
-
-    it('prefers a size it allows, the one the default layout gives it', () => {
-      const placed = defaultLayoutFor('PATIENT').widgets.find((item) => item.id === definition.id);
-
-      expect(definition.sizes).toContain(definition.defaultSize);
-      expect(placed?.size).toBe(definition.defaultSize);
-    });
-  });
+  describeCatalogDefinition(definition);
 
   describe(`${definition.id} states (LAY-15, LAY-16)`, () => {
     it('shows the skeleton at the height of its size while the summary loads', () => {
       renderWidget(<Widget size="L" />, { load: () => new Promise(() => undefined) });
 
-      expect(screen.getByRole('status', { name: 'Carregando' })).toHaveStyle({ height: SKELETON_HEIGHT.L });
+      expectSkeletonOfSize('L');
     });
 
     it('shows the cause, not a number, when the period has no readings', async () => {
