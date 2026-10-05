@@ -4704,13 +4704,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: os dois recursos viram entidades; `403` vira `forbidden`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/infrastructure/httpAdminRepository.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: os dois recursos viram entidades; `403` vira `forbidden`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/infrastructure/httpAdminRepository.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(web): add the HTTP admin repository`
+**Status**: ✅ Done
 
 ---
 

@@ -478,7 +478,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-03 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-04 | P1: Arquitetura limpa verificável (rubrica 37) | T17, T18, T28, T46, T79 | Implementing |
 | ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | T20, T28, T83, T104, T173, T201 | Implementing |
-| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34, T84, T105, T174 | Implementing |
+| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34, T84, T105, T174, T202 | Implementing |
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33, T84 | Implementing |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
@@ -592,10 +592,10 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-14 | P2: Dashboard do profissional de saúde | T163, T164 | Implementing |
 | PRO-15 | P2: Dashboard do profissional de saúde | T146, T147, T165, T166 | Implementing |
 | PRO-16 | P2: Dashboard do profissional de saúde | T161, T164, T184 | Implementing |
-| ADM-01 | P3: Dashboard do administrador | - | Pending |
+| ADM-01 | P3: Dashboard do administrador | T202 | Implementing |
 | ADM-02 | P3: Dashboard do administrador | T60 | Implementing |
 | ADM-03 | P3: Dashboard do administrador | - | Pending |
-| ADM-04 | P3: Dashboard do administrador | - | Pending |
+| ADM-04 | P3: Dashboard do administrador | T202 | Implementing |
 | ADM-05 | P3: Dashboard do administrador | - | Pending |
 | ADM-06 | P3: Dashboard do administrador | - | Pending |
 | ADM-07 | P3: Dashboard do administrador | - | Pending |
