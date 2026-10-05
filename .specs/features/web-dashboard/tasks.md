@@ -3599,13 +3599,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Apagar paciente remove seus convites e vínculos; apagar profissional remove seus vínculos
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Apagar paciente remove seus convites e vínculos; apagar profissional remove seus vínculos
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `test(glucose-service): cover consent cleanup on account deletion`
+**Status**: ✅ Done
 
 ---
 
