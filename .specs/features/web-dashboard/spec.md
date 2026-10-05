@@ -590,7 +590,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-12 | P2: Dashboard do profissional de saúde | T144 | Implementing |
 | PRO-13 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-14 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-15 | P2: Dashboard do profissional de saúde | T146 | Implementing |
+| PRO-15 | P2: Dashboard do profissional de saúde | T146, T147 | Implementing |
 | PRO-16 | P2: Dashboard do profissional de saúde | - | Pending |
 | ADM-01 | P3: Dashboard do administrador | - | Pending |
 | ADM-02 | P3: Dashboard do administrador | T60 | Implementing |

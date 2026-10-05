@@ -3515,13 +3515,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com stub: envia os ids e devolve o mapa; lista vazia não chama o upstream
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/gateway/tests/clients/authClient.lookup.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com stub: envia os ids e devolve o mapa; lista vazia não chama o upstream
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/gateway/tests/clients/authClient.lookup.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(gateway): add account lookup to the auth client`
+**Status**: ✅ Done
 
 ---
 

@@ -15,6 +15,9 @@ export interface RegisterAccountResult {
   token: string;
 }
 
+/** The most ids auth-service accepts in one lookup; larger lists are split into chunks of this size. */
+export const LOOKUP_BATCH_SIZE = 200;
+
 /** Every call this service makes into auth-service, all going through `/internal/*`. */
 export class AuthClient {
   private readonly http: InternalHttpClient;
@@ -42,5 +45,27 @@ export class AuthClient {
 
   deleteAccount(userId: string): Promise<void> {
     return this.http.request('DELETE', `/internal/accounts/${userId}`, GATEWAY_SERVICE_IDENTITY);
+  }
+
+  /**
+   * Display names by account id. Ids with no account are simply absent from the
+   * map, and an empty list never reaches the network.
+   */
+  async lookupAccounts(ids: string[]): Promise<Map<string, string>> {
+    const names = new Map<string, string>();
+    const unique = [...new Set(ids)];
+
+    for (let start = 0; start < unique.length; start += LOOKUP_BATCH_SIZE) {
+      const chunk = unique.slice(start, start + LOOKUP_BATCH_SIZE);
+      const found = await this.http.request<{ id: string; fullName: string }[]>(
+        'POST',
+        '/internal/accounts/lookup',
+        GATEWAY_SERVICE_IDENTITY,
+        { ids: chunk },
+      );
+      for (const { id, fullName } of found) names.set(id, fullName);
+    }
+
+    return names;
   }
 }
