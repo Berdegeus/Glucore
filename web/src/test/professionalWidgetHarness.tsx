@@ -9,10 +9,12 @@ import type { CohortSummary, PatientPage } from '../features/professional/domain
 import { ProfessionalPeriodProvider } from '../features/professional/presentation/periodContext';
 import { ProfessionalServicesProvider } from '../features/professional/presentation/professionalServices';
 import { RevokedAccessProvider } from '../features/professional/presentation/revokedAccess';
+import { TABLE_TOGGLE_LABEL } from '../shared/presentation/charts/chartFrame';
 import { NO_PATIENTS_CAUSE } from '../features/professional/presentation/widgets/cohortWidget';
 import { AppError } from '../shared/domain/appError';
 import { cohortSummaryOf, patientPageOf } from './professionalFakes';
-import { describeCatalogDefinition, describeWidgetStates, type StatesScenario } from './widgetHarness';
+import { stubChartContainer } from './chartContainer';
+import { describeCatalogDefinition, describeChartAlternatives, describeWidgetStates, type ChartAlternativesSpec, type StatesScenario } from './widgetHarness';
 
 /** The period the harness puts above a widget unless a test picks another. */
 export const TEST_DAYS = 30;
@@ -163,4 +165,20 @@ export function describeCohortFigure({ Widget, title, withValue, samples, note, 
       expect(await region.findByText(note)).toBeInTheDocument();
     });
   });
+}
+
+type CohortChartSpec = Omit<CohortWidgetSpec, 'shown' | 'source'> & Pick<ChartAlternativesSpec, 'summary' | 'tableName' | 'columns' | 'rows'>;
+
+/**
+ * What every chart widget of the portfolio shares (RSP-07): the cohort widget
+ * states, with the table toggle as proof the chart rendered, a text summary on
+ * the chart and the same data as a table.
+ */
+export function describeCohortChart({ summary, columns, rows, tableName, ...widget }: CohortChartSpec) {
+  stubChartContainer();
+  describeCohortWidget({ ...widget, shown: TABLE_TOGGLE_LABEL });
+  describeChartAlternatives(
+    { Widget: widget.Widget, id: widget.definition.id, title: widget.title, summary, tableName, columns, rows },
+    (element) => void renderProfessionalWidget(element),
+  );
 }

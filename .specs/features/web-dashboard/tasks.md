@@ -4338,16 +4338,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `pro-tir-by-patient`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza barras empilhadas de zonas por paciente a partir de `cohort.perPatient`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Usa o adaptador `StackedBarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proTirByPatient.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `pro-tir-by-patient`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza barras empilhadas de zonas por paciente a partir de `cohort.perPatient`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Usa o adaptador `StackedBarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proTirByPatient.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add pro-tir-by-patient widget`
+**Status**: ✅ Done
 
 ---
 

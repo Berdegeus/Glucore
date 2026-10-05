@@ -202,6 +202,37 @@ interface ChartWidgetSpec extends Omit<SummaryWidgetSpec, 'shown'> {
   rows: ReadonlyArray<readonly string[]>;
 }
 
+export type ChartAlternativesSpec = Pick<ChartWidgetSpec, 'Widget' | 'title' | 'summary' | 'tableName' | 'columns' | 'rows'> & { id: string };
+
+/**
+ * What every chart widget says besides its picture (RSP-07): a one-sentence
+ * summary for screen readers and the same data as a table. `mount` renders the
+ * widget the way its family is fed.
+ */
+export function describeChartAlternatives({ Widget, id, title, summary, tableName, columns, rows }: ChartAlternativesSpec, mount: (widget: ReactElement) => void) {
+  describe(`${id} alternatives (RSP-07)`, () => {
+    it('labels the chart with a one-sentence summary for screen readers', async () => {
+      mount(<Widget size="M" />);
+
+      const region = within(await screen.findByRole('region', { name: title }));
+      expect(await region.findByRole('img', { name: summary })).toBeInTheDocument();
+    });
+
+    it('offers "Ver como tabela" with the same data, formatted in pt-BR', async () => {
+      mount(<Widget size="M" />);
+
+      await userEvent.setup().click(await screen.findByRole('button', { name: TABLE_TOGGLE_LABEL }));
+
+      const table = screen.getByRole('table', { name: tableName ?? title });
+      const [header = [], ...body] = within(table)
+        .getAllByRole('row')
+        .map((row) => [...row.querySelectorAll('th, td')].map((cell) => cell.textContent));
+      expect(header).toEqual(columns);
+      expect(body).toEqual(rows);
+    });
+  });
+}
+
 /**
  * What every chart widget shares (RSP-07): the summary widget states, with the
  * table toggle as proof the chart rendered, a text summary on the chart, and
@@ -210,26 +241,8 @@ interface ChartWidgetSpec extends Omit<SummaryWidgetSpec, 'shown'> {
 export function describeChartWidget({ summary, columns, rows, tableName, ...widget }: ChartWidgetSpec) {
   stubChartContainer();
   describeSummaryWidget({ ...widget, shown: TABLE_TOGGLE_LABEL });
-
-  describe(`${widget.definition.id} alternatives (RSP-07)`, () => {
-    it('labels the chart with a one-sentence summary for screen readers', async () => {
-      renderWidget(<widget.Widget size="M" />);
-
-      const region = within(await screen.findByRole('region', { name: widget.title }));
-      expect(await region.findByRole('img', { name: summary })).toBeInTheDocument();
-    });
-
-    it('offers "Ver como tabela" with the same data, formatted in pt-BR', async () => {
-      renderWidget(<widget.Widget size="M" />);
-
-      await userEvent.setup().click(await screen.findByRole('button', { name: TABLE_TOGGLE_LABEL }));
-
-      const table = screen.getByRole('table', { name: tableName ?? widget.title });
-      const [header = [], ...body] = within(table)
-        .getAllByRole('row')
-        .map((row) => [...row.querySelectorAll('th, td')].map((cell) => cell.textContent));
-      expect(header).toEqual(columns);
-      expect(body).toEqual(rows);
-    });
-  });
+  describeChartAlternatives(
+    { Widget: widget.Widget, id: widget.definition.id, title: widget.title, summary, tableName, columns, rows },
+    (element) => void renderWidget(element),
+  );
 }

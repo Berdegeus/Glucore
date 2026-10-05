@@ -585,7 +585,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-07 | P2: Dashboard do profissional de saúde | T172, T184 | Implementing |
 | PRO-08 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-09 | P2: Dashboard do profissional de saúde | T163, T174, T179, T180, T181, T182, T183 | Implementing |
-| PRO-10 | P2: Dashboard do profissional de saúde | T59, T62, T162, T163, T166, T174 | Implementing |
+| PRO-10 | P2: Dashboard do profissional de saúde | T59, T62, T162, T163, T166, T174, T185 | Implementing |
 | PRO-11 | P2: Dashboard do profissional de saúde | T149, T160, T161, T163, T164 | Implementing |
 | PRO-12 | P2: Dashboard do profissional de saúde | T144, T163, T164 | Implementing |
 | PRO-13 | P2: Dashboard do profissional de saúde | T177 | Implementing |
