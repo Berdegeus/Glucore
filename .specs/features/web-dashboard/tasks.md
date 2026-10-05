@@ -2161,15 +2161,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: dois widgets com o mesmo período fazem uma requisição
-- [ ] Timers falsos: com `visibilityState` visível recarrega após 5 min; oculta não recarrega
-- [ ] Escopo de paciente vinculado usa a rota do profissional
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/useSummary.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: dois widgets com o mesmo período fazem uma requisição
+- [x] Timers falsos: com `visibilityState` visível recarrega após 5 min; oculta não recarrega
+- [x] Escopo de paciente vinculado usa a rota do profissional
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/useSummary.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): share one summary query across widgets`
+**Status**: ✅ Done
 
 ---
 
