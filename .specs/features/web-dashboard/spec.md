@@ -466,7 +466,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-03 | P1: Login único e acesso por papel | T42 | Implementing |
 | ACC-04 | P1: Login único e acesso por papel | T30, T42 | Implementing |
 | ACC-05 | P1: Login único e acesso por papel | T17, T23, T39, T40 | Implementing |
-| ACC-06 | P1: Login único e acesso por papel | - | Pending |
+| ACC-06 | P1: Login único e acesso por papel | T75 | Implementing |
 | ACC-07 | P1: Login único e acesso por papel | T23, T29, T43 | Implementing |
 | ACC-08 | P1: Login único e acesso por papel | T23, T225, T43 | Implementing |
 | ACC-09 | P1: Login único e acesso por papel | T21, T24, T41 | Implementing |
@@ -544,14 +544,14 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
 | DEP-06 | P1: Publicação na Vercel | - | Pending |
 | DEP-07 | P1: Publicação na Vercel | T9, T225 | Implementing |
-| API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67, T73, T74 | Implementing |
-| API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66 | Implementing |
+| API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67, T73, T74, T75 | Implementing |
+| API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66, T75 | Implementing |
 | API-03 | P2: Ajustes de backend para os gráficos novos | T68, T74 | Implementing |
 | API-04 | P2: Ajustes de backend para os gráficos novos | T69, T74 | Implementing |
 | API-05 | P2: Ajustes de backend para os gráficos novos | T70, T74 | Implementing |
 | API-06 | P2: Ajustes de backend para os gráficos novos | T71, T74 | Implementing |
 | API-07 | P2: Ajustes de backend para os gráficos novos | T73 | Implementing |
-| API-08 | P2: Ajustes de backend para os gráficos novos | T67, T73, T74 | Implementing |
+| API-08 | P2: Ajustes de backend para os gráficos novos | T67, T73, T74, T75 | Implementing |
 | API-09 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | REG-01 | P2: Cadastro do profissional de saúde | - | Pending |
 | REG-02 | P2: Cadastro do profissional de saúde | - | Pending |

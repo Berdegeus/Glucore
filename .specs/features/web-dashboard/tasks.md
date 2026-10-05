@@ -1928,13 +1928,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Sem `tz` o JSON antigo é idêntico campo a campo; com `tz=America/Sao_Paulo` os dias mudam; `INVALID_TIMEZONE`; token de profissional recebe `403 FORBIDDEN_ROLE`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Sem `tz` o JSON antigo é idêntico campo a campo; com `tz=America/Sao_Paulo` os dias mudam; `INVALID_TIMEZONE`; token de profissional recebe `403 FORBIDDEN_ROLE`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `test(glucose-service): cover the extended summary route`
+**Status**: ✅ Done
 
 ---
 
