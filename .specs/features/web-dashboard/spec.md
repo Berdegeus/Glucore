@@ -494,11 +494,11 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-19 | P1: Arquitetura limpa verificável (rubrica 37) | T126, T127 | Implementing |
 | LAY-01 | P1: Layout customizável por widgets | T1, T48, T49, T108, T189 | Implementing |
 | LAY-02 | P1: Layout customizável por widgets | T48, T51, T54 | Implementing |
-| LAY-03 | P1: Layout customizável por widgets | T46, T113, T114, T119 | Implementing |
+| LAY-03 | P1: Layout customizável por widgets | T46, T113, T114, T119, T190 | Implementing |
 | LAY-04 | P1: Layout customizável por widgets | T19, T46, T113, T115, T119 | Implementing |
 | LAY-05 | P1: Layout customizável por widgets | T46, T113, T116 | Implementing |
 | LAY-06 | P1: Layout customizável por widgets | T46, T113, T117, T119 | Implementing |
-| LAY-07 | P1: Layout customizável por widgets | T3, T5, T6, T7, T8, T50, T51, T118, T119 | Implementing |
+| LAY-07 | P1: Layout customizável por widgets | T3, T5, T6, T7, T8, T50, T51, T118, T119, T190 | Implementing |
 | LAY-08 | P1: Layout customizável por widgets | T5, T6, T7, T8, T50, T51, T54, T119 | Implementing |
 | LAY-09 | P1: Layout customizável por widgets | T5, T6, T7, T50, T51, T118 | Implementing |
 | LAY-10 | P1: Layout customizável por widgets | T47, T51, T54 | Implementing |
@@ -576,11 +576,11 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | CON-11 | P2: Consentimento do paciente pelo app (código de convite) | T132, T134, T138, T151 | Implementing |
 | CON-12 | P2: Consentimento do paciente pelo app (código de convite) | T156, T157 | Implementing |
 | CON-13 | P2: Consentimento do paciente pelo app (código de convite) | T153, T154, T155, T156, T157 | Implementing |
-| PRO-01 | P2: Dashboard do profissional de saúde | T178 | Implementing |
+| PRO-01 | P2: Dashboard do profissional de saúde | T178, T190 | Implementing |
 | PRO-02 | P2: Dashboard do profissional de saúde | T176, T178 | Implementing |
 | PRO-03 | P2: Dashboard do profissional de saúde | T72, T160, T163, T165, T174, T184 | Implementing |
 | PRO-04 | P2: Dashboard do profissional de saúde | T171 | Implementing |
-| PRO-05 | P2: Dashboard do profissional de saúde | T176, T177 | Implementing |
+| PRO-05 | P2: Dashboard do profissional de saúde | T176, T177, T190 | Implementing |
 | PRO-06 | P2: Dashboard do profissional de saúde | T172, T184 | Implementing |
 | PRO-07 | P2: Dashboard do profissional de saúde | T172, T184 | Implementing |
 | PRO-08 | P2: Dashboard do profissional de saúde | - | Pending |

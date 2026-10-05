@@ -17,7 +17,8 @@ export const CODE_HINT = 'Peça ao paciente o código gerado no aplicativo. Espa
 export const SUBMIT_LABEL = 'Vincular paciente';
 export const PENDING_LABEL = 'Vinculando…';
 
-function RedeemForm() {
+/** The form alone, for the page that explains how to get a code (PRO-01); the widget is this inside its card. */
+export function RedeemForm() {
   const { redeemInvite } = useProfessionalServices();
   const client = useQueryClient();
   const ids = { input: useId(), hint: useId(), message: useId() };

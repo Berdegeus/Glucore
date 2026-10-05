@@ -3,3 +3,7 @@
 import './presentation/widgetCatalog';
 
 export { ProfessionalServicesProvider } from './presentation/professionalServices';
+
+/** The page as a module for `React.lazy`: the app loads it with its route, not with the login screen. */
+export const loadProfessionalDashboardPage = () =>
+  import('./presentation/professionalDashboardPage').then((module) => ({ default: module.ProfessionalDashboardPage }));

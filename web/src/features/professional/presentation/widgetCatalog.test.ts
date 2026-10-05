@@ -14,17 +14,18 @@ describe('professional widget catalog (LAY-01, ARQ-10)', () => {
     expect(allDefinitions()).toHaveLength(definitionsForRole('HEALTH_PROFESSIONAL').length);
   });
 
-  it('gives every registered widget a component to load, under the title key the editor resolves', () => {
-    for (const definition of allDefinitions()) {
-      expect(componentFor(definition.id), definition.id).not.toBeNull();
-      expect(definition.titleKey).toBe(`widget.${definition.id}`);
-    }
-  });
+  it.each(definitionsForRole('HEALTH_PROFESSIONAL').map((definition) => [definition.id, definition] as const))(
+    '%s has a component to load, a title key the editor resolves and a title of its own',
+    (id, definition) => {
+      expect(componentFor(id)).not.toBeNull();
+      expect(definition.titleKey).toBe(`widget.${id}`);
+      expect(widgetTitle(definition)).not.toBe(id);
+    },
+  );
 
-  it('names every registered widget with a title of its own, so the editor never shows an id', () => {
+  it('gives no two widgets the same title', () => {
     const titles = allDefinitions().map((definition) => widgetTitle(definition));
 
-    for (const [at, definition] of allDefinitions().entries()) expect(titles[at], definition.id).not.toBe(definition.id);
     expect(new Set(titles).size).toBe(titles.length);
     expect(widgetTitle({ id: 'pro-kpi-patients', titleKey: 'widget.pro-kpi-patients' })).toBe(PRO_KPI_PATIENTS_TITLE);
     expect(widgetTitle({ id: 'pro-hypo-by-hour', titleKey: 'widget.pro-hypo-by-hour' })).toBe(PRO_HYPO_BY_HOUR_TITLE);

@@ -1,6 +1,7 @@
 // Public API of the dashboard-layout feature (ARQ-15): what other features may import.
 // A widget module needs its definition types, the props the grid hands it and the shell around it.
 export { WIDGET_SIZES } from './domain/layout';
+export { defaultLayoutFor } from './domain/defaultLayout';
 export type { WidgetDefinition, WidgetSize } from './domain/layout';
 export { allDefinitions, componentFor, definitionFor, definitionsForRole, registerWidget } from './presentation/widgetRegistry';
 export type { WidgetProps } from './presentation/widgetRegistry';
