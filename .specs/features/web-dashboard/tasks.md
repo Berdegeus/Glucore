@@ -1842,13 +1842,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração: domingo é 0; leitura às 22:00 BRT de sábado cai em sábado com `tz` e em domingo com `UTC`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Integração: domingo é 0; leitura às 22:00 BRT de sábado cai em sábado com `tz` e em domingo com `UTC`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(glucose-service): add the weekday-hour heatmap`
+**Status**: ✅ Done
 
 ---
 

@@ -35,6 +35,7 @@ import type {
   DailyBucketDto,
   DashboardTotals,
   ExcursionDto,
+  HeatCellDto,
   InsulinByTypeDto,
   PeriodMetricsDto,
   ZoneDistributionDto,
@@ -259,6 +260,7 @@ export class FakeDashboardRepository implements IDashboardRepository {
   };
   zoneDistribution: ZoneDistributionDto = { veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 };
   agp: AgpPointDto[] = [];
+  heatmap: HeatCellDto[] = [];
   dailyBuckets: DailyBucketDto[] = [];
   insulinByType: InsulinByTypeDto[] = [];
   alertsByType: AlertsByTypeDto[] = [];
@@ -308,6 +310,10 @@ export class FakeDashboardRepository implements IDashboardRepository {
 
   async getAgp(): Promise<AgpPointDto[]> {
     return this.agp;
+  }
+
+  async getHeatmap(): Promise<HeatCellDto[]> {
+    return this.heatmap;
   }
 
   async getDailyBuckets(): Promise<DailyBucketDto[]> {

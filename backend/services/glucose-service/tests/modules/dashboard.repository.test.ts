@@ -226,3 +226,73 @@ describe('getAgp', () => {
     expect(await repository.getAgp(patientId, RANGE, 'UTC')).toEqual([]);
   });
 });
+
+describe('getHeatmap', () => {
+  let patientId: string;
+
+  // 2026-08-08 is a Saturday. The range covers Saturday through Monday, UTC.
+  const WEEKEND: DateRange = { from: day('2026-08-08'), toExclusive: day('2026-08-11') };
+
+  beforeEach(async () => {
+    await truncateAll();
+    patientId = (await signedInPatient()).userId;
+  });
+
+  async function seed(owner: string, readings: Array<[iso: string, value: number]>): Promise<void> {
+    await prisma.glucoseReading.createMany({
+      data: readings.map(([iso, valueMgDl]) => ({ patientId: owner, valueMgDl, recordedAt: new Date(iso) })),
+    });
+  }
+
+  it('puts Saturday 22:00 in Sao Paulo on Saturday with tz, and on Sunday with UTC', async () => {
+    await seed(patientId, [['2026-08-09T01:00:00.000Z', 150]]); // Sat 22:00 BRT == Sun 01:00 UTC
+
+    const local = await repository.getHeatmap(patientId, WEEKEND, 'America/Sao_Paulo');
+    const utc = await repository.getHeatmap(patientId, WEEKEND, 'UTC');
+
+    expect(local).toEqual([{ dayOfWeek: 6, hour: 22, avgGlucose: 150, count: 1 }]);
+    expect(utc).toEqual([{ dayOfWeek: 0, hour: 1, avgGlucose: 150, count: 1 }]);
+  });
+
+  it('numbers the week from Sunday = 0', async () => {
+    await seed(patientId, [
+      ['2026-08-09T12:00:00.000Z', 100], // Sunday
+      ['2026-08-10T12:00:00.000Z', 100], // Monday
+      ['2026-08-08T12:00:00.000Z', 100], // Saturday
+    ]);
+
+    const heatmap = await repository.getHeatmap(patientId, WEEKEND, 'UTC');
+
+    expect(heatmap.map((cell) => cell.dayOfWeek)).toEqual([0, 1, 6]);
+  });
+
+  it('averages and counts the readings that share a weekday and hour', async () => {
+    await seed(patientId, [
+      ['2026-08-10T09:05:00.000Z', 100],
+      ['2026-08-10T09:50:00.000Z', 111],
+      ['2026-08-10T10:00:00.000Z', 200],
+    ]);
+
+    const heatmap = await repository.getHeatmap(patientId, WEEKEND, 'UTC');
+
+    expect(heatmap).toEqual([
+      { dayOfWeek: 1, hour: 9, avgGlucose: 105.5, count: 2 },
+      { dayOfWeek: 1, hour: 10, avgGlucose: 200, count: 1 },
+    ]);
+  });
+
+  it('ignores readings outside the range and from other patients', async () => {
+    const other = (await signedInPatient()).userId;
+    await seed(patientId, [['2026-08-10T09:00:00.000Z', 100]]);
+    await seed(patientId, [['2026-08-11T00:00:00.000Z', 300]]); // at toExclusive: out
+    await seed(other, [['2026-08-10T09:00:00.000Z', 400]]);
+
+    const heatmap = await repository.getHeatmap(patientId, WEEKEND, 'UTC');
+
+    expect(heatmap).toEqual([{ dayOfWeek: 1, hour: 9, avgGlucose: 100, count: 1 }]);
+  });
+
+  it('answers an empty list when the period has no readings', async () => {
+    expect(await repository.getHeatmap(patientId, WEEKEND, 'UTC')).toEqual([]);
+  });
+});

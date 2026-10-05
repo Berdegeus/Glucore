@@ -5,6 +5,7 @@ import {
   mapAlertsByTypeRow,
   mapDailyBucketRow,
   mapExcursionRow,
+  mapHeatCellRow,
   mapInsulinByTypeRow,
   mapPeriodMetricsRow,
   mapZonesRow,
@@ -13,12 +14,14 @@ import {
   type DailyBucketDto,
   type DashboardTotals,
   type ExcursionDto,
+  type HeatCellDto,
   type InsulinByTypeDto,
   type PeriodMetricsDto,
   type RawAgpRow,
   type RawAlertsByTypeRow,
   type RawDailyBucketRow,
   type RawExcursionRow,
+  type RawHeatCellRow,
   type RawInsulinByTypeRow,
   type RawPeriodMetricsRow,
   type RawZonesRow,
@@ -58,6 +61,8 @@ export interface IDashboardRepository {
   ): Promise<ZoneDistributionDto>;
   /** SQL cru (b) — `percentile_cont` P5/P25/P50/P75/P95 per local hour; hours without readings are absent. */
   getAgp(patientId: string, range: DateRange, tz: string): Promise<AgpPointDto[]>;
+  /** SQL cru (b) — mean and count per local weekday (0 = Sunday) × local hour; empty cells are absent. */
+  getHeatmap(patientId: string, range: DateRange, tz: string): Promise<HeatCellDto[]>;
   /** SQL cru, Q1 (b) — `date_trunc` + 7-day moving average window function. */
   getDailyBuckets(patientId: string, range: DateRange, low: number, high: number): Promise<DailyBucketDto[]>;
   /** SQL cru, Q2 (b) — gaps-and-islands over sustained hypo/hyper readings. */
@@ -191,6 +196,28 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       ORDER BY 1
     `;
     return rows.map(mapAgpRow);
+  }
+
+  async getHeatmap(patientId: string, { from, toExclusive }: DateRange, tz: string): Promise<HeatCellDto[]> {
+    // The local wall clock is computed once in a subquery so weekday and hour
+    // come from the same instant; see `getAgp` for the two-step conversion.
+    const rows = await this.prisma.$queryRaw<RawHeatCellRow[]>`
+      SELECT
+        EXTRACT(DOW FROM local_at)::integer AS day_of_week,
+        EXTRACT(HOUR FROM local_at)::integer AS hour,
+        AVG("valueMgDl") AS avg_glucose,
+        COUNT(*) AS readings_count
+      FROM (
+        SELECT "valueMgDl", ("recordedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz} AS local_at
+        FROM "GlucoseReading"
+        WHERE "patientId" = ${patientId}::uuid
+          AND "recordedAt" >= (${from} AT TIME ZONE 'UTC')
+          AND "recordedAt" < (${toExclusive} AT TIME ZONE 'UTC')
+      ) AS readings
+      GROUP BY 1, 2
+      ORDER BY 1, 2
+    `;
+    return rows.map(mapHeatCellRow);
   }
 
   async getDailyBuckets(

@@ -95,12 +95,39 @@ export interface RawAgpRow {
   readings_count: unknown;
 }
 
+/** Two decimals is plenty for mg/dL, and keeps raw doubles (`100.80000000000001`) out of the JSON. */
 const roundTo2 = (value: unknown): number => Math.round(toNumber(value) * 100) / 100;
 
-/** Percentiles come back as raw doubles (`100.80000000000001`); two decimals is plenty for mg/dL. */
+/** The percentiles come back as raw doubles, hence `roundTo2`. */
 export function mapAgpRow(row: RawAgpRow): AgpPointDto {
   const [p5, p25, p50, p75, p95] = row.percentiles.map(roundTo2);
   return { hour: toNumber(row.hour), p5, p25, p50, p75, p95, count: toNumber(row.readings_count) };
+}
+
+/** Mean glucose and reading count for one weekday × local-hour cell of the heatmap. */
+export interface HeatCellDto {
+  /** 0 = Sunday .. 6 = Saturday, as Postgres' `EXTRACT(DOW ...)` numbers them. */
+  dayOfWeek: number;
+  hour: number;
+  avgGlucose: number;
+  count: number;
+}
+
+/** Raw row shape from the heatmap `$queryRaw`. */
+export interface RawHeatCellRow {
+  day_of_week: unknown;
+  hour: unknown;
+  avg_glucose: unknown;
+  readings_count: unknown;
+}
+
+export function mapHeatCellRow(row: RawHeatCellRow): HeatCellDto {
+  return {
+    dayOfWeek: toNumber(row.day_of_week),
+    hour: toNumber(row.hour),
+    avgGlucose: roundTo2(row.avg_glucose),
+    count: toNumber(row.readings_count),
+  };
 }
 
 export interface DailyBucketDto {

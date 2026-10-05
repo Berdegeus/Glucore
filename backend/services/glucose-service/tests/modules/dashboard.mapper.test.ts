@@ -6,6 +6,7 @@ import {
   mapAlertsByTypeRow,
   mapDailyBucketRow,
   mapExcursionRow,
+  mapHeatCellRow,
   mapInsulinByTypeRow,
   mapPeriodMetricsRow,
   mapZonesRow,
@@ -165,5 +166,18 @@ describe('mapAgpRow', () => {
         readings_count: 5n,
       }),
     ).toEqual({ hour: 8, p5: 102, p25: 110, p50: 100.8, p75: 130.01, p95: 138, count: 5 });
+  });
+});
+
+describe('mapHeatCellRow', () => {
+  it('coerces the Decimal mean, rounds it to two decimals and coerces the bigint count', () => {
+    expect(
+      mapHeatCellRow({
+        day_of_week: 6,
+        hour: 22,
+        avg_glucose: new Prisma.Decimal('140.33333333333333'),
+        readings_count: 3n,
+      }),
+    ).toEqual({ dayOfWeek: 6, hour: 22, avgGlucose: 140.33, count: 3 });
   });
 });
