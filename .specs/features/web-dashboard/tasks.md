@@ -2140,13 +2140,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com fakes: período inválido não chama o repositório; `patientId` muda o escopo
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/application/loadPatientSummary.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com fakes: período inválido não chama o repositório; `patientId` muda o escopo
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/application/loadPatientSummary.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the load summary use case`
+**Status**: ✅ Done
 
 ---
 

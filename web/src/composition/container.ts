@@ -6,6 +6,8 @@ import { HttpAccountRepository } from '../features/auth/infrastructure/httpAccou
 import { HttpSessionRepository } from '../features/auth/infrastructure/httpSessionRepository';
 import { createLayoutUseCases, type LayoutUseCases } from '../features/dashboard-layout/application/layoutUseCases';
 import { HttpLayoutRepository } from '../features/dashboard-layout/infrastructure/httpLayoutRepository';
+import { createLoadPatientSummary, type SummaryUseCases } from '../features/patient-dashboard/application/loadPatientSummary';
+import { HttpSummaryRepository } from '../features/patient-dashboard/infrastructure/httpSummaryRepository';
 import { allDefinitions } from '../features/dashboard-layout/presentation/widgetRegistry';
 import type { Clock, SessionEvents, TimeZoneProvider, TokenStore, Unsubscribe } from '../shared/domain/ports';
 import { JwtExpiryReader } from '../shared/infrastructure/auth/jwtExpiryReader';
@@ -26,7 +28,7 @@ export interface AuthUseCases {
 }
 
 export interface Container {
-  useCases: { auth: AuthUseCases; layout: LayoutUseCases };
+  useCases: { auth: AuthUseCases; layout: LayoutUseCases; summary: SummaryUseCases };
   /** The one bus: the HTTP client publishes on it and the UI subscribes to it (ACC-09). */
   sessionEvents: SessionEvents;
   tokenStore: TokenStore;
@@ -51,6 +53,8 @@ export function createContainer(env: AppEnv): Container {
   const sessions = new HttpSessionRepository(http);
   const accounts = new HttpAccountRepository(http);
   const layouts = new HttpLayoutRepository(http);
+  const summaries = new HttpSummaryRepository(http);
+  const timeZone = new BrowserTimeZoneProvider();
   const expiryReader = new JwtExpiryReader();
   const cleaners = new Set<SessionCleaner>();
 
@@ -64,11 +68,12 @@ export function createContainer(env: AppEnv): Container {
       },
       // The registry is read at load time: widgets register when their modules load.
       layout: createLayoutUseCases({ layouts, catalog: allDefinitions }),
+      summary: { loadPatientSummary: createLoadPatientSummary({ summaries, timeZone }) },
     },
     sessionEvents,
     tokenStore,
     clock,
-    timeZone: new BrowserTimeZoneProvider(),
+    timeZone,
     registerSessionCleaner(cleaner) {
       cleaners.add(cleaner);
       return () => {

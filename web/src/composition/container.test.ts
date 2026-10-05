@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { server } from '../test/server';
+import { summaryFixture } from '../test/summaryFakes';
 import { SessionEventBus } from '../shared/infrastructure/events/sessionEventBus';
 import { createContainer } from './container';
 
@@ -44,6 +45,24 @@ describe('createContainer (ARQ-08)', () => {
 
     expect(loaded.degraded).toBe(false);
     expect(loaded.layout.widgets.length).toBeGreaterThan(0);
+  });
+
+  it('exposes the summary use case, wired to /api/v1/dashboard/summary with the browser zone', async () => {
+    let params: Record<string, string> = {};
+    server.use(
+      http.get(`${API}/dashboard/summary`, ({ request }) => {
+        params = Object.fromEntries(new URL(request.url).searchParams);
+        return HttpResponse.json(summaryFixture());
+      }),
+    );
+    const { useCases, timeZone } = createContainer({ apiUrl: HOST });
+
+    expect(Object.keys(useCases.summary)).toEqual(['loadPatientSummary']);
+
+    const summary = await useCases.summary.loadPatientSummary({ range: { from: '2026-08-05', to: '2026-08-06' } });
+
+    expect(summary).toEqual(summaryFixture());
+    expect(params).toEqual({ from: '2026-08-05', to: '2026-08-06', tz: timeZone.timeZone() });
   });
 
   it('builds one SessionEventBus, shared with the HTTP client', async () => {
