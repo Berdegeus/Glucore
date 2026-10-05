@@ -18,6 +18,8 @@ import { RegisterController } from './modules/register/register.controller';
 import { RegisterProfessionalController } from './modules/registerProfessional/registerProfessional.controller';
 import { createRegisterProfessionalRouter } from './modules/registerProfessional/registerProfessional.routes';
 import { createRegisterRouter } from './modules/register/register.routes';
+import { GrantsController } from './modules/sharing/grants.controller';
+import { createGrantsRouter } from './modules/sharing/grants.routes';
 import { createProxyRoute } from './routes/routingTable';
 import { redeemLimiter, registerLimiter, strictAuthLimiter } from './middleware/rateLimiters';
 import { upstreamClassifier } from './middleware/upstreamClassifier';
@@ -135,6 +137,13 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   // request once the limiter lets it through. POST only: nothing else under
   // `sharing` is a guessing surface.
   app.post('/api/v1/sharing/redeem', container.authenticate, redeemLimiter());
+
+  // The patient's grants, composed with the professionals' names (CON-08).
+  // Mounted before the `sharing` proxy for the same reason as the routers above.
+  app.use(
+    '/api/v1/sharing/grants',
+    createGrantsRouter(new GrantsController(container.authClient, container.glucoseClient), container.authenticate),
+  );
 
   for (const [prefix, service] of Object.entries(AUTHENTICATED_PROXIES)) {
     app.use(
