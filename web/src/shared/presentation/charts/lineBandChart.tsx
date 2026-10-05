@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { Area, ComposedChart, Line, ReferenceArea } from 'recharts';
 import { ChartAxes } from './chartAxes';
+import { withRanges } from './chartBands';
 import { BASE_CHART_PROPS, NO_ANIMATION, defaultFormat } from './chartDefaults';
 import { ChartGrid, ChartSurface, ChartTooltip, markerDot, type LegendItem } from './chartSurface';
 import type { ChartRow, SeriesSpec, ValueFormatter } from './chartTypes';
@@ -42,14 +43,10 @@ export interface LineBandChartProps {
 
 export const BAND_DATA_KEY = '__band';
 
-/** Adds the `[min, max]` pair Recharts reads for a range area; a gap in either end is a gap in the band. */
+/** Rows plus the `[min, max]` pair the band area reads; the rows alone without a band. */
 export function withBand(data: readonly ChartRow[], band: BandSpec | undefined): ChartRow[] {
   if (!band) return [...data];
-  return data.map((row) => {
-    const { [band.minKey]: min, [band.maxKey]: max } = row;
-    const pair = typeof min === 'number' && typeof max === 'number' ? [min, max] : null;
-    return { ...row, [BAND_DATA_KEY]: pair } as unknown as ChartRow;
-  });
+  return withRanges(data, [{ dataKey: BAND_DATA_KEY, minKey: band.minKey, maxKey: band.maxKey }]);
 }
 
 function renderSeries(spec: LineSpec, index: number, { filled, markers }: Pick<LineBandChartProps, 'filled' | 'markers'>) {
