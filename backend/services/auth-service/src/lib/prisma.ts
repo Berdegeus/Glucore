@@ -8,7 +8,7 @@
  * prisma/schema.prisma. Re-exporting `Prisma` and the model types from here
  * keeps that path in one file: nothing else in the service refers to it.
  */
-export { Prisma, PrismaClient } from '../../generated/prisma';
+export { Prisma, PrismaClient, UserRole, UserStatus } from '../../generated/prisma';
 
 import { PrismaClient } from '../../generated/prisma';
 

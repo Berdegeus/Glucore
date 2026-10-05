@@ -62,6 +62,9 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use('/dashboard', createDashboardRouter(container.dashboard));
   app.use('/sharing', createSharingRouter(container.sharing));
   app.use('/professional', createProfessionalRouter(container.professional));
+  // Ahead of the two below: they gate every `/internal` path on the token alone,
+  // and `/internal/admin` also needs the role check.
+  app.use('/internal/admin', container.internalAdminRouter);
   app.use('/internal', container.internalPatientRouter);
   app.use('/internal', container.internalProfessionalsRouter);
 

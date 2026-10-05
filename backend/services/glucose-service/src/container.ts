@@ -4,6 +4,10 @@ import type { Router } from 'express';
 
 import { getInternalJwtSecret } from './lib/env';
 import { prisma as defaultPrisma } from './lib/prisma';
+import { AdminController } from './modules/admin/admin.controller';
+import { PrismaAdminRepository } from './modules/admin/admin.repository';
+import { createInternalAdminRouter } from './modules/admin/admin.routes';
+import { AdminService } from './modules/admin/admin.service';
 import { AlertsController } from './modules/alerts/alerts.controller';
 import { PrismaAlertRepository } from './modules/alerts/alerts.repository';
 import { AlertsService } from './modules/alerts/alerts.service';
@@ -58,6 +62,7 @@ export interface Container {
   grantPolicy: GrantPolicy;
   internalPatientRouter: Router;
   internalProfessionalsRouter: Router;
+  internalAdminRouter: Router;
 }
 
 /**
@@ -114,6 +119,10 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
     ),
     internalProfessionalsRouter: createInternalProfessionalsRouter(
       new ProfessionalsController(new ProfessionalsService(new PrismaProfessionalRepository(prisma))),
+      createRequireInternalAuth(getInternalJwtSecret),
+    ),
+    internalAdminRouter: createInternalAdminRouter(
+      new AdminController(new AdminService(new PrismaAdminRepository(prisma))),
       createRequireInternalAuth(getInternalJwtSecret),
     ),
   };

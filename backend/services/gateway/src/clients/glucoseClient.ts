@@ -20,6 +20,14 @@ export type PatientListResponse = { items: PortfolioEntry[] } & Record<string, u
 /** `GET /professional/cohort/summary` as glucose-service answers it: `perPatient` carries no names. */
 export type CohortSummaryResponse = { perPatient: PortfolioEntry[] } & Record<string, unknown>;
 
+/** `GET /internal/admin/stats` as glucose-service answers it: counts only. */
+export interface PlatformStatsResponse {
+  activePatients: { last24h: number; last7d: number; registered: number };
+  readingsByDay: { day: string; count: number }[];
+  grants: { active: number; createdByWeek: { weekStart: string; count: number }[] };
+  alertsByType: { alertType: string; count: number }[];
+}
+
 /**
  * Every call this service makes into glucose-service: `/internal/*` with an
  * internal token, plus the one public route (`listGrants`) it composes on the
@@ -68,6 +76,15 @@ export class GlucoseClient {
 
   deleteProfessional(userId: string): Promise<void> {
     return this.http.request('DELETE', `/internal/professionals/${userId}`, GATEWAY_SERVICE_IDENTITY);
+  }
+
+  /**
+   * Platform counts for the administrator. `userId` is the admin the request
+   * came from; the role is fixed here and checked again by glucose-service
+   * (ADM-05).
+   */
+  adminStats(userId: string, days: number): Promise<PlatformStatsResponse> {
+    return this.http.request('GET', `/internal/admin/stats?days=${days}`, { sub: userId, role: 'ADMINISTRATOR' });
   }
 
   /**
