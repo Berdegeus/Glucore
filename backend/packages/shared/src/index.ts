@@ -36,6 +36,14 @@ export {
   type PageQuery,
 } from './util/pageQuery';
 export {
+  fillDayCounts,
+  utcDayKey,
+  utcDayStart,
+  utcPeriodDayKeys,
+  utcPeriodStart,
+  type DayCount,
+} from './util/utcDays';
+export {
   MAX_LAYOUT_WIDGETS,
   WIDGET_IDS_BY_ROLE,
   WIDGET_SIZES,
