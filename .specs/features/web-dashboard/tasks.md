@@ -5058,13 +5058,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: ids iguais aos do papel `ADMINISTRATOR` em `contracts/widget-catalog.json`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgetCatalog.test.ts`
-- [ ] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: ids iguais aos do papel `ADMINISTRATOR` em `contracts/widget-catalog.json`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgetCatalog.test.ts`
+- [x] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): register the admin widgets`
+**Status**: ✅ Done
 
 ---
 
