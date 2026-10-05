@@ -2629,13 +2629,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: leitura às 23:30 BRT fica no dia certo; lista de dias disponíveis vem das leituras
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/application/loadDayDetail.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: leitura às 23:30 BRT fica no dia certo; lista de dias disponíveis vem das leituras
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/application/loadDayDetail.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the day detail use case`
+**Status**: ✅ Done
 
 ---
 
