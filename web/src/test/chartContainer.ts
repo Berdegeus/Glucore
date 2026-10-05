@@ -43,6 +43,10 @@ class FakeResizeObserver {
 }
 
 const CONTAINER_CLASS = 'recharts-responsive-container';
+/** Chart containers that are not Recharts (the heatmap) mark themselves with this attribute. */
+const CONTAINER_ATTRIBUTE = 'data-chart-container';
+
+const isContainer = (element: Element) => element.classList.contains(CONTAINER_CLASS) || element.hasAttribute(CONTAINER_ATTRIBUTE);
 
 export interface ChartContainer {
   /** Changes the size of every chart container and fires the observers, as a browser does. */
@@ -63,7 +67,7 @@ export function stubChartContainer(initial: Size = { width: 600, height: 300 }):
     Object.assign(current, initial);
     globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
     Element.prototype.getBoundingClientRect = function measure(this: Element): DOMRect {
-      const size = this.classList.contains(CONTAINER_CLASS) ? current : { width: 0, height: 0 };
+      const size = isContainer(this) ? current : { width: 0, height: 0 };
       return { x: 0, y: 0, top: 0, left: 0, right: size.width, bottom: size.height, ...size } as DOMRect;
     };
   });

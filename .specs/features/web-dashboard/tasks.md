@@ -1671,13 +1671,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: 168 células no máximo, células sem dado vazias, `<title>` por célula com dia, hora e valor
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/heatmapChart.test.tsx`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: 168 células no máximo, células sem dado vazias, `<title>` por célula com dia, hora e valor
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/heatmapChart.test.tsx`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the SVG heatmap`
+**Status**: ✅ Done
 
 ---
 
