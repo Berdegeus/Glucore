@@ -1,0 +1,44 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.button {
+  min-height: var(--control-min-size);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2);
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.primary {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status,
+.notice {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.notice {
+  color: var(--color-danger);
+}
+
+/* Live regions stay in the page even when empty, or a screen reader would miss the first message. */
+.status:empty,
+.notice:empty {
+  position: absolute;
+}

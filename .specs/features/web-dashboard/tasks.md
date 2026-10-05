@@ -2888,13 +2888,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: salvar mostra "Layout salvo"; falha mantém o rascunho, mostra o erro e permite tentar de novo; restaurar pede confirmação e reaplica o padrão
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/layoutToolbar.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: salvar mostra "Layout salvo"; falha mantém o rascunho, mostra o erro e permite tentar de novo; restaurar pede confirmação e reaplica o padrão
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/layoutToolbar.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the layout toolbar`
+**Status**: ✅ Done
 
 ---
 
