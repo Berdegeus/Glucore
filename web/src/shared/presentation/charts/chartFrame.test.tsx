@@ -48,6 +48,18 @@ describe('ChartFrame', () => {
     expect(body.map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent))).toEqual(ROWS);
   });
 
+  it('names the table with the caption it is given instead of the title (RSP-07)', async () => {
+    render(
+      <ChartFrame title="Carboidratos e insulina" summary={SUMMARY} columns={COLUMNS} rows={ROWS} tableCaption="Valores em unidades diferentes">
+        <svg />
+      </ChartFrame>,
+    );
+    await userEvent.setup().click(toggle());
+
+    expect(screen.getByRole('table', { name: 'Valores em unidades diferentes' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Carboidratos e insulina' })).toBeInTheDocument();
+  });
+
   it('goes back to the chart when toggled again', async () => {
     renderFrame();
     const user = userEvent.setup();

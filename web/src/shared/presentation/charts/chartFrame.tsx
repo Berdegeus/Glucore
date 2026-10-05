@@ -11,13 +11,15 @@ interface ChartFrameProps {
   columns: readonly string[];
   /** Body of the table view, already formatted for display (pt-BR, RSP-09). */
   rows: ReadonlyArray<readonly string[]>;
+  /** What the table is called to a screen reader; the title when absent. For a note the table needs, such as mixed units. */
+  tableCaption?: string;
   children: ReactNode;
 }
 
-function DataTable({ title, columns, rows }: Pick<ChartFrameProps, 'title' | 'columns' | 'rows'>) {
+function DataTable({ caption, columns, rows }: Pick<ChartFrameProps, 'columns' | 'rows'> & { caption: string }) {
   return (
     <table className={styles.table}>
-      <caption className={styles.hidden}>{title}</caption>
+      <caption className={styles.hidden}>{caption}</caption>
       <thead>
         <tr>
           {columns.map((column) => (
@@ -46,7 +48,7 @@ function DataTable({ title, columns, rows }: Pick<ChartFrameProps, 'title' | 'co
  * adapter (RSP-07). The chart is one image to assistive technology; the table
  * view exposes the same data cell by cell.
  */
-export function ChartFrame({ title, summary, columns, rows, children }: ChartFrameProps) {
+export function ChartFrame({ title, summary, columns, rows, tableCaption = title, children }: ChartFrameProps) {
   const [asTable, setAsTable] = useState(false);
   const titleId = useId();
   return (
@@ -60,7 +62,7 @@ export function ChartFrame({ title, summary, columns, rows, children }: ChartFra
         </button>
       </div>
       {asTable ? (
-        <DataTable title={title} columns={columns} rows={rows} />
+        <DataTable caption={tableCaption} columns={columns} rows={rows} />
       ) : (
         <div className={styles.chart} role="img" aria-label={summary}>
           {children}

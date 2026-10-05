@@ -145,6 +145,8 @@ export function describeSummaryWidget({ Widget, definition, title, shown, emptyC
 interface ChartWidgetSpec extends Omit<SummaryWidgetSpec, 'shown'> {
   /** The sentence the chart carries for screen readers, for the fixture summary. */
   summary: string | RegExp;
+  /** The accessible name of the table, when it is not the title. */
+  tableName?: string;
   /** The "Ver como tabela" header cells. */
   columns: readonly string[];
   /** The table body for the fixture summary, formatted as shown. */
@@ -156,7 +158,7 @@ interface ChartWidgetSpec extends Omit<SummaryWidgetSpec, 'shown'> {
  * table toggle as proof the chart rendered, a text summary on the chart, and
  * the same data as a table.
  */
-export function describeChartWidget({ summary, columns, rows, ...widget }: ChartWidgetSpec) {
+export function describeChartWidget({ summary, columns, rows, tableName, ...widget }: ChartWidgetSpec) {
   stubChartContainer();
   describeSummaryWidget({ ...widget, shown: TABLE_TOGGLE_LABEL });
 
@@ -173,7 +175,7 @@ export function describeChartWidget({ summary, columns, rows, ...widget }: Chart
 
       await userEvent.setup().click(await screen.findByRole('button', { name: TABLE_TOGGLE_LABEL }));
 
-      const table = screen.getByRole('table', { name: widget.title });
+      const table = screen.getByRole('table', { name: tableName ?? widget.title });
       const [header = [], ...body] = within(table)
         .getAllByRole('row')
         .map((row) => [...row.querySelectorAll('th, td')].map((cell) => cell.textContent));

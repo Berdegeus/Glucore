@@ -10,6 +10,8 @@ export interface ChartAlternative {
   columns: readonly string[];
   /** Already formatted for display (pt-BR). */
   rows: ReadonlyArray<readonly string[]>;
+  /** Names the table when it needs more than the title, e.g. to say the columns are in different units. */
+  tableCaption?: string;
 }
 
 interface ChartWidgetProps {
