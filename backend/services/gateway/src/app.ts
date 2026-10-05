@@ -19,7 +19,7 @@ import { RegisterProfessionalController } from './modules/registerProfessional/r
 import { createRegisterProfessionalRouter } from './modules/registerProfessional/registerProfessional.routes';
 import { createRegisterRouter } from './modules/register/register.routes';
 import { createProxyRoute } from './routes/routingTable';
-import { registerLimiter, strictAuthLimiter } from './middleware/rateLimiters';
+import { redeemLimiter, registerLimiter, strictAuthLimiter } from './middleware/rateLimiters';
 import { upstreamClassifier } from './middleware/upstreamClassifier';
 
 export interface BuildAppOptions {
@@ -125,6 +125,12 @@ export function buildApp(options: BuildAppOptions = {}): Express {
     '/api/v1/account',
     createAccountRouter(new AccountController(container.authClient, container.glucoseClient), container.authenticate),
   );
+
+  // Per-user limit on invite redemption (CON-06). After `authenticate`, because
+  // the key is the user id; before the `sharing` proxy below, which forwards the
+  // request once the limiter lets it through. POST only: nothing else under
+  // `sharing` is a guessing surface.
+  app.post('/api/v1/sharing/redeem', container.authenticate, redeemLimiter());
 
   for (const [prefix, service] of Object.entries(AUTHENTICATED_PROXIES)) {
     app.use(

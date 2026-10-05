@@ -3536,13 +3536,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest: 11ª tentativa do mesmo usuário `429`; outro usuário no mesmo IP não é afetado
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest: 11ª tentativa do mesmo usuário `429`; outro usuário no mesmo IP não é afetado
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(gateway): rate-limit invite redemption per user`
+**Status**: ✅ Done
 
 ---
 

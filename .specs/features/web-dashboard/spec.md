@@ -568,7 +568,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | CON-03 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142 | Implementing |
 | CON-04 | P2: Consentimento do paciente pelo app (código de convite) | T142, T143, T145 | Implementing |
 | CON-05 | P2: Consentimento do paciente pelo app (código de convite) | T143 | Implementing |
-| CON-06 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
+| CON-06 | P2: Consentimento do paciente pelo app (código de convite) | T148 | Implementing |
 | CON-07 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142, T143 | Implementing |
 | CON-08 | P2: Consentimento do paciente pelo app (código de convite) | T145, T146 | Implementing |
 | CON-09 | P2: Consentimento do paciente pelo app (código de convite) | T142, T144, T145 | Implementing |
