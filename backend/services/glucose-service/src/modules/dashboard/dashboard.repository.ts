@@ -6,6 +6,7 @@ import {
   mapExcursionRow,
   mapInsulinByTypeRow,
   mapPeriodMetricsRow,
+  mapZonesRow,
   type AlertsByTypeDto,
   type DailyBucketDto,
   type DashboardTotals,
@@ -17,6 +18,8 @@ import {
   type RawExcursionRow,
   type RawInsulinByTypeRow,
   type RawPeriodMetricsRow,
+  type RawZonesRow,
+  type ZoneDistributionDto,
 } from './dashboard.mapper';
 
 /** A closed-open range: `[from, toExclusive)`. Callers add a day to an inclusive calendar "to". */
@@ -43,6 +46,13 @@ export interface IDashboardRepository {
   getAlertsByType(patientId: string, range: DateRange): Promise<AlertsByTypeDto[]>;
   /** `glucose_metrics()` stored procedure (c) — GMI/CV/TIR for the whole period. */
   getPeriodMetrics(patientId: string, range: DateRange, low: number, high: number): Promise<PeriodMetricsDto>;
+  /** `glucose_zones()` stored function (c) — the five CGM zones, as percentages summing to 100. */
+  getZoneDistribution(
+    patientId: string,
+    range: DateRange,
+    low: number,
+    high: number,
+  ): Promise<ZoneDistributionDto>;
   /** SQL cru, Q1 (b) — `date_trunc` + 7-day moving average window function. */
   getDailyBuckets(patientId: string, range: DateRange, low: number, high: number): Promise<DailyBucketDto[]>;
   /** SQL cru, Q2 (b) — gaps-and-islands over sustained hypo/hyper readings. */
@@ -137,6 +147,25 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       )
     `;
     return mapPeriodMetricsRow(rows[0]);
+  }
+
+  async getZoneDistribution(
+    patientId: string,
+    { from, toExclusive }: DateRange,
+    low: number,
+    high: number,
+  ): Promise<ZoneDistributionDto> {
+    // Same `AT TIME ZONE 'UTC'` binding as `getPeriodMetrics`; see the comment there.
+    const rows = await this.prisma.$queryRaw<RawZonesRow[]>`
+      SELECT * FROM glucose_zones(
+        ${patientId}::uuid,
+        ${from} AT TIME ZONE 'UTC',
+        ${toExclusive} AT TIME ZONE 'UTC',
+        ${low}::integer,
+        ${high}::integer
+      )
+    `;
+    return mapZonesRow(rows[0]);
   }
 
   async getDailyBuckets(

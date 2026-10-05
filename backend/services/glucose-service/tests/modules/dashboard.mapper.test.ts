@@ -7,6 +7,7 @@ import {
   mapExcursionRow,
   mapInsulinByTypeRow,
   mapPeriodMetricsRow,
+  mapZonesRow,
   toNullableNumber,
   toNumber,
 } from '../../src/modules/dashboard/dashboard.mapper';
@@ -123,5 +124,33 @@ describe('mapInsulinByTypeRow / mapAlertsByTypeRow — Prisma groupBy aggregates
       alertType: 'HYPO_RISK',
       count: 7,
     });
+  });
+});
+
+describe('mapZonesRow', () => {
+  it('coerces Decimal percents into numbers per zone', () => {
+    expect(
+      mapZonesRow({
+        very_low_percent: new Prisma.Decimal('12.50'),
+        low_percent: new Prisma.Decimal('25.00'),
+        target_percent: '25.00',
+        high_percent: new Prisma.Decimal('25.00'),
+        very_high_percent: new Prisma.Decimal('12.50'),
+      }),
+    ).toEqual({ veryLow: 12.5, low: 25, target: 25, high: 25, veryHigh: 12.5 });
+  });
+
+  it('turns the NULL percents of an empty period, or a missing row, into zeros', () => {
+    const zeros = { veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 };
+    const nulls = {
+      very_low_percent: null,
+      low_percent: null,
+      target_percent: null,
+      high_percent: null,
+      very_high_percent: null,
+    };
+
+    expect(mapZonesRow(nulls)).toEqual(zeros);
+    expect(mapZonesRow(undefined)).toEqual(zeros);
   });
 });

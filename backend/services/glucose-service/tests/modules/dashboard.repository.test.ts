@@ -1,7 +1,8 @@
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { PrismaDashboardRepository } from '../../src/modules/dashboard/dashboard.repository';
-import { disconnect, prisma } from '../helpers/db';
+import type { DateRange } from '../../src/modules/dashboard/dashboard.repository';
+import { disconnect, prisma, signedInPatient, truncateAll } from '../helpers/db';
 
 /**
  * Integration tests for the repository methods that need a real Postgres:
@@ -16,6 +17,20 @@ afterAll(async () => {
 });
 
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
+/** The window every fixture below lives in: 2026-08-05, UTC. */
+const RANGE: DateRange = { from: day('2026-08-05'), toExclusive: day('2026-08-06') };
+
+/** Seeds one reading per value, five minutes apart from 08:00 UTC on 2026-08-05. */
+async function seedReadings(patientId: string, values: number[], date = '2026-08-05'): Promise<void> {
+  await prisma.glucoseReading.createMany({
+    data: values.map((valueMgDl, i) => ({
+      patientId,
+      valueMgDl,
+      recordedAt: new Date(Date.parse(`${date}T08:00:00.000Z`) + i * 5 * 60_000),
+    })),
+  });
+}
+
 const hoursBetween = (a: Date, b: Date) => (b.getTime() - a.getTime()) / 3_600_000;
 
 describe('resolveBounds', () => {
@@ -53,5 +68,91 @@ describe('resolveBounds', () => {
     const bounds = await repository.resolveBounds(day('2026-03-07'), day('2026-03-09'), 'America/New_York');
 
     expect(hoursBetween(bounds.from, bounds.toExclusive)).toBe(3 * 24 - 1);
+  });
+});
+
+describe('getZoneDistribution', () => {
+  let patientId: string;
+
+  beforeEach(async () => {
+    await truncateAll();
+    patientId = (await signedInPatient()).userId;
+  });
+
+  const ZONES = ['veryLow', 'low', 'target', 'high', 'veryHigh'] as const;
+
+  // [low, high, value, expected zone] — every boundary with a sample just below and exactly at it.
+  it.each([
+    [80, 180, 53, 'veryLow'],
+    [80, 180, 54, 'low'],
+    [80, 180, 79, 'low'],
+    [80, 180, 80, 'target'],
+    [80, 180, 180, 'target'],
+    [80, 180, 181, 'high'],
+    [80, 180, 250, 'high'],
+    [80, 180, 251, 'veryHigh'],
+    // A low threshold under 54 moves the very-low edge to it: no "low" band is left.
+    [50, 180, 49, 'veryLow'],
+    [50, 180, 50, 'target'],
+    [50, 180, 53, 'target'],
+    // A high threshold over 250 moves the very-high edge to it: no "high" band is left.
+    [80, 300, 251, 'target'],
+    [80, 300, 300, 'target'],
+    [80, 300, 301, 'veryHigh'],
+  ] as const)('low=%i high=%i: %i mg/dL is %s', async (low, high, value, zone) => {
+    await seedReadings(patientId, [value]);
+
+    const distribution = await repository.getZoneDistribution(patientId, RANGE, low, high);
+
+    expect(distribution).toEqual({ veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0, [zone]: 100 });
+  });
+
+  it('splits the eight boundary readings across the five zones and sums to 100', async () => {
+    await seedReadings(patientId, [53, 54, 79, 80, 180, 181, 250, 251]);
+
+    const distribution = await repository.getZoneDistribution(patientId, RANGE, 80, 180);
+
+    expect(distribution).toEqual({ veryLow: 12.5, low: 25, target: 25, high: 25, veryHigh: 12.5 });
+  });
+
+  it('sums to 100 within 0.01 when the shares do not divide evenly', async () => {
+    // 7 readings -> 14.2857 / 28.5714 / 14.2857 / 28.5714 / 14.2857: five independent roundings add up to 100.01.
+    await seedReadings(patientId, [40, 60, 60, 100, 200, 200, 300]);
+
+    const distribution = await repository.getZoneDistribution(patientId, RANGE, 80, 180);
+    const sum = ZONES.reduce((total, zone) => total + distribution[zone], 0);
+
+    expect(Math.abs(sum - 100)).toBeLessThanOrEqual(0.01);
+    // Each share stays within 0.01 of its exact value (100/7 or 200/7).
+    const exact = { veryLow: 100 / 7, low: 200 / 7, target: 100 / 7, high: 200 / 7, veryHigh: 100 / 7 };
+    for (const zone of ZONES) {
+      expect(Math.abs(distribution[zone] - exact[zone])).toBeLessThan(0.01);
+    }
+  });
+
+  it('counts only readings inside [from, toExclusive)', async () => {
+    await seedReadings(patientId, [100]);
+    await seedReadings(patientId, [300], '2026-08-06'); // exactly at toExclusive: out
+    await seedReadings(patientId, [40], '2026-08-04'); // before from: out
+
+    const distribution = await repository.getZoneDistribution(patientId, RANGE, 80, 180);
+
+    expect(distribution.target).toBe(100);
+  });
+
+  it("ignores another patient's readings", async () => {
+    const other = (await signedInPatient()).userId;
+    await seedReadings(patientId, [100]);
+    await seedReadings(other, [300, 300, 300]);
+
+    const distribution = await repository.getZoneDistribution(patientId, RANGE, 80, 180);
+
+    expect(distribution.target).toBe(100);
+  });
+
+  it('answers zero in every zone when there are no readings', async () => {
+    const distribution = await repository.getZoneDistribution(patientId, RANGE, 80, 180);
+
+    expect(distribution).toEqual({ veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 });
   });
 });

@@ -546,7 +546,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-07 | P1: Publicação na Vercel | T9, T225 | Implementing |
 | API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66 | Implementing |
-| API-03 | P2: Ajustes de backend para os gráficos novos | - | Pending |
+| API-03 | P2: Ajustes de backend para os gráficos novos | T68 | Implementing |
 | API-04 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-05 | P2: Ajustes de backend para os gráficos novos | - | Pending |
 | API-06 | P2: Ajustes de backend para os gráficos novos | - | Pending |

@@ -36,6 +36,7 @@ import type {
   ExcursionDto,
   InsulinByTypeDto,
   PeriodMetricsDto,
+  ZoneDistributionDto,
 } from '../../src/modules/dashboard/dashboard.mapper';
 
 let sequence = 0;
@@ -255,6 +256,7 @@ export class FakeDashboardRepository implements IDashboardRepository {
     timeInRangePercent: null,
     readingsCount: 0,
   };
+  zoneDistribution: ZoneDistributionDto = { veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 };
   dailyBuckets: DailyBucketDto[] = [];
   insulinByType: InsulinByTypeDto[] = [];
   alertsByType: AlertsByTypeDto[] = [];
@@ -296,6 +298,10 @@ export class FakeDashboardRepository implements IDashboardRepository {
   ): Promise<PeriodMetricsDto> {
     this.thresholdsSeen.push({ low, high });
     return this.periodMetrics;
+  }
+
+  async getZoneDistribution(): Promise<ZoneDistributionDto> {
+    return this.zoneDistribution;
   }
 
   async getDailyBuckets(): Promise<DailyBucketDto[]> {

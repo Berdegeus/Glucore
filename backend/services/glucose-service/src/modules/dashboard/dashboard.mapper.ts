@@ -45,6 +45,38 @@ export interface PeriodMetricsDto {
   readingsCount: number;
 }
 
+/** Share of readings in each CGM zone, in percent; the five add up to 100 (0 each with no readings). */
+export interface ZoneDistributionDto {
+  veryLow: number;
+  low: number;
+  target: number;
+  high: number;
+  veryHigh: number;
+}
+
+/** Raw row shape from the `glucose_zones()` stored function via `$queryRaw`. */
+export interface RawZonesRow {
+  very_low_percent: unknown;
+  low_percent: unknown;
+  target_percent: unknown;
+  high_percent: unknown;
+  very_high_percent: unknown;
+}
+
+/**
+ * The function answers NULL percents for a period with no readings; the
+ * contract is a number per zone, so they become 0 here (`toNumber`).
+ */
+export function mapZonesRow(row: RawZonesRow | undefined): ZoneDistributionDto {
+  return {
+    veryLow: toNumber(row?.very_low_percent),
+    low: toNumber(row?.low_percent),
+    target: toNumber(row?.target_percent),
+    high: toNumber(row?.high_percent),
+    veryHigh: toNumber(row?.very_high_percent),
+  };
+}
+
 export interface DailyBucketDto {
   day: string;
   avgGlucose: number | null;

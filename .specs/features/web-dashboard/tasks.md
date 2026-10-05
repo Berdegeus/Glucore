@@ -1778,14 +1778,15 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Migration nova em `prisma/migrations/` com `CREATE FUNCTION glucose_zones` (muito baixa `< LEAST(54, low)`, muito alta `> GREATEST(250, high)`)
-- [ ] Integração: leituras em 53, 54, low-1, low, high, high+1, 250, 251 caem na zona certa; soma 100 ± 0,01; limiar baixo de 50 usa 50
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Migration nova em `prisma/migrations/` com `CREATE FUNCTION glucose_zones` (muito baixa `< LEAST(54, low)`, muito alta `> GREATEST(250, high)`)
+- [x] Integração: leituras em 53, 54, low-1, low, high, high+1, 250, 251 caem na zona certa; soma 100 ± 0,01; limiar baixo de 50 usa 50
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(glucose-service): add the five-zone distribution`
+**Status**: ✅ Done
 
 ---
 
