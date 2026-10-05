@@ -1,6 +1,7 @@
 import { Router, type RequestHandler } from 'express';
 import { asyncHandler } from '@glucore/shared';
 
+import type { CohortController } from './cohort.controller';
 import type { PatientsController } from './patients.controller';
 
 /**
@@ -11,5 +12,12 @@ import type { PatientsController } from './patients.controller';
 export function createPatientsRouter(controller: PatientsController, authenticate: RequestHandler): Router {
   const router = Router();
   router.get('/', authenticate, asyncHandler(controller.list));
+  return router;
+}
+
+/** Mounted at `/api/v1/professional/cohort/summary`, ahead of the `professional` proxy; `GET /` only. */
+export function createCohortRouter(controller: CohortController, authenticate: RequestHandler): Router {
+  const router = Router();
+  router.get('/', authenticate, asyncHandler(controller.summary));
   return router;
 }

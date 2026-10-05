@@ -3917,13 +3917,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: nomes em `perPatient`; degradação igual à da lista
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: nomes em `perPatient`; degradação igual à da lista
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(gateway): compose the cohort summary with names`
+**Status**: ✅ Done
 
 ---
 
