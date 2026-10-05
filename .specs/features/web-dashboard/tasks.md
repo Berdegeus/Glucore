@@ -1971,13 +1971,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste em `test/features/patient/glucose_metrics_test.dart` lê o mesmo JSON e confere todos os casos
-- [ ] Gate `quick` passa: `flutter test --no-pub test/features/patient/glucose_metrics_test.dart`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste em `test/features/patient/glucose_metrics_test.dart` lê o mesmo JSON e confere todos os casos
+- [x] Gate `quick` passa: `flutter test --no-pub test/features/patient/glucose_metrics_test.dart`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(app): compute GMI with the shared formula`
+**Status**: ✅ Done
 
 ---
 
