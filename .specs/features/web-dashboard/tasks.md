@@ -3365,13 +3365,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Migration com índice único parcial de convite pendente por paciente e de vínculo ativo por par
-- [ ] `npm run build` passa e a migration aplica no banco de teste; o comentário `roadmap` do grant sai
-- [ ] Gate `build` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Migration com índice único parcial de convite pendente por paciente e de vínculo ativo por par
+- [x] `npm run build` passa e a migration aplica no banco de teste; o comentário `roadmap` do grant sai
+- [x] Gate `build` passa: `cd backend && npm run build && npm run test:coverage`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(glucose-service): add invite and grant revocation tables`
+**Status**: ✅ Done
 
 ---
 

@@ -64,9 +64,9 @@ model Patient {
   alertThresholdConfig  AlertThresholdConfig?
   clinicalReports       ClinicalReport[]
   dashboardAccessGrants DashboardAccessGrant[]
+  invites               PatientInvite[]
 }
 
-/// roadmap: perfil do profissional de saude. Sem rota nesta release; mantido para o painel clinico planejado.
 model HealthProfessional {
   userId                String                 @id @db.Uuid
   licenseNumber         String
@@ -256,7 +256,10 @@ model MetricsSnapshot {
   @@index([clinicalReportId])
 }
 
-/// roadmap: consentimento de acesso do profissional ao painel do paciente. Sem rota nesta release.
+/// Consentimento do paciente para o profissional ler o painel dele. Nasce do
+/// resgate de um `PatientInvite`; so o paciente revoga (`revokedAt`). Vinculo
+/// ativo = `revokedAt IS NULL AND (expiresAt IS NULL OR expiresAt > now())`.
+/// O indice unico parcial de um vinculo ativo por par vive so no SQL da migration.
 model DashboardAccessGrant {
   id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   patientId            String             @db.Uuid
@@ -264,6 +267,7 @@ model DashboardAccessGrant {
   clinicalReportId     String?            @db.Uuid
   grantedAt            DateTime           @default(now())
   expiresAt            DateTime?
+  revokedAt            DateTime?
   permissionLevel      String
   patient              Patient            @relation(fields: [patientId], references: [userId], onDelete: Cascade)
   healthProfessional   HealthProfessional @relation(fields: [healthProfessionalId], references: [userId], onDelete: Cascade)
@@ -272,6 +276,24 @@ model DashboardAccessGrant {
   @@index([patientId])
   @@index([healthProfessionalId])
   @@index([clinicalReportId])
+}
+
+/// Convite de uso unico que o paciente gera no app e o profissional resgata na
+/// web (AD-015). Guarda so o sha256 do codigo normalizado: o codigo em claro nunca
+/// e gravado. Pendente = `usedAt IS NULL AND revokedAt IS NULL`; o indice unico
+/// parcial que limita um pendente por paciente vive so no SQL da migration.
+model PatientInvite {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId String    @db.Uuid
+  codeHash  String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  usedBy    String?   @db.Uuid
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  patient   Patient   @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+
+  @@index([patientId, createdAt])
 }
 
 /// Trilha de auditoria (item 4.11 do checklist), das escritas clínicas —

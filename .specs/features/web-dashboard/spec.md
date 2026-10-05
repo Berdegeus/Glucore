@@ -565,11 +565,11 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | REG-10 | P2: Cadastro do profissional de saúde | T139 | Implementing |
 | CON-01 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | CON-02 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
-| CON-03 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
+| CON-03 | P2: Consentimento do paciente pelo app (código de convite) | T140 | Implementing |
 | CON-04 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | CON-05 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | CON-06 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
-| CON-07 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
+| CON-07 | P2: Consentimento do paciente pelo app (código de convite) | T140 | Implementing |
 | CON-08 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | CON-09 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | CON-10 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
