@@ -3706,12 +3706,13 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Mesmas chaves nos dois `.arb`; `flutter gen-l10n` regenera sem erro
-- [ ] Gate `build` passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub`
+- [x] Mesmas chaves nos dois `.arb`; `flutter gen-l10n` regenera sem erro
+- [x] Gate `build` passa: `flutter gen-l10n && flutter analyze && flutter test --no-pub`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(app): add sharing strings`
+**Status**: ✅ Done
 
 ---
 
