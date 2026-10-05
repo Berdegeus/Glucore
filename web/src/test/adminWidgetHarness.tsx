@@ -8,9 +8,17 @@ import type { AdminUseCases } from '../features/admin/application/adminUseCases'
 import type { AdminOverview } from '../features/admin/domain/overview';
 import { AdminPeriodProvider } from '../features/admin/presentation/adminPeriodContext';
 import { AppError } from '../shared/domain/appError';
-import { accountPageOf, overviewOf } from './adminFakes';
+import { accountPageOf, overviewOf, zeroOverviewOf } from './adminFakes';
+import { stubChartContainer } from './chartContainer';
 import { plainQueryClient } from './professionalHarness';
-import { describeCatalogDefinition, describeWidgetStates, type StatesScenario } from './widgetHarness';
+import { TABLE_TOGGLE_LABEL } from '../shared/presentation/charts/chartFrame';
+import {
+  describeCatalogDefinition,
+  describeChartAlternatives,
+  describeWidgetStates,
+  type ChartAlternativesSpec,
+  type StatesScenario,
+} from './widgetHarness';
 
 interface AdminHarnessOptions {
   /** What `loadOverview` answers; the fixture when omitted. */
@@ -45,7 +53,7 @@ export function renderAdminWidget(widget: ReactElement, options: AdminHarnessOpt
 
 const using = (load: ReturnType<typeof vi.fn>): Partial<AdminUseCases> => ({ loadOverview: load as unknown as AdminUseCases['loadOverview'] });
 
-// No `empty`: a count of zero is a figure the administrator reads, so these widgets have no empty state.
+// No `empty`: a count of zero is a figure the administrator reads, so the KPIs have no empty state; the charts add one.
 const overviewScenario: StatesScenario = {
   loading: (widget) => void renderAdminWidget(widget, { services: using(vi.fn(() => new Promise(() => undefined))) }),
   failsOnce: (widget) => {
@@ -56,12 +64,19 @@ const overviewScenario: StatesScenario = {
   loaded: (widget) => renderAdminWidget(widget),
 };
 
+const chartScenario: StatesScenario = {
+  ...overviewScenario,
+  empty: (widget) => void renderAdminWidget(widget, { overview: zeroOverviewOf() }),
+};
+
 export interface AdminWidgetSpec {
   Widget: ComponentType<WidgetProps>;
   definition: WidgetDefinition;
   title: string;
   /** Text the widget shows once the fixture overview has loaded. */
   shown: string | RegExp;
+  /** The cause an empty period shows; absent for a widget that never shows an empty state. */
+  emptyCause?: string;
 }
 
 /**
@@ -73,7 +88,7 @@ export interface AdminWidgetSpec {
  */
 export function describeAdminWidget(spec: AdminWidgetSpec) {
   describeCatalogDefinition(spec.definition, 'ADMINISTRATOR');
-  describeWidgetStates(spec, overviewScenario);
+  describeWidgetStates(spec, spec.emptyCause === undefined ? overviewScenario : chartScenario);
 
   describe(`${spec.definition.id} period (ADM-07)`, () => {
     it.each([7, 90])('asks for the overview of the %i days the page picked', async (days) => {
@@ -83,6 +98,22 @@ export function describeAdminWidget(spec: AdminWidgetSpec) {
       expect(services.loadOverview).toHaveBeenCalledTimes(1);
     });
   });
+}
+
+type AdminChartSpec = Omit<AdminWidgetSpec, 'shown'> & Pick<ChartAlternativesSpec, 'summary' | 'tableName' | 'columns' | 'rows'>;
+
+/**
+ * What every chart of the administrator shares (ADM-02, RSP-07): the widget
+ * states with the table toggle as proof the chart rendered, the cause of an
+ * empty period, a text summary on the chart and the same data as a table.
+ */
+export function describeAdminChart({ summary, columns, rows, tableName, ...widget }: AdminChartSpec) {
+  stubChartContainer();
+  describeAdminWidget({ ...widget, shown: TABLE_TOGGLE_LABEL });
+  describeChartAlternatives(
+    { Widget: widget.Widget, id: widget.definition.id, title: widget.title, summary, tableName, columns, rows },
+    (element) => void renderAdminWidget(element),
+  );
 }
 
 interface AdminFigureSpec {

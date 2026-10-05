@@ -18,3 +18,7 @@ export { todayInBrowserZone } from './presentation/today';
 export { useSummary } from './presentation/useSummary';
 export { DEFAULT_PRESET, toRange } from './domain/period';
 export type { DateRange } from './domain/period';
+
+// Labels of the patient's summary that the administrator's charts speak in as well: alert types and calendar days.
+export { alertLabel } from './presentation/widgets/alertLabels';
+export { fullDay, shortDay } from './presentation/widgets/dayLabel';

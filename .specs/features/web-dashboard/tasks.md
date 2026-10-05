@@ -4890,16 +4890,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `adm-users-role`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza a rosca de contas por papel a partir de `overview.accounts.byRole`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Usa o adaptador `DonutChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admUsersRole.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `adm-users-role`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza a rosca de contas por papel a partir de `overview.accounts.byRole`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Usa o adaptador `DonutChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admUsersRole.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add adm-users-role widget`
+**Status**: ✅ Done
 
 ---
 
