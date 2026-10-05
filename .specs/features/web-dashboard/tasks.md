@@ -3768,13 +3768,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de widget: tocar no item abre a tela de compartilhamento
-- [ ] Gate `full` passa: `flutter analyze && flutter test --no-pub`
-- [ ] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de widget: tocar no item abre a tela de compartilhamento
+- [x] Gate `full` passa: `flutter analyze && flutter test --no-pub`
+- [x] Pelo menos 1 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: full
 **Commit**: `feat(app): link sharing from settings`
+**Status**: ✅ Done
 
 ---
 
