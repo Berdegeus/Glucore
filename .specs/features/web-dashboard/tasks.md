@@ -1650,13 +1650,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: pontos com rótulo; linhas nos limites recebidos (TIR 70, CV 36)
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/scatterQuadrantChart.test.tsx`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: pontos com rótulo; linhas nos limites recebidos (TIR 70, CV 36)
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/scatterQuadrantChart.test.tsx`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the scatter quadrant chart adapter`
+**Status**: ✅ Done
 
 ---
 

@@ -1,9 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { expectAccessibleInFrame } from '../../../test/chartA11y';
 import { stubChartContainer } from '../../../test/chartContainer';
 import { expectResponsive, renderChart } from '../../../test/chartQueries';
-import { axe } from 'vitest-axe';
-import { ChartFrame } from './chartFrame';
 import { DONUT_EMPTY_CAUSE, DonutChart, type DonutChartProps } from './donutChart';
 
 stubChartContainer({ width: 600, height: 280 });
@@ -50,11 +49,6 @@ describe('DonutChart', () => {
   });
 
   it('has no axe violations inside the chart frame (ADM-02)', async () => {
-    const { container } = render(
-      <ChartFrame title="Contas por papel" summary="Contas por papel." columns={['Papel', 'Contas']} rows={[['Pacientes', '60']]}>
-        <DonutChart slices={SLICES} />
-      </ChartFrame>,
-    );
-    expect(await axe(container)).toHaveNoViolations();
+    await expectAccessibleInFrame(<DonutChart slices={SLICES} />);
   });
 });

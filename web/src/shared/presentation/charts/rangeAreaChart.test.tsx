@@ -1,9 +1,7 @@
-import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { axe } from 'vitest-axe';
+import { expectAccessibleInFrame } from '../../../test/chartA11y';
 import { stubChartContainer } from '../../../test/chartContainer';
 import { expectResponsive, renderChart } from '../../../test/chartQueries';
-import { ChartFrame } from './chartFrame';
 import { RangeAreaChart, type RangeAreaChartProps } from './rangeAreaChart';
 
 stubChartContainer({ width: 600, height: 280 });
@@ -65,11 +63,6 @@ describe('RangeAreaChart', () => {
   });
 
   it('has no axe violations inside the chart frame (PAC-10)', async () => {
-    const { container } = render(
-      <ChartFrame title="AGP" summary="Perfil ambulatorial." columns={['Hora', 'Mediana']} rows={[['0', '130']]}>
-        <RangeAreaChart {...PROPS} />
-      </ChartFrame>,
-    );
-    expect(await axe(container)).toHaveNoViolations();
+    await expectAccessibleInFrame(<RangeAreaChart {...PROPS} />);
   });
 });

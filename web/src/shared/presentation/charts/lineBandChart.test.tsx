@@ -1,9 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { axe } from 'vitest-axe';
+import { expectAccessibleInFrame } from '../../../test/chartA11y';
 import { stubChartContainer } from '../../../test/chartContainer';
 import { expectResponsive, renderChart } from '../../../test/chartQueries';
-import { ChartFrame } from './chartFrame';
 import { LineBandChart, withBand, type LineBandChartProps } from './lineBandChart';
 
 stubChartContainer({ width: 600, height: 280 });
@@ -74,13 +73,8 @@ describe('LineBandChart', () => {
     expect(labels).toEqual(['Média diária', 'Média de 7 dias', 'Mínimo a máximo', 'Faixa-alvo']);
   });
 
-  it('has no axe violations inside the chart frame, as a chart and as a table (PAC-06)', async () => {
-    const { container } = render(
-      <ChartFrame title="Tendência" summary="Média diária de glicose." columns={['Dia', 'Média']} rows={[['01/10', '120']]}>
-        <LineBandChart data={DATA} xKey="day" lines={LINES} band={BAND} targetRange={TARGET} markers />
-      </ChartFrame>,
-    );
-    expect(await axe(container)).toHaveNoViolations();
+  it('has no axe violations inside the chart frame (PAC-06)', async () => {
+    await expectAccessibleInFrame(<LineBandChart data={DATA} xKey="day" lines={LINES} band={BAND} targetRange={TARGET} markers />);
   });
 });
 
