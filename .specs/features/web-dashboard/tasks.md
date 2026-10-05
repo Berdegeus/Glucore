@@ -5146,6 +5146,27 @@ Achados da execução que viraram tarefa. Cada uma depende só de tarefas já co
 
 ---
 
+### T226: Estabilizar os testes de apresentação sob carga
+
+**What**: Subir o timeout padrão das consultas assíncronas do Testing Library (`asyncUtilTimeout`) no setup da web, para os testes que falharam uma vez sob carga (`loginPage` "expiry notice once" e `openClosed` "page drawing the fake widget") deixarem de ser instáveis, sem tocar em nenhuma asserção.
+**Where**: `web/src/test/setup.ts`
+**Depends on**: T127
+**Reuses**: `configure` do `@testing-library/react`; `testTimeout` de 15 s do projeto `dom`
+**Requirement**: ARQ-13
+
+**Done when**:
+
+- [ ] `asyncUtilTimeout` configurado (valor justificado em comentário, abaixo do `testTimeout`) e nenhum teste alterado
+- [ ] Os dois testes citados passam 5 vezes seguidas e dentro de `npm run test:coverage` completo
+- [ ] Gate `full` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage`
+- [ ] A contagem total da suíte não cai
+
+**Tests**: component
+**Gate**: full
+**Commit**: `test(web): raise the async query timeout for loaded machines`
+
+---
+
 ## Phase Execution Map
 
 ```
