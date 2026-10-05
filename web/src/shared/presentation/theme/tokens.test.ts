@@ -55,7 +55,7 @@ describe.each<Theme>(['light', 'dark'])('%s theme contrast (RSP-08)', (theme) =>
 
 describe('theme completeness (RSP-10)', () => {
   it('overrides every color token in the dark theme', () => {
-    const colorTokens = Object.keys(light).filter((name) => /^--(color|zone)-/.test(name));
+    const colorTokens = Object.keys(light).filter((name) => /^--(color|zone|series)-/.test(name));
     const overridden = Object.keys(declarations(blockOf(":root[data-theme='dark']")));
     expect(overridden.sort()).toEqual(colorTokens.sort());
   });
@@ -63,7 +63,7 @@ describe('theme completeness (RSP-10)', () => {
   it('keeps all color tokens as hex values', () => {
     for (const theme of ['light', 'dark'] as const) {
       for (const [name, value] of Object.entries(themes[theme])) {
-        if (/^--(color|zone)-/.test(name)) expect(value, `${theme} ${name}`).toMatch(/^#[0-9a-f]{6}$/);
+        if (/^--(color|zone|series)-/.test(name)) expect(value, `${theme} ${name}`).toMatch(/^#[0-9a-f]{6}$/);
       }
     }
   });
