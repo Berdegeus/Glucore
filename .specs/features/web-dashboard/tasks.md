@@ -4754,13 +4754,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: vários widgets fazem uma requisição de overview; trocar o período refaz a consulta
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/useOverview.test.ts`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: vários widgets fazem uma requisição de overview; trocar o período refaz a consulta
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/useOverview.test.ts`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add admin query hooks`
+**Status**: ✅ Done
 
 ---
 

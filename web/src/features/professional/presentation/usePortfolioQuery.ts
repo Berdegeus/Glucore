@@ -1,7 +1,7 @@
-import { keepPreviousData, useQuery, type QueryKey, type UseQueryResult } from '@tanstack/react-query';
+import { useQuery, type QueryKey, type UseQueryResult } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import type { AppError } from '../../../shared/domain/appError';
-import { REFETCH_INTERVAL_MS } from '../../../shared/presentation/queryClient';
+import { dashboardQueryOptions } from '../../../shared/presentation/queryClient';
 import { useRevokedAccessNotice } from './revokedAccess';
 
 /**
@@ -14,14 +14,7 @@ import { useRevokedAccessNotice } from './revokedAccess';
  */
 export function usePortfolioQuery<T>(queryKey: QueryKey, queryFn: () => Promise<T>, keepPrevious = false): UseQueryResult<T, AppError> {
   const { handleError } = useRevokedAccessNotice();
-  const query = useQuery<T, AppError>({
-    queryKey,
-    queryFn,
-    staleTime: REFETCH_INTERVAL_MS,
-    refetchInterval: REFETCH_INTERVAL_MS,
-    refetchIntervalInBackground: false,
-    placeholderData: keepPrevious ? keepPreviousData : undefined,
-  });
+  const query = useQuery<T, AppError>({ queryKey, queryFn, ...dashboardQueryOptions(keepPrevious) });
   const { error } = query;
   useEffect(() => {
     if (error) handleError(error);

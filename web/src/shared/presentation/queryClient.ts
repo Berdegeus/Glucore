@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query';
+import { keepPreviousData, QueryClient } from '@tanstack/react-query';
 import { isAppError, type AppErrorKind } from '../domain/appError';
 
 /** Retries after the first failure, for the kinds worth repeating (ACC-05). */
@@ -10,6 +10,22 @@ const MAX_BACKOFF_MS = 30_000;
 
 /** Dashboard data reloads this often while the tab is visible (PAC-16). */
 export const REFETCH_INTERVAL_MS = 5 * 60 * 1000;
+
+/**
+ * What every dashboard query shares, set on the query so the rule holds under
+ * any client: fresh for 5 minutes, reloaded that often while the tab is
+ * visible and never while it is hidden (PAC-16). With `keepPrevious`, a new
+ * key shows the last answer until its own arrives, so a pager does not blank
+ * the list it sits in.
+ */
+export function dashboardQueryOptions(keepPrevious = false) {
+  return {
+    staleTime: REFETCH_INTERVAL_MS,
+    refetchInterval: REFETCH_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
+  };
+}
 
 /**
  * Retry only what can change on its own: a `503` or a `429`. A `403`, `401`,
