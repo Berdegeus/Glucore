@@ -29,6 +29,28 @@ npm run dev             # http://localhost:5173
 
 `src/{app,composition,shared,features}`. Each feature has `domain`, `application`, `infrastructure` and `presentation`. `composition/` is the only place that wires the layers. The rules live in `.dependency-cruiser.cjs`; the reasoning is in `.specs/features/web-dashboard/design.md`.
 
+## Lighthouse (RSP-11)
+
+Goal: accessibility score of at least 90 on the login page and on the patient dashboard, measured on the production build. `lighthouserc.json` lists the two URLs (`http://localhost:4173/login`, `http://localhost:4173/paciente`) and asserts `categories:accessibility >= 0.9` on every report.
+
+This is measured in the validation phase, not in CI: the dashboard needs a real session, so the run needs the full backend up. In CI, accessibility is covered by `vitest-axe` in the component tests.
+
+How the run authenticates: the access token lives in `sessionStorage` (ACC-12), which belongs to one browser tab, and `lhci collect` (and so `npx lhci autorun`) opens a fresh tab for each URL. Run that way, the dashboard would redirect to `/login` and the login page would be measured twice. So `scripts/lighthouseLogin.mjs` does the collection instead: it starts `vite preview` on port 4173, measures the login page, then signs in through the real login form in a new tab, waits for `/paciente`, and runs Lighthouse in that same tab with `disableStorageReset`. It fails if that run does not end on `/paciente`. Reports land in `.lighthouseci/` (`lhr-*.json` and `.html`), where `lhci assert` reads them.
+
+Steps:
+
+```bash
+# 1. Backend: Postgres, then gateway (:3000), auth-service (:3002) and glucose-service (:3001), see backend/README.md.
+#    If the gateway sets CORS_ORIGIN, it must include http://localhost:4173.
+# 2. A local PATIENT account to sign in with (register one against the local backend; never a real account).
+# 3. Chrome installed; set CHROME_PATH if it is not in the default location.
+cd web
+cp .env.example .env              # VITE_API_URL=http://localhost:3000, read by the build
+LH_EMAIL=<local patient e-mail> LH_PASSWORD=<its password> npm run lighthouse
+```
+
+`npm run lighthouse` runs `npm run build`, then `node scripts/lighthouseLogin.mjs`, then `lhci assert --config=lighthouserc.json`, and exits non-zero if either page scores below 90. Open the `.html` reports in `.lighthouseci/` for the details. Tools, pinned exactly: `@lhci/cli` 0.15.1, `lighthouse` 12.6.1 (the version `@lhci/cli` bundles), `puppeteer-core` 24.43.1 (the version `lighthouse` resolves; `-core` downloads no browser on `npm ci`).
+
 ## Library versions
 
 Pinned exactly in `package.json` and `package-lock.json`. Node 22.13+ (CI runs Node 22).
