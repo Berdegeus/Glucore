@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 
 import type { DateRange } from '../dashboard/dashboard.repository';
+import { getHypoStartHours, type HypoHourCount } from './professional.hypo';
 import {
   listGrantedPatientIds,
   type GrantedPatientPage,
@@ -27,6 +28,8 @@ export interface ICohortRepository {
     now: Date,
     request?: PatientPageRequest,
   ): Promise<GrantedPatientPage>;
+  /** Sustained hypo episodes of all `ids` counted by the local hour (in `tz`) they started in (PRO-10). */
+  getHypoStartHours(ids: readonly string[], range: DateRange, tz: string): Promise<HypoHourCount[]>;
 }
 
 export class PrismaCohortRepository implements ICohortRepository {
@@ -38,6 +41,10 @@ export class PrismaCohortRepository implements ICohortRepository {
     request?: PatientPageRequest,
   ): Promise<GrantedPatientPage> {
     return listGrantedPatientIds(this.prisma, professionalId, now, request);
+  }
+
+  getHypoStartHours(ids: readonly string[], range: DateRange, tz: string): Promise<HypoHourCount[]> {
+    return getHypoStartHours(this.prisma, ids, range, tz);
   }
 
   async getPatientMetrics(ids: readonly string[], range: DateRange): Promise<PatientMetrics[]> {
