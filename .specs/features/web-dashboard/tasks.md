@@ -3961,13 +3961,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com fakes: senha fraca não chama o repositório; CRM com 41 caracteres falha; sucesso grava token e devolve sessão de profissional
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/registration/application/registerProfessional.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com fakes: senha fraca não chama o repositório; CRM com 41 caracteres falha; sucesso grava token e devolve sessão de profissional
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/registration/application/registerProfessional.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the professional registration use case`
+**Status**: ✅ Done
 
 ---
 
