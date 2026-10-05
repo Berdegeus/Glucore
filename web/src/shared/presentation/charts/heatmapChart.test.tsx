@@ -37,7 +37,7 @@ describe('HeatmapChart', () => {
 
   it('gives each cell a title with its day, hour and value (PAC-10)', () => {
     const { all } = draw({ formatValue: formatMgdl });
-    expect(cellAt(all, 1, 8).querySelector('title')?.textContent).toBe('seg, 8h: 142 mg/dL'.replace('142', '100'));
+    expect(cellAt(all, 1, 8).querySelector('title')?.textContent).toBe('seg, 8h: 100 mg/dL');
     expect(cellAt(all, 6, 23).querySelector('title')?.textContent).toBe('sáb, 23h: 200 mg/dL');
   });
 
