@@ -2184,13 +2184,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: escolher preset dispara mudança; intervalo de 91 dias mostra "Escolha um período de até 90 dias" e não envia; axe sem violações
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/periodFilter.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: escolher preset dispara mudança; intervalo de 91 dias mostra "Escolha um período de até 90 dias" e não envia; axe sem violações
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/periodFilter.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the period filter`
+**Status**: ✅ Done
 
 ---
 
