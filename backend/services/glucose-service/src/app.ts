@@ -7,6 +7,7 @@ import { createCarbsRouter } from './modules/carbs/carbs.routes';
 import { createDashboardRouter } from './modules/dashboard/dashboard.routes';
 import { createInsulinRouter } from './modules/insulin/insulin.routes';
 import { createReadingsRouter } from './modules/readings/readings.routes';
+import { createSharingRouter } from './modules/sharing/sharing.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
 import { prismaErrorHandler } from './middleware/prismaError';
 import { createContainer, type Container } from './container';
@@ -58,6 +59,7 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use('/alerts', createAlertsRouter(container.alerts));
   app.use('/settings', createSettingsRouter(container.settings));
   app.use('/dashboard', createDashboardRouter(container.dashboard));
+  app.use('/sharing', createSharingRouter(container.sharing));
   app.use('/internal', container.internalPatientRouter);
   app.use('/internal', container.internalProfessionalsRouter);
 

@@ -466,7 +466,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ACC-03 | P1: Login único e acesso por papel | T42, T111 | Implementing |
 | ACC-04 | P1: Login único e acesso por papel | T30, T42, T111 | Implementing |
 | ACC-05 | P1: Login único e acesso por papel | T17, T23, T39, T40 | Implementing |
-| ACC-06 | P1: Login único e acesso por papel | T75 | Implementing |
+| ACC-06 | P1: Login único e acesso por papel | T75, T145 | Implementing |
 | ACC-07 | P1: Login único e acesso por papel | T23, T29, T43 | Implementing |
 | ACC-08 | P1: Login único e acesso por papel | T23, T225, T43 | Implementing |
 | ACC-09 | P1: Login único e acesso por papel | T21, T24, T41 | Implementing |
@@ -563,15 +563,15 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | REG-08 | P2: Cadastro do profissional de saúde | T129 | Implementing |
 | REG-09 | P2: Cadastro do profissional de saúde | T139 | Implementing |
 | REG-10 | P2: Cadastro do profissional de saúde | T139 | Implementing |
-| CON-01 | P2: Consentimento do paciente pelo app (código de convite) | T143 | Implementing |
+| CON-01 | P2: Consentimento do paciente pelo app (código de convite) | T143, T145 | Implementing |
 | CON-02 | P2: Consentimento do paciente pelo app (código de convite) | T141 | Implementing |
 | CON-03 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142 | Implementing |
-| CON-04 | P2: Consentimento do paciente pelo app (código de convite) | T142, T143 | Implementing |
+| CON-04 | P2: Consentimento do paciente pelo app (código de convite) | T142, T143, T145 | Implementing |
 | CON-05 | P2: Consentimento do paciente pelo app (código de convite) | T143 | Implementing |
 | CON-06 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | CON-07 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142, T143 | Implementing |
-| CON-08 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
-| CON-09 | P2: Consentimento do paciente pelo app (código de convite) | T142, T144 | Implementing |
+| CON-08 | P2: Consentimento do paciente pelo app (código de convite) | T145 | Implementing |
+| CON-09 | P2: Consentimento do paciente pelo app (código de convite) | T142, T144, T145 | Implementing |
 | CON-10 | P2: Consentimento do paciente pelo app (código de convite) | T143 | Implementing |
 | CON-11 | P2: Consentimento do paciente pelo app (código de convite) | T132, T134, T138 | Implementing |
 | CON-12 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |

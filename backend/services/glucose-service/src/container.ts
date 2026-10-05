@@ -25,6 +25,10 @@ import { ProfessionalsController } from './modules/professionals/professionals.c
 import { PrismaProfessionalRepository } from './modules/professionals/professionals.repository';
 import { createInternalProfessionalsRouter } from './modules/professionals/professionals.routes';
 import { ProfessionalsService } from './modules/professionals/professionals.service';
+import { GrantPolicy } from './modules/sharing/grantPolicy';
+import { SharingController } from './modules/sharing/sharing.controller';
+import { PrismaSharingRepository } from './modules/sharing/sharing.repository';
+import { SharingService } from './modules/sharing/sharing.service';
 import { ReadingsController } from './modules/readings/readings.controller';
 import { PrismaReadingRepository } from './modules/readings/readings.repository';
 import { SettingsController } from './modules/settings/settings.controller';
@@ -45,6 +49,9 @@ export interface Container {
   alerts: AlertsController;
   settings: SettingsController;
   dashboard: DashboardController;
+  sharing: SharingController;
+  /** Read by the professional module: every patient read goes through `assertActive` (PRO-12). */
+  grantPolicy: GrantPolicy;
   internalPatientRouter: Router;
   internalProfessionalsRouter: Router;
 }
@@ -62,6 +69,7 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
   const recordAudit = (entry: AuditEntry): Promise<void> => recordAuditWith(entry, prisma);
 
   const patients = new PrismaPatientRepository(prisma);
+  const sharing = new PrismaSharingRepository(prisma);
 
   return {
     readings: new ReadingsController(
@@ -86,6 +94,8 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
         new TimeZoneValidator(prismaTimeZoneLoader(prisma)),
       ),
     ),
+    sharing: new SharingController(new SharingService(sharing, patients, recordAudit)),
+    grantPolicy: new GrantPolicy(sharing),
     internalPatientRouter: createInternalPatientRouter(
       new PatientController(new PatientService(patients, recordAudit)),
       createRequireInternalAuth(getInternalJwtSecret),

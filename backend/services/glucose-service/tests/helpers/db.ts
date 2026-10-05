@@ -77,6 +77,37 @@ export async function signedInPatient(
   };
 }
 
+export interface SignedInProfessional {
+  token: string;
+  userId: string;
+}
+
+/**
+ * Seeds a health professional and returns a bearer token for them.
+ *
+ * The profile row is what the gateway's registration saga writes here, and what
+ * a grant's foreign key needs; `withProfile: false` mints the token alone, for
+ * the account whose saga never reached this database.
+ */
+export async function signedInProfessional(
+  options: { specialty?: string; withProfile?: boolean } = {},
+): Promise<SignedInProfessional> {
+  sequence += 1;
+  const userId = deterministicUuid(sequence);
+  if (options.withProfile !== false) {
+    await prisma.healthProfessional.create({
+      data: { userId, licenseNumber: `CRM-SP ${sequence}`, specialty: options.specialty ?? 'Endocrinologia' },
+    });
+  }
+  return { userId, token: signAccessToken({ sub: userId, role: 'HEALTH_PROFESSIONAL' }, TEST_JWT_SECRET) };
+}
+
+/** A token for an account with the administrator role; it owns no clinical row. */
+export function administratorToken(): string {
+  sequence += 1;
+  return signAccessToken({ sub: deterministicUuid(sequence), role: 'ADMINISTRATOR' }, TEST_JWT_SECRET);
+}
+
 /**
  * A valid v4 UUID that varies per call.
  *
