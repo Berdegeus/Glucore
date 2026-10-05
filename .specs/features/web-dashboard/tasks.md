@@ -2119,13 +2119,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: resposta completa vira `GlucoseSummary`; campo obrigatório ausente vira `unknown`; `400 INVALID_DASHBOARD_RANGE` vira `validation`; `tz` sempre enviado
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/infrastructure/httpSummaryRepository.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: resposta completa vira `GlucoseSummary`; campo obrigatório ausente vira `unknown`; `400 INVALID_DASHBOARD_RANGE` vira `validation`; `tz` sempre enviado
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/infrastructure/httpSummaryRepository.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(web): add the HTTP summary repository`
+**Status**: ✅ Done
 
 ---
 

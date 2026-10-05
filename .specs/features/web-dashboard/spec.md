@@ -478,8 +478,8 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-03 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-04 | P1: Arquitetura limpa verificável (rubrica 37) | T17, T18, T28, T46, T79 | Implementing |
 | ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | T20, T28, T83 | Implementing |
-| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34 | Implementing |
-| ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33 | Implementing |
+| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34, T84 | Implementing |
+| ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33, T84 | Implementing |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
 | ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | T49, T52 | Implementing |
@@ -519,7 +519,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | RSP-09 | P1: Responsivo, acessível e com tema | T26, T37 | Implementing |
 | RSP-10 | P1: Responsivo, acessível e com tema | T36, T38, T45 | Implementing |
 | RSP-11 | P1: Responsivo, acessível e com tema | - | Pending |
-| PAC-01 | P1: Dashboard do paciente com os dados do app | T83 | Implementing |
+| PAC-01 | P1: Dashboard do paciente com os dados do app | T83, T84 | Implementing |
 | PAC-02 | P1: Dashboard do paciente com os dados do app | T80 | Implementing |
 | PAC-03 | P1: Dashboard do paciente com os dados do app | T80 | Implementing |
 | PAC-04 | P1: Dashboard do paciente com os dados do app | T80 | Implementing |
@@ -544,7 +544,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
 | DEP-06 | P1: Publicação na Vercel | - | Pending |
 | DEP-07 | P1: Publicação na Vercel | T9, T225 | Implementing |
-| API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67, T73, T74, T75 | Implementing |
+| API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67, T73, T74, T75, T84 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66, T75 | Implementing |
 | API-03 | P2: Ajustes de backend para os gráficos novos | T68, T74 | Implementing |
 | API-04 | P2: Ajustes de backend para os gráficos novos | T69, T74 | Implementing |
