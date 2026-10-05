@@ -65,6 +65,7 @@ export class AccountsService {
       fullName: input.fullName,
       phone: input.phone,
       passwordHash,
+      role: 'PATIENT',
     });
 
     await this.sessions.open(user.id, audit.userAgent ?? null);

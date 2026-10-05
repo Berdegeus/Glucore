@@ -3106,13 +3106,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração: cria paciente e profissional; tentativa com `ADMINISTRATOR` lança
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Integração: cria paciente e profissional; tentativa com `ADMINISTRATOR` lança
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): let the service choose the account role`
+**Status**: ✅ Done
 
 ---
 

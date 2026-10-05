@@ -2,11 +2,20 @@ import { Prisma, type PrismaClient } from '../../lib/prisma';
 
 import type { AccountSource } from './accounts.mapper';
 
+/**
+ * Roles an account can be created with. ADMINISTRATOR is deliberately absent:
+ * the only way to get one is the seed, never a request.
+ */
+export type CreatableRole = 'PATIENT' | 'HEALTH_PROFESSIONAL';
+
+const CREATABLE_ROLES: readonly string[] = ['PATIENT', 'HEALTH_PROFESSIONAL'];
+
 export interface CreateAccountData {
   email: string;
   fullName: string;
   phone: string | null | undefined;
   passwordHash: string;
+  role: CreatableRole;
 }
 
 export interface AccountWithCredential extends AccountSource {
@@ -81,13 +90,17 @@ export class PrismaAccountRepository implements AccountRepository {
     });
   }
 
-  create(data: CreateAccountData): Promise<AccountSource> {
+  async create(data: CreateAccountData): Promise<AccountSource> {
+    // The type already forbids it; this is for a caller that got past the type.
+    if (!CREATABLE_ROLES.includes(data.role)) {
+      throw new Error(`Role ${data.role} cannot be created through this path`);
+    }
     return this.prisma.user.create({
       data: {
         email: data.email,
         fullName: data.fullName,
         phone: data.phone,
-        role: 'PATIENT',
+        role: data.role,
         authCredential: { create: { passwordHash: data.passwordHash } },
       },
       select: ACCOUNT_FIELDS,
