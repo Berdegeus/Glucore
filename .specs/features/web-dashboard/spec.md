@@ -511,7 +511,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | RSP-01 | P1: Responsivo, acessível e com tema | T52 | Implementing |
 | RSP-02 | P1: Responsivo, acessível e com tema | T52 | Implementing |
 | RSP-03 | P1: Responsivo, acessível e com tema | T45, T100, T184 | Implementing |
-| RSP-04 | P1: Responsivo, acessível e com tema | T36, T87 | Implementing |
+| RSP-04 | P1: Responsivo, acessível e com tema | T36, T87, T205 | Implementing |
 | RSP-05 | P1: Responsivo, acessível e com tema | T64 | Implementing |
 | RSP-06 | P1: Responsivo, acessível e com tema | T39, T43, T45, T56, T112, T170 | Implementing |
 | RSP-07 | P1: Responsivo, acessível e com tema | T56 | Implementing |
@@ -598,7 +598,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ADM-04 | P3: Dashboard do administrador | T202, T195, T199, T200, T203 | Implementing |
 | ADM-05 | P3: Dashboard do administrador | T193, T196, T198, T200 | Implementing |
 | ADM-06 | P3: Dashboard do administrador | T195 | Implementing |
-| ADM-07 | P3: Dashboard do administrador | T200, T203, T204 | Implementing |
+| ADM-07 | P3: Dashboard do administrador | T200, T203, T204, T205 | Implementing |
 
 **Coverage:** 138 total, 0 mapped to tasks, 138 unmapped ⚠️
 <!-- TRACE:END -->
