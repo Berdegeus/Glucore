@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { ComponentPropsWithRef, HTMLAttributes, ReactNode } from 'react';
 import type { WidgetSize } from '../domain/layout';
 import styles from './dashboardGrid.module.css';
 
@@ -20,12 +20,12 @@ export function DashboardGrid({ className, children, ...rest }: DashboardGridPro
   );
 }
 
-interface GridItemProps extends HTMLAttributes<HTMLDivElement> {
+interface GridItemProps extends ComponentPropsWithRef<'div'> {
   size: WidgetSize;
   children: ReactNode;
 }
 
-/** One cell of the grid; `size` becomes `data-size`, which the stylesheet turns into a column span. */
+/** One cell of the grid; `size` becomes `data-size`, which the stylesheet turns into a column span. It takes a `ref`, for the editor to make the cell sortable. */
 export function GridItem({ size, className, children, ...rest }: GridItemProps) {
   return (
     <div {...rest} data-size={size} className={className ? `${styles.item} ${className}` : styles.item}>

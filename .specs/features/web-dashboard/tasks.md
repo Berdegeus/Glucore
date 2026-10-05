@@ -2825,13 +2825,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: reordenação pelo sensor de teclado muda a ordem do rascunho
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/sortableGrid.test.tsx`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: reordenação pelo sensor de teclado muda a ordem do rascunho
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/dashboard-layout/presentation/sortableGrid.test.tsx`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): reorder widgets by drag and drop`
+**Status**: ✅ Done
 
 ---
 
