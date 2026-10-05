@@ -1992,13 +1992,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste de widget com leituras fixas mostra o GMI esperado; a regra de mínimo de 14 leituras continua
-- [ ] Gate `full` passa: `flutter analyze && flutter test --no-pub`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Teste de widget com leituras fixas mostra o GMI esperado; a regra de mínimo de 14 leituras continua
+- [x] Gate `full` passa: `flutter analyze && flutter test --no-pub`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: full
 **Commit**: `fix(app): align the reports GMI with the backend`
+**Status**: ✅ Done
 
 ---
 

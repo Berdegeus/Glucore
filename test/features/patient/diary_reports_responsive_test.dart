@@ -170,6 +170,43 @@ void main() {
       expect(indicatorsY, isNot(closeTo(tirY, 1)));
     });
   });
+
+  // API-09: the GMI shown comes from gmiFromMean (3.31 + 0.02392 x mean), the
+  // formula the backend uses, and still needs at least 14 readings.
+  group('ReportsPage GMI', () {
+    /// [count] readings from the last hours, half 20 mg/dL under [mean] and half over.
+    PatientState stateWith(double mean, int count) => PatientState(
+          readings: [
+            for (var i = 0; i < count; i++)
+              GlucoseReadingItem(
+                value: i.isEven ? mean - 20 : mean + 20,
+                timestamp: now.subtract(Duration(minutes: 5 * i)),
+                trend: GlucoseTrend.stable,
+                rate: 0,
+              ),
+          ],
+        );
+
+    // Mean 250 -> 9.29 (the old 0.0296 x mean + 2.419 gave 9.8); mean 120 -> 6.18 (old: 6.0).
+    for (final (mean, shown) in [(250.0, '9.3'), (120.0, '6.2')]) {
+      testWidgets('shows GMI $shown for 14 readings averaging $mean mg/dL',
+          (tester) async {
+        await pumpAtWidth(
+            tester, const ReportsPage(), stateWith(mean, 14), 400);
+
+        expect(find.text('GMI estimado'), findsOneWidget);
+        expect(find.text(shown), findsOneWidget);
+      });
+    }
+
+    testWidgets('hides the GMI with 13 readings, one below the minimum',
+        (tester) async {
+      await pumpAtWidth(tester, const ReportsPage(), stateWith(250, 13), 400);
+
+      expect(find.text('INDICADORES'), findsOneWidget);
+      expect(find.text('GMI estimado'), findsNothing);
+    });
+  });
 }
 
 class _FakeAccountService extends AccountService {

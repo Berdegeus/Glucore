@@ -6,6 +6,7 @@ import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../domain/glucose_metrics.dart';
 import '../widgets/glucore_form_layout.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/user_app_bar.dart';
@@ -95,7 +96,7 @@ class _ReportsPageState extends State<ReportsPage> {
 
     final n = readings.length;
     final avg = readings.map((r) => r.value).reduce((a, b) => a + b) / n;
-    final gmi = readings.length >= 14 ? 0.0296 * avg + 2.419 : 0.0;
+    final gmi = readings.length >= 14 ? gmiFromMean(avg) : 0.0;
 
     int urgentLow = 0, low = 0, target = 0, high = 0, urgentHigh = 0;
     for (final r in readings) {
