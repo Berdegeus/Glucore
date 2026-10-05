@@ -75,19 +75,21 @@ describe('useUsers (ADM-04)', () => {
     expect(Object.fromEntries(mock.usersRequests[0]?.searchParams ?? [])).toEqual({ role: 'PATIENT', status: 'ACTIVE', q: 'ana', page: '1', limit: '25' });
   });
 
-  it.each([
-    { keepPrevious: true, shownWhileLoading: ['ana@example.com'] },
-    { keepPrevious: false, shownWhileLoading: undefined },
-  ])('with keepPrevious $keepPrevious shows $shownWhileLoading while the next page loads', async ({ keepPrevious, shownWhileLoading }) => {
-    mockAdmin({ users: (n) => HttpResponse.json(accountPageDto(n === 1 ? [accountRowDto()] : [accountRowDto({ id: 'u2', email: 'bia@example.com' })])) });
-    const { wrapper } = adminWrapper();
-    const { result, rerender } = renderHook(({ page }) => ({ ...useUsers({ page }, keepPrevious) }), { wrapper, initialProps: { page: 1 } });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  it('keeps the page on screen while the next one loads only with keepPrevious', async () => {
+    /** Turns from page 1 to page 2 and returns what the hook held in between. */
+    async function heldWhileLoading(keepPrevious: boolean) {
+      const second = [accountRowDto({ id: 'u2', email: 'bia@example.com' })];
+      mockAdmin({ users: (n) => HttpResponse.json(accountPageDto(n === 1 ? [accountRowDto()] : second)) });
+      const { result, rerender } = renderHook(({ page }) => ({ ...useUsers({ page }, keepPrevious) }), { wrapper: adminWrapper().wrapper, initialProps: { page: 1 } });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      rerender({ page: 2 });
+      const held = emails(result.current.data);
+      await waitFor(() => expect(emails(result.current.data)).toEqual(['bia@example.com']));
+      return held;
+    }
 
-    rerender({ page: 2 });
-
-    expect(emails(result.current.data)).toEqual(shownWhileLoading);
-    await waitFor(() => expect(emails(result.current.data)).toEqual(['bia@example.com']));
+    expect(await heldWhileLoading(true)).toEqual(['ana@example.com']);
+    expect(await heldWhileLoading(false)).toBeUndefined();
   });
 });
 
