@@ -59,6 +59,11 @@ export function accountRowDto(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/** The domain account for `accountRowDto()`, with the fields a test needs to vary. */
+export function accountRowOf(overrides: Partial<AccountRow> = {}): AccountRow {
+  return { ...(accountRowDto() as AccountRow), ...overrides };
+}
+
 export function accountPageDto(items: unknown[] = [accountRowDto()]) {
   return { items, page: 1, limit: 25, total: items.length };
 }

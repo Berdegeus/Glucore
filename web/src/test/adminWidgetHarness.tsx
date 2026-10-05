@@ -60,32 +60,50 @@ export async function renderDrawnChart(widget: ReactElement, options: AdminHarne
   return { ...view, all, axisLabels };
 }
 
-const using = (load: ReturnType<typeof vi.fn>): Partial<AdminUseCases> => ({ loadOverview: load as unknown as AdminUseCases['loadOverview'] });
+type Load = ReturnType<typeof vi.fn>;
 
-// No `empty`: a count of zero is a figure the administrator reads, so the KPIs have no empty state; the charts add one.
-const overviewScenario: StatesScenario = {
-  loading: (widget) => void renderAdminWidget(widget, { services: using(vi.fn(() => new Promise(() => undefined))) }),
-  failsOnce: (widget) => {
-    const load = vi.fn().mockRejectedValueOnce(new AppError('unavailable')).mockResolvedValue(overviewOf());
-    renderAdminWidget(widget, { services: using(load) });
-    return { load };
+/** What differs between the two queries an administrator's widget can be fed by. */
+const SOURCES = {
+  overview: {
+    fixture: () => overviewOf(),
+    // A count of zero is a figure the administrator reads, so only the charts have an empty period.
+    empty: (): AdminHarnessOptions => ({ overview: zeroOverviewOf() }),
+    using: (load: Load): Partial<AdminUseCases> => ({ loadOverview: load as unknown as AdminUseCases['loadOverview'] }),
   },
-  loaded: (widget) => renderAdminWidget(widget),
-};
+  users: {
+    fixture: () => accountPageOf(),
+    empty: (): AdminHarnessOptions => ({ services: { loadUsers: vi.fn().mockResolvedValue({ ...accountPageOf([]), total: 0 }) } }),
+    using: (load: Load): Partial<AdminUseCases> => ({ loadUsers: load as unknown as AdminUseCases['loadUsers'] }),
+  },
+} as const;
 
-const chartScenario: StatesScenario = {
-  ...overviewScenario,
-  empty: (widget) => void renderAdminWidget(widget, { overview: zeroOverviewOf() }),
-};
+type Source = keyof typeof SOURCES;
+
+/** How a widget is mounted over each state of the query that feeds it; `withEmpty` adds the empty state. */
+function scenarioOf(source: Source, withEmpty: boolean): StatesScenario {
+  const { fixture, empty, using } = SOURCES[source];
+  return {
+    loading: (widget) => void renderAdminWidget(widget, { services: using(vi.fn(() => new Promise(() => undefined))) }),
+    failsOnce: (widget) => {
+      const load = vi.fn().mockRejectedValueOnce(new AppError('unavailable')).mockResolvedValue(fixture());
+      renderAdminWidget(widget, { services: using(load) });
+      return { load };
+    },
+    loaded: (widget) => renderAdminWidget(widget),
+    ...(withEmpty && { empty: (widget: ReactElement) => void renderAdminWidget(widget, empty()) }),
+  };
+}
 
 export interface AdminWidgetSpec {
   Widget: ComponentType<WidgetProps>;
   definition: WidgetDefinition;
   title: string;
-  /** Text the widget shows once the fixture overview has loaded. */
+  /** Text the widget shows once the fixture has loaded. */
   shown: string | RegExp;
-  /** The cause an empty period shows; absent for a widget that never shows an empty state. */
+  /** The cause an empty source shows; absent for a widget that never shows an empty state. */
   emptyCause?: string;
+  /** The query that feeds the widget: the overview of the period (default) or the list of accounts. */
+  source?: Source;
 }
 
 /**
@@ -95,13 +113,16 @@ export interface AdminWidgetSpec {
  * error with retry and no axe violation, and it reads the overview of the
  * page's period. Each widget's own test adds what its figure shows.
  */
-export function describeAdminWidget(spec: AdminWidgetSpec) {
+export function describeAdminWidget({ source = 'overview', ...spec }: AdminWidgetSpec) {
   describeCatalogDefinition(spec.definition, 'ADMINISTRATOR');
-  describeWidgetStates(spec, spec.emptyCause === undefined ? overviewScenario : chartScenario);
+  describeWidgetStates(spec, scenarioOf(source, spec.emptyCause !== undefined));
+  if (source === 'overview') describePeriod(spec.definition.id, spec.Widget);
+}
 
-  describe(`${spec.definition.id} period (ADM-07)`, () => {
+function describePeriod(id: string, Widget: ComponentType<WidgetProps>) {
+  describe(`${id} period (ADM-07)`, () => {
     it.each([7, 90])('asks for the overview of the %i days the page picked', async (days) => {
-      const { services } = renderAdminWidget(<spec.Widget size="S" />, { days });
+      const { services } = renderAdminWidget(<Widget size="S" />, { days });
 
       await waitFor(() => expect(services.loadOverview).toHaveBeenCalledWith(days));
       expect(services.loadOverview).toHaveBeenCalledTimes(1);

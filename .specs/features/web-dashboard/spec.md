@@ -510,7 +510,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | LAY-16 | P1: Layout customizável por widgets | T39, T53 | Implementing |
 | RSP-01 | P1: Responsivo, acessível e com tema | T52 | Implementing |
 | RSP-02 | P1: Responsivo, acessível e com tema | T52 | Implementing |
-| RSP-03 | P1: Responsivo, acessível e com tema | T45, T100, T184 | Implementing |
+| RSP-03 | P1: Responsivo, acessível e com tema | T45, T100, T184, T216 | Implementing |
 | RSP-04 | P1: Responsivo, acessível e com tema | T36, T87, T205 | Implementing |
 | RSP-05 | P1: Responsivo, acessível e com tema | T64 | Implementing |
 | RSP-06 | P1: Responsivo, acessível e com tema | T39, T43, T45, T56, T112, T170 | Implementing |
@@ -595,7 +595,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ADM-01 | P3: Dashboard do administrador | T202, T194, T197, T199, T200, T206, T207, T208, T209 | Implementing |
 | ADM-02 | P3: Dashboard do administrador | T60, T194, T197, T210, T211, T212, T213, T214, T215 | Implementing |
 | ADM-03 | P3: Dashboard do administrador | T197, T198 | Implementing |
-| ADM-04 | P3: Dashboard do administrador | T202, T195, T199, T200, T203 | Implementing |
+| ADM-04 | P3: Dashboard do administrador | T202, T195, T199, T200, T203, T216 | Implementing |
 | ADM-05 | P3: Dashboard do administrador | T193, T196, T198, T200 | Implementing |
 | ADM-06 | P3: Dashboard do administrador | T195 | Implementing |
 | ADM-07 | P3: Dashboard do administrador | T200, T203, T204, T205 | Implementing |

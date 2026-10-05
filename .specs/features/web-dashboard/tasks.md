@@ -5034,16 +5034,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `adm-users-table`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza a tabela paginada de contas com filtro de papel e status e busca a partir de `useUsers`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Página de 25; nenhum dado clínico na tabela
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admUsersTable.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `adm-users-table`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza a tabela paginada de contas com filtro de papel e status e busca a partir de `useUsers`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Página de 25; nenhum dado clínico na tabela
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admUsersTable.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add adm-users-table widget`
+**Status**: ✅ Done
 
 ---
 
