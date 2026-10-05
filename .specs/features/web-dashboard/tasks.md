@@ -4522,13 +4522,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste em `auth-service/tests/lib/requireInternalRole.test.ts`: papel certo passa; outro papel `403 FORBIDDEN_ROLE`; sem identidade `401`
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/auth-service/tests/lib/requireInternalRole.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste em `auth-service/tests/lib/requireInternalRole.test.ts`: papel certo passa; outro papel `403 FORBIDDEN_ROLE`; sem identidade `401`
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/auth-service/tests/lib/requireInternalRole.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(shared): authorize internal routes by role`
+**Status**: ✅ Done
 
 ---
 
@@ -4542,13 +4543,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração: contagens conferem com o fixture; dias sem cadastro aparecem com zero
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Integração: contagens conferem com o fixture; dias sem cadastro aparecem com zero
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): compute account statistics`
+**Status**: ✅ Done
 
 ---
 
@@ -4562,13 +4564,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração: filtros combinados; busca com `%` literal não vira curinga; auditoria `ADMIN_LIST_USERS` gravada
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Integração: filtros combinados; busca com `%` literal não vira curinga; auditoria `ADMIN_LIST_USERS` gravada
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): list accounts for administrators`
+**Status**: ✅ Done
 
 ---
 
@@ -4582,13 +4585,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest: identidade de admin `200`; de paciente `403`; sem token interno `401`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest: identidade de admin `200`; de paciente `403`; sem token interno `401`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): expose internal admin routes`
+**Status**: ✅ Done
 
 ---
 
@@ -4602,13 +4606,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração: contagens conferem; a resposta não tem nenhum `patientId` nem valor de glicose (varredura das chaves)
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Integração: contagens conferem; a resposta não tem nenhum `patientId` nem valor de glicose (varredura das chaves)
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(glucose-service): compute platform statistics`
+**Status**: ✅ Done
 
 ---
 
@@ -4622,13 +4627,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest: admin `200` só com contagens; outro papel `403`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest: admin `200` só com contagens; outro papel `403`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 2 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(glucose-service): expose internal admin statistics`
+**Status**: ✅ Done
 
 ---
 
@@ -4642,13 +4648,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com stub: identidade com papel `ADMINISTRATOR` no token interno; parâmetros repassados
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/gateway/tests/clients/admin.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com stub: identidade com papel `ADMINISTRATOR` no token interno; parâmetros repassados
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/gateway/tests/clients/admin.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(gateway): add admin calls to the service clients`
+**Status**: ✅ Done
 
 ---
 
@@ -4662,13 +4669,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest: admin recebe o JSON combinado; paciente e profissional `403 FORBIDDEN_ROLE`; `days` 7/30/90 repassado; falha de um serviço responde `503`
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest: admin recebe o JSON combinado; paciente e profissional `403 FORBIDDEN_ROLE`; `days` 7/30/90 repassado; falha de um serviço responde `503`
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(gateway): compose the admin overview`
+**Status**: ✅ Done
 
 ---
 
