@@ -42,6 +42,19 @@ O que a marca **não** implementa, porque já vem pronto:
 
 Um código de retorno fora dos documentados só é interpretado como leitura depois que o handshake assentou, e mesmo assim passa por `SibionicsGlucoseDecoder.decodeUnsolicited`, que descarta qualquer valor sem bits de rate/alarm — um código de protocolo não vira glicemia (`SibionicsBleManager.kt:225-235`).
 
+#### Estado nativo do sensor e desvinculação
+
+A `libg.so` guarda em `filesDir` o que sabe de cada sensor pareado: o registro `sensors/sensors.dat` e um diretório por sensor, `sensors/<id>/` (`info.dat`, `data.dat`, `current.dat`, `polls.dat`, `trends.dat`, `state.bin`). Ali ficam o ponto até onde o histórico já foi entregue (o sensor **não reenvia** o que a lib já recebeu) e o endereço BLE salvo. Apagar só a linha de `glucore_session.db` deixa isso para trás e um novo pareamento chega sem backlog (issue #37).
+
+Duas restrições, ambas vistas no aparelho:
+
+- **Apagar junto ou nada.** Remover `sensors/<id>/` e manter `sensors.dat` faz a lib desreferenciar ponteiro nulo em `addSIscangetName` no próximo registro.
+- **Não apagar com a lib carregada.** Ela mantém o estado em memória; apagar os arquivos e parear de novo no mesmo processo derruba o app em `SIprocessData`.
+
+Por isso "Limpar sessão" (e a troca de conta, via `ensureOwner`) não apaga nada na hora: `SensorPlatformImpl.clearSession` grava um marcador (`NativeSensorState.markWipePending`) e reinicia o processo. `SensorCore` aplica a limpeza (`applyPendingWipe`) no início do processo novo, antes de qualquer chamada à `libg`. A lista do que apagar vive em `NativeSensorState` (Kotlin puro, com teste JVM).
+
+O backlog também é gravado aos poucos: `PatientCubit` persiste as leituras de histórico com debounce de 2 s enquanto o status é `syncingHistory`, em vez de só quando a leitura atual chega. Como o cursor avança na lib a cada item entregue, fechar o app ou trocar de conta no meio do sync perdia o que já tinha vindo.
+
 ### Accu-Chek SmartGuide
 
 `AccuChekBleManager.kt:25`, portado do `AccuGattCallback` do Juggluco. Usa o perfil CGM padrão do SIG: serviço `0x181f`, medições notificadas em `2aa7`, control point `2aac` e RACP `2a52` por indicação (`AccuChekProtocol.kt:12-20`).

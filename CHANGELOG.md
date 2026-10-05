@@ -46,6 +46,22 @@ rotas que alimentam os três dashboards. Contrato rota a rota em `backend/README
 
 ## [Unreleased] — app ligado ao gateway (branch `feat/app-to-gateway`)
 
+### Fixed
+- **Repareamento do Sibionics sem histórico** (#37): "Limpar sessão" e a troca de conta só apagavam a sessão
+  SQLite, e a `libg.so` seguia com o cursor do histórico e o endereço BLE salvo, então o sensor não reenviava
+  o backlog. Agora a desvinculação deixa um marcador, reinicia o processo e apaga `sensors/` no início do
+  próximo (`NativeSensorState`), antes de a lib carregar. Testado no aparelho: 1.051 leituras / 11,6 dias após
+  limpar e parear de novo, duas vezes seguidas.
+- O backlog do sensor passa a ser gravado no banco local aos poucos (debounce de 2 s), não só quando a leitura
+  atual chega.
+
+### Changed (UI)
+- Parear sensor: com um sensor já vinculado, a escolha de marca é pulada e abre o painel da marca dele.
+- Seta de tendência maior no card principal.
+- Gráfico de glicose: eixos redondos (100/200/300 e horas cheias), faixa-alvo, linha com degradê, tooltip
+  escuro, zoom por pinça com dois dedos (botão Reset) e marcadores de carboidrato/insulina maiores e
+  clicáveis. Registros mais novos que a última leitura agora aparecem (o eixo vai até o registro mais recente).
+
 ### Changed
 - **O app fala só com o gateway** (`/api/v1`): `ApiClient` monta a `baseUrl` como `<API_URL>/api/v1`
   (padrão `http://localhost:3000`; antes `:3001` sem prefixo, que não servia mais `/auth/*`). Os

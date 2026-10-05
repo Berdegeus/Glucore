@@ -14,6 +14,7 @@ import { createAccountRouter } from './modules/account/account.routes';
 import { AdminController } from './modules/admin/admin.controller';
 import { createAdminRouter } from './modules/admin/admin.routes';
 import { createContainer, type Container } from './container';
+import { createDocsRouter } from './modules/docs/docs.routes';
 import { MeController } from './modules/me/me.controller';
 import { createMeRouter } from './modules/me/me.routes';
 import { RegisterController } from './modules/register/register.controller';
@@ -86,6 +87,10 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.set('trust proxy', 1);
 
   app.use('/health', createHealthRouter(noopHealthCheck));
+
+  // Public API contract (Swagger UI + openapi.yaml). Relative `openapi.yaml` in the
+  // page resolves against `/api/v1/docs/`, hence the trailing-slash redirect Express adds.
+  app.use('/api/v1/docs', createDocsRouter());
 
   // The browser hides every response header outside the safelist from the web's
   // scripts. `Retry-After` (429 wait) and `X-Degraded` (partial composition) are

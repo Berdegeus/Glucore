@@ -123,7 +123,7 @@ class GlucoreStatusCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Icon(_trendIcon(trend), color: Colors.white, size: 18),
+                    Icon(_trendIcon(trend), color: Colors.white, size: 32),
                   ],
                 ),
               ),

@@ -20,6 +20,8 @@ import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/monitoring_home_page.dart';
 import 'package:glucore/features/patient/presentation/pages/sensor_choice_page.dart';
 import 'package:glucore/features/sensor/domain/models.dart';
+import 'package:glucore/features/sensor/domain/events.dart';
+import 'package:glucore/features/sensor/domain/sensor_repository.dart';
 import 'package:glucore/features/sensor/presentation/cubit/sensor_cubit.dart';
 import 'package:glucore/l10n/l10n.dart';
 
@@ -33,10 +35,12 @@ void main() {
   late AppLocalizations l10n;
   late _FakePatientCubit patientCubit;
   late UserIdentityCubit identity;
+  late _FakeSensorCubit sensorCubit;
 
   setUp(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('pt', 'BR'));
     patientCubit = _FakePatientCubit();
+    sensorCubit = _FakeSensorCubit();
     identity = UserIdentityCubit(
       accountService: _FakeAccountService(fullName: 'Ana Silva'),
     );
@@ -44,6 +48,7 @@ void main() {
 
   tearDown(() async {
     await patientCubit.close();
+    await sensorCubit.close();
     await identity.close();
   });
 
@@ -54,6 +59,8 @@ void main() {
         providers: [
           BlocProvider<PatientCubit>.value(value: patientCubit),
           BlocProvider<UserIdentityCubit>.value(value: identity),
+          // The pairing page reads the sensor session to skip the brand list.
+          BlocProvider<SensorCubit>.value(value: sensorCubit),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -108,24 +115,19 @@ void main() {
     },
   );
 
-  testWidgets(
-    'shows the localized default no-sensor card when disconnected',
-    (tester) async {
-      await pump(
-        tester,
-        const PatientState(
-          sensorState:
-              SensorUiState(status: SensorConnectionStatus.disconnected),
-        ),
-      );
+  testWidgets('shows the localized default no-sensor card when disconnected', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const PatientState(
+        sensorState: SensorUiState(status: SensorConnectionStatus.disconnected),
+      ),
+    );
 
-      expect(find.text(l10n.monitoringNoSensorDefaultTitle), findsOneWidget);
-      expect(
-        find.text(l10n.monitoringNoSensorDefaultSubtitle),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(find.text(l10n.monitoringNoSensorDefaultTitle), findsOneWidget);
+    expect(find.text(l10n.monitoringNoSensorDefaultSubtitle), findsOneWidget);
+  });
 
   testWidgets(
     'shows localized stats row labels and the GMI estimate from AppLocalizations',
@@ -150,63 +152,57 @@ void main() {
     },
   );
 
-  testWidgets(
-    'shows the sensor strip using the localized days-left template',
-    (tester) async {
-      final session = SensorSession(
-        sensorId: 'SN12345678ABC',
-        createdAt: DateTime.now(),
-      );
+  testWidgets('shows the sensor strip using the localized days-left template', (
+    tester,
+  ) async {
+    final session = SensorSession(
+      sensorId: 'SN12345678ABC',
+      createdAt: DateTime.now(),
+    );
 
-      await pump(
-        tester,
-        PatientState(
-          sensorState: SensorUiState(session: session),
-        ),
-      );
+    await pump(
+      tester,
+      PatientState(sensorState: SensorUiState(session: session)),
+    );
 
+    expect(
+      find.text(l10n.monitoringSensorDaysLeftLabel(14, 'SN123456')),
+      findsOneWidget,
+    );
+  });
+
+  test('no longer hardcodes Colors.red/Colors.green or the migrated Portuguese '
+      'strings that used to live directly in the widget tree', () async {
+    final source = await File(
+      'lib/features/patient/presentation/pages/monitoring_home_page.dart',
+    ).readAsString();
+
+    expect(source.contains('Colors.red'), isFalse);
+    expect(source.contains('Colors.green'), isFalse);
+
+    const migratedLiterals = [
+      "'Excluir registro?'",
+      "'Esta ação não pode ser desfeita.'",
+      "'Cancelar'",
+      "'Excluir'",
+      "'Editar'",
+      "'Fechar'",
+      "'Parear sensor'",
+      "'Procurando sensor…'",
+      "'Sem sensor conectado'",
+      "'Últimas 12 horas'",
+      "'Tempo no alvo'",
+      "'Média'",
+      "'GMI est.'",
+    ];
+    for (final literal in migratedLiterals) {
       expect(
-        find.text(l10n.monitoringSensorDaysLeftLabel(14, 'SN123456')),
-        findsOneWidget,
+        source.contains(literal),
+        isFalse,
+        reason: '$literal should now come from AppLocalizations',
       );
-    },
-  );
-
-  test(
-    'no longer hardcodes Colors.red/Colors.green or the migrated Portuguese '
-    'strings that used to live directly in the widget tree',
-    () async {
-      final source = await File(
-        'lib/features/patient/presentation/pages/monitoring_home_page.dart',
-      ).readAsString();
-
-      expect(source.contains('Colors.red'), isFalse);
-      expect(source.contains('Colors.green'), isFalse);
-
-      const migratedLiterals = [
-        "'Excluir registro?'",
-        "'Esta ação não pode ser desfeita.'",
-        "'Cancelar'",
-        "'Excluir'",
-        "'Editar'",
-        "'Fechar'",
-        "'Parear sensor'",
-        "'Procurando sensor…'",
-        "'Sem sensor conectado'",
-        "'Últimas 12 horas'",
-        "'Tempo no alvo'",
-        "'Média'",
-        "'GMI est.'",
-      ];
-      for (final literal in migratedLiterals) {
-        expect(
-          source.contains(literal),
-          isFalse,
-          reason: '$literal should now come from AppLocalizations',
-        );
-      }
-    },
-  );
+    }
+  });
 }
 
 class _FakeAccountService extends AccountService {
@@ -216,14 +212,14 @@ class _FakeAccountService extends AccountService {
 
   @override
   Future<AccountProfile> fetchProfile() async => AccountProfile(
-        email: 'ana@glucore.app',
-        fullName: fullName,
-        birthDate: null,
-        diabetesType: null,
-        weightKg: null,
-        targetRangeMin: 80,
-        targetRangeMax: 180,
-      );
+    email: 'ana@glucore.app',
+    fullName: fullName,
+    birthDate: null,
+    diabetesType: null,
+    weightKg: null,
+    targetRangeMin: 80,
+    targetRangeMax: 180,
+  );
 }
 
 /// `initialize()` is a no-op so the fake never touches its repository — these
@@ -231,7 +227,7 @@ class _FakeAccountService extends AccountService {
 /// mirroring the fake in `shell_tabs_user_app_bar_test.dart`.
 class _FakePatientCubit extends PatientCubit {
   _FakePatientCubit._(PatientRepository repository)
-      : super(useCases: PatientUseCases.fromRepository(repository));
+    : super(useCases: PatientUseCases.fromRepository(repository));
 
   factory _FakePatientCubit() {
     final local = LocalPatientDataSource();
@@ -294,4 +290,48 @@ class _FakePatientRemote implements PatientRemoteApi {
 
   @override
   Future<void> deleteAlert(String id) async {}
+}
+
+/// `initialize()` is a no-op so the fake never touches platform channels.
+class _FakeSensorCubit extends SensorCubit {
+  _FakeSensorCubit() : super(repository: _FakeSensorRepository());
+
+  @override
+  Future<void> initialize() async {}
+}
+
+class _FakeSensorRepository implements SensorRepository {
+  @override
+  Future<SensorSession?> restoreSession() async => null;
+
+  @override
+  Future<SensorSession?> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async => null;
+
+  @override
+  Future<void> startMonitoring() async {}
+
+  @override
+  Future<void> stopMonitoring() async {}
+
+  @override
+  Stream<SensorEvent> observeSessionEvents() => const Stream.empty();
+
+  @override
+  Future<void> clearSession() async {}
+
+  @override
+  Future<AbbottLibraryStatus> getAbbottLibraryStatus() async =>
+      const AbbottLibraryStatus(installed: false, libraryName: '');
+
+  @override
+  Future<void> installAbbottLibrary(String path) async {}
+
+  @override
+  Future<void> startNfcScan() async {}
+
+  @override
+  Future<void> stopNfcScan() async {}
 }

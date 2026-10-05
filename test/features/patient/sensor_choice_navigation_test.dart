@@ -33,12 +33,14 @@ import 'package:glucore/features/sensor/presentation/cubit/sensor_cubit.dart';
 /// `UserIdentityCubit` is provided too (T24): both pages now render
 /// `UserAppBar`, which watches it unconditionally.
 void main() {
-  testWidgets('brand pages pushed on the root Navigator resolve the cubits',
-      (tester) async {
+  testWidgets('brand pages pushed on the root Navigator resolve the cubits', (
+    tester,
+  ) async {
     final sensorCubit = _FakeSensorCubit();
     final patientCubit = _FakePatientCubit();
-    final identityCubit =
-        UserIdentityCubit(accountService: _NoopAccountService());
+    final identityCubit = UserIdentityCubit(
+      accountService: _NoopAccountService(),
+    );
     addTearDown(sensorCubit.close);
     addTearDown(patientCubit.close);
     addTearDown(identityCubit.close);
@@ -63,8 +65,7 @@ void main() {
                 // Raw MaterialPageRoute on the root Navigator — the exact
                 // push pattern that used to crash from Settings/Profile.
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (_) => const SensorChoicePage()),
+                  MaterialPageRoute(builder: (_) => const SensorChoicePage()),
                 ),
                 child: const Text('open'),
               ),
@@ -81,8 +82,11 @@ void main() {
     Future<void> tapCardAndReturn(String label, Type destination) async {
       await tester.tap(find.text(label));
       await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull,
-          reason: 'tapping "$label" must not throw ProviderNotFoundException');
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'tapping "$label" must not throw ProviderNotFoundException',
+      );
       expect(find.byType(destination), findsOneWidget);
       Navigator.of(tester.element(find.byType(destination))).pop();
       await tester.pumpAndSettle();
@@ -91,6 +95,72 @@ void main() {
     await tapCardAndReturn('Sibionics', SensorLinkPage);
     await tapCardAndReturn('Accu-Chek SmartGuide', SensorLinkPage);
     await tapCardAndReturn('FreeStyle Libre 2', LibreNFCPage);
+  });
+
+  Future<void> pumpChoicePage(
+    WidgetTester tester,
+    _FakeSensorCubit sensorCubit,
+  ) async {
+    final patientCubit = _FakePatientCubit();
+    final identityCubit = UserIdentityCubit(
+      accountService: _NoopAccountService(),
+    );
+    addTearDown(sensorCubit.close);
+    addTearDown(patientCubit.close);
+    addTearDown(identityCubit.close);
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<SensorCubit>.value(value: sensorCubit),
+          BlocProvider<PatientCubit>.value(value: patientCubit),
+          BlocProvider<UserIdentityCubit>.value(value: identityCubit),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const SensorChoicePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('without a linked sensor the brand list is shown', (
+    tester,
+  ) async {
+    await pumpChoicePage(tester, _FakeSensorCubit());
+
+    expect(find.text('Sibionics'), findsOneWidget);
+    expect(find.byType(SensorLinkPage), findsNothing);
+    expect(find.byType(LibreNFCPage), findsNothing);
+  });
+
+  testWidgets('a linked Sibionics sensor skips the brand list', (tester) async {
+    final sensorCubit = _FakeSensorCubit()
+      ..setState(
+        SensorUiState(
+          status: SensorConnectionStatus.connected,
+          session: SensorSession(sensorId: 'S1'),
+        ),
+      );
+    await pumpChoicePage(tester, sensorCubit);
+
+    expect(find.byType(SensorLinkPage), findsOneWidget);
+    expect(find.text('Accu-Chek SmartGuide'), findsNothing);
+  });
+
+  testWidgets('a linked Libre 2 sensor opens the Libre panel', (tester) async {
+    final sensorCubit = _FakeSensorCubit()
+      ..setState(
+        SensorUiState(
+          status: SensorConnectionStatus.connected,
+          session: SensorSession(sensorId: 'L1', brand: SensorBrand.libre2),
+        ),
+      );
+    await pumpChoicePage(tester, sensorCubit);
+
+    expect(find.byType(LibreNFCPage), findsOneWidget);
+    expect(find.text('Accu-Chek SmartGuide'), findsNothing);
   });
 }
 
@@ -103,11 +173,13 @@ class _FakeSensorCubit extends SensorCubit {
 
   @override
   Future<void> initialize() async {}
+
+  void setState(SensorUiState state) => emit(state);
 }
 
 class _FakePatientCubit extends PatientCubit {
   _FakePatientCubit._(PatientRepository repository)
-      : super(useCases: PatientUseCases.fromRepository(repository));
+    : super(useCases: PatientUseCases.fromRepository(repository));
 
   factory _FakePatientCubit() {
     final local = LocalPatientDataSource();
@@ -136,9 +208,10 @@ class _FakeSensorRepository implements SensorRepository {
   Future<SensorSession?> restoreSession() async => null;
 
   @override
-  Future<SensorSession?> registerSensor(String barcode,
-          {SensorBrand brand = SensorBrand.sibionics}) async =>
-      null;
+  Future<SensorSession?> registerSensor(
+    String barcode, {
+    SensorBrand brand = SensorBrand.sibionics,
+  }) async => null;
 
   @override
   Future<void> startMonitoring() async {}

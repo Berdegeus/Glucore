@@ -23,7 +23,14 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test --no-pub
+      - run: flutter test --no-pub --coverage
+      # The summary drops tool-generated code from the number (see coverage.py).
+      - run: python3 .github/scripts/coverage.py flutter-summary coverage/lcov.info >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: coverage/lcov.info
+          retention-days: 30
 
   android-unit:
     name: Kotlin unit tests (JVM)
@@ -106,6 +113,8 @@ jobs:
           name: backend-coverage
           path: backend/coverage/
           retention-days: 30
+      - run: python3 ../.github/scripts/coverage.py backend-summary coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY"
+        if: always()
 
   web:
     name: Web typecheck + lint + test + build
@@ -140,3 +149,43 @@ jobs:
       - run: npm run size
       # Only what ships to the browser; dev tooling advisories do not block.
       - run: npm audit --omit=dev --audit-level=high
+
+  # Publishes the two reports as one page. Only on `main`: a PR run must not
+  # overwrite what the default branch shows. Needs Pages set to "GitHub Actions".
+  coverage-pages:
+    name: Publish coverage to GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [flutter, backend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: flutter-coverage
+          path: cov/flutter
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: cov/backend
+      - run: sudo apt-get install -y --no-install-recommends lcov
+      - run: python3 .github/scripts/coverage.py flutter-filter cov/flutter/lcov.info cov/flutter/filtered.info
+      - run: |
+          mkdir -p site
+          genhtml cov/flutter/filtered.info --output-directory site/flutter --title "Glucore Flutter" --quiet
+          cp -r cov/backend site/backend
+          python3 .github/scripts/coverage.py site cov/flutter/lcov.info cov/backend/coverage-summary.json site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
