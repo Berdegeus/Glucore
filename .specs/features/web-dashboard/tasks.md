@@ -4865,15 +4865,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `adm-kpi-grants`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza os vínculos ativos a partir de `overview.grants.active`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admKpiGrants.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `adm-kpi-grants`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza os vínculos ativos a partir de `overview.grants.active`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/presentation/widgets/admKpiGrants.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add adm-kpi-grants widget`
+**Status**: ✅ Done
 
 ---
 
