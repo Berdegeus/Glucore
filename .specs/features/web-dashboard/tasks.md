@@ -4386,16 +4386,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `pro-tir-histogram`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza pacientes por faixa de TIR a partir de `cohort.tirHistogram`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Usa o adaptador `BarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proTirHistogram.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `pro-tir-histogram`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza pacientes por faixa de TIR a partir de `cohort.tirHistogram`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Usa o adaptador `BarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/presentation/widgets/proTirHistogram.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add pro-tir-histogram widget`
+**Status**: ✅ Done
 
 ---
 
