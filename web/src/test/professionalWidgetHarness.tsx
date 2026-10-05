@@ -165,17 +165,27 @@ interface CohortFigureSpec {
   withValue: (value: number | null) => CohortSummary;
   /** Values the figure can take, and how each reads once formatted. */
   samples: ReadonlyArray<{ value: number | null; shown: string }>;
+  /** The line of context under the figure, when the card has one. */
+  note?: string;
   requirement: string;
 }
 
 /** What a KPI of the portfolio shows: its figure, formatted pt-BR, for each sample, `—` for a missing average and a real zero as `0`. */
-export function describeCohortFigure({ Widget, title, withValue, samples, requirement }: CohortFigureSpec) {
+export function describeCohortFigure({ Widget, title, withValue, samples, note, requirement }: CohortFigureSpec) {
   describe(`${title} figure (${requirement})`, () => {
     it.each(samples)('shows $shown for $value', async ({ value, shown }) => {
       renderProfessionalWidget(<Widget size="S" />, { cohort: withValue(value) });
 
       const region = within(await screen.findByRole('region', { name: title }));
       expect(await region.findByText(shown)).toBeInTheDocument();
+    });
+
+    if (note === undefined) return;
+    it('says what the figure counts under it', async () => {
+      renderProfessionalWidget(<Widget size="S" />);
+
+      const region = within(await screen.findByRole('region', { name: title }));
+      expect(await region.findByText(note)).toBeInTheDocument();
     });
   });
 }
