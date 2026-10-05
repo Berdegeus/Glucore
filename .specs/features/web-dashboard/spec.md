@@ -563,19 +563,19 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | REG-08 | P2: Cadastro do profissional de saúde | T129 | Implementing |
 | REG-09 | P2: Cadastro do profissional de saúde | T139 | Implementing |
 | REG-10 | P2: Cadastro do profissional de saúde | T139 | Implementing |
-| CON-01 | P2: Consentimento do paciente pelo app (código de convite) | T143, T145, T152, T153 | Implementing |
+| CON-01 | P2: Consentimento do paciente pelo app (código de convite) | T143, T145, T152, T153, T155 | Implementing |
 | CON-02 | P2: Consentimento do paciente pelo app (código de convite) | T141 | Implementing |
 | CON-03 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142 | Implementing |
 | CON-04 | P2: Consentimento do paciente pelo app (código de convite) | T142, T143, T145, T149 | Implementing |
 | CON-05 | P2: Consentimento do paciente pelo app (código de convite) | T143 | Implementing |
 | CON-06 | P2: Consentimento do paciente pelo app (código de convite) | T148 | Implementing |
 | CON-07 | P2: Consentimento do paciente pelo app (código de convite) | T140, T142, T143 | Implementing |
-| CON-08 | P2: Consentimento do paciente pelo app (código de convite) | T145, T146, T150, T152 | Implementing |
+| CON-08 | P2: Consentimento do paciente pelo app (código de convite) | T145, T146, T150, T152, T155 | Implementing |
 | CON-09 | P2: Consentimento do paciente pelo app (código de convite) | T142, T144, T145 | Implementing |
 | CON-10 | P2: Consentimento do paciente pelo app (código de convite) | T143 | Implementing |
 | CON-11 | P2: Consentimento do paciente pelo app (código de convite) | T132, T134, T138, T151 | Implementing |
 | CON-12 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
-| CON-13 | P2: Consentimento do paciente pelo app (código de convite) | T153, T154 | Implementing |
+| CON-13 | P2: Consentimento do paciente pelo app (código de convite) | T153, T154, T155 | Implementing |
 | PRO-01 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-02 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-03 | P2: Dashboard do profissional de saúde | T72 | Implementing |

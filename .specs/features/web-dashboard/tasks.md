@@ -3685,13 +3685,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: gerar sem rede vai a `offline` sem código; revogar remove da lista; erro preserva a lista anterior
-- [ ] Gate `quick` passa: `flutter test --no-pub test/features/sharing/presentation/sharing_cubit_test.dart`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: gerar sem rede vai a `offline` sem código; revogar remove da lista; erro preserva a lista anterior
+- [x] Gate `quick` passa: `flutter test --no-pub test/features/sharing/presentation/sharing_cubit_test.dart`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(app): add the sharing cubit`
+**Status**: ✅ Done
 
 ---
 
