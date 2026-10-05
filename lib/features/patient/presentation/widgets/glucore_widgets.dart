@@ -40,12 +40,12 @@ extension GlucoseZoneX on GlucoseZone {
         GlucoseZone.urgentHigh => context.glucoreColors.zoneUrgentHighInk,
       };
 
-  String get label => switch (this) {
-        GlucoseZone.urgentLow => 'Baixo urgente',
-        GlucoseZone.low => 'Abaixo do alvo',
-        GlucoseZone.target => 'No alvo',
-        GlucoseZone.high => 'Acima do alvo',
-        GlucoseZone.urgentHigh => 'Alto urgente',
+  String label(AppLocalizations l10n) => switch (this) {
+        GlucoseZone.urgentLow => l10n.zoneLabelUrgentLow,
+        GlucoseZone.low => l10n.zoneLabelLow,
+        GlucoseZone.target => l10n.zoneLabelTarget,
+        GlucoseZone.high => l10n.zoneLabelHigh,
+        GlucoseZone.urgentHigh => l10n.zoneLabelUrgentHigh,
       };
 
   Color chartLine(BuildContext context) => switch (this) {
@@ -135,11 +135,11 @@ class GlucoreStatusCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _ZonePill(label: zone.label),
+              _ZonePill(label: zone.label(context.l10n)),
               const Spacer(),
               if (updatedAt != null)
                 Text(
-                  _timeAgo(updatedAt!),
+                  _timeAgo(context.l10n, updatedAt!),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.75),
                     fontSize: 12,
@@ -168,12 +168,12 @@ class GlucoreStatusCard extends StatelessWidget {
         GlucoseTrend.stable => Icons.trending_flat_rounded,
       };
 
-  static String _timeAgo(DateTime dt) {
+  static String _timeAgo(AppLocalizations l10n, DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 2) return 'Agora';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min atrás';
-    if (diff.inHours < 24) return '${diff.inHours}h atrás';
-    return '${diff.inDays}d atrás';
+    if (diff.inMinutes < 2) return l10n.timeAgoNow;
+    if (diff.inMinutes < 60) return l10n.timeAgoMinutes(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.timeAgoHours(diff.inHours);
+    return l10n.timeAgoDays(diff.inDays);
   }
 }
 
@@ -253,7 +253,7 @@ class GlucoreZoneBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(
-        zone.label,
+        zone.label(context.l10n),
         style: TextStyle(
           color: zone.ink(context),
           fontSize: 11,

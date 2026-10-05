@@ -560,5 +560,35 @@
   "settingsLanguageEnglishLabel": "English",
   "settingsUnitSectionTitle": "UNIDADE DE GLICOSE",
   "settingsUnitMgdlLabel": "mg/dL",
-  "settingsUnitMmolLabel": "mmol/L"
+  "settingsUnitMmolLabel": "mmol/L",
+  "zoneLabelUrgentLow": "Baixo urgente",
+  "zoneLabelLow": "Abaixo do alvo",
+  "zoneLabelTarget": "No alvo",
+  "zoneLabelHigh": "Acima do alvo",
+  "zoneLabelUrgentHigh": "Alto urgente",
+  "timeAgoNow": "Agora",
+  "timeAgoMinutes": "{minutes} min atrás",
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "timeAgoHours": "{hours}h atrás",
+  "@timeAgoHours": {
+    "placeholders": {
+      "hours": {}
+    }
+  },
+  "timeAgoDays": "{days}d atrás",
+  "@timeAgoDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "reportsReadingsCount": "{count} leituras",
+  "@reportsReadingsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  }
 }

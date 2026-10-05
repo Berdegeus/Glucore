@@ -280,7 +280,7 @@ class _GmiCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '$count leituras',
+            context.l10n.reportsReadingsCount(count),
             style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
           ),
         ],

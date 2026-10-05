@@ -560,5 +560,35 @@
   "settingsLanguageEnglishLabel": "English",
   "settingsUnitSectionTitle": "GLUCOSE UNIT",
   "settingsUnitMgdlLabel": "mg/dL",
-  "settingsUnitMmolLabel": "mmol/L"
+  "settingsUnitMmolLabel": "mmol/L",
+  "zoneLabelUrgentLow": "Urgent low",
+  "zoneLabelLow": "Below range",
+  "zoneLabelTarget": "In range",
+  "zoneLabelHigh": "Above range",
+  "zoneLabelUrgentHigh": "Urgent high",
+  "timeAgoNow": "Now",
+  "timeAgoMinutes": "{minutes} min ago",
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "timeAgoHours": "{hours}h ago",
+  "@timeAgoHours": {
+    "placeholders": {
+      "hours": {}
+    }
+  },
+  "timeAgoDays": "{days}d ago",
+  "@timeAgoDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "reportsReadingsCount": "{count} readings",
+  "@reportsReadingsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  }
 }
