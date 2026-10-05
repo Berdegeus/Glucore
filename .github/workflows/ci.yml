@@ -124,6 +124,10 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
+        with:
+          # tests/docs/architectureDoc.test.ts reads `git log` (ARQ-19); a
+          # shallow clone cannot see the refactor commits it cites.
+          fetch-depth: 0
       # Same Node line as the backend job: one version in the repository.
       - uses: actions/setup-node@v4
         with:
