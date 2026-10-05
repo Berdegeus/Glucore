@@ -1,3 +1,5 @@
+import { createAdminUseCases, type AdminUseCases } from '../features/admin/application/adminUseCases';
+import { HttpAdminRepository } from '../features/admin/infrastructure/httpAdminRepository';
 import { createLogin, type Login } from '../features/auth/application/login';
 import { createLogout, type Logout, type SessionCleaner } from '../features/auth/application/logout';
 import { createRefreshSession, type RefreshSession } from '../features/auth/application/refreshSession';
@@ -40,6 +42,7 @@ export interface Container {
     auth: AuthUseCases;
     registration: RegistrationUseCases;
     professional: ProfessionalUseCases;
+    admin: AdminUseCases;
     layout: LayoutUseCases;
     summary: SummaryUseCases;
     patientDiary: DiaryUseCases;
@@ -70,6 +73,7 @@ export function createContainer(env: AppEnv): Container {
   const registrations = new HttpRegistrationRepository(http);
   const professionals = new HttpProfessionalRepository(http);
   const redemptions = new HttpRedeemRepository(http);
+  const admin = new HttpAdminRepository(http);
   const layouts = new HttpLayoutRepository(http);
   const summaries = new HttpSummaryRepository(http);
   const diary = new HttpDiaryRepository(http);
@@ -94,6 +98,7 @@ export function createContainer(env: AppEnv): Container {
         }),
       },
       professional: createProfessionalUseCases({ professionals, redemptions, timeZone }),
+      admin: createAdminUseCases({ admin }),
       // The registry is read at load time: widgets register when their modules load.
       layout: createLayoutUseCases({ layouts, catalog: allDefinitions }),
       summary: { loadPatientSummary: createLoadPatientSummary({ summaries, timeZone }) },

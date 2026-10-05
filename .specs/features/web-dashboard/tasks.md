@@ -4733,13 +4733,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: período fora de 7/30/90 rejeitado; filtros repassados
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/admin/application/adminUseCases.test.ts`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: período fora de 7/30/90 rejeitado; filtros repassados
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/admin/application/adminUseCases.test.ts`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add admin use cases`
+**Status**: ✅ Done
 
 ---
 

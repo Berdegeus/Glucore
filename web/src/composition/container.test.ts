@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { accountPageDto, overviewDto } from '../test/adminFakes';
 import { cohortDto, patientPageDto } from '../test/professionalFakes';
 import { server } from '../test/server';
 import { summaryFixture } from '../test/summaryFakes';
@@ -97,6 +98,30 @@ describe('createContainer (ARQ-08)', () => {
       cohort: { days: '7', tz: timeZone.timeZone() },
       redeem: { code: 'AB12CD34' },
     });
+  });
+
+  it('exposes the admin use cases, wired to /api/v1/admin/overview and /admin/users', async () => {
+    const seen: Record<string, unknown> = {};
+    server.use(
+      http.get(`${API}/admin/overview`, ({ request }) => {
+        seen.overview = Object.fromEntries(new URL(request.url).searchParams);
+        return HttpResponse.json(overviewDto());
+      }),
+      http.get(`${API}/admin/users`, ({ request }) => {
+        seen.users = Object.fromEntries(new URL(request.url).searchParams);
+        return HttpResponse.json(accountPageDto());
+      }),
+    );
+    const { useCases } = createContainer({ apiUrl: HOST });
+
+    expect(Object.keys(useCases.admin).sort()).toEqual(['loadOverview', 'loadUsers']);
+
+    const overview = await useCases.admin.loadOverview(90);
+    const users = await useCases.admin.loadUsers({ status: 'ACTIVE' });
+
+    expect(overview.accounts.total).toBe(42);
+    expect(users.items.map((row) => row.email)).toEqual(['ana@example.com']);
+    expect(seen).toEqual({ overview: { days: '90' }, users: { status: 'ACTIVE', page: '1', limit: '25' } });
   });
 
   it('exposes the layout use cases, wired to /api/v1/preferences/dashboard', async () => {

@@ -595,10 +595,10 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ADM-01 | P3: Dashboard do administrador | T202, T194, T197, T199, T200 | Implementing |
 | ADM-02 | P3: Dashboard do administrador | T60, T194, T197 | Implementing |
 | ADM-03 | P3: Dashboard do administrador | T197, T198 | Implementing |
-| ADM-04 | P3: Dashboard do administrador | T202, T195, T199, T200 | Implementing |
+| ADM-04 | P3: Dashboard do administrador | T202, T195, T199, T200, T203 | Implementing |
 | ADM-05 | P3: Dashboard do administrador | T193, T196, T198, T200 | Implementing |
 | ADM-06 | P3: Dashboard do administrador | T195 | Implementing |
-| ADM-07 | P3: Dashboard do administrador | T200 | Implementing |
+| ADM-07 | P3: Dashboard do administrador | T200, T203 | Implementing |
 
 **Coverage:** 138 total, 0 mapped to tasks, 138 unmapped ⚠️
 <!-- TRACE:END -->
