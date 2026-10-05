@@ -21,6 +21,10 @@ import { PatientController } from './modules/patient/patient.controller';
 import { createInternalPatientRouter } from './modules/patient/patient.routes';
 import { PrismaPatientRepository } from './modules/patient/patient.repository';
 import { PatientService } from './modules/patient/patient.service';
+import { ProfessionalsController } from './modules/professionals/professionals.controller';
+import { PrismaProfessionalRepository } from './modules/professionals/professionals.repository';
+import { createInternalProfessionalsRouter } from './modules/professionals/professionals.routes';
+import { ProfessionalsService } from './modules/professionals/professionals.service';
 import { ReadingsController } from './modules/readings/readings.controller';
 import { PrismaReadingRepository } from './modules/readings/readings.repository';
 import { SettingsController } from './modules/settings/settings.controller';
@@ -42,6 +46,7 @@ export interface Container {
   settings: SettingsController;
   dashboard: DashboardController;
   internalPatientRouter: Router;
+  internalProfessionalsRouter: Router;
 }
 
 /**
@@ -83,6 +88,10 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
     ),
     internalPatientRouter: createInternalPatientRouter(
       new PatientController(new PatientService(patients, recordAudit)),
+      createRequireInternalAuth(getInternalJwtSecret),
+    ),
+    internalProfessionalsRouter: createInternalProfessionalsRouter(
+      new ProfessionalsController(new ProfessionalsService(new PrismaProfessionalRepository(prisma))),
       createRequireInternalAuth(getInternalJwtSecret),
     ),
   };

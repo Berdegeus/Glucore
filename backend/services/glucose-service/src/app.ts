@@ -59,6 +59,7 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   app.use('/settings', createSettingsRouter(container.settings));
   app.use('/dashboard', createDashboardRouter(container.dashboard));
   app.use('/internal', container.internalPatientRouter);
+  app.use('/internal', container.internalProfessionalsRouter);
 
   // Classifies known failures into `{ error, code }`; the handler below is the
   // last-resort net for anything it delegates (response already started).
