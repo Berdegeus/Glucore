@@ -35,6 +35,35 @@ describe('createContainer (ARQ-08)', () => {
     for (const useCase of Object.values(useCases.auth)) expect(useCase).toBeTypeOf('function');
   });
 
+  it('exposes the registration use case, wired to /api/v1/auth/register/professional and /me', async () => {
+    const token = tokenExpiringAt('2026-05-03T12:30:00.000Z');
+    let body: unknown;
+    server.use(
+      http.post(`${API}/auth/register/professional`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ userId: 'u1', token }, { status: 201 });
+      }),
+      http.get(`${API}/me`, () => HttpResponse.json(ME)),
+    );
+    const container = createContainer({ apiUrl: HOST });
+
+    expect(Object.keys(container.useCases.registration)).toEqual(['registerProfessional']);
+
+    const registration = {
+      fullName: 'Ana Souza',
+      email: ME.email,
+      password: 'Senha123!',
+      licenseNumber: 'CRM-SP 123456',
+      specialty: 'Endocrinologia',
+    };
+    const session = await container.useCases.registration.registerProfessional(registration);
+
+    expect(body).toEqual(registration);
+    expect(session.account.role).toBe('HEALTH_PROFESSIONAL');
+    expect(session.expiresAt).toEqual(new Date('2026-05-03T12:30:00.000Z'));
+    expect(container.tokenStore.read()).toBe(token);
+  });
+
   it('exposes the layout use cases, wired to /api/v1/preferences/dashboard', async () => {
     server.use(http.get(`${API}/preferences/dashboard`, () => HttpResponse.json({ widgets: null })));
     const { useCases } = createContainer({ apiUrl: HOST });

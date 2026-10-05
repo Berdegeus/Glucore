@@ -170,6 +170,19 @@ describe('LoginPage session notice (ACC-09)', () => {
   });
 });
 
+describe('LoginPage professional sign-up link (REG-01)', () => {
+  it('points a health professional to the registration page, reachable with the keyboard', async () => {
+    renderLogin();
+    const link = await screen.findByRole('link', { name: 'Sou profissional de saúde — criar conta' });
+    expect(link).toHaveAttribute('href', '/cadastro-profissional');
+
+    const user = userEvent.setup();
+    await user.click(submitButton());
+    await user.tab();
+    expect(link).toHaveFocus();
+  });
+});
+
 describe('LoginPage accessibility (RSP-06)', () => {
   it('has no axe violations, with or without an error and a notice', async () => {
     const { container } = renderLogin(failingLogin('invalid-credentials'));

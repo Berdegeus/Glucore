@@ -9,13 +9,14 @@ import { AuthProvider, SESSION_EXPIRED_MESSAGE, useAuth, type AuthServices } fro
 const credentials = { email: 'ana@example.com', password: 'secret' };
 
 function Probe() {
-  const { state, login, logout, retryRestore } = useAuth();
+  const { state, login, adoptSession, logout, retryRestore } = useAuth();
   return (
     <div>
       <p data-testid="status">{state.status}</p>
       {state.status === 'authenticated' && <p>{`Olá, ${state.session.account.fullName}`}</p>}
       {state.status === 'anonymous' && state.notice && <p role="alert">{state.notice}</p>}
       <button onClick={() => login(credentials).catch(() => undefined)}>entrar</button>
+      <button onClick={() => adoptSession(sessionOf('HEALTH_PROFESSIONAL', 'Dra. Lia'))}>adotar</button>
       <button onClick={() => logout()}>sair</button>
       <button onClick={retryRestore}>de novo</button>
     </div>
@@ -87,6 +88,20 @@ describe('AuthProvider login', () => {
     await press('entrar');
     await waitFor(() => expect(login).toHaveBeenCalled());
     expect(status()).toBe('anonymous');
+  });
+});
+
+describe('AuthProvider adoptSession', () => {
+  it('signs the person in with a session another flow opened, without calling login', async () => {
+    const { services } = makeAuthServices();
+    setup(services);
+    await waitForStatus('anonymous');
+
+    await press('adotar');
+
+    expect(status()).toBe('authenticated');
+    expect(screen.getByText('Olá, Dra. Lia')).toBeInTheDocument();
+    expect(services.login).not.toHaveBeenCalled();
   });
 });
 

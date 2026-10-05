@@ -4,12 +4,15 @@ import { createRefreshSession, type RefreshSession } from '../features/auth/appl
 import { createRestoreSession, type RestoreSession } from '../features/auth/application/restoreSession';
 import { HttpAccountRepository } from '../features/auth/infrastructure/httpAccountRepository';
 import { HttpSessionRepository } from '../features/auth/infrastructure/httpSessionRepository';
+import { resolveSession } from '../features/auth/application/resolveSession';
 import { createLayoutUseCases, type LayoutUseCases } from '../features/dashboard-layout/application/layoutUseCases';
 import { HttpLayoutRepository } from '../features/dashboard-layout/infrastructure/httpLayoutRepository';
 import { createLoadDayDetail, type DiaryUseCases } from '../features/patient-dashboard/application/loadDayDetail';
 import { createLoadPatientSummary, type SummaryUseCases } from '../features/patient-dashboard/application/loadPatientSummary';
 import { HttpDiaryRepository } from '../features/patient-dashboard/infrastructure/httpDiaryRepository';
 import { HttpSummaryRepository } from '../features/patient-dashboard/infrastructure/httpSummaryRepository';
+import { createRegisterProfessional, type RegistrationUseCases } from '../features/registration/application/registerProfessional';
+import { HttpRegistrationRepository } from '../features/registration/infrastructure/httpRegistrationRepository';
 import { allDefinitions } from '../features/dashboard-layout/presentation/widgetRegistry';
 import type { Clock, SessionEvents, TimeZoneProvider, TokenStore, Unsubscribe } from '../shared/domain/ports';
 import { JwtExpiryReader } from '../shared/infrastructure/auth/jwtExpiryReader';
@@ -30,7 +33,13 @@ export interface AuthUseCases {
 }
 
 export interface Container {
-  useCases: { auth: AuthUseCases; layout: LayoutUseCases; summary: SummaryUseCases; patientDiary: DiaryUseCases };
+  useCases: {
+    auth: AuthUseCases;
+    registration: RegistrationUseCases;
+    layout: LayoutUseCases;
+    summary: SummaryUseCases;
+    patientDiary: DiaryUseCases;
+  };
   /** The one bus: the HTTP client publishes on it and the UI subscribes to it (ACC-09). */
   sessionEvents: SessionEvents;
   tokenStore: TokenStore;
@@ -54,6 +63,7 @@ export function createContainer(env: AppEnv): Container {
 
   const sessions = new HttpSessionRepository(http);
   const accounts = new HttpAccountRepository(http);
+  const registrations = new HttpRegistrationRepository(http);
   const layouts = new HttpLayoutRepository(http);
   const summaries = new HttpSummaryRepository(http);
   const diary = new HttpDiaryRepository(http);
@@ -68,6 +78,14 @@ export function createContainer(env: AppEnv): Container {
         restoreSession: createRestoreSession({ accounts, tokenStore, expiryReader, clock }),
         logout: createLogout({ tokenStore, cleaners }),
         refreshSession: createRefreshSession({ sessions, tokenStore, expiryReader, clock }),
+      },
+      registration: {
+        registerProfessional: createRegisterProfessional({
+          registrations,
+          tokenStore,
+          sessionEvents,
+          resolveSession: (token) => resolveSession(token, { accounts, expiryReader }),
+        }),
       },
       // The registry is read at load time: widgets register when their modules load.
       layout: createLayoutUseCases({ layouts, catalog: allDefinitions }),

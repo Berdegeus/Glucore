@@ -2,6 +2,6 @@
 export { AuthProvider, SESSION_EXPIRED_MESSAGE, useAuth } from './presentation/authProvider';
 export type { AuthServices, AuthState } from './presentation/authProvider';
 export type { Session } from './domain/session';
-export { LoginPage } from './presentation/loginPage';
-export { RequireRole } from './presentation/requireRole';
+export { LoginPage, TOO_MANY_ATTEMPTS_MESSAGE } from './presentation/loginPage';
+export { RequireRole, UNAVAILABLE_MESSAGE } from './presentation/requireRole';
 export { useSessionRefresh } from './presentation/useSessionRefresh';

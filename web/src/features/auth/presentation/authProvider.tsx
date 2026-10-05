@@ -36,6 +36,11 @@ export type AuthState =
 export interface AuthContextValue {
   state: AuthState;
   login(credentials: Credentials): Promise<void>;
+  /**
+   * Takes a session another flow already opened, e.g. a registration that
+   * stored its token, so the guards see the person as signed in.
+   */
+  adoptSession(session: Session): void;
   logout(): void;
   /** Asks again after a failed restore. */
   retryRestore(): void;
@@ -104,6 +109,8 @@ export function AuthProvider({ services, children }: { services: AuthServices; c
     [services],
   );
 
+  const adoptSession = useCallback((session: Session) => setState({ status: 'authenticated', session }), []);
+
   const logout = useCallback(() => {
     services.logout();
     setState(SIGNED_OUT);
@@ -131,8 +138,8 @@ export function AuthProvider({ services, children }: { services: AuthServices; c
   );
 
   const value = useMemo(
-    () => ({ state, login, logout, retryRestore, renewSession }),
-    [state, login, logout, retryRestore, renewSession],
+    () => ({ state, login, adoptSession, logout, retryRestore, renewSession }),
+    [state, login, adoptSession, logout, retryRestore, renewSession],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

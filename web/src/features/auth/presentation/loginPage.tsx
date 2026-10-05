@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useSearchParams } from 'react-router';
+import { Link, Navigate, useSearchParams } from 'react-router';
 import { isAppError } from '../../../shared/domain/appError';
 import { ErrorState, Skeleton } from '../../../shared/presentation/ui/states';
 import { useAuth } from './authProvider';
@@ -93,6 +93,9 @@ function LoginForm({ notice }: { notice: string | null }) {
       <button className={styles.submit} type="submit" disabled={pending}>
         {pending ? 'Entrando…' : 'Entrar'}
       </button>
+      <Link className={styles.link} to="/cadastro-profissional">
+        Sou profissional de saúde — criar conta
+      </Link>
     </form>
   );
 }

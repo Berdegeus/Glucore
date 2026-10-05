@@ -4003,13 +4003,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: regra de senha mostrada no campo; e-mail duplicado mostra mensagem própria; sucesso abre `/profissional`; axe sem violações
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/registration/presentation/registerProfessionalPage.test.tsx`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: regra de senha mostrada no campo; e-mail duplicado mostra mensagem própria; sucesso abre `/profissional`; axe sem violações
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/registration/presentation/registerProfessionalPage.test.tsx`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add the professional registration page`
+**Status**: ✅ Done
 
 ---
 

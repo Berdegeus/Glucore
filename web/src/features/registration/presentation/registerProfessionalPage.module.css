@@ -14,7 +14,7 @@
   flex-direction: column;
   gap: var(--space-4);
   width: 100%;
-  max-width: 24rem;
+  max-width: 28rem;
   padding: var(--space-5);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-2);
@@ -62,21 +62,18 @@
   cursor: progress;
 }
 
-.notice {
+.hint {
   margin: 0;
-  padding: var(--space-3);
-  border-radius: var(--radius-1);
-  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-1);
+}
+
+.optional {
+  font-weight: 400;
 }
 
 .error {
   margin: 0;
   color: var(--color-danger);
   font-weight: 600;
-}
-
-.link {
-  color: var(--color-brand);
-  font-size: var(--font-size-1);
-  text-align: center;
 }

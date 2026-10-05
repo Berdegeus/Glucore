@@ -18,6 +18,11 @@ export interface RegisterProfessionalDeps {
 
 export type RegisterProfessional = (registration: ProfessionalRegistration) => Promise<Session>;
 
+/** What the container hands the registration screen. */
+export interface RegistrationUseCases {
+  registerProfessional: RegisterProfessional;
+}
+
 /**
  * Opens a professional's account and signs them in (REG-01). The fields are
  * checked first (REG-02, REG-05): an invalid one rejects with a `validation`
