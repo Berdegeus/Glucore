@@ -2078,13 +2078,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: dias nulos ignorados; 13 dias com leitura não bastam, 14 bastam
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/domain/metrics.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: dias nulos ignorados; 13 dias com leitura não bastam, 14 bastam
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/domain/metrics.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add summary metric helpers`
+**Status**: ✅ Done
 
 ---
 
