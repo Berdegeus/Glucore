@@ -530,7 +530,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-09 | P1: Dashboard do paciente com os dados do app | T58 | Implementing |
 | PAC-10 | P1: Dashboard do paciente com os dados do app | T59, T61, T63 | Implementing |
 | PAC-11 | P1: Dashboard do paciente com os dados do app | - | Pending |
-| PAC-12 | P1: Dashboard do paciente com os dados do app | - | Pending |
+| PAC-12 | P1: Dashboard do paciente com os dados do app | T72 | Implementing |
 | PAC-13 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-14 | P1: Dashboard do paciente com os dados do app | - | Pending |
 | PAC-15 | P1: Dashboard do paciente com os dados do app | - | Pending |
@@ -578,7 +578,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | CON-13 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | PRO-01 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-02 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-03 | P2: Dashboard do profissional de saúde | - | Pending |
+| PRO-03 | P2: Dashboard do profissional de saúde | T72 | Implementing |
 | PRO-04 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-05 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-06 | P2: Dashboard do profissional de saúde | - | Pending |

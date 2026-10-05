@@ -59,6 +59,12 @@ export interface IDashboardRepository {
     low: number,
     high: number,
   ): Promise<ZoneDistributionDto>;
+  /**
+   * ISO timestamp of the patient's most recent reading, `null` if there is none.
+   * Deliberately not bounded by the requested period: "when did the app last sync"
+   * is about the patient, not about the window being charted.
+   */
+  getLastReadingAt(patientId: string): Promise<string | null>;
   /** SQL cru (b) — `percentile_cont` P5/P25/P50/P75/P95 per local hour; hours without readings are absent. */
   getAgp(patientId: string, range: DateRange, tz: string): Promise<AgpPointDto[]>;
   /** SQL cru (b) — mean and count per local weekday (0 = Sunday) × local hour; empty cells are absent. */
@@ -98,6 +104,15 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     const config = await this.prisma.alertThresholdConfig.findUnique({ where: { patientId } });
     if (!config) return null;
     return { lowGlucoseMgDl: config.lowGlucoseMgDl, highGlucoseMgDl: config.highGlucoseMgDl };
+  }
+
+  async getLastReadingAt(patientId: string): Promise<string | null> {
+    // `MAX("recordedAt")` for one patient — served by the (patientId, recordedAt) index.
+    const { _max } = await this.prisma.glucoseReading.aggregate({
+      where: { patientId },
+      _max: { recordedAt: true },
+    });
+    return _max.recordedAt?.toISOString() ?? null;
   }
 
   async getTotals(patientId: string, { from, toExclusive }: DateRange): Promise<DashboardTotals> {

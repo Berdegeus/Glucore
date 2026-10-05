@@ -259,6 +259,7 @@ export class FakeDashboardRepository implements IDashboardRepository {
     readingsCount: 0,
   };
   zoneDistribution: ZoneDistributionDto = { veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 };
+  lastReadingAt: string | null = null;
   agp: AgpPointDto[] = [];
   heatmap: HeatCellDto[] = [];
   dailyBuckets: DailyBucketDto[] = [];
@@ -306,6 +307,10 @@ export class FakeDashboardRepository implements IDashboardRepository {
 
   async getZoneDistribution(): Promise<ZoneDistributionDto> {
     return this.zoneDistribution;
+  }
+
+  async getLastReadingAt(): Promise<string | null> {
+    return this.lastReadingAt;
   }
 
   async getAgp(): Promise<AgpPointDto[]> {

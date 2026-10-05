@@ -296,3 +296,31 @@ describe('getHeatmap', () => {
     expect(await repository.getHeatmap(patientId, WEEKEND, 'UTC')).toEqual([]);
   });
 });
+
+describe('getLastReadingAt', () => {
+  let patientId: string;
+
+  beforeEach(async () => {
+    await truncateAll();
+    patientId = (await signedInPatient()).userId;
+  });
+
+  it('is null for a patient without readings', async () => {
+    expect(await repository.getLastReadingAt(patientId)).toBeNull();
+  });
+
+  it('is the most recent reading, even when it is outside the period being viewed', async () => {
+    await seedReadings(patientId, [100], '2026-08-05'); // inside RANGE
+    await seedReadings(patientId, [100, 110], '2026-09-20'); // weeks after RANGE; latest is 08:05
+
+    expect(await repository.getLastReadingAt(patientId)).toBe('2026-09-20T08:05:00.000Z');
+  });
+
+  it("does not pick up another patient's newer reading", async () => {
+    const other = (await signedInPatient()).userId;
+    await seedReadings(patientId, [100], '2026-08-05');
+    await seedReadings(other, [100], '2026-09-20');
+
+    expect(await repository.getLastReadingAt(patientId)).toBe('2026-08-05T08:00:00.000Z');
+  });
+});
