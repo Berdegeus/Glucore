@@ -145,37 +145,31 @@ describe('useSummary, scope (PAC-01)', () => {
 });
 
 describe('useSummary, reload (PAC-16)', () => {
-  it('reloads after 5 minutes while the tab is visible', async () => {
+  /** Mounts the hook with the tab in `visibility`, waits for the first load and lets `elapsedMs` of fake time pass. */
+  async function reloadsAfter(elapsedMs: number, visibility: 'visible' | 'hidden', client?: QueryClient) {
     fakeIntervals();
-    setVisibility('visible');
-    const { result } = renderHook(() => useSummary(RANGE), { wrapper: setup().wrapper });
+    setVisibility(visibility);
+    const { result } = renderHook(() => useSummary(RANGE), { wrapper: setup(client).wrapper });
     await vi.waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(own).toHaveLength(1);
 
-    await vi.advanceTimersByTimeAsync(REFETCH_INTERVAL_MS + 1000);
+    await vi.advanceTimersByTimeAsync(elapsedMs);
+  }
+
+  it('reloads after 5 minutes while the tab is visible', async () => {
+    await reloadsAfter(REFETCH_INTERVAL_MS + 1000, 'visible');
 
     await vi.waitFor(() => expect(own).toHaveLength(2));
   });
 
   it('does not reload after 5 minutes, nor after 10, while the tab is hidden', async () => {
-    fakeIntervals();
-    setVisibility('hidden');
-    const { result } = renderHook(() => useSummary(RANGE), { wrapper: setup().wrapper });
-    await vi.waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(own).toHaveLength(1);
-
-    await vi.advanceTimersByTimeAsync(REFETCH_INTERVAL_MS * 2 + 1000);
+    await reloadsAfter(REFETCH_INTERVAL_MS * 2 + 1000, 'hidden');
 
     expect(own).toHaveLength(1);
   });
 
   it('holds under a plain query client that sets no interval of its own', async () => {
-    fakeIntervals();
-    setVisibility('visible');
-    const { result } = renderHook(() => useSummary(RANGE), { wrapper: setup(new QueryClient()).wrapper });
-    await vi.waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    await vi.advanceTimersByTimeAsync(REFETCH_INTERVAL_MS + 1000);
+    await reloadsAfter(REFETCH_INTERVAL_MS + 1000, 'visible', new QueryClient());
 
     await vi.waitFor(() => expect(own).toHaveLength(2));
   });
