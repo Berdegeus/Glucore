@@ -3450,13 +3450,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: ativo passa; revogado, expirado e inexistente lançam `NO_ACTIVE_GRANT`
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/grantPolicy.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: ativo passa; revogado, expirado e inexistente lançam `NO_ACTIVE_GRANT`
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/grantPolicy.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(glucose-service): enforce active grants`
+**Status**: ✅ Done
 
 ---
 
