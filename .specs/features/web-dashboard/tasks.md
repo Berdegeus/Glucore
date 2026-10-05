@@ -2974,12 +2974,13 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] O build gera chunk próprio para `recharts`, fora do carregamento inicial
-- [ ] Gate `build` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size`
+- [x] O build gera chunk próprio para `recharts`, fora do carregamento inicial
+- [x] Gate `build` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage && npm run dup && npm run build && npm run size`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `perf(web): lazy-load dashboards and charts`
+**Status**: ✅ Done
 
 ---
 

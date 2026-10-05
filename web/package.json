@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "dup": "jscpd --config .jscpd.json src",
-    "size": "node scripts/checkBundleSize.mjs"
+    "size": "node scripts/checkBundleSize.mjs && node scripts/checkInitialChunks.mjs",
+    "chunks": "node scripts/checkInitialChunks.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

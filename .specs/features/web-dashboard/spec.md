@@ -483,7 +483,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
 | ARQ-10 | P1: Arquitetura limpa verificável (rubrica 37) | T49, T52, T108, T120 | Implementing |
-| ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13, T57, T58, T59, T60, T61, T62 | Implementing |
+| ARQ-11 | P1: Arquitetura limpa verificável (rubrica 37) | T13, T57, T58, T59, T60, T61, T62, T122 | Implementing |
 | ARQ-12 | P1: Arquitetura limpa verificável (rubrica 37) | T10, T11 | Implementing |
 | ARQ-13 | P1: Arquitetura limpa verificável (rubrica 37) | T15, T16 | Implementing |
 | ARQ-14 | P1: Arquitetura limpa verificável (rubrica 37) | - | Pending |
@@ -542,7 +542,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | DEP-03 | P1: Publicação na Vercel | T121 | Implementing |
 | DEP-04 | P1: Publicação na Vercel | T10 | Implementing |
 | DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
-| DEP-06 | P1: Publicação na Vercel | - | Pending |
+| DEP-06 | P1: Publicação na Vercel | T122 | Implementing |
 | DEP-07 | P1: Publicação na Vercel | T9, T225 | Implementing |
 | API-01 | P2: Ajustes de backend para os gráficos novos | T26, T65, T67, T73, T74, T75, T84 | Implementing |
 | API-02 | P2: Ajustes de backend para os gráficos novos | T65, T66, T75 | Implementing |
