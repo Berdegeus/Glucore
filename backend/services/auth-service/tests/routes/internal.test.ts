@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { Express } from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -185,5 +187,79 @@ describe('DELETE /internal/accounts/:id', () => {
       .delete(`/internal/accounts/${userId}`)
       .set('x-internal-token', internalToken('gateway'));
     expect(res.status).toBe(204);
+  });
+});
+
+describe('POST /internal/accounts/lookup', () => {
+  const lookup = (body: unknown, token: string | null = internalToken('gateway')) => {
+    const req = request(app).post('/internal/accounts/lookup');
+    return (token ? req.set('x-internal-token', token) : req).send(body as object);
+  };
+  const uuids = (n: number) => Array.from({ length: n }, () => randomUUID());
+
+  it('rejects a request with no internal token', async () => {
+    const res = await lookup({ ids: [] }, null);
+    expect(res.status).toBe(401);
+  });
+
+  it('answers only id and fullName, never email, phone or role (PRO-15, CON-08)', async () => {
+    const created = await registerViaInternal({
+      email: uniqueEmail(),
+      password: STRONG,
+      fullName: 'Dra. Ana Souza',
+      phone: '11999990000',
+    });
+    const id = created.body.userId as string;
+
+    const res = await lookup({ ids: [id] });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([{ id, fullName: 'Dra. Ana Souza' }]);
+  });
+
+  it('leaves out an id with no account', async () => {
+    const created = await registerViaInternal({ email: uniqueEmail(), password: STRONG, fullName: 'Conta Real' });
+    const known = created.body.userId as string;
+
+    const res = await lookup({ ids: [randomUUID(), known] });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([{ id: known, fullName: 'Conta Real' }]);
+  });
+
+  it('answers each account once when an id is repeated', async () => {
+    const created = await registerViaInternal({ email: uniqueEmail(), password: STRONG, fullName: 'Conta Unica' });
+    const id = created.body.userId as string;
+
+    const res = await lookup({ ids: [id, id.toUpperCase(), id] });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([{ id, fullName: 'Conta Unica' }]);
+  });
+
+  it('answers [] for an empty list', async () => {
+    const res = await lookup({ ids: [] });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('accepts exactly 200 ids and rejects 201 with 400', async () => {
+    const atLimit = await lookup({ ids: uuids(200) });
+    expect(atLimit.status).toBe(200);
+    expect(atLimit.body).toEqual([]);
+
+    const overLimit = await lookup({ ids: uuids(201) });
+    expect(overLimit.status).toBe(400);
+  });
+
+  it.each([
+    ['an id that is not a UUID', { ids: ['not-a-uuid'] }],
+    ['one bad id among valid ones', { ids: [randomUUID(), 'x'] }],
+    ['a non-string id', { ids: [42] }],
+    ['ids that is not a list', { ids: randomUUID() }],
+    ['a body with no ids', {}],
+  ])('answers 400 for %s', async (_label, body) => {
+    const res = await lookup(body);
+    expect(res.status).toBe(400);
   });
 });

@@ -50,6 +50,8 @@ export interface AccountRepository {
   ): Promise<void>;
   /** Idempotent: deleting an id that no longer exists is a success, not a 404. */
   delete(id: string): Promise<void>;
+  /** Id and display name only; ids with no account are simply absent. */
+  findNamesByIds(ids: string[]): Promise<{ id: string; fullName: string }[]>;
 }
 
 const ACCOUNT_FIELDS = {
@@ -87,6 +89,13 @@ export class PrismaAccountRepository implements AccountRepository {
     return this.prisma.user.findFirst({
       where: { email, NOT: { id: exceptUserId } },
       select: { id: true },
+    });
+  }
+
+  findNamesByIds(ids: string[]): Promise<{ id: string; fullName: string }[]> {
+    return this.prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, fullName: true },
     });
   }
 

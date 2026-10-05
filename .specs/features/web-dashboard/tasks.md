@@ -3494,13 +3494,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest: devolve só id e nome; id inválido `400`; mais de 200 ids `400`; id desconhecido ausente da resposta
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest: devolve só id e nome; id inválido `400`; mais de 200 ids `400`; id desconhecido ausente da resposta
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): resolve account names for the gateway`
+**Status**: ✅ Done
 
 ---
 

@@ -163,6 +163,16 @@ export class AccountsService {
     await this.accounts.delete(userId);
   }
 
+  /**
+   * Display names for other services to show next to an id (the patient's list
+   * of professionals). Deliberately id and name only: no email, phone or role
+   * leaves through this door.
+   */
+  async lookupNames(ids: string[]): Promise<{ id: string; fullName: string }[]> {
+    if (ids.length === 0) return [];
+    return this.accounts.findNamesByIds(ids);
+  }
+
   private async assertCurrentPassword(
     storedHash: string | null,
     supplied: string | undefined,
