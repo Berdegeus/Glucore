@@ -4088,13 +4088,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] MSW: lista com `fullName: null` usa iniciais; resumo vira `CohortSummary`; `403 NO_ACTIVE_GRANT` vira `forbidden` com o código
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/infrastructure/httpProfessionalRepository.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] MSW: lista com `fullName: null` usa iniciais; resumo vira `CohortSummary`; `403 NO_ACTIVE_GRANT` vira `forbidden` com o código
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/infrastructure/httpProfessionalRepository.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(web): add the HTTP professional repository`
+**Status**: ✅ Done
 
 ---
 

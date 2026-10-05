@@ -478,7 +478,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | ARQ-03 | P1: Arquitetura limpa verificável (rubrica 37) | T12 | Implementing |
 | ARQ-04 | P1: Arquitetura limpa verificável (rubrica 37) | T17, T18, T28, T46, T79 | Implementing |
 | ARQ-05 | P1: Arquitetura limpa verificável (rubrica 37) | T20, T28, T83, T104, T173 | Implementing |
-| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34, T84, T105 | Implementing |
+| ARQ-06 | P1: Arquitetura limpa verificável (rubrica 37) | T23, T24, T33, T34, T84, T105, T174 | Implementing |
 | ARQ-07 | P1: Arquitetura limpa verificável (rubrica 37) | T27, T33, T84 | Implementing |
 | ARQ-08 | P1: Arquitetura limpa verificável (rubrica 37) | T35 | Implementing |
 | ARQ-09 | P1: Arquitetura limpa verificável (rubrica 37) | T49 | Implementing |
@@ -578,14 +578,14 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | CON-13 | P2: Consentimento do paciente pelo app (código de convite) | T153, T154, T155, T156, T157 | Implementing |
 | PRO-01 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-02 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-03 | P2: Dashboard do profissional de saúde | T72, T160, T163, T165 | Implementing |
+| PRO-03 | P2: Dashboard do profissional de saúde | T72, T160, T163, T165, T174 | Implementing |
 | PRO-04 | P2: Dashboard do profissional de saúde | T171 | Implementing |
 | PRO-05 | P2: Dashboard do profissional de saúde | - | Pending |
 | PRO-06 | P2: Dashboard do profissional de saúde | T172 | Implementing |
 | PRO-07 | P2: Dashboard do profissional de saúde | T172 | Implementing |
 | PRO-08 | P2: Dashboard do profissional de saúde | - | Pending |
-| PRO-09 | P2: Dashboard do profissional de saúde | T163 | Implementing |
-| PRO-10 | P2: Dashboard do profissional de saúde | T59, T62, T162, T163, T166 | Implementing |
+| PRO-09 | P2: Dashboard do profissional de saúde | T163, T174 | Implementing |
+| PRO-10 | P2: Dashboard do profissional de saúde | T59, T62, T162, T163, T166, T174 | Implementing |
 | PRO-11 | P2: Dashboard do profissional de saúde | T149, T160, T161, T163, T164 | Implementing |
 | PRO-12 | P2: Dashboard do profissional de saúde | T144, T163, T164 | Implementing |
 | PRO-13 | P2: Dashboard do profissional de saúde | - | Pending |
