@@ -3386,13 +3386,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: 8 caracteres de um alfabeto de 32 sem `0`, `O`, `1`, `I`; usa `crypto.randomInt` (spy); normaliza minúsculas, espaços e hífen; hash estável
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/inviteCode.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: 8 caracteres de um alfabeto de 32 sem `0`, `O`, `1`, `I`; usa `crypto.randomInt` (spy); normaliza minúsculas, espaços e hífen; hash estável
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/inviteCode.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(glucose-service): generate invite codes`
+**Status**: ✅ Done
 
 ---
 
