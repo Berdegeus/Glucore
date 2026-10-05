@@ -3664,13 +3664,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: cada exceção da fonte vira a falha certa
-- [ ] Gate `quick` passa: `flutter test --no-pub test/features/sharing/data/sharing_repository_impl_test.dart`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: cada exceção da fonte vira a falha certa
+- [x] Gate `quick` passa: `flutter test --no-pub test/features/sharing/data/sharing_repository_impl_test.dart`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(app): add the sharing repository`
+**Status**: ✅ Done
 
 ---
 
