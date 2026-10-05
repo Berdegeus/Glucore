@@ -3,7 +3,9 @@ import { deregisterService, registerService } from '@glucore/shared';
 
 import { buildApp } from './app';
 import { createContainer } from './container';
+import { ensureAdminSeed } from './lib/adminSeed';
 import { loadEnv } from './lib/env';
+import { BcryptPasswordHasher } from './lib/passwordHasher';
 import { prisma } from './lib/prisma';
 
 const SERVICE_NAME = 'auth';
@@ -21,11 +23,17 @@ function consulUrl(): string | undefined {
  * Process bootstrap. Everything that assembles the application lives in
  * `app.ts`; this file only reads the environment and binds the port.
  *
- * `loadEnv` throws on bad configuration rather than exiting, so the exit code is
- * decided here — a server with no JWT_SECRET must still refuse to start.
+ * `loadEnv` and `ensureAdminSeed` throw on bad configuration rather than
+ * exiting, so the exit code is decided here — a server with no JWT_SECRET must
+ * still refuse to start.
  */
-function main(): void {
+async function main(): Promise<void> {
   const env = loadEnv();
+
+  // Before `listen`: a production boot that cannot create the first
+  // administrator must not start serving (REG-09, REG-10).
+  await ensureAdminSeed(prisma, process.env, new BcryptPasswordHasher(env.bcryptRounds));
+
   const app = buildApp({
     corsOrigins: env.corsOrigins,
     requestLogging: true,
@@ -77,9 +85,7 @@ function main(): void {
   process.on('SIGINT', () => void shutdown('SIGINT'));
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error: unknown) => {
   console.error(`FATAL: ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
-}
+});

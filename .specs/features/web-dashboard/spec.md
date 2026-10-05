@@ -561,8 +561,8 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | REG-06 | P2: Cadastro do profissional de saúde | T128, T130, T136 | Implementing |
 | REG-07 | P2: Cadastro do profissional de saúde | T136 | Implementing |
 | REG-08 | P2: Cadastro do profissional de saúde | T129 | Implementing |
-| REG-09 | P2: Cadastro do profissional de saúde | - | Pending |
-| REG-10 | P2: Cadastro do profissional de saúde | - | Pending |
+| REG-09 | P2: Cadastro do profissional de saúde | T139 | Implementing |
+| REG-10 | P2: Cadastro do profissional de saúde | T139 | Implementing |
 | CON-01 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | CON-02 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |
 | CON-03 | P2: Consentimento do paciente pelo app (código de convite) | - | Pending |

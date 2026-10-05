@@ -3340,15 +3340,16 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração: cria quando não há admin; não duplica em nova subida; não cria quando já existe outro admin
-- [ ] Produção com variável faltando ou senha fraca lança erro que nomeia a variável; a senha nunca aparece em log (spy no console)
-- [ ] `.env.example` documenta as duas variáveis
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Integração: cria quando não há admin; não duplica em nova subida; não cria quando já existe outro admin
+- [x] Produção com variável faltando ou senha fraca lança erro que nomeia a variável; a senha nunca aparece em log (spy no console)
+- [x] `.env.example` documenta as duas variáveis
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(auth-service): seed the first administrator`
+**Status**: ✅ Done
 
 ---
 
