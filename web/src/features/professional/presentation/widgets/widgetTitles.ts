@@ -10,6 +10,7 @@ export const PRO_KPI_STALE_TITLE = 'Sem leitura recente';
 export const PRO_KPI_STALE_NOTE = 'sem leitura há mais de 24 h';
 export const PRO_PATIENTS_TABLE_TITLE = 'Pacientes';
 export const PRO_TIR_BY_PATIENT_TITLE = 'Zonas por paciente';
+export const PRO_RISK_SCATTER_TITLE = 'TIR × CV por paciente';
 export const PRO_REDEEM_CODE_TITLE = 'Vincular paciente por código';
 
 /** Title of each professional widget by its `titleKey`. */
@@ -21,5 +22,6 @@ export const PROFESSIONAL_WIDGET_TITLES: Readonly<Record<string, string>> = {
   'widget.pro-kpi-stale': PRO_KPI_STALE_TITLE,
   'widget.pro-patients-table': PRO_PATIENTS_TABLE_TITLE,
   'widget.pro-tir-by-patient': PRO_TIR_BY_PATIENT_TITLE,
+  'widget.pro-risk-scatter': PRO_RISK_SCATTER_TITLE,
   'widget.pro-redeem-code': PRO_REDEEM_CODE_TITLE,
 };

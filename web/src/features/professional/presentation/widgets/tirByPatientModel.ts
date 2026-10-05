@@ -1,9 +1,10 @@
 import { ZONE_COLORS } from '../../../../shared/presentation/charts/palette';
 import type { ChartRow } from '../../../../shared/presentation/charts/chartTypes';
-import { formatNumber, formatPercent } from '../../../../shared/presentation/format';
+import { formatPercent } from '../../../../shared/presentation/format';
 import type { CohortPatient, CohortSummary } from '../../domain/cohort';
 import type { ZoneShares } from '../../domain/risk';
 import type { CohortChartAlternative } from './cohortChartWidget';
+import { patientCountText } from './cohortText';
 
 type Zone = keyof ZoneShares;
 
@@ -53,9 +54,8 @@ export function tirByPatientRows(patients: readonly CohortPatient[]): ChartRow[]
 /** The sentence for screen readers and the table behind "Ver como tabela". */
 export function tirByPatientAlternative({ perPatient }: CohortSummary): CohortChartAlternative {
   const labels = uniqueLabels(perPatient);
-  const count = perPatient.length;
   return {
-    summary: `Distribuição do tempo nas cinco zonas de glicose de cada um dos ${formatNumber(count, 0)} ${count === 1 ? 'paciente' : 'pacientes'}.`,
+    summary: `Distribuição do tempo nas cinco zonas de glicose de cada um dos ${patientCountText(perPatient.length)}.`,
     columns: TIR_BY_PATIENT_COLUMNS,
     rows: perPatient.map((patient, index) => [labels[index] ?? patient.displayName, ...ZONES.map((zone) => formatPercent(patient.zoneDistribution[zone]))]),
   };

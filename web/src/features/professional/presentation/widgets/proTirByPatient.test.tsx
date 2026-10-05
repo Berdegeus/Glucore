@@ -7,6 +7,7 @@ import ProTirByPatient, { PRO_TIR_BY_PATIENT_TITLE, proTirByPatientDefinition } 
 
 const NBSP = ' ';
 const pct = (value: number) => `${value.toFixed(1).replace('.', ',')}${NBSP}%`;
+const ZONE_NAMES = ['Muito baixa', 'Baixa', 'No alvo', 'Alta', 'Muito alta'];
 const ZONES_OF_FIXTURE = [pct(0), pct(2), pct(78), pct(18), pct(2)];
 
 describeCohortChart({
@@ -22,13 +23,20 @@ describeCohortChart({
 });
 
 describe('pro-tir-by-patient figure (PRO-10)', () => {
-  it('names the five zones in order in the legend and draws one stacked bar per patient in the zone hues', async () => {
-    const { container } = renderProfessionalWidget(<ProTirByPatient size="M" />);
+  it('names the five zones in the legend, from very low to very high', async () => {
+    renderProfessionalWidget(<ProTirByPatient size="M" />);
 
-    const region = within(await screen.findByRole('region', { name: PRO_TIR_BY_PATIENT_TITLE }));
-    const legend = (await region.findAllByRole('listitem')).map((item) => item.textContent);
-    expect(legend).toEqual(['Muito baixa', 'Baixa', 'No alvo', 'Alta', 'Muito alta']);
+    const legend = await within(await screen.findByRole('region', { name: PRO_TIR_BY_PATIENT_TITLE })).findAllByRole('listitem');
+
+    expect(legend.map((item) => item.textContent)).toEqual(ZONE_NAMES);
+  });
+
+  it('draws the segments of each patient in the hues of their zones', async () => {
+    const { container } = renderProfessionalWidget(<ProTirByPatient size="M" />);
+    await screen.findByRole('button', { name: 'Ver como tabela' });
+
     const fills = [...container.querySelectorAll('.recharts-bar-rectangle path')].map((bar) => bar.getAttribute('fill'));
+
     // The fixture has no very low share, so each of the two patients has the four segments above it; Recharts lists them zone by zone.
     expect(fills).toEqual(ZONE_COLORS.slice(1).flatMap((color) => [color, color]));
   });
