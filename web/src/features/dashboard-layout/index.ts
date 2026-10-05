@@ -5,4 +5,8 @@ export type { WidgetDefinition, WidgetSize } from './domain/layout';
 export { allDefinitions, componentFor, definitionFor, definitionsForRole, registerWidget } from './presentation/widgetRegistry';
 export type { WidgetProps } from './presentation/widgetRegistry';
 export { SKELETON_HEIGHT, WidgetShell } from './presentation/widgetShell';
+export { DashboardGrid, GridItem } from './presentation/dashboardGrid';
+export { LayoutServicesProvider } from './presentation/layoutServices';
+export { useLayout } from './presentation/useLayout';
+export { UNAVAILABLE_WIDGET_TITLE, WidgetSlot } from './presentation/widgetSlot';
 export type { WidgetState } from './presentation/widgetShell';

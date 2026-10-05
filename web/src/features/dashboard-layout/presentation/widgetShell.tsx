@@ -15,7 +15,7 @@ export type WidgetState =
   /** The data source failed; the widget offers "Tentar novamente" (LAY-15). */
   | { kind: 'error'; onRetry: () => void; message?: string };
 
-interface BoundaryProps {
+export interface BoundaryProps {
   children: ReactNode;
   render(retry: () => void): ReactNode;
 }
@@ -25,7 +25,7 @@ interface BoundaryState {
 }
 
 /** Catches a widget that throws while rendering, so it takes down only its own cell (LAY-15). */
-class WidgetErrorBoundary extends Component<BoundaryProps, BoundaryState> {
+export class WidgetErrorBoundary extends Component<BoundaryProps, BoundaryState> {
   override state: BoundaryState = { failed: false };
 
   static getDerivedStateFromError(): BoundaryState {

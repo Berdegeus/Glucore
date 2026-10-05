@@ -65,6 +65,25 @@ describe('createContainer (ARQ-08)', () => {
     expect(params).toEqual({ from: '2026-08-05', to: '2026-08-06', tz: timeZone.timeZone() });
   });
 
+  it('exposes the diary use case, wired to /api/v1/readings, /carbs and /insulin', async () => {
+    const readTime = Date.UTC(2026, 7, 5, 12, 0);
+    server.use(
+      http.get(`${API}/readings`, () => HttpResponse.json([{ value: 110, timestampMs: readTime, trend: 'FLAT', rate: 0, alarmCode: null }])),
+      http.get(`${API}/carbs`, () => HttpResponse.json([{ id: 'c1', grams: 30, description: 'Pão', timeMs: readTime }])),
+      http.get(`${API}/insulin`, () => HttpResponse.json([{ id: 'i1', units: 4, type: 'RAPID', timeMs: readTime, dayOfWeek: 'WEDNESDAY' }])),
+    );
+    const { useCases, timeZone } = createContainer({ apiUrl: HOST });
+
+    expect(Object.keys(useCases.patientDiary)).toEqual(['loadDayDetail']);
+
+    const diary = await useCases.patientDiary.loadDayDetail();
+    const [day] = diary.days;
+
+    expect(day).toBeDefined();
+    const detail = diary.detailOf(day as string);
+    expect([detail.readings.length, detail.carbs.length, detail.insulin.length, detail.timeZone]).toEqual([1, 1, 1, timeZone.timeZone()]);
+  });
+
   it('builds one SessionEventBus, shared with the HTTP client', async () => {
     server.use(http.get(`${API}/me`, () => HttpResponse.json({ error: 'x', code: 'TOKEN_INVALID' }, { status: 401 })));
     const container = createContainer({ apiUrl: HOST });
