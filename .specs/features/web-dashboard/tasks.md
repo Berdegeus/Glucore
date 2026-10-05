@@ -5161,14 +5161,15 @@ Achados da execução que viraram tarefa. Cada uma depende só de tarefas já co
 
 **Done when**:
 
-- [ ] `asyncUtilTimeout` configurado (valor justificado em comentário, abaixo do `testTimeout`) e nenhum teste alterado
-- [ ] Os dois testes citados passam 5 vezes seguidas e dentro de `npm run test:coverage` completo
-- [ ] Gate `full` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage`
-- [ ] A contagem total da suíte não cai
+- [x] `asyncUtilTimeout` configurado (valor justificado em comentário, abaixo do `testTimeout`) e nenhum teste alterado
+- [x] Os dois testes citados passam 5 vezes seguidas e dentro de `npm run test:coverage` completo
+- [x] Gate `full` passa: `cd web && npm run typecheck && npm run lint && npm run lint:arch && npm run test:coverage`
+- [x] A contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: full
 **Commit**: `test(web): raise the async query timeout for loaded machines`
+**Status**: ✅ Done
 
 ---
 
