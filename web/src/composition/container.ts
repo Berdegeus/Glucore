@@ -11,6 +11,9 @@ import { createLoadDayDetail, type DiaryUseCases } from '../features/patient-das
 import { createLoadPatientSummary, type SummaryUseCases } from '../features/patient-dashboard/application/loadPatientSummary';
 import { HttpDiaryRepository } from '../features/patient-dashboard/infrastructure/httpDiaryRepository';
 import { HttpSummaryRepository } from '../features/patient-dashboard/infrastructure/httpSummaryRepository';
+import { createProfessionalUseCases, type ProfessionalUseCases } from '../features/professional/application/professionalUseCases';
+import { HttpProfessionalRepository } from '../features/professional/infrastructure/httpProfessionalRepository';
+import { HttpRedeemRepository } from '../features/professional/infrastructure/httpRedeemRepository';
 import { createRegisterProfessional, type RegistrationUseCases } from '../features/registration/application/registerProfessional';
 import { HttpRegistrationRepository } from '../features/registration/infrastructure/httpRegistrationRepository';
 import { allDefinitions } from '../features/dashboard-layout/presentation/widgetRegistry';
@@ -36,6 +39,7 @@ export interface Container {
   useCases: {
     auth: AuthUseCases;
     registration: RegistrationUseCases;
+    professional: ProfessionalUseCases;
     layout: LayoutUseCases;
     summary: SummaryUseCases;
     patientDiary: DiaryUseCases;
@@ -64,6 +68,8 @@ export function createContainer(env: AppEnv): Container {
   const sessions = new HttpSessionRepository(http);
   const accounts = new HttpAccountRepository(http);
   const registrations = new HttpRegistrationRepository(http);
+  const professionals = new HttpProfessionalRepository(http);
+  const redemptions = new HttpRedeemRepository(http);
   const layouts = new HttpLayoutRepository(http);
   const summaries = new HttpSummaryRepository(http);
   const diary = new HttpDiaryRepository(http);
@@ -87,6 +93,7 @@ export function createContainer(env: AppEnv): Container {
           resolveSession: (token) => resolveSession(token, { accounts, expiryReader }),
         }),
       },
+      professional: createProfessionalUseCases({ professionals, redemptions, timeZone }),
       // The registry is read at load time: widgets register when their modules load.
       layout: createLayoutUseCases({ layouts, catalog: allDefinitions }),
       summary: { loadPatientSummary: createLoadPatientSummary({ summaries, timeZone }) },

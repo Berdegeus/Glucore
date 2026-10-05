@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cohortDto, patientPageDto } from '../test/professionalFakes';
 import { server } from '../test/server';
 import { summaryFixture } from '../test/summaryFakes';
 import { SessionEventBus } from '../shared/infrastructure/events/sessionEventBus';
@@ -62,6 +63,40 @@ describe('createContainer (ARQ-08)', () => {
     expect(session.account.role).toBe('HEALTH_PROFESSIONAL');
     expect(session.expiresAt).toEqual(new Date('2026-05-03T12:30:00.000Z'));
     expect(container.tokenStore.read()).toBe(token);
+  });
+
+  it('exposes the professional use cases, wired to /api/v1/professional/* and /sharing/redeem with the browser zone', async () => {
+    const seen: Record<string, unknown> = {};
+    server.use(
+      http.get(`${API}/professional/patients`, ({ request }) => {
+        seen.patients = Object.fromEntries(new URL(request.url).searchParams);
+        return HttpResponse.json(patientPageDto());
+      }),
+      http.get(`${API}/professional/cohort/summary`, ({ request }) => {
+        seen.cohort = Object.fromEntries(new URL(request.url).searchParams);
+        return HttpResponse.json(cohortDto());
+      }),
+      http.post(`${API}/sharing/redeem`, async ({ request }) => {
+        seen.redeem = await request.json();
+        return HttpResponse.json({ patientId: 'p1', grantId: 'g1' }, { status: 201 });
+      }),
+    );
+    const { useCases, timeZone } = createContainer({ apiUrl: HOST });
+
+    expect(Object.keys(useCases.professional).sort()).toEqual(['loadCohort', 'loadPatients', 'redeemInvite']);
+
+    const page = await useCases.professional.loadPatients({ days: 30 });
+    const cohort = await useCases.professional.loadCohort({ days: 7 });
+    const link = await useCases.professional.redeemInvite(' ab12 cd34 ');
+
+    expect(page.items.map((row) => row.displayName)).toEqual(['Ana Souza']);
+    expect(cohort.patientCount).toBe(2);
+    expect(link).toEqual({ patientId: 'p1', grantId: 'g1' });
+    expect(seen).toEqual({
+      patients: { days: '30', page: '1', limit: '50', tz: timeZone.timeZone() },
+      cohort: { days: '7', tz: timeZone.timeZone() },
+      redeem: { code: 'AB12CD34' },
+    });
   });
 
   it('exposes the layout use cases, wired to /api/v1/preferences/dashboard', async () => {

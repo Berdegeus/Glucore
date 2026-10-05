@@ -4130,13 +4130,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: código " ab12 cd34 " vira "AB12CD34"; período inválido não chama o repositório
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/professional/application/professionalUseCases.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: código " ab12 cd34 " vira "AB12CD34"; período inválido não chama o repositório
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/professional/application/professionalUseCases.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add professional use cases`
+**Status**: ✅ Done
 
 ---
 
