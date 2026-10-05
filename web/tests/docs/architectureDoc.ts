@@ -113,9 +113,13 @@ export function refactorHashes(doc: string): string[] {
   });
 }
 
-/** `full hash -> subject` of every commit reachable from HEAD. */
+/**
+ * `full hash -> subject` of every commit reachable from any ref. `--all`, not just HEAD: the feature reached
+ * `main` as a squash merge, so the refactor commits it cites live only on the branch the checkout fetches
+ * (`fetch-depth: 0`), and a HEAD-only log would report them as missing.
+ */
 export function gitLog(repoRoot: string): Map<string, string> {
-  const out = execFileSync('git', ['log', '--format=%H %s'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const out = execFileSync('git', ['log', '--all', '--format=%H %s'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const log = new Map<string, string>();
   for (const line of out.split('\n')) {
     const space = line.indexOf(' ');
