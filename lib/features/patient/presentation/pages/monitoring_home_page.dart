@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../sensor/domain/models.dart';
@@ -39,7 +38,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
           icon: Icons.restaurant_rounded,
           iconColor: context.glucoreColors.zoneTargetBg,
           title: l10n.monitoringCarbPopupTitle(entry.grams),
-          subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
+          subtitle: context.formatDayMonthTime(entry.time),
           onEdit: () {
             Navigator.pop(sheetCtx);
             Navigator.of(context).push(
@@ -93,7 +92,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
             entry.units.toStringAsFixed(1),
             entry.type.label(l10n),
           ),
-          subtitle: DateFormat('dd/MM HH:mm').format(entry.time),
+          subtitle: context.formatDayMonthTime(entry.time),
           onEdit: () {
             Navigator.pop(sheetCtx);
             Navigator.of(context).push(

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/notifications/notification_service.dart';
 import 'core/session/session_expiry_notifier.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
@@ -112,6 +113,9 @@ class _AppState extends State<App> {
           // used to sit above providers created inside AuthGate). Gated on the
           // authenticated state so they follow the login/logout lifecycle.
           builder: (context, child) {
+            NotificationService.instance.useLocale(
+              Localizations.localeOf(context),
+            );
             return BlocBuilder<AuthCubit, AuthState>(
               buildWhen: (previous, current) =>
                   previous.status != current.status,

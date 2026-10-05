@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glucore/l10n/l10n.dart';
 import 'package:glucore/l10n/localized_values.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../cubit/patient_cubit.dart';
@@ -156,7 +155,7 @@ class _InsulinEditPageState extends State<InsulinEditPage> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(l10n.genericTimeLabel(
-                  DateFormat('dd/MM HH:mm').format(_selectedTime),
+                  context.formatDayMonthTime(_selectedTime),
                 )),
                 trailing: TextButton(
                   onPressed: _pickDateTime,

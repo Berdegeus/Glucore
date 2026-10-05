@@ -98,6 +98,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
   // ── Setup flow ────────────────────────────────────────────────────────────
 
   Widget _buildSetupFlow(BuildContext context, SensorUiState state) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -107,22 +108,24 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
           FilledButton.icon(
             onPressed: () => setState(() => _tutorialStep = 1),
             icon: const Icon(Icons.navigate_next),
-            label: const Text('Continuar'),
+            label: Text(l10n.sensorLinkContinueButton),
           ),
         ] else if (_tutorialStep == 1) ...[
           FilledButton.icon(
             onPressed: _openScanner,
             icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Escanear código da caixa'),
+            label: Text(l10n.sensorLinkScanBoxButton),
           ),
           const SizedBox(height: 8),
-          const Center(child: Text('ou cole manualmente:')),
+          Center(child: Text(l10n.sensorLinkPasteManuallyLabel)),
           const SizedBox(height: 8),
           TextField(
             controller: _barcodeController,
             decoration: InputDecoration(
-              labelText: 'Código do sensor',
-              hintText: _isAccuChek ? 'Código da tampa (46 caracteres)' : '(01)069...',
+              labelText: l10n.sensorLinkCodeLabel,
+              hintText: _isAccuChek
+                  ? l10n.sensorLinkAccuChekCodeHint
+                  : '(01)069...',
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -137,7 +140,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
                     setState(() => _tutorialStep = 2);
                   }
                 : null,
-            child: const Text('Registrar sensor'),
+            child: Text(l10n.sensorPageRegisterButton),
           ),
         ] else ...[
           const Center(child: CircularProgressIndicator()),
@@ -145,8 +148,8 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
           Center(
             child: Text(
               _isAccuChek
-                  ? 'Aguardando conexão. Confirme o pareamento quando o Android pedir o PIN.'
-                  : 'Aguardando conexão Bluetooth…',
+                  ? l10n.sensorLinkWaitingPinBody
+                  : l10n.sensorLinkWaitingBluetoothBody,
               textAlign: TextAlign.center,
             ),
           ),
@@ -168,8 +171,10 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Sensor vinculado',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  l10n.sensorLinkLinkedTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 4),
                 Text(
                   state.session!.sensorId,
@@ -264,8 +269,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
         icon = Icons.bluetooth_connected;
         break;
       case SensorConnectionStatus.pairing:
-        subtitle =
-            'Confirme o pareamento no diálogo do sistema e digite o PIN do sensor.';
+        subtitle = l10n.sensorLinkPairingSubtitle;
         color = context.glucoreColors.brandSecondary;
         icon = Icons.password;
         break;
@@ -322,45 +326,50 @@ class _TutorialStepper extends StatelessWidget {
   final int currentStep;
   final bool isAccuChek;
 
-  static const _sibionicsSteps = [
+  static List<(IconData, String, String)> _sibionicsSteps(
+    AppLocalizations l10n,
+  ) => [
     (
       Icons.inventory_2_outlined,
-      'Retire o sensor da caixa',
-      'Mantenha o código de barras acessível.',
+      l10n.sensorLinkSibionicsStep1Title,
+      l10n.sensorLinkSibionicsStep1Body,
     ),
     (
       Icons.qr_code_scanner,
-      'Escaneie o código da caixa',
-      'Aponte a câmera para o código data matrix na caixa do sensor.',
+      l10n.sensorLinkScanBoxStepTitle,
+      l10n.sensorLinkSibionicsStep2Body,
     ),
     (
       Icons.bluetooth_searching,
-      'Aguarde a conexão Bluetooth',
-      'O sensor será detectado e vinculado automaticamente.',
+      l10n.sensorLinkSibionicsStep3Title,
+      l10n.sensorLinkSibionicsStep3Body,
     ),
   ];
 
-  static const _accuChekSteps = [
+  static List<(IconData, String, String)> _accuChekSteps(
+    AppLocalizations l10n,
+  ) => [
     (
       Icons.inventory_2_outlined,
-      'Aplique o sensor e guarde a tampa',
-      'O código data matrix fica na tampa azul do aplicador.',
+      l10n.sensorLinkAccuChekStep1Title,
+      l10n.sensorLinkAccuChekStep1Body,
     ),
     (
       Icons.qr_code_scanner,
-      'Escaneie o código da tampa',
-      'Aponte a câmera para o código data matrix na tampa azul.',
+      l10n.sensorLinkAccuChekStep2Title,
+      l10n.sensorLinkAccuChekStep2Body,
     ),
     (
       Icons.password,
-      'Pareie quando o Android pedir o PIN',
-      'Digite o PIN do sensor no diálogo de pareamento do sistema.',
+      l10n.sensorLinkAccuChekStep3Title,
+      l10n.sensorLinkAccuChekStep3Body,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final steps = isAccuChek ? _accuChekSteps : _sibionicsSteps;
+    final l10n = context.l10n;
+    final steps = isAccuChek ? _accuChekSteps(l10n) : _sibionicsSteps(l10n);
     return Column(
       children: List.generate(steps.length, (i) {
         final (icon, title, subtitle) = steps[i];
@@ -501,7 +510,7 @@ class _ScannerSheetState extends State<_ScannerSheet> {
         children: [
           const SizedBox(height: 12),
           Text(
-            'Escaneie o código da caixa',
+            context.l10n.sensorLinkScanBoxStepTitle,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -520,7 +529,7 @@ class _ScannerSheetState extends State<_ScannerSheet> {
           const SizedBox(height: 12),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.genericCancelButton),
           ),
           const SizedBox(height: 8),
         ],

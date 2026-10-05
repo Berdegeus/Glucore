@@ -5,6 +5,7 @@ import '../widgets/glucore_messenger.dart';
 import '../widgets/patient_widgets.dart';
 import 'carb_entry_page.dart';
 import 'insulin_entry_page.dart';
+import '../../../../l10n/l10n.dart';
 
 class AddObservationSheet extends StatelessWidget {
   const AddObservationSheet({super.key});
@@ -22,7 +23,7 @@ class AddObservationSheet extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Adicionar observação',
+                  context.l10n.addObservationTitle,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -48,7 +49,7 @@ class AddObservationSheet extends StatelessWidget {
                 _OptionTile(
                   icon: Icons.restaurant_rounded,
                   color: context.glucoreColors.zoneTargetBg,
-                  label: 'Refeição',
+                  label: context.l10n.observationMeal,
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(
@@ -62,7 +63,7 @@ class AddObservationSheet extends StatelessWidget {
                 _OptionTile(
                   icon: Icons.vaccines_outlined,
                   color: context.glucoreColors.brandBlue,
-                  label: 'Insulina',
+                  label: context.l10n.observationInsulin,
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(
@@ -76,21 +77,31 @@ class AddObservationSheet extends StatelessWidget {
                 _OptionTile(
                   icon: Icons.directions_run_rounded,
                   color: context.glucoreColors.brandAmber,
-                  label: 'Exercício',
+                  label: context.l10n.observationExercise,
                   onTap: () {
                     Navigator.of(context).pop();
                     // TODO: implement ExerciseEntryPage
-                    GlucoreMessenger.info(context, 'Exercício — em breve');
+                    GlucoreMessenger.info(
+                      context,
+                      context.l10n.observationComingSoon(
+                        context.l10n.observationExercise,
+                      ),
+                    );
                   },
                 ),
                 _OptionTile(
                   icon: Icons.edit_note_rounded,
                   color: context.glucoreColors.inkMuted,
-                  label: 'Nota livre',
+                  label: context.l10n.observationNote,
                   onTap: () {
                     Navigator.of(context).pop();
                     // TODO: implement NoteEntryPage
-                    GlucoreMessenger.info(context, 'Nota livre — em breve');
+                    GlucoreMessenger.info(
+                      context,
+                      context.l10n.observationComingSoon(
+                        context.l10n.observationNote,
+                      ),
+                    );
                   },
                 ),
               ],

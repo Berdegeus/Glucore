@@ -12,6 +12,25 @@ extension BuildContextFormatting on BuildContext {
     final locale = Localizations.localeOf(this).toString();
     return DateFormat.yMd(locale).add_Hm().format(value);
   }
+
+  /// Day/month plus time (e.g. `04/10 16:13` in pt_BR), in the app locale.
+  String formatDayMonthTime(DateTime value) {
+    final locale = Localizations.localeOf(this).toString();
+    return DateFormat.Md(locale).add_Hm().format(value);
+  }
+
+  /// "Today"/"Yesterday" for the last two days, otherwise [pattern] in the
+  /// app locale.
+  String formatDayLabel(DateTime dt, {String pattern = 'd MMM'}) {
+    final l10n = AppLocalizations.of(this)!;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final d = DateTime(dt.year, dt.month, dt.day);
+    if (d == today) return l10n.dayToday;
+    if (d == today.subtract(const Duration(days: 1))) return l10n.dayYesterday;
+    final locale = Localizations.localeOf(this).toString();
+    return DateFormat(pattern, locale).format(dt);
+  }
 }
 
 extension AuthErrorLocalization on AuthError {

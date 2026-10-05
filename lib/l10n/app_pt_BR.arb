@@ -414,5 +414,118 @@
   "monitoringNoSensorErrorTitle": "Erro de conexão",
   "monitoringNoSensorErrorSubtitle": "Verifique o sensor e tente novamente",
   "monitoringNoSensorDefaultTitle": "Sem sensor conectado",
-  "monitoringNoSensorDefaultSubtitle": "Toque no ícone Bluetooth para parear"
+  "monitoringNoSensorDefaultSubtitle": "Toque no ícone Bluetooth para parear",
+  "splashTagline": "Monitoramento contínuo de glicose",
+  "shellTabMonitor": "Monitor",
+  "diaryTitle": "Diário",
+  "reportsTitle": "Relatórios",
+  "notificationsTitle": "Notificações",
+  "notificationsEmpty": "Sem notificações",
+  "sensorChoiceTitle": "Escolher sensor",
+  "sensorChoiceSubtitle": "Selecione a marca do seu sensor CGM",
+  "historyEmpty": "Sem leituras registradas",
+  "historyTirLabel": "TIR {value}%",
+  "@historyTirLabel": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "dayToday": "Hoje",
+  "dayYesterday": "Ontem",
+  "addObservationTitle": "Adicionar observação",
+  "observationMeal": "Refeição",
+  "observationInsulin": "Insulina",
+  "observationExercise": "Exercício",
+  "observationNote": "Nota livre",
+  "observationComingSoon": "{name} — em breve",
+  "@observationComingSoon": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "diaryCarbDetail": "{grams} g carb",
+  "@diaryCarbDetail": {
+    "placeholders": {
+      "grams": {}
+    }
+  },
+  "diaryInsulinBolus": "Insulina bolus",
+  "diaryInsulinBasal": "Insulina basal",
+  "diaryInsulinCorrection": "Correção",
+  "diaryEmptyTitle": "Nenhuma observação ainda",
+  "diaryEmptySubtitle": "Use o botão + para registrar refeições e insulina",
+  "reportsIndicatorsHeader": "INDICADORES",
+  "reportsAverageGlucoseLabel": "Glicose média",
+  "reportsGmiEstimatedLabel": "GMI estimado",
+  "reportsTimeInTargetHeader": "TEMPO NO ALVO",
+  "reportsZoneUrgentLow": "Baixo urgente",
+  "reportsZoneLow": "Baixo",
+  "reportsZoneTarget": "No alvo",
+  "reportsZoneHigh": "Alto",
+  "reportsZoneUrgentHigh": "Alto urgente",
+  "reportsEmptyPeriod": "Sem leituras no período",
+  "chartWaitingReadings": "Aguardando leituras...",
+  "birthDateHint": "dd/mm/aaaa",
+  "notificationChannelName": "Status do Sensor",
+  "notificationChannelDescription": "Alertas de conexão do sensor CGM",
+  "notificationSensorDisconnectedBody": "O sensor CGM perdeu a conexão. Toque para reconectar.",
+  "notificationGlucoseLowTitle": "Glicose baixa: {value} mg/dL",
+  "@notificationGlucoseLowTitle": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "notificationGlucoseLowBody": "Atenção: valor abaixo do limite configurado.",
+  "notificationGlucoseHighTitle": "Glicose alta: {value} mg/dL",
+  "@notificationGlucoseHighTitle": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "notificationGlucoseHighBody": "Atenção: valor acima do limite configurado.",
+  "libreTitle": "Libre 2 — Parear sensor",
+  "libreLibraryInstalledSuccess": "Biblioteca instalada com sucesso",
+  "libreStep1Title": "1. Biblioteca da Abbott",
+  "libreLibraryInstalledBody": "Biblioteca instalada. O aparelho consegue decodificar sensores Libre 2.",
+  "libreLibraryMissingBody": "O Libre 2 exige a biblioteca de algoritmos do app LibreLink. Selecione o arquivo APK do LibreLink (arm64) para extraí-la.",
+  "libreInstallingLabel": "Instalando…",
+  "libreSelectApkButton": "Selecionar APK do LibreLink",
+  "libreResultActivated": "Sensor ativado! Aguarde ~60 minutos de aquecimento e aproxime o telefone novamente.",
+  "libreResultWarmup": "Sensor em aquecimento. Aguarde o fim do período de 60 minutos.",
+  "libreResultReady": "Sensor vinculado! Inicie o monitoramento abaixo.",
+  "libreResultEnded": "Este sensor chegou ao fim da vida útil. Use um sensor novo.",
+  "libreResultNeedsLibrary": "Instale a biblioteca da Abbott (passo 1) antes de escanear.",
+  "libreResultUnsupportedLibre3": "Sensor Libre 3 detectado — apenas Libre 2 é suportado.",
+  "libreResultUnsupportedUsGen2": "Sensor Libre 2 US (gen2) não é suportado nesta versão.",
+  "libreResultReadError": "Falha na leitura NFC. Mantenha o telefone parado sobre o sensor e tente de novo.",
+  "libreResultError": "Falha ao processar o sensor. Tente novamente.",
+  "libreStep2Title": "2. Leitura NFC",
+  "libreScanningBody": "Aproxime a parte de trás do telefone do sensor e aguarde a vibração.",
+  "libreIdleBody": "Toque em iniciar e aproxime o telefone do sensor Libre 2 para ativar e habilitar o streaming Bluetooth.",
+  "libreStopScanButton": "Parar leitura",
+  "libreStartScanButton": "Iniciar leitura NFC",
+  "libreStep3Title": "3. Sensor vinculado",
+  "libreStartMonitoringButton": "Iniciar monitoramento",
+  "libreStopMonitoringButton": "Parar monitoramento",
+  "sensorLinkContinueButton": "Continuar",
+  "sensorLinkScanBoxButton": "Escanear código da caixa",
+  "sensorLinkPasteManuallyLabel": "ou cole manualmente:",
+  "sensorLinkCodeLabel": "Código do sensor",
+  "sensorLinkAccuChekCodeHint": "Código da tampa (46 caracteres)",
+  "sensorLinkWaitingPinBody": "Aguardando conexão. Confirme o pareamento quando o Android pedir o PIN.",
+  "sensorLinkWaitingBluetoothBody": "Aguardando conexão Bluetooth…",
+  "sensorLinkLinkedTitle": "Sensor vinculado",
+  "sensorLinkPairingSubtitle": "Confirme o pareamento no diálogo do sistema e digite o PIN do sensor.",
+  "sensorLinkSibionicsStep1Title": "Retire o sensor da caixa",
+  "sensorLinkSibionicsStep1Body": "Mantenha o código de barras acessível.",
+  "sensorLinkScanBoxStepTitle": "Escaneie o código da caixa",
+  "sensorLinkSibionicsStep2Body": "Aponte a câmera para o código data matrix na caixa do sensor.",
+  "sensorLinkSibionicsStep3Title": "Aguarde a conexão Bluetooth",
+  "sensorLinkSibionicsStep3Body": "O sensor será detectado e vinculado automaticamente.",
+  "sensorLinkAccuChekStep1Title": "Aplique o sensor e guarde a tampa",
+  "sensorLinkAccuChekStep1Body": "O código data matrix fica na tampa azul do aplicador.",
+  "sensorLinkAccuChekStep2Title": "Escaneie o código da tampa",
+  "sensorLinkAccuChekStep2Body": "Aponte a câmera para o código data matrix na tampa azul.",
+  "sensorLinkAccuChekStep3Title": "Pareie quando o Android pedir o PIN",
+  "sensorLinkAccuChekStep3Body": "Digite o PIN do sensor no diálogo de pareamento do sistema."
 }

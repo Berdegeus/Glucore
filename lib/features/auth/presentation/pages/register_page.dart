@@ -153,7 +153,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           l10n.profileBirthDateLabel,
                           required: false,
                         ),
-                        hintText: 'dd/mm/aaaa',
+                        hintText: l10n.birthDateHint,
                       ),
                       validator: _validateBirthDate,
                     ),

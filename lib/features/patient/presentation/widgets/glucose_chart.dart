@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../../../l10n/l10n.dart';
 
 class GlucoseChart extends StatefulWidget {
   const GlucoseChart({
@@ -119,7 +120,7 @@ class _GlucoseChartState extends State<GlucoseChart> {
         height: 180,
         child: Center(
           child: Text(
-            'Aguardando leituras...',
+            context.l10n.chartWaitingReadings,
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
@@ -492,7 +493,10 @@ class _GlucoseChartState extends State<GlucoseChart> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 icon: const Icon(Icons.zoom_out_map_rounded, size: 16),
-                label: const Text('Reset', style: TextStyle(fontSize: 12)),
+                label: Text(
+                  context.l10n.genericResetButton,
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             ),
         ],

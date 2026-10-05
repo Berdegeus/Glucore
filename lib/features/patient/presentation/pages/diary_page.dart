@@ -11,6 +11,8 @@ import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
+import '../../../../l10n/l10n.dart';
+import '../../../../l10n/localized_values.dart';
 
 class DiaryPage extends StatelessWidget {
   const DiaryPage({super.key});
@@ -18,7 +20,7 @@ class DiaryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserAppBar(title: const Text('Diário')),
+      appBar: UserAppBar(title: Text(context.l10n.diaryTitle)),
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           final groups = _buildDayGroups(context, state);
@@ -47,28 +49,34 @@ class DiaryPage extends StatelessWidget {
     final items = <_DiaryItem>[];
 
     for (final c in state.carbs) {
-      items.add(_DiaryItem(
-        time: c.time,
-        icon: Icons.restaurant_rounded,
-        color: context.glucoreColors.zoneTargetBg,
-        title: c.description.isEmpty ? 'Refeição' : c.description,
-        detail: '${c.grams} g carb',
-        onTap: () => Navigator.of(context).push(
-          buildPatientScopedRoute(context, CarbEditPage(entry: c)),
+      items.add(
+        _DiaryItem(
+          time: c.time,
+          icon: Icons.restaurant_rounded,
+          color: context.glucoreColors.zoneTargetBg,
+          title: c.description.isEmpty
+              ? context.l10n.observationMeal
+              : c.description,
+          detail: context.l10n.diaryCarbDetail(c.grams),
+          onTap: () => Navigator.of(
+            context,
+          ).push(buildPatientScopedRoute(context, CarbEditPage(entry: c))),
         ),
-      ));
+      );
     }
     for (final ins in state.insulin) {
-      items.add(_DiaryItem(
-        time: ins.time,
-        icon: Icons.vaccines_outlined,
-        color: context.glucoreColors.brandBlue,
-        title: _insulinLabel(ins.type),
-        detail: '${ins.units.toStringAsFixed(1)} UI · ${ins.dayOfWeek}',
-        onTap: () => Navigator.of(context).push(
-          buildPatientScopedRoute(context, InsulinEditPage(entry: ins)),
+      items.add(
+        _DiaryItem(
+          time: ins.time,
+          icon: Icons.vaccines_outlined,
+          color: context.glucoreColors.brandBlue,
+          title: _insulinLabel(context, ins.type),
+          detail: '${ins.units.toStringAsFixed(1)} UI · ${ins.dayOfWeek}',
+          onTap: () => Navigator.of(
+            context,
+          ).push(buildPatientScopedRoute(context, InsulinEditPage(entry: ins))),
         ),
-      ));
+      );
     }
 
     items.sort((a, b) => b.time.compareTo(a.time));
@@ -79,7 +87,11 @@ class DiaryPage extends StatelessWidget {
     for (final item in items) {
       final dayKey = DateFormat('yyyy-MM-dd').format(item.time);
       if (dayKey != lastDay) {
-        groups.add(_DayGroup(label: _dayLabel(item.time)));
+        groups.add(
+          _DayGroup(
+            label: context.formatDayLabel(item.time, pattern: 'EEEE, d MMM'),
+          ),
+        );
         lastDay = dayKey;
       }
       groups.last.items.add(item);
@@ -88,20 +100,12 @@ class DiaryPage extends StatelessWidget {
     return groups;
   }
 
-  String _insulinLabel(InsulinType type) => switch (type) {
-        InsulinType.bolus => 'Insulina bolus',
-        InsulinType.basal => 'Insulina basal',
-        InsulinType.correction => 'Correção',
+  String _insulinLabel(BuildContext context, InsulinType type) =>
+      switch (type) {
+        InsulinType.bolus => context.l10n.diaryInsulinBolus,
+        InsulinType.basal => context.l10n.diaryInsulinBasal,
+        InsulinType.correction => context.l10n.diaryInsulinCorrection,
       };
-
-  String _dayLabel(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final d = DateTime(dt.year, dt.month, dt.day);
-    if (d == today) return 'Hoje';
-    if (d == today.subtract(const Duration(days: 1))) return 'Ontem';
-    return DateFormat('EEEE, d MMM', 'pt_BR').format(dt);
-  }
 }
 
 class _DayGroup {
@@ -295,7 +299,7 @@ class _EmptyDiary extends StatelessWidget {
           Icon(Icons.book_outlined, size: 48, color: Colors.grey.shade400),
           const SizedBox(height: 12),
           Text(
-            'Nenhuma observação ainda',
+            context.l10n.diaryEmptyTitle,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -304,8 +308,11 @@ class _EmptyDiary extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Use o botão + para registrar refeições e insulina',
-            style: TextStyle(fontSize: 13, color: context.glucoreColors.inkMuted),
+            context.l10n.diaryEmptySubtitle,
+            style: TextStyle(
+              fontSize: 13,
+              color: context.glucoreColors.inkMuted,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
