@@ -1,6 +1,11 @@
 import type { PrismaClient } from '@prisma/client';
 
 import type { DateRange } from '../dashboard/dashboard.repository';
+import {
+  listGrantedPatientIds,
+  type GrantedPatientPage,
+  type PatientPageRequest,
+} from './professional.listing';
 import { mapPatientMetricsRow, type PatientMetrics, type RawPatientMetricsRow } from './professional.mapper';
 import { cohortCtes } from './professional.sql';
 
@@ -16,10 +21,24 @@ export interface ICohortRepository {
    * is unordered; an id with no readings still answers (null metrics, zero counts).
    */
   getPatientMetrics(ids: readonly string[], range: DateRange): Promise<PatientMetrics[]>;
+  /** One page of the professional's actively granted patients, with the total across pages (PRO-11, PRO-16). */
+  listGrantedPatientIds(
+    professionalId: string,
+    now: Date,
+    request?: PatientPageRequest,
+  ): Promise<GrantedPatientPage>;
 }
 
 export class PrismaCohortRepository implements ICohortRepository {
   constructor(private readonly prisma: PrismaClient) {}
+
+  listGrantedPatientIds(
+    professionalId: string,
+    now: Date,
+    request?: PatientPageRequest,
+  ): Promise<GrantedPatientPage> {
+    return listGrantedPatientIds(this.prisma, professionalId, now, request);
+  }
 
   async getPatientMetrics(ids: readonly string[], range: DateRange): Promise<PatientMetrics[]> {
     if (ids.length === 0) return [];
