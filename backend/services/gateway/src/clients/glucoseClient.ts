@@ -31,4 +31,21 @@ export class GlucoseClient {
   deletePatient(userId: string): Promise<void> {
     return this.http.request('DELETE', `/internal/patients/${userId}`, GATEWAY_SERVICE_IDENTITY);
   }
+
+  /**
+   * Same identity rule as `createPatient`: the token's `sub` is the userId the
+   * account call just produced, and the role is fixed here, not taken from the
+   * caller, because only a professional registration reaches this method.
+   */
+  createProfessional(userId: string, input: Record<string, unknown>): Promise<unknown> {
+    return this.http.request('POST', '/internal/professionals', { sub: userId, role: 'HEALTH_PROFESSIONAL' }, input);
+  }
+
+  getProfessional(userId: string): Promise<unknown> {
+    return this.http.request('GET', '/internal/professionals/me', { sub: userId, role: 'HEALTH_PROFESSIONAL' });
+  }
+
+  deleteProfessional(userId: string): Promise<void> {
+    return this.http.request('DELETE', `/internal/professionals/${userId}`, GATEWAY_SERVICE_IDENTITY);
+  }
 }
