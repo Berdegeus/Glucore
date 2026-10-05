@@ -538,8 +538,8 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PAC-17 | P1: Dashboard do paciente com os dados do app | T86 | Implementing |
 | PAC-18 | P1: Dashboard do paciente com os dados do app | T110 | Implementing |
 | DEP-01 | P1: Publicação na Vercel | T10 | Implementing |
-| DEP-02 | P1: Publicação na Vercel | - | Pending |
-| DEP-03 | P1: Publicação na Vercel | - | Pending |
+| DEP-02 | P1: Publicação na Vercel | T121 | Implementing |
+| DEP-03 | P1: Publicação na Vercel | T121 | Implementing |
 | DEP-04 | P1: Publicação na Vercel | T10 | Implementing |
 | DEP-05 | P1: Publicação na Vercel | T16 | Implementing |
 | DEP-06 | P1: Publicação na Vercel | - | Pending |

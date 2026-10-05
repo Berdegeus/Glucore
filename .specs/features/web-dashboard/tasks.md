@@ -2953,13 +2953,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste `web/tests/deploy/vercelConfig.test.ts`: a regra casa `/paciente` e não casa `/assets/x.js`; CSP com `default-src 'self'`, `script-src 'self'`, `connect-src` só com a origem da API e `frame-ancestors 'none'`; `nosniff`, `Referrer-Policy` e `Permissions-Policy` presentes
-- [ ] Gate `quick` passa: `cd web && npx vitest run tests/deploy/vercelConfig.test.ts`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Teste `web/tests/deploy/vercelConfig.test.ts`: a regra casa `/paciente` e não casa `/assets/x.js`; CSP com `default-src 'self'`, `script-src 'self'`, `connect-src` só com a origem da API e `frame-ancestors 'none'`; `nosniff`, `Referrer-Policy` e `Permissions-Policy` presentes
+- [x] Gate `quick` passa: `cd web && npx vitest run tests/deploy/vercelConfig.test.ts`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add Vercel routing and security headers`
+**Status**: ✅ Done
 
 ---
 
