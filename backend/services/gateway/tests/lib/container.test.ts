@@ -34,6 +34,7 @@ describe('createContainer — registry selection (phase 5)', () => {
     expect(container.authClient).toBeDefined();
     expect(container.glucoseClient).toBeDefined();
     expect(container.registerSaga).toBeDefined();
+    expect(container.registerProfessionalSaga).toBeDefined();
     expect(container.authenticate).toBeTypeOf('function');
   });
 });

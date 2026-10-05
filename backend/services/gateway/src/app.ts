@@ -15,6 +15,8 @@ import { createContainer, type Container } from './container';
 import { MeController } from './modules/me/me.controller';
 import { createMeRouter } from './modules/me/me.routes';
 import { RegisterController } from './modules/register/register.controller';
+import { RegisterProfessionalController } from './modules/registerProfessional/registerProfessional.controller';
+import { createRegisterProfessionalRouter } from './modules/registerProfessional/registerProfessional.routes';
 import { createRegisterRouter } from './modules/register/register.routes';
 import { createProxyRoute } from './routes/routingTable';
 import { registerLimiter, strictAuthLimiter } from './middleware/rateLimiters';
@@ -61,8 +63,9 @@ const noopHealthCheck: HealthCheckable = {
  * under `/api/v1/{auth,readings,carbs,insulin,alerts,settings,dashboard,preferences}`
  * is a pure proxy, and a global body parser would consume the request stream before
  * `http-proxy-middleware` can forward it — silently sending an empty body
- * downstream on every POST. The three composition routers below
- * (`/api/v1/auth/register`, `/api/v1/me`, `/api/v1/account`) each mount their
+ * downstream on every POST. The composition routers below
+ * (`/api/v1/auth/register`, `/api/v1/auth/register/professional`, `/api/v1/me`,
+ * `/api/v1/account`) each mount their
  * own `express.json()`, scoped to just that router.
  */
 export function buildApp(options: BuildAppOptions = {}): Express {
@@ -83,6 +86,17 @@ export function buildApp(options: BuildAppOptions = {}): Express {
   // Composition, mounted before the generic auth proxy: a router only
   // handles the methods it declares (POST '/' here), so anything else under
   // /api/v1/auth/register falls through to the proxy below unchanged.
+  //
+  // The professional registration is mounted first, on its own longer path:
+  // it must never be reachable through the patient router, whose saga would
+  // create a Patient row for a professional.
+  app.use(
+    '/api/v1/auth/register/professional',
+    createRegisterProfessionalRouter(
+      new RegisterProfessionalController(container.registerProfessionalSaga),
+      registerLimiter(),
+    ),
+  );
   app.use(
     '/api/v1/auth/register',
     createRegisterRouter(new RegisterController(container.registerSaga), registerLimiter()),

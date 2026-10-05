@@ -3277,13 +3277,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Supertest com clientes falsos: `201`; `WEAK_PASSWORD` e `EMAIL_TAKEN` repassados; 21ª requisição em 15 min `429`; `role` no corpo não chega ao auth
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Supertest com clientes falsos: `201`; `WEAK_PASSWORD` e `EMAIL_TAKEN` repassados; 21ª requisição em 15 min `429`; `role` no corpo não chega ao auth
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(gateway): expose professional registration`
+**Status**: ✅ Done
 
 ---
 

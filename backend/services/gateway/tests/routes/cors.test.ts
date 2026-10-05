@@ -10,6 +10,7 @@ import { GlucoseClient } from '../../src/clients/glucoseClient';
 import { loadEnv } from '../../src/lib/env';
 import { createAuthenticate } from '../../src/middleware/authenticate';
 import { RegisterSaga } from '../../src/modules/register/register.saga';
+import { RegisterProfessionalSaga } from '../../src/modules/registerProfessional/registerProfessional.saga';
 import { TEST_INTERNAL_JWT_SECRET, TEST_JWT_SECRET } from '../helpers/testEnv';
 
 /**
@@ -41,6 +42,7 @@ function buildTestApp(corsOrigins: string[]): Express {
       authClient,
       glucoseClient,
       registerSaga: new RegisterSaga(authClient, glucoseClient),
+      registerProfessionalSaga: new RegisterProfessionalSaga(authClient, glucoseClient),
     },
   });
 }

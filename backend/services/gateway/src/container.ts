@@ -5,6 +5,7 @@ import { AuthClient } from './clients/authClient';
 import { GlucoseClient } from './clients/glucoseClient';
 import { createAuthenticate } from './middleware/authenticate';
 import { RegisterSaga } from './modules/register/register.saga';
+import { RegisterProfessionalSaga } from './modules/registerProfessional/registerProfessional.saga';
 import { loadEnv, type Env } from './lib/env';
 
 /**
@@ -19,6 +20,7 @@ export interface Container {
   authClient: AuthClient;
   glucoseClient: GlucoseClient;
   registerSaga: RegisterSaga;
+  registerProfessionalSaga: RegisterProfessionalSaga;
 }
 
 export function createContainer(env: Env = loadEnv()): Container {
@@ -39,5 +41,6 @@ export function createContainer(env: Env = loadEnv()): Container {
     authClient,
     glucoseClient,
     registerSaga: new RegisterSaga(authClient, glucoseClient),
+    registerProfessionalSaga: new RegisterProfessionalSaga(authClient, glucoseClient),
   };
 }
