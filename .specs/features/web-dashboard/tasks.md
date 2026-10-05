@@ -1692,13 +1692,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Para cada adaptador, mudar a largura simulada gera nova renderização com a largura nova
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/chartResponsive.test.tsx`
-- [ ] Pelo menos 7 testes novos passam e a contagem total da suíte não cai
+- [x] Para cada adaptador, mudar a largura simulada gera nova renderização com a largura nova
+- [x] Gate `quick` passa: `cd web && npx vitest run src/shared/presentation/charts/chartResponsive.test.tsx`
+- [x] Pelo menos 7 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `test(web): cover chart redraw on container resize`
+**Status**: ✅ Done
 
 ---
 
