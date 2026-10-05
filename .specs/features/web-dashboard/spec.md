@@ -462,8 +462,8 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
 | ACC-01 | P1: Login único e acesso por papel | T29, T30, T33, T34, T43, T137 | Implementing |
-| ACC-02 | P1: Login único e acesso por papel | T18, T42, T111 | Implementing |
-| ACC-03 | P1: Login único e acesso por papel | T42, T111 | Implementing |
+| ACC-02 | P1: Login único e acesso por papel | T18, T42, T111, T192 | Implementing |
+| ACC-03 | P1: Login único e acesso por papel | T42, T111, T192 | Implementing |
 | ACC-04 | P1: Login único e acesso por papel | T30, T42, T111 | Implementing |
 | ACC-05 | P1: Login único e acesso por papel | T17, T23, T39, T40 | Implementing |
 | ACC-06 | P1: Login único e acesso por papel | T75, T145, T164 | Implementing |
@@ -583,7 +583,7 @@ Cada requisito tem um ID único, citado ao fim do critério correspondente.
 | PRO-05 | P2: Dashboard do profissional de saúde | T176, T177, T190 | Implementing |
 | PRO-06 | P2: Dashboard do profissional de saúde | T172, T184 | Implementing |
 | PRO-07 | P2: Dashboard do profissional de saúde | T172, T184 | Implementing |
-| PRO-08 | P2: Dashboard do profissional de saúde | T191 | Implementing |
+| PRO-08 | P2: Dashboard do profissional de saúde | T191, T192 | Implementing |
 | PRO-09 | P2: Dashboard do profissional de saúde | T163, T174, T179, T180, T181, T182, T183 | Implementing |
 | PRO-10 | P2: Dashboard do profissional de saúde | T59, T62, T162, T163, T166, T174, T185, T186, T187, T188 | Implementing |
 | PRO-11 | P2: Dashboard do profissional de saúde | T149, T160, T161, T163, T164 | Implementing |

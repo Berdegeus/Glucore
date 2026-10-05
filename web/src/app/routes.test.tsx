@@ -8,6 +8,8 @@ import { mockApi } from '../test/apiMocks';
 import { renderApp, where } from '../test/appHarness';
 import { stubChartContainer } from '../test/chartContainer';
 import { API_BASE } from '../test/httpClient';
+import { mockLayoutStore } from '../test/layoutStore';
+import { mockLinkedPatientSummary, mockPortfolio } from '../test/professionalHarness';
 import { server } from '../test/server';
 import { NOT_FOUND_LINK, NOT_FOUND_TITLE } from './notFoundPage';
 
@@ -18,6 +20,17 @@ const SLOW = { timeout: 10_000 };
 
 /** One widget is enough to prove the page renders; the page's own tests cover all 16. */
 const mockPatient = (role: Role | null = 'PATIENT') => mockApi({ role, layout: [{ id: 'kpi-tir', size: 'S' }] });
+
+/** A professional's account over the gateway: one widget is enough to prove the page renders. */
+function mockProfessional(role: Role | null = 'HEALTH_PROFESSIONAL') {
+  mockApi({ role });
+  mockLayoutStore([{ id: 'pro-kpi-patients', size: 'S' }]);
+  return mockPortfolio();
+}
+
+const PATIENT_ID = '3f2b8c1e-5d4a-4e6f-9a7b-0c1d2e3f4a5b';
+const PATIENT_PATH = `/profissional/pacientes/${PATIENT_ID}`;
+const portfolioHeading = () => screen.findByRole('heading', { level: 1, name: 'Meus pacientes' }, SLOW);
 
 const dashboardHeading = () => screen.findByRole('heading', { level: 1, name: 'Meu painel' }, SLOW);
 
@@ -60,14 +73,16 @@ describe('routes: sign in (ACC-02, ACC-04)', () => {
 });
 
 describe('routes: the home of each role (ACC-02, ACC-03)', () => {
-  it.each<[Role, string]>([
-    ['HEALTH_PROFESSIONAL', '/profissional'],
-    ['ADMINISTRATOR', '/admin'],
-  ])('redirects %s from /paciente to %s without drawing the patient dashboard', async (role, home) => {
+  it.each<[Role, string, string]>([
+    ['HEALTH_PROFESSIONAL', '/profissional', 'Meus pacientes'],
+    ['ADMINISTRATOR', '/admin', NOT_FOUND_TITLE],
+  ])('redirects %s from /paciente to %s without drawing the patient dashboard', async (role, home, landing) => {
     const api = mockPatient(role);
+    mockPortfolio();
     renderApp('/paciente', { token: 'token-1' });
 
-    await waitFor(() => expect(where()).toBe(home));
+    expect(await screen.findByRole('heading', { level: 1, name: landing }, SLOW)).toBeInTheDocument();
+    expect(where()).toBe(home);
     expect(screen.queryByRole('heading', { name: 'Meu painel' })).not.toBeInTheDocument();
     // No widget of the route asked for was rendered, so none called the API (ACC-03).
     expect(api.summaryRequests).toHaveLength(0);
@@ -126,5 +141,102 @@ describe('routes: unknown path', () => {
     await userEvent.click(screen.getByRole('link', { name: NOT_FOUND_LINK }));
     expect(await screen.findByLabelText('E-mail')).toBeInTheDocument();
     expect(where()).toBe('/login');
+  });
+});
+
+describe('routes: the professional area (ACC-02, ACC-03, PRO-08)', () => {
+  it('lands a professional on /profissional with the portfolio', async () => {
+    mockProfessional();
+    renderApp('/login');
+    await signIn();
+
+    expect(await portfolioHeading()).toBeInTheDocument();
+    expect(where()).toBe('/profissional');
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument();
+  });
+
+  it('takes a patient from /profissional to /paciente without asking the portfolio anything', async () => {
+    const portfolio = mockProfessional('PATIENT');
+    renderApp('/profissional', { token: 'token-1' });
+
+    expect(await dashboardHeading()).toBeInTheDocument();
+    expect(where()).toBe('/paciente');
+    expect(screen.queryByRole('heading', { name: 'Meus pacientes' })).not.toBeInTheDocument();
+    expect(portfolio.cohortRequests).toHaveLength(0);
+    expect(portfolio.listRequests).toHaveLength(0);
+  });
+
+  it.each(['/profissional', PATIENT_PATH])('takes an anonymous visitor of %s to the login, remembering the page', async (path) => {
+    mockProfessional();
+    renderApp(path);
+
+    expect(await screen.findByLabelText('E-mail')).toBeInTheDocument();
+    expect(where()).toBe(`/login?next=${encodeURIComponent(path)}`);
+  });
+
+  it('opens a linked patient on /profissional/pacientes/:id inside the shell, with the way back', async () => {
+    mockProfessional();
+    const summary = mockLinkedPatientSummary();
+    renderApp(PATIENT_PATH, { token: 'token-1' });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Paciente 3F' }, SLOW)).toBeInTheDocument();
+    expect(where()).toBe(PATIENT_PATH);
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument();
+    await waitFor(() => expect(summary.requests).toHaveLength(1), SLOW);
+
+    await userEvent.click(screen.getByRole('link', { name: 'Voltar à carteira' }));
+
+    expect(await portfolioHeading()).toBeInTheDocument();
+    expect(where()).toBe('/profissional');
+  });
+
+  it('takes a patient from a linked patient page to /paciente without asking for that patient', async () => {
+    mockProfessional('PATIENT');
+    const summary = mockLinkedPatientSummary();
+    renderApp(PATIENT_PATH, { token: 'token-1' });
+
+    expect(await dashboardHeading()).toBeInTheDocument();
+    expect(where()).toBe('/paciente');
+    expect(summary.requests).toHaveLength(0);
+  });
+
+  it('shows the not-found heading for an id that is no patient, still inside the shell', async () => {
+    mockProfessional();
+    const summary = mockLinkedPatientSummary();
+    renderApp('/profissional/pacientes/not-a-uuid', { token: 'token-1' });
+
+    expect(await screen.findByRole('heading', { level: 1, name: NOT_FOUND_TITLE }, SLOW)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument();
+    expect(summary.requests).toHaveLength(0);
+  });
+
+  it('keeps the revoked-access notice when the patient page sends the professional back to the portfolio (PRO-13)', async () => {
+    mockProfessional();
+    mockLinkedPatientSummary(() => HttpResponse.json({ error: 'Acesso revogado', code: 'NO_ACTIVE_GRANT' }, { status: 403 }));
+    renderApp(PATIENT_PATH, { token: 'token-1' });
+
+    expect(await portfolioHeading()).toBeInTheDocument();
+    expect(where()).toBe('/profissional');
+    expect(screen.getByText('O paciente revogou o acesso')).toBeInTheDocument();
+  });
+});
+
+describe('routes: the professional registration (ACC-02)', () => {
+  it('is reachable by an anonymous visitor, with no redirect to the login', async () => {
+    mockApi({ role: null });
+    renderApp('/cadastro-profissional');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Criar conta de profissional' }, SLOW)).toBeInTheDocument();
+    expect(where()).toBe('/cadastro-profissional');
+  });
+
+  it('is where the link of the login page leads', async () => {
+    mockApi({ role: null });
+    renderApp('/login');
+
+    await userEvent.click(await screen.findByRole('link', { name: 'Sou profissional de saúde — criar conta' }));
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Criar conta de profissional' }, SLOW)).toBeInTheDocument();
+    expect(where()).toBe('/cadastro-profissional');
   });
 });

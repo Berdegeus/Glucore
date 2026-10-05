@@ -8,5 +8,9 @@ export { ProfessionalServicesProvider } from './presentation/professionalService
 export const loadProfessionalDashboardPage = () =>
   import('./presentation/professionalDashboardPage').then((module) => ({ default: module.ProfessionalDashboardPage }));
 
+/** The linked patient's page, for `React.lazy` as well. */
 export const loadPatientDetailPage = () =>
   import('./presentation/patientDetailPage').then((module) => ({ default: module.PatientDetailPage }));
+
+// The notice of a revoked link is shared by the portfolio and the patient detail, so the routes hold it above both.
+export { RevokedAccessProvider } from './presentation/revokedAccess';
