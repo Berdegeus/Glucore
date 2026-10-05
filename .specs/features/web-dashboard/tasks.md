@@ -2538,16 +2538,17 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Exporta `WidgetDefinition` com id `chart-alerts-type`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
-- [ ] Renderiza os alertas por tipo a partir de `summary.alertsByType`
-- [ ] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
-- [ ] Usa o adaptador `BarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/chartAlertsType.test.tsx`
-- [ ] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
+- [x] Exporta `WidgetDefinition` com id `chart-alerts-type`, papéis e tamanhos iguais aos de `contracts/widget-catalog.json`
+- [x] Renderiza os alertas por tipo a partir de `summary.alertsByType`
+- [x] Teste cobre dados normais, estado vazio com a causa e erro isolado no `WidgetShell`
+- [x] Usa o adaptador `BarChart` (nunca importa `recharts`) e oferece "Ver como tabela" pelo `ChartFrame`
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/patient-dashboard/presentation/widgets/chartAlertsType.test.tsx`
+- [x] Pelo menos 4 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: component
 **Gate**: quick
 **Commit**: `feat(web): add chart-alerts-type widget`
+**Status**: ✅ Done
 
 ---
 
