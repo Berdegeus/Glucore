@@ -3036,13 +3036,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Checklist do que o usuário faz no painel da Vercel, marcado como ação manual (o agente não conecta contas)
-- [ ] Cada arquivo citado existe
-- [ ] Gate `build` passa: `cd web && npm run test:coverage && cd ../backend && npm run build`
+- [x] Checklist do que o usuário faz no painel da Vercel, marcado como ação manual (o agente não conecta contas)
+- [x] Cada arquivo citado existe
+- [x] Gate `build` passa: `cd web && npm run test:coverage && cd ../backend && npm run build`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs: describe the Vercel deployment`
+**Status**: ✅ Done
 
 ---
 
