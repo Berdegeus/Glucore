@@ -3940,13 +3940,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste com a tabela do AD-001, incluindo 7 e 8 caracteres e cada classe de caractere faltando
-- [ ] Gate `quick` passa: `cd web && npx vitest run src/features/registration/domain/passwordPolicy.test.ts`
-- [ ] Pelo menos 8 testes novos passam e a contagem total da suíte não cai
+- [x] Teste com a tabela do AD-001, incluindo 7 e 8 caracteres e cada classe de caractere faltando
+- [x] Gate `quick` passa: `cd web && npx vitest run src/features/registration/domain/passwordPolicy.test.ts`
+- [x] Pelo menos 8 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(web): add the password policy`
+**Status**: ✅ Done
 
 ---
 
