@@ -15,6 +15,7 @@ export {
   createRequireInternalAuth,
   type InternalAuthRequest,
 } from './auth/requireInternalAuth';
+export { requireInternalRole } from './auth/requireInternalRole';
 export { type ServiceRegistry } from './discovery/ServiceRegistry';
 export { EnvServiceRegistry } from './discovery/EnvServiceRegistry';
 export { ConsulServiceRegistry } from './discovery/ConsulServiceRegistry';
