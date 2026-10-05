@@ -1,7 +1,10 @@
+import { BadRequestError } from '@glucore/shared';
+
 import type { IPatientRepository } from '../patient/patient.repository';
-import type { DashboardQuery } from './dashboard.schema';
+import { INVALID_TIMEZONE, type DashboardQuery } from './dashboard.schema';
 import type { DashboardSummaryDto } from './dashboard.mapper';
 import type { DateRange, IDashboardRepository } from './dashboard.repository';
+import type { TimeZoneChecker } from './dashboard.timezones';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -9,9 +12,15 @@ export class DashboardService {
   constructor(
     private readonly dashboard: IDashboardRepository,
     private readonly patients: IPatientRepository,
+    private readonly timeZones: TimeZoneChecker,
   ) {}
 
   async getSummaryForUser(userId: string, query: DashboardQuery): Promise<DashboardSummaryDto> {
+    // First, before any patient row is created: a bad `tz` must cost nothing.
+    if (!(await this.timeZones.isValid(query.tz))) {
+      throw new BadRequestError(`tz "${query.tz}" is not a known time zone`, INVALID_TIMEZONE);
+    }
+
     const patientId = await this.patients.ensure(userId);
     const { low, high } = await this.resolveThresholds(patientId);
 

@@ -28,6 +28,7 @@ import type {
   ThresholdValues,
 } from '../../src/modules/settings/settings.repository';
 import type { DateRange, IDashboardRepository } from '../../src/modules/dashboard/dashboard.repository';
+import type { TimeZoneChecker } from '../../src/modules/dashboard/dashboard.timezones';
 import type {
   AlertsByTypeDto,
   DailyBucketDto,
@@ -298,6 +299,15 @@ export class FakeDashboardRepository implements IDashboardRepository {
 
   async getExcursions(): Promise<ExcursionDto[]> {
     return this.excursions;
+  }
+}
+
+/** Knows only the zones it is given — keeps `DashboardService` tests off Postgres. */
+export class FakeTimeZoneChecker implements TimeZoneChecker {
+  constructor(private readonly known: string[] = ['UTC', 'America/Sao_Paulo']) {}
+
+  async isValid(name: string): Promise<boolean> {
+    return this.known.includes(name);
   }
 }
 

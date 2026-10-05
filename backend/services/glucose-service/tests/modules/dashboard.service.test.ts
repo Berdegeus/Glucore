@@ -1,15 +1,16 @@
+import { BadRequestError } from '@glucore/shared';
 import { describe, expect, it } from 'vitest';
 
 import { DashboardService } from '../../src/modules/dashboard/dashboard.service';
 import type { DashboardQuery } from '../../src/modules/dashboard/dashboard.schema';
-import { FakeDashboardRepository, FakePatientRepository } from '../helpers/fakes';
+import { FakeDashboardRepository, FakePatientRepository, FakeTimeZoneChecker } from '../helpers/fakes';
 
 const USER = 'user-1';
 
 function build() {
   const dashboard = new FakeDashboardRepository();
   const patients = new FakePatientRepository();
-  return { dashboard, patients, service: new DashboardService(dashboard, patients) };
+  return { dashboard, patients, service: new DashboardService(dashboard, patients, new FakeTimeZoneChecker()) };
 }
 
 function query(overrides: Partial<DashboardQuery> = {}): DashboardQuery {
@@ -111,5 +112,27 @@ describe('DashboardService — response shape', () => {
       alertsByType: dashboard.alertsByType,
       excursions: dashboard.excursions,
     });
+  });
+});
+
+describe('DashboardService — time zone check', () => {
+  it('answers 400 INVALID_TIMEZONE for a zone the database does not know, before touching any data', async () => {
+    const { dashboard, patients, service } = build();
+
+    const failure = await service.getSummaryForUser(USER, query({ tz: 'Mars/Phobos' })).catch((e) => e);
+
+    expect(failure).toBeInstanceOf(BadRequestError);
+    expect(failure.status).toBe(400);
+    expect(failure.code).toBe('INVALID_TIMEZONE');
+    expect(patients.ensured).toEqual([]);
+    expect(dashboard.rangesSeen).toEqual([]);
+  });
+
+  it('lets a known zone through', async () => {
+    const { dashboard, service } = build();
+
+    await service.getSummaryForUser(USER, query({ tz: 'America/Sao_Paulo' }));
+
+    expect(dashboard.rangesSeen).toHaveLength(1);
   });
 });

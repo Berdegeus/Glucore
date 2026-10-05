@@ -13,6 +13,7 @@ import { CarbsService } from './modules/carbs/carbs.service';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { PrismaDashboardRepository } from './modules/dashboard/dashboard.repository';
 import { DashboardService } from './modules/dashboard/dashboard.service';
+import { prismaTimeZoneLoader, TimeZoneValidator } from './modules/dashboard/dashboard.timezones';
 import { InsulinController } from './modules/insulin/insulin.controller';
 import { PrismaInsulinRepository } from './modules/insulin/insulin.repository';
 import { InsulinService } from './modules/insulin/insulin.service';
@@ -74,7 +75,11 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
       new SettingsService(new PrismaSettingsRepository(prisma), patients, recordAudit),
     ),
     dashboard: new DashboardController(
-      new DashboardService(new PrismaDashboardRepository(prisma), patients),
+      new DashboardService(
+        new PrismaDashboardRepository(prisma),
+        patients,
+        new TimeZoneValidator(prismaTimeZoneLoader(prisma)),
+      ),
     ),
     internalPatientRouter: createInternalPatientRouter(
       new PatientController(new PatientService(patients, recordAudit)),
