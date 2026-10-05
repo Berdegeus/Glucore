@@ -3791,13 +3791,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Integração com 3 pacientes: métricas de cada um conferem com o `summary` individual; uma consulta só (sem laço por paciente)
-- [ ] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
-- [ ] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
+- [x] Integração com 3 pacientes: métricas de cada um conferem com o `summary` individual; uma consulta só (sem laço por paciente)
+- [x] Gate `full` passa: `cd backend && npm run build && npm run test:coverage`
+- [x] Pelo menos 3 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `feat(glucose-service): compute cohort metrics in one query`
+**Status**: ✅ Done
 
 ---
 
