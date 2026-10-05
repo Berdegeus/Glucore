@@ -17,6 +17,7 @@ function query(overrides: Partial<DashboardQuery> = {}): DashboardQuery {
     from: new Date('2026-08-01T00:00:00.000Z'),
     to: new Date('2026-08-14T00:00:00.000Z'),
     bucket: 'day',
+    tz: 'UTC',
     ...overrides,
   };
 }

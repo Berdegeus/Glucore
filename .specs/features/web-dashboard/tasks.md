@@ -1715,13 +1715,14 @@ T220 → T221 → T222 → T223 → T224
 
 **Done when**:
 
-- [ ] Teste: ausente vira `UTC`; formato inválido `400 INVALID_TIMEZONE`; regras atuais de período intactas
-- [ ] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/dashboard.schema.test.ts`
-- [ ] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
+- [x] Teste: ausente vira `UTC`; formato inválido `400 INVALID_TIMEZONE`; regras atuais de período intactas
+- [x] Gate `quick` passa: `cd backend && npx vitest run services/glucose-service/tests/modules/dashboard.schema.test.ts`
+- [x] Pelo menos 5 testes novos passam e a contagem total da suíte não cai
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(glucose-service): accept a tz parameter on the summary`
+**Status**: ✅ Done
 
 ---
 
