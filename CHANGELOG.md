@@ -10,6 +10,9 @@ papel. O backend ganha os papéis de profissional e administrador, o consentimen
 rotas que alimentam os três dashboards. Contrato rota a rota em `backend/README.md`.
 
 ### Added
+- **Recuperação das leituras por minuto da lib do sensor** (Sibionics): o app lê o `polls.dat` da `libg` (`getStoredReadings`) e insere os minutos que faltam por queda de sinal e a resolução de 16 min do histórico. Janela escolhida em Configurações > Histórico do sensor (24 h, 48 h padrão, 7 d, 14 d, desligado). 7 e 14 dias aguardam a correção do backend (issue #45).
+- **Gráfico**: seletor 1/3/6/12/24 h, escala ajustada aos dados, média por trecho nas janelas longas, linha laranja acima e vermelha abaixo da faixa-alvo.
+- **Barra de progresso do sync de histórico** na home e na notificação do serviço; botão "Conectar sensor" na tela sem sensor.
 - **Dashboard web** (`web/`, Vite + React + TypeScript): paciente, profissional de saúde e administrador,
   cada um com o seu catálogo de widgets (`contracts/widget-catalog.json`) e layout editável, salvo por
   usuário em `GET/PUT/DELETE /preferences/dashboard` (`DashboardLayout` no auth-service; até 20 widgets,
@@ -32,6 +35,8 @@ rotas que alimentam os três dashboards. Contrato rota a rota em `backend/README
 - Função `glucose_zones()` e índice BRIN em `GlucoseReading.recordedAt`.
 
 ### Changed
+- **Reconexão do Sibionics**: primeira tentativa imediata, `autoConnect` após timeout (Android 13+), perda de sinal tratada como desconexão e não como erro, retomada ao religar o Bluetooth, watchdog de "sem valor" e re-auth com espera de 1 s. Ver `docs/reference/multi-sensor-architecture.md`.
+- Leitura antiga ou sensor sem conexão aparece como cartão discreto "Última leitura / Desatualizada"; a home ficou mais compacta; a tela do app trava em retrato.
 - **`GET /dashboard/summary`**: query `tz` (IANA, padrão `UTC`, `400 INVALID_TIMEZONE`) e campos novos
   `tz`, `lastReadingAt`, `zoneDistribution`, `sensorUsePercent`, `agp`, `heatmap`,
   `byDay[].carbsGrams` e `byDay[].insulinUnits`. Mudança aditiva: sem `tz` o corte segue em UTC.
@@ -41,6 +46,8 @@ rotas que alimentam os três dashboards. Contrato rota a rota em `backend/README
 - `HealthProfessional` e `DashboardAccessGrant` saem da lista de tabelas de roadmap.
 
 ### Fixed
+- **Dias restantes do sensor** vinham de um `createdAt` fabricado e sempre mostravam 14d; agora vêm da lib (P24).
+- **Código 2 do Sibionics** terminava num `disconnect()` terminal que parava o monitoramento mesmo com o sensor saudável.
 - `services/auth-service/.env.test.example` usa `TEST_AUTH_DATABASE_URL`: com `TEST_DATABASE_URL`, o
   mesmo nome do glucose-service, as duas suítes podiam apontar para o mesmo banco.
 
