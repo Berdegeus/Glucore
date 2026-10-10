@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui show TextDirection;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -321,26 +322,6 @@ class _GlucoseChartState extends State<GlucoseChart> {
                       ),
                       borderData: FlBorderData(show: false),
                       extraLinesData: ExtraLinesData(
-                        verticalLines: [
-                          for (final s in carbSpots)
-                            VerticalLine(
-                              x: s.x,
-                              color: const Color(
-                                0xFF05B169,
-                              ).withValues(alpha: 0.35),
-                              strokeWidth: 1.5,
-                              dashArray: [3, 3],
-                            ),
-                          for (final s in insulinSpots)
-                            VerticalLine(
-                              x: s.x,
-                              color: const Color(
-                                0xFF0052FF,
-                              ).withValues(alpha: 0.35),
-                              strokeWidth: 1.5,
-                              dashArray: [3, 3],
-                            ),
-                        ],
                         horizontalLines: [
                           HorizontalLine(
                             y: lowThreshold.toDouble(),
@@ -461,11 +442,9 @@ class _GlucoseChartState extends State<GlucoseChart> {
                             dotData: FlDotData(
                               show: true,
                               getDotPainter: (spot, _, __, ___) =>
-                                  FlDotCirclePainter(
-                                    radius: 9,
-                                    color: const Color(0xFF05B169),
-                                    strokeWidth: 3,
-                                    strokeColor: Colors.white,
+                                  const _EntryMarkerPainter(
+                                    color: _carbColor,
+                                    icon: Icons.restaurant_rounded,
                                   ),
                             ),
                           ),
@@ -479,13 +458,28 @@ class _GlucoseChartState extends State<GlucoseChart> {
                             dotData: FlDotData(
                               show: true,
                               getDotPainter: (spot, _, __, ___) =>
-                                  FlDotCirclePainter(
-                                    radius: 8,
-                                    color: const Color(0xFF0052FF),
-                                    strokeWidth: 3,
-                                    strokeColor: Colors.white,
+                                  const _EntryMarkerPainter(
+                                    color: _insulinColor,
+                                    icon: Icons.vaccines_rounded,
                                   ),
                             ),
+                          ),
+                        // Faint stems tying each marker to its moment on the
+                        // glucose line; they stop well short of the top.
+                        for (final entry in [
+                          ...carbSpots.map((s) => (s, _carbColor)),
+                          ...insulinSpots.map((s) => (s, _insulinColor)),
+                        ])
+                          LineChartBarData(
+                            spots: [
+                              entry.$1,
+                              FlSpot(entry.$1.x, minY + yRange * 0.5),
+                            ],
+                            isCurved: false,
+                            barWidth: 1,
+                            color: entry.$2.withValues(alpha: 0.18),
+                            dashArray: [3, 4],
+                            dotData: const FlDotData(show: false),
                           ),
                       ],
                       lineTouchData: LineTouchData(
@@ -621,4 +615,60 @@ class _GlucoseChartState extends State<GlucoseChart> {
       ),
     );
   }
+}
+
+const _carbColor = Color(0xFF05B169);
+const _insulinColor = Color(0xFF0052FF);
+
+/// Round badge with an icon, so a logged carb or insulin entry reads as
+/// something to tap rather than as a data point.
+class _EntryMarkerPainter extends FlDotPainter {
+  const _EntryMarkerPainter({required this.color, required this.icon});
+
+  final Color color;
+  final IconData icon;
+
+  static const _radius = 12.0;
+
+  @override
+  void draw(Canvas canvas, FlSpot spot, Offset center) {
+    canvas.drawCircle(
+      center.translate(0, 1.5),
+      _radius + 2,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.18)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+    canvas.drawCircle(center, _radius + 2, Paint()..color = Colors.white);
+    canvas.drawCircle(center, _radius, Paint()..color = color);
+
+    final glyph = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontSize: 14,
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          color: Colors.white,
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+    glyph.paint(
+      canvas,
+      center - Offset(glyph.width / 2, glyph.height / 2),
+    );
+  }
+
+  @override
+  Size getSize(FlSpot spot) => const Size(_radius * 2 + 4, _radius * 2 + 4);
+
+  @override
+  Color get mainColor => color;
+
+  @override
+  FlDotPainter lerp(FlDotPainter a, FlDotPainter b, double t) => b;
+
+  @override
+  List<Object?> get props => [color, icon];
 }
