@@ -164,24 +164,26 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
       body: BlocBuilder<PatientCubit, PatientState>(
         builder: (context, state) {
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            // Tight vertical rhythm: the sensor strip at the bottom has to clear
+            // the + button without needing a scroll.
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             children: [
               if (state.sensorState.status == SensorConnectionStatus.syncingHistory) ...[
                 _HistorySyncCard(info: state.sensorState.historySyncInfo),
                 const SizedBox(height: 12),
               ],
               _buildHero(context, state),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               if (state.readings.isNotEmpty) ...[
                 _ChartCard(
                   state: state,
                   onCarbTap: _showCarbPopup,
                   onInsulinTap: _showInsulinPopup,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _StatsRow(state: state),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               _SensorStrip(state: state),
             ],
           );
@@ -632,7 +634,7 @@ class _SensorStrip extends StatelessWidget {
     final daysLeft = (14 - daysUsed).clamp(0, 14);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: context.glucoreColors.surfaceCanvas,
         borderRadius: BorderRadius.circular(16),

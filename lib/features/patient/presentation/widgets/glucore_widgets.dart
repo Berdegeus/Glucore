@@ -93,7 +93,7 @@ class GlucoreStatusCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 14),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(24),
@@ -143,7 +143,7 @@ class GlucoreStatusCard extends StatelessWidget {
               const _PulsingDot(),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
               _ZonePill(label: zone.label),
@@ -558,7 +558,7 @@ class GlucoreStatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color: context.glucoreColors.surfaceCanvas,
           borderRadius: BorderRadius.circular(16),
