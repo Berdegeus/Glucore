@@ -181,6 +181,32 @@ class SensorPlatform {
     await _methodChannel.invokeMethod('clearSession');
   }
 
+  /// Per-minute readings the vendor library stored since [since], ascending.
+  /// The wire format is `[[timestampMs, mgdl, rate], ...]`; anything malformed
+  /// is skipped rather than failing the whole call.
+  Future<List<StoredSensorReading>> getStoredReadings(DateTime since) async {
+    final result = await _methodChannel.invokeMethod<List<dynamic>>(
+      'getStoredReadings',
+      {'sinceMs': since.millisecondsSinceEpoch},
+    );
+    final readings = <StoredSensorReading>[];
+    for (final item in result ?? const <dynamic>[]) {
+      if (item is! List || item.length < 3) continue;
+      final timestampMs = item[0];
+      final value = item[1];
+      final rate = item[2];
+      if (timestampMs is! num || value is! num || rate is! num) continue;
+      readings.add(
+        StoredSensorReading(
+          timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMs.toInt()),
+          value: value.toDouble(),
+          rate: rate.toDouble(),
+        ),
+      );
+    }
+    return readings;
+  }
+
   Future<AbbottLibraryStatus> getAbbottLibraryStatus() async {
     final result =
         await _methodChannel.invokeMethod('getAbbottLibraryStatus');

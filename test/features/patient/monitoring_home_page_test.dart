@@ -323,6 +323,9 @@ class _FakeSensorRepository implements SensorRepository {
   Future<void> clearSession() async {}
 
   @override
+  Future<List<StoredSensorReading>> getStoredReadings(DateTime since) async =>
+      const [];
+  @override
   Future<AbbottLibraryStatus> getAbbottLibraryStatus() async =>
       const AbbottLibraryStatus(installed: false, libraryName: '');
 

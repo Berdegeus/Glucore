@@ -79,6 +79,10 @@ class AndroidSensorRepository implements SensorRepository {
   Stream<SensorEvent> observeSessionEvents() => _eventController.stream;
 
   @override
+  Future<List<StoredSensorReading>> getStoredReadings(DateTime since) =>
+      platform.getStoredReadings(since);
+
+  @override
   Future<AbbottLibraryStatus> getAbbottLibraryStatus() =>
       platform.getAbbottLibraryStatus();
 

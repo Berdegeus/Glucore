@@ -114,6 +114,20 @@ class HistorySyncInfo {
   }
 }
 
+/// One per-minute reading the vendor library stored for the sensor, as read
+/// back from its own store (see `getStoredReadings` in the platform channel).
+class StoredSensorReading {
+  final DateTime timestamp;
+  final double value;
+  final double rate;
+
+  const StoredSensorReading({
+    required this.timestamp,
+    required this.value,
+    required this.rate,
+  });
+}
+
 /// Outcome of a Libre 2 NFC interaction, emitted by the Android layer.
 /// `result` values: activated, warmup, ready, streaming, ended,
 /// needsLibrary, unsupportedLibre3, unsupportedUsGen2, readError, error.

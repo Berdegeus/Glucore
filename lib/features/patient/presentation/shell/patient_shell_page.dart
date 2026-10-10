@@ -16,8 +16,30 @@ class PatientShellPage extends StatefulWidget {
   State<PatientShellPage> createState() => _PatientShellPageState();
 }
 
-class _PatientShellPageState extends State<PatientShellPage> {
+class _PatientShellPageState extends State<PatientShellPage>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Coming back to the foreground: the sensor library kept recording while the
+  /// app had no UI, so pull what it stored in the meantime.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<PatientCubit>().reconcileFromSensorStore();
+    }
+  }
 
   static const _pages = [
     MonitoringHomePage(),

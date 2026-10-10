@@ -99,6 +99,16 @@ class SensorCubit extends Cubit<SensorUiState> {
     }
   }
 
+  /// Readings the sensor library stored since [since]. A failure here must
+  /// never disturb monitoring, so it degrades to "nothing to recover".
+  Future<List<StoredSensorReading>> storedReadings(DateTime since) async {
+    try {
+      return await repository.getStoredReadings(since);
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<void> startMonitoring() async {
     if (state.status == SensorConnectionStatus.scanning ||
         state.status == SensorConnectionStatus.connecting ||
