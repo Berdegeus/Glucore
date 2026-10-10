@@ -92,7 +92,26 @@ class HistorySyncInfo {
   final int receivedCount;
   final DateTime? latestTimestamp;
 
-  const HistorySyncInfo({required this.receivedCount, this.latestTimestamp});
+  /// Timestamp of the first backlog record of this sync (the oldest one).
+  final DateTime? firstTimestamp;
+
+  const HistorySyncInfo({
+    required this.receivedCount,
+    this.latestTimestamp,
+    this.firstTimestamp,
+  });
+
+  /// Estimated progress in 0..1, or null until it can be estimated. The total
+  /// isn't known up front; the backlog runs oldest-first up to [now], so the
+  /// distance covered between the first record and now stands in for it.
+  double? progress(DateTime now) {
+    final first = firstTimestamp;
+    final latest = latestTimestamp;
+    if (first == null || latest == null) return null;
+    final span = now.difference(first).inMilliseconds;
+    if (span <= 0) return null;
+    return (latest.difference(first).inMilliseconds / span).clamp(0.0, 1.0);
+  }
 }
 
 /// Outcome of a Libre 2 NFC interaction, emitted by the Android layer.

@@ -27,7 +27,7 @@ Todo evento é um `Map` com este shape (chaves sempre presentes ou null):
   "connected": true,                       // bool
   "session":  { "sensorId": "...", "brand": "sibionics" },   // ou null
   "brand":    "sibionics|accuchek|libre2",
-  "sync":     { "receivedCount": 12, "latestTimestampMs": 1750000000000 },  // só em syncingHistory
+  "sync":     { "receivedCount": 12, "latestTimestampMs": 1750000000000, "firstTimestampMs": 1749000000000 },  // só em syncingHistory; first = registro mais antigo deste sync (base da barra de progresso)
   "historyReading": { "value": 104.3, "timestampMs": ..., "rate": 0.021, "alarmCode": 0 }, // só em syncingHistory
   "reading":  { "value": 104.3, "timestampMs": ..., "rate": 0.021, "alarmCode": 0 },       // só em readingAvailable
   "warmup":   null,                                   // sempre null: nenhum emissor preenche esta chave

@@ -156,13 +156,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
           IconButton(
             icon: const Icon(Icons.bluetooth_searching),
             tooltip: l10n.monitoringPairSensorTooltip,
-            onPressed: () => Navigator.of(context).push(
-              buildPatientScopedRoute(
-                context,
-                const SensorChoicePage(),
-                withSensorCubit: true,
-              ),
-            ),
+            onPressed: () => _openSensorChoice(context),
           ),
         ],
       ),
@@ -171,6 +165,10 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             children: [
+              if (state.sensorState.status == SensorConnectionStatus.syncingHistory) ...[
+                _HistorySyncCard(info: state.sensorState.historySyncInfo),
+                const SizedBox(height: 12),
+              ],
               _buildHero(context, state),
               const SizedBox(height: 16),
               if (state.readings.isNotEmpty) ...[
@@ -191,12 +189,25 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
     );
   }
 
+  void _openSensorChoice(BuildContext context) {
+    Navigator.of(context).push(
+      buildPatientScopedRoute(
+        context,
+        const SensorChoicePage(),
+        withSensorCubit: true,
+      ),
+    );
+  }
+
   Widget _buildHero(BuildContext context, PatientState state) {
     final current = state.currentReading;
     final sensorState = state.sensorState;
 
     if (current == null) {
-      return _NoSensorCard(sensorStatus: sensorState.status);
+      return _NoSensorCard(
+        sensorStatus: sensorState.status,
+        onPairSensor: () => _openSensorChoice(context),
+      );
     }
 
     final zone = glucoseZoneOf(
@@ -211,7 +222,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
       trend: current.trend,
       sensorId: sensorState.session?.sensorId,
       updatedAt: current.timestamp,
-      isLive: state.hasRecentReading,
+      isLive: state.isReadingLive,
     );
   }
 }
@@ -309,9 +320,73 @@ class _EntryPopupSheet extends StatelessWidget {
   }
 }
 
+class _HistorySyncCard extends StatelessWidget {
+  const _HistorySyncCard({required this.info});
+  final HistorySyncInfo? info;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final colors = context.glucoreColors;
+    final progress = info?.progress(DateTime.now());
+    final percent = progress == null ? null : (progress * 100).floor();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.brandBlue.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.brandBlue.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.sync_rounded, color: colors.brandBlue, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.monitoringHistorySyncTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: colors.brandBlue,
+                  ),
+                ),
+              ),
+              if (percent != null)
+                Text(
+                  '$percent%',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: colors.brandBlue,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(value: progress, minHeight: 6),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.monitoringHistorySyncSubtitle,
+            style: TextStyle(fontSize: 12, color: colors.inkMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NoSensorCard extends StatelessWidget {
-  const _NoSensorCard({required this.sensorStatus});
+  const _NoSensorCard({required this.sensorStatus, required this.onPairSensor});
   final SensorConnectionStatus sensorStatus;
+  final VoidCallback onPairSensor;
 
   @override
   Widget build(BuildContext context) {
@@ -361,6 +436,17 @@ class _NoSensorCard extends StatelessWidget {
         ),
     };
 
+    // Busy states (scanning, connecting, syncing...) are already doing
+    // something; only the idle and error states need to push the user to pair.
+    final needsAction = sensorStatus == SensorConnectionStatus.error ||
+        !const {
+          SensorConnectionStatus.scanning,
+          SensorConnectionStatus.connecting,
+          SensorConnectionStatus.pairing,
+          SensorConnectionStatus.syncingHistory,
+          SensorConnectionStatus.warmingUp,
+        }.contains(sensorStatus);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -369,30 +455,46 @@ class _NoSensorCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
+          Row(
+            children: [
+              Icon(icon, color: color, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 13, color: context.glucoreColors.inkMuted),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 13, color: context.glucoreColors.inkMuted),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (needsAction) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onPairSensor,
+                icon: const Icon(Icons.add_rounded, size: 20),
+                label: Text(l10n.monitoringNoSensorPairButton),
+              ),
+            ),
+          ],
         ],
       ),
     );

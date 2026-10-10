@@ -77,10 +77,14 @@ class SensorPlatformEvent {
     if (map['sync'] != null) {
       final s = map['sync'] as Map<dynamic, dynamic>;
       final latestTimestampMs = (s['latestTimestampMs'] as num?)?.toInt();
+      final firstTimestampMs = (s['firstTimestampMs'] as num?)?.toInt();
       historySyncInfo = HistorySyncInfo(
         receivedCount: (s['receivedCount'] as num?)?.toInt() ?? 0,
         latestTimestamp: latestTimestampMs != null
             ? DateTime.fromMillisecondsSinceEpoch(latestTimestampMs)
+            : null,
+        firstTimestamp: firstTimestampMs != null
+            ? DateTime.fromMillisecondsSinceEpoch(firstTimestampMs)
             : null,
       );
     }

@@ -148,6 +148,7 @@ void main() {
           ),
         ],
         sensorState: SensorUiState(
+          status: SensorConnectionStatus.readingAvailable,
           session: SensorSession(sensorId: 'SN123', createdAt: now),
         ),
       );
