@@ -325,6 +325,25 @@
       "sensorId": {}
     }
   },
+  "monitoringSensorHoursLeftLabel": "{hours}h restantes · {sensorId}",
+  "@monitoringSensorHoursLeftLabel": {
+    "placeholders": {
+      "hours": {},
+      "sensorId": {}
+    }
+  },
+  "monitoringSensorExpiredLabel": "Sensor expirado · {sensorId}",
+  "@monitoringSensorExpiredLabel": {
+    "placeholders": {
+      "sensorId": {}
+    }
+  },
+  "monitoringSensorLifeUnknownLabel": "Sensor {sensorId}",
+  "@monitoringSensorLifeUnknownLabel": {
+    "placeholders": {
+      "sensorId": {}
+    }
+  },
   "monitoringNoSensorScanningTitle": "Procurando sensor…",
   "monitoringNoSensorScanningSubtitle": "Aguardando sinal Bluetooth",
   "monitoringNoSensorConnectingTitle": "Conectando…",

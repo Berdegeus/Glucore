@@ -59,6 +59,7 @@ class MainActivity : FlutterActivity() {
                             val sinceMs = (call.argument<Number>("sinceMs") ?: 0).toLong()
                             core.getStoredReadings(sinceMs) { readings -> result.success(readings) }
                         }
+                        "getSensorLife" -> result.success(core.getSensorLife())
                         "clearSession" -> {
                             core.clearSession()
                             result.success(null)

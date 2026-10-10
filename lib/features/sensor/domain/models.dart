@@ -128,6 +128,25 @@ class StoredSensorReading {
   });
 }
 
+/// When the active sensor started and when it is expected to end, as the
+/// vendor library computes them (the same figure Juggluco shows as "sensor
+/// ends"). The wear duration depends on the sensor type, so it is not a fixed
+/// number of days.
+class SensorLife {
+  final DateTime startedAt;
+  final DateTime expectedEnd;
+
+  const SensorLife({required this.startedAt, required this.expectedEnd});
+
+  /// Time left at [now]; never negative.
+  Duration remaining(DateTime now) {
+    final left = expectedEnd.difference(now);
+    return left.isNegative ? Duration.zero : left;
+  }
+
+  bool hasEnded(DateTime now) => !expectedEnd.isAfter(now);
+}
+
 /// Outcome of a Libre 2 NFC interaction, emitted by the Android layer.
 /// `result` values: activated, warmup, ready, streaming, ended,
 /// needsLibrary, unsupportedLibre3, unsupportedUsGen2, readError, error.
@@ -156,6 +175,9 @@ class SensorUiState {
   final SensorFailure? failure;
   final SensorNfcInfo? nfcInfo;
 
+  /// Null until the library knows when the sensor started (no data yet).
+  final SensorLife? sensorLife;
+
   const SensorUiState({
     this.status = SensorConnectionStatus.idle,
     this.session,
@@ -165,6 +187,7 @@ class SensorUiState {
     this.reading,
     this.failure,
     this.nfcInfo,
+    this.sensorLife,
   });
 
   SensorUiState copyWith({
@@ -177,6 +200,8 @@ class SensorUiState {
     SensorFailure? failure,
     bool clearFailure = false,
     SensorNfcInfo? nfcInfo,
+    SensorLife? sensorLife,
+    bool clearSensorLife = false,
   }) {
     return SensorUiState(
       status: status ?? this.status,
@@ -187,6 +212,7 @@ class SensorUiState {
       reading: reading ?? this.reading,
       failure: clearFailure ? null : failure ?? this.failure,
       nfcInfo: nfcInfo ?? this.nfcInfo,
+      sensorLife: clearSensorLife ? null : sensorLife ?? this.sensorLife,
     );
   }
 

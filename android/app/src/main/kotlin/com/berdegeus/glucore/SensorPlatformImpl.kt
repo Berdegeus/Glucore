@@ -233,6 +233,28 @@ class SensorPlatformImpl(
         return file
     }
 
+    /**
+     * `{startMs, expectedEndMs}` of the active sensor, computed by the vendor
+     * library the way Juggluco does, or null while it is not known (no sensor,
+     * or no data yet). Main thread only: it asks the native layer.
+     */
+    fun sensorLife(): Map<String, Any?>? {
+        val session = sessionManager.getCurrentSession() ?: return null
+        val sensors = try { Natives.activeSensors() } catch (e: Exception) { return null }
+        if (sensors.isNullOrEmpty()) return null
+        val sensorName = sensors.firstOrNull { it == session.sensorId } ?: sensors[0]
+        val dataptr = try { Natives.getdataptr(sensorName) } catch (e: Exception) { return null }
+        if (dataptr == 0L) return null
+
+        val window = try {
+            SensorLifeCalculator.window(Natives.getSensorStartmsec(dataptr), Natives.sensorends())
+        } catch (e: Throwable) {
+            android.util.Log.w("SensorPlatformImpl", "sensor life unavailable: ${e.message}")
+            null
+        } ?: return null
+        return mapOf("startMs" to window.startMs, "expectedEndMs" to window.expectedEndMs)
+    }
+
     fun stopMonitoring() {
         activeBleManager?.stopScan()
         activeBleManager?.disconnect()

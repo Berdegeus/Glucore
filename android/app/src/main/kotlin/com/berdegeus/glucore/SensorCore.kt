@@ -164,6 +164,9 @@ class SensorCore(context: Context) {
         }.start()
     }
 
+    /** See [SensorPlatformImpl.sensorLife]. */
+    fun getSensorLife(): Map<String, Any?>? = platform.sensorLife()
+
     fun clearSession() {
         platform.clearSession()
         CgmForegroundService.stop(appContext)

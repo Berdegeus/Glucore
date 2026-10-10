@@ -181,23 +181,80 @@ void main() {
     expect(chartWindow(), 24);
   });
 
-  testWidgets('shows the sensor strip using the localized days-left template', (
-    tester,
-  ) async {
+  group('sensor strip', () {
     final session = SensorSession(
       sensorId: 'SN12345678ABC',
       createdAt: DateTime.now(),
     );
 
-    await pump(
-      tester,
-      PatientState(sensorState: SensorUiState(session: session)),
-    );
+    testWidgets('counts the days left from the end the library reports', (tester) async {
+      final now = DateTime.now();
+      final life = SensorLife(
+        startedAt: now.subtract(const Duration(days: 4)),
+        // About 22.8 days of Sibionics EU life, 4 already used.
+        expectedEnd: now.add(const Duration(days: 18, hours: 20)),
+      );
 
-    expect(
-      find.text(l10n.monitoringSensorDaysLeftLabel(14, 'SN123456')),
-      findsOneWidget,
-    );
+      await pump(
+        tester,
+        PatientState(sensorState: SensorUiState(session: session, sensorLife: life)),
+      );
+
+      expect(find.text(l10n.monitoringSensorDaysLeftLabel(18, 'SN123456')), findsOneWidget);
+    });
+
+    testWidgets('says nothing about time while the life is unknown', (tester) async {
+      await pump(
+        tester,
+        PatientState(sensorState: SensorUiState(session: session)),
+      );
+
+      expect(find.text(l10n.monitoringSensorLifeUnknownLabel('SN123456')), findsOneWidget);
+      expect(find.textContaining('14d'), findsNothing,
+          reason: 'the old fixed 14 days must not come back');
+    });
+
+    testWidgets('an expired sensor is shown as expired', (tester) async {
+      final now = DateTime.now();
+      final life = SensorLife(
+        startedAt: now.subtract(const Duration(days: 30)),
+        expectedEnd: now.subtract(const Duration(hours: 2)),
+      );
+
+      await pump(
+        tester,
+        PatientState(sensorState: SensorUiState(session: session, sensorLife: life)),
+      );
+
+      expect(find.text(l10n.monitoringSensorExpiredLabel('SN123456')), findsOneWidget);
+    });
+  });
+
+  group('sensorLifeLabel', () {
+    final now = DateTime(2026, 10, 10, 12);
+    SensorLife endsIn(Duration d) =>
+        SensorLife(startedAt: now.subtract(const Duration(days: 10)), expectedEnd: now.add(d));
+    String label(SensorLife? life) =>
+        sensorLifeLabel(l10n: l10n, life: life, sensorId: 'ID', now: now);
+
+    test('whole days while there is a day or more left, rounded down', () {
+      expect(label(endsIn(const Duration(days: 12, hours: 23))), l10n.monitoringSensorDaysLeftLabel(12, 'ID'));
+      expect(label(endsIn(const Duration(days: 1))), l10n.monitoringSensorDaysLeftLabel(1, 'ID'));
+    });
+
+    test('hours in the last day, never "0h"', () {
+      expect(label(endsIn(const Duration(hours: 23, minutes: 59))), l10n.monitoringSensorHoursLeftLabel(23, 'ID'));
+      expect(label(endsIn(const Duration(minutes: 20))), l10n.monitoringSensorHoursLeftLabel(1, 'ID'));
+    });
+
+    test('expired once the end has passed, including exactly at the end', () {
+      expect(label(endsIn(Duration.zero)), l10n.monitoringSensorExpiredLabel('ID'));
+      expect(label(endsIn(const Duration(hours: -1))), l10n.monitoringSensorExpiredLabel('ID'));
+    });
+
+    test('unknown life gets the neutral label', () {
+      expect(label(null), l10n.monitoringSensorLifeUnknownLabel('ID'));
+    });
   });
 
   test('no longer hardcodes Colors.red/Colors.green or the migrated Portuguese '
@@ -351,6 +408,8 @@ class _FakeSensorRepository implements SensorRepository {
   @override
   Future<void> clearSession() async {}
 
+  @override
+  Future<SensorLife?> getSensorLife() async => null;
   @override
   Future<List<StoredSensorReading>> getStoredReadings(DateTime since) async =>
       const [];

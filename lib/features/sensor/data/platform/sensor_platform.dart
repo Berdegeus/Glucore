@@ -181,6 +181,20 @@ class SensorPlatform {
     await _methodChannel.invokeMethod('clearSession');
   }
 
+  /// When the active sensor started and is expected to end, or null while the
+  /// library does not know yet.
+  Future<SensorLife?> getSensorLife() async {
+    final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>('getSensorLife');
+    if (result == null) return null;
+    final startMs = result['startMs'];
+    final endMs = result['expectedEndMs'];
+    if (startMs is! num || endMs is! num) return null;
+    return SensorLife(
+      startedAt: DateTime.fromMillisecondsSinceEpoch(startMs.toInt()),
+      expectedEnd: DateTime.fromMillisecondsSinceEpoch(endMs.toInt()),
+    );
+  }
+
   /// Per-minute readings the vendor library stored since [since], ascending.
   /// The wire format is `[[timestampMs, mgdl, rate], ...]`; anything malformed
   /// is skipped rather than failing the whole call.

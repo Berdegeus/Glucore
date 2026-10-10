@@ -192,6 +192,9 @@ class _FakeSensorRepository implements SensorRepository {
   }
 
   @override
+  Future<SensorLife?> getSensorLife() async => null;
+
+  @override
   Stream<SensorEvent> observeSessionEvents() => const Stream.empty();
 
   @override

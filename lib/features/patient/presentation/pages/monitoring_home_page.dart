@@ -621,6 +621,28 @@ class _StatsRow extends StatelessWidget {
   }
 }
 
+/// What the sensor strip says about the sensor's remaining life.
+///
+/// The end comes from the vendor library (see [SensorLife]); while it is not
+/// known the label says nothing about time, rather than guess a number of days.
+@visibleForTesting
+String sensorLifeLabel({
+  required AppLocalizations l10n,
+  required SensorLife? life,
+  required String sensorId,
+  required DateTime now,
+}) {
+  if (life == null) return l10n.monitoringSensorLifeUnknownLabel(sensorId);
+  if (life.hasEnded(now)) return l10n.monitoringSensorExpiredLabel(sensorId);
+  final left = life.remaining(now);
+  if (left < const Duration(days: 1)) {
+    // Never "0h": under an hour still reads as one.
+    final hours = left.inHours < 1 ? 1 : left.inHours;
+    return l10n.monitoringSensorHoursLeftLabel(hours, sensorId);
+  }
+  return l10n.monitoringSensorDaysLeftLabel(left.inDays, sensorId);
+}
+
 class _SensorStrip extends StatelessWidget {
   const _SensorStrip({required this.state});
   final PatientState state;
@@ -630,8 +652,16 @@ class _SensorStrip extends StatelessWidget {
     final session = state.sensorState.session;
     if (session == null) return const SizedBox.shrink();
 
-    final daysUsed = DateTime.now().difference(session.createdAt).inDays;
-    final daysLeft = (14 - daysUsed).clamp(0, 14);
+    final l10n = context.l10n;
+    final sensorId = session.sensorId.length > 8
+        ? session.sensorId.substring(0, 8)
+        : session.sensorId;
+    final label = sensorLifeLabel(
+      l10n: l10n,
+      life: state.sensorState.sensorLife,
+      sensorId: sensorId,
+      now: DateTime.now(),
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -645,13 +675,11 @@ class _SensorStrip extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              context.l10n.monitoringSensorDaysLeftLabel(
-                daysLeft,
-                session.sensorId.length > 8
-                    ? session.sensorId.substring(0, 8)
-                    : session.sensorId,
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: context.glucoreColors.inkMuted,
               ),
-              style: TextStyle(fontSize: 12, color: context.glucoreColors.inkMuted),
             ),
           ),
         ],

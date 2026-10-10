@@ -264,6 +264,8 @@ class _FakeSensorRepository implements SensorRepository {
   @override
   Future<void> clearSession() => throw UnimplementedError();
   @override
+  Future<SensorLife?> getSensorLife() async => null;
+  @override
   Future<List<StoredSensorReading>> getStoredReadings(DateTime since) async =>
       const [];
   @override
