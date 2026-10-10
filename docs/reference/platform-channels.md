@@ -11,6 +11,8 @@
 | `startMonitoring` | — | `null` | dispara scan BLE; progresso via eventos |
 | `stopMonitoring` | — | `null` | emite `disconnected` |
 | `clearSession` | — | `null` | stopMonitoring + limpa SQLite; emite `idle` |
+| `getStoredReadings` | `{sinceMs: int}` | `[[timestampMs, mgdl, rate], ...]` | leituras **por minuto** que a lib do sensor guardou desde `sinceMs`, em ordem crescente de tempo. Lê o `polls.dat` do sensor ativo (`files/sensors/<sensor>/`), registros de 20 bytes little-endian: `uint32 tempo(s), uint32 índice, uint32 mg/dL, int32 tendência, float variação` (`variação` == `rate`). Só Sibionics; outra marca, sessão ausente ou arquivo ausente → `[]`, nunca erro. Registros com tempo < 2014, mg/dL fora de 40..600 ou variação não finita são descartados (a lib escreve enquanto lemos). Assíncrono: a leitura roda fora da main thread. Existe porque o BLE só entrega ao Kotlin uma leitura por notificação, enquanto a lib grava todas |
+| `getSensorLife` | — | `{startMs, expectedEndMs}` ou `null` | quando o sensor ativo começou e quando deve acabar, **calculados pela lib** como o Juggluco ("Sensor termina"): início (`getSensorStartmsec`) + duração esperada do tipo de sensor (`sensorends`; ~22,8 dias no Sibionics EU, não 14). `null` enquanto o início é desconhecido (sem dados ainda), sem sessão/sensor, ou se o resultado não descreve uma vida plausível (fora de 7–40 dias): melhor "desconhecido" que um número de dias errado. Lê o nativo, então roda na main thread |
 | `scanBarcode` | — | `String` (texto cru) ou `null` | abre o **Google code scanner** (`play-services-code-scanner`, DataMatrix + QR) para a caixa do sensor; assíncrono. `null` = usuário cancelou; `PlatformException("SCANNER_UNAVAILABLE")` = sem Play Services/módulo ainda baixando — o Dart (`GoogleBarcodeScanner`) cai no scanner do `mobile_scanner`. Mesmo scanner que o Juggluco usa na caixa do Sibionics |
 
 Exceções Kotlin → `PlatformException(code: "NATIVE_ERROR", message)`.
@@ -27,7 +29,7 @@ Todo evento é um `Map` com este shape (chaves sempre presentes ou null):
   "connected": true,                       // bool
   "session":  { "sensorId": "...", "brand": "sibionics" },   // ou null
   "brand":    "sibionics|accuchek|libre2",
-  "sync":     { "receivedCount": 12, "latestTimestampMs": 1750000000000 },  // só em syncingHistory
+  "sync":     { "receivedCount": 12, "latestTimestampMs": 1750000000000, "firstTimestampMs": 1749000000000 },  // só em syncingHistory; first = registro mais antigo deste sync (base da barra de progresso)
   "historyReading": { "value": 104.3, "timestampMs": ..., "rate": 0.021, "alarmCode": 0 }, // só em syncingHistory
   "reading":  { "value": 104.3, "timestampMs": ..., "rate": 0.021, "alarmCode": 0 },       // só em readingAvailable
   "warmup":   null,                                   // sempre null: nenhum emissor preenche esta chave

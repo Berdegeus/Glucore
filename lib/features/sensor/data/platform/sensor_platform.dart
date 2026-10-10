@@ -77,10 +77,14 @@ class SensorPlatformEvent {
     if (map['sync'] != null) {
       final s = map['sync'] as Map<dynamic, dynamic>;
       final latestTimestampMs = (s['latestTimestampMs'] as num?)?.toInt();
+      final firstTimestampMs = (s['firstTimestampMs'] as num?)?.toInt();
       historySyncInfo = HistorySyncInfo(
         receivedCount: (s['receivedCount'] as num?)?.toInt() ?? 0,
         latestTimestamp: latestTimestampMs != null
             ? DateTime.fromMillisecondsSinceEpoch(latestTimestampMs)
+            : null,
+        firstTimestamp: firstTimestampMs != null
+            ? DateTime.fromMillisecondsSinceEpoch(firstTimestampMs)
             : null,
       );
     }
@@ -175,6 +179,46 @@ class SensorPlatform {
 
   Future<void> clearSession() async {
     await _methodChannel.invokeMethod('clearSession');
+  }
+
+  /// When the active sensor started and is expected to end, or null while the
+  /// library does not know yet.
+  Future<SensorLife?> getSensorLife() async {
+    final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>('getSensorLife');
+    if (result == null) return null;
+    final startMs = result['startMs'];
+    final endMs = result['expectedEndMs'];
+    if (startMs is! num || endMs is! num) return null;
+    return SensorLife(
+      startedAt: DateTime.fromMillisecondsSinceEpoch(startMs.toInt()),
+      expectedEnd: DateTime.fromMillisecondsSinceEpoch(endMs.toInt()),
+    );
+  }
+
+  /// Per-minute readings the vendor library stored since [since], ascending.
+  /// The wire format is `[[timestampMs, mgdl, rate], ...]`; anything malformed
+  /// is skipped rather than failing the whole call.
+  Future<List<StoredSensorReading>> getStoredReadings(DateTime since) async {
+    final result = await _methodChannel.invokeMethod<List<dynamic>>(
+      'getStoredReadings',
+      {'sinceMs': since.millisecondsSinceEpoch},
+    );
+    final readings = <StoredSensorReading>[];
+    for (final item in result ?? const <dynamic>[]) {
+      if (item is! List || item.length < 3) continue;
+      final timestampMs = item[0];
+      final value = item[1];
+      final rate = item[2];
+      if (timestampMs is! num || value is! num || rate is! num) continue;
+      readings.add(
+        StoredSensorReading(
+          timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMs.toInt()),
+          value: value.toDouble(),
+          rate: rate.toDouble(),
+        ),
+      );
+    }
+    return readings;
   }
 
   Future<AbbottLibraryStatus> getAbbottLibraryStatus() async {

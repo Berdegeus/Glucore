@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/entities/patient_entities.dart';
 
 enum GlucoseZone { urgentLow, low, target, high, urgentHigh }
@@ -66,8 +67,11 @@ class GlucoreStatusCard extends StatelessWidget {
     this.sensorId,
     this.updatedAt,
     this.isLive = false,
+    this.onReconnect,
   });
 
+  /// Opens the sensor panel from the stale card (null hides the button).
+  final VoidCallback? onReconnect;
   final double value;
   final GlucoseZone zone;
   final GlucoseTrend trend;
@@ -77,11 +81,23 @@ class GlucoreStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!isLive) {
+      return _StaleReadingCard(
+        value: value,
+        trend: trend,
+        sensorId: sensorId,
+        updatedAt: updatedAt,
+        trendIcon: _trendIcon(trend),
+        timeAgo: updatedAt == null ? null : _timeAgo(updatedAt!),
+        onReconnect: onReconnect,
+      );
+    }
+
     final bg = zone.bg(context);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 14),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(24),
@@ -128,10 +144,10 @@ class GlucoreStatusCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (isLive) const _PulsingDot(),
+              const _PulsingDot(),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
               _ZonePill(label: zone.label),
@@ -173,6 +189,134 @@ class GlucoreStatusCard extends StatelessWidget {
     if (diff.inMinutes < 60) return '${diff.inMinutes} min atrás';
     if (diff.inHours < 24) return '${diff.inHours}h atrás';
     return '${diff.inDays}d atrás';
+  }
+}
+
+/// The last known value once it is no longer live (too old, or the sensor is
+/// not connected). Deliberately quiet: no zone colour, no pulse, smaller
+/// number and an explicit "outdated" marker, so it can't pass for a live
+/// measurement.
+class _StaleReadingCard extends StatelessWidget {
+  const _StaleReadingCard({
+    required this.value,
+    required this.trend,
+    required this.trendIcon,
+    this.sensorId,
+    this.updatedAt,
+    this.timeAgo,
+    this.onReconnect,
+  });
+
+  final VoidCallback? onReconnect;
+  final double value;
+  final GlucoseTrend trend;
+  final IconData trendIcon;
+  final String? sensorId;
+  final DateTime? updatedAt;
+  final String? timeAgo;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final colors = context.glucoreColors;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      decoration: BoxDecoration(
+        color: colors.surfaceSunken,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colors.inkMuted.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.history_rounded, size: 18, color: colors.inkMuted),
+              const SizedBox(width: 6),
+              Text(
+                l10n.glucoseStaleLabel,
+                style: TextStyle(
+                  color: colors.inkMuted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              if (timeAgo != null)
+                Text(
+                  timeAgo!,
+                  style: TextStyle(color: colors.inkMuted, fontSize: 12),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value.toStringAsFixed(0),
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w600,
+                  color: colors.inkMuted,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'mg/dL',
+                  style: TextStyle(color: colors.inkMuted, fontSize: 13),
+                ),
+              ),
+              const Spacer(),
+              if (onReconnect != null)
+                FilledButton.icon(
+                  onPressed: onReconnect,
+                  style: FilledButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  icon: const Icon(Icons.bluetooth_searching, size: 16),
+                  label: Text(l10n.glucoseReconnectButton),
+                )
+              else
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: colors.inkMuted.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Text(
+                    l10n.glucoseStaleBadge,
+                    style: TextStyle(
+                      color: colors.inkMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (sensorId != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              sensorId!,
+              style: GoogleFonts.jetBrainsMono(
+                color: colors.inkMuted.withValues(alpha: 0.7),
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
@@ -434,7 +578,7 @@ class GlucoreStatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color: context.glucoreColors.surfaceCanvas,
           borderRadius: BorderRadius.circular(16),

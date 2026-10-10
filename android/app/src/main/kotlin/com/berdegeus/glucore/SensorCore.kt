@@ -139,6 +139,48 @@ class SensorCore(context: Context) {
         CgmForegroundService.stop(appContext)
     }
 
+    /**
+     * OS-alarm entry point ([ConnectionWatchdogReceiver]): restarts the BLE
+     * connection if its lifecycle looks stuck. Runs on the main thread, where
+     * all BLE manager state lives.
+     */
+    fun checkConnection() {
+        mainHandler.post { platform.checkConnection() }
+    }
+
+    /** The user is looking at the app/phone: reconnect now if the sensor is not connected. */
+    fun ensureConnected(reason: String) {
+        mainHandler.post { platform.ensureConnected(reason) }
+    }
+
+    /**
+     * Per-minute readings the vendor library stored since [sinceMs], as
+     * `[timestampMs, mg/dL, rate]` triples ascending by time. Empty when the
+     * active sensor has no readable store. The sensor lookup runs on the
+     * calling (main) thread; the file read and parse run off it, and
+     * [deliver] is called back on the main thread.
+     */
+    fun getStoredReadings(sinceMs: Long, deliver: (List<List<Number>>) -> Unit) {
+        val file = platform.storedReadingsFile()
+        if (file == null) {
+            deliver(emptyList())
+            return
+        }
+        Thread {
+            val readings = try {
+                SibionicsStoreReader.parse(file.readBytes(), sinceMs = sinceMs)
+                    .map { listOf<Number>(it.timestampMs, it.mgdl, it.rate) }
+            } catch (e: Exception) {
+                android.util.Log.w("SensorCore", "getStoredReadings failed: ${e.message}")
+                emptyList()
+            }
+            mainHandler.post { deliver(readings) }
+        }.start()
+    }
+
+    /** See [SensorPlatformImpl.sensorLife]. */
+    fun getSensorLife(): Map<String, Any?>? = platform.sensorLife()
+
     fun clearSession() {
         platform.clearSession()
         CgmForegroundService.stop(appContext)

@@ -58,7 +58,43 @@ class SensorCubit extends Cubit<SensorUiState> {
       reading: event.reading ?? state.reading,
       failure: event.failure,
       nfcInfo: event.nfc ?? state.nfcInfo,
+      // Kept across events; dropped with the session it belonged to.
+      sensorLife: _sessionEnded(event) ? null : state.sensorLife,
     );
+  }
+
+  bool _sessionEnded(SensorEvent event) =>
+      event.status == SensorConnectionStatus.idle && event.session == null;
+
+  /// Statuses in which the sensor is delivering data, so its start is known.
+  static const _liveStatuses = {
+    SensorConnectionStatus.connected,
+    SensorConnectionStatus.syncingHistory,
+    SensorConnectionStatus.warmingUp,
+    SensorConnectionStatus.readingAvailable,
+  };
+
+  bool _fetchingLife = false;
+
+  /// Asks the library when the sensor ends. Read when data starts flowing and
+  /// again on each live reading until it is known: right after pairing the
+  /// start time does not exist yet. A failure leaves it unknown, never wrong.
+  Future<void> _refreshSensorLife() async {
+    if (_fetchingLife || isClosed) return;
+    _fetchingLife = true;
+    try {
+      final life = await repository.getSensorLife();
+      if (life == null || isClosed) return;
+      if (state.sensorLife?.expectedEnd == life.expectedEnd &&
+          state.sensorLife?.startedAt == life.startedAt) {
+        return;
+      }
+      emit(state.copyWith(sensorLife: life));
+    } catch (_) {
+      // Unknown life is a valid answer.
+    } finally {
+      _fetchingLife = false;
+    }
   }
 
   void _listenToEvents() {
@@ -66,6 +102,11 @@ class SensorCubit extends Cubit<SensorUiState> {
     _eventSubscription = repository.observeSessionEvents().listen(
       (event) {
         emit(_mapEventToState(event));
+        if (_liveStatuses.contains(event.status) &&
+            (state.sensorLife == null ||
+                event.status == SensorConnectionStatus.readingAvailable)) {
+          unawaited(_refreshSensorLife());
+        }
       },
       onError: (error) {
         emit(
@@ -96,6 +137,16 @@ class SensorCubit extends Cubit<SensorUiState> {
           failure: SensorFailure(e.toString()),
         ),
       );
+    }
+  }
+
+  /// Readings the sensor library stored since [since]. A failure here must
+  /// never disturb monitoring, so it degrades to "nothing to recover".
+  Future<List<StoredSensorReading>> storedReadings(DateTime since) async {
+    try {
+      return await repository.getStoredReadings(since);
+    } catch (_) {
+      return const [];
     }
   }
 

@@ -7,6 +7,8 @@ import tk.glucodata.Natives
 data class GlucoseReadingPayload(val value: Double)
 data class FailurePayload(val message: String)
 
+private const val STORE_FILE = "polls.dat"
+
 class SensorPlatformImpl(
     private val sessionManager: SensorSessionManager,
     private val nativeBridgeAdapter: SibionicsNativeBridgeAdapter,
@@ -199,6 +201,66 @@ class SensorPlatformImpl(
         bm.startSensorScan(dataptr)
             .onFailure { emitError(it.message ?: "BLE scan failed"); return false }
         return true
+    }
+
+    /**
+     * The vendor library's per-minute store (`polls.dat`) for the active
+     * Sibionics sensor, or null when there is none to read. Main thread only:
+     * it asks the native layer which sensor is active.
+     */
+    fun storedReadingsFile(): java.io.File? {
+        val session = sessionManager.getCurrentSession() ?: return null
+        if (session.brand != SensorBrand.SIBIONICS) return null
+
+        val sensorsRoot = java.io.File(nativeFilesDir, NativeSensorState.SENSORS_DIR)
+        if (!sensorsRoot.isDirectory) return null
+
+        // Same pick as startMonitoring: the persisted id when the library knows
+        // it, otherwise its first sensor. `activeSensors()` reports the id, not
+        // the directory name (that has a prefix), so SensorStoreLocator matches.
+        val sensors = try { Natives.activeSensors() } catch (e: Exception) { null }
+        val sensorName = sensors?.firstOrNull { it == session.sensorId } ?: sensors?.firstOrNull()
+        val candidates = sensorsRoot.listFiles { f -> f.isDirectory }.orEmpty().map {
+            SensorStoreLocator.Candidate(it.name, java.io.File(it, STORE_FILE).lastModified())
+        }
+        val dir = SensorStoreLocator.pick(sensorName, candidates)
+            ?.let { java.io.File(sensorsRoot, it) }
+        val file = dir?.let { java.io.File(it, STORE_FILE) }?.takeIf { it.isFile }
+        android.util.Log.d(
+            "SensorPlatformImpl",
+            "Stored readings: activeSensors=${sensors?.toList()} dir=${dir?.name} file=${file?.length() ?: -1}B"
+        )
+        return file
+    }
+
+    /**
+     * `{startMs, expectedEndMs}` of the active sensor, computed by the vendor
+     * library the way Juggluco does, or null while it is not known (no sensor,
+     * or no data yet). Main thread only: it asks the native layer.
+     */
+    fun sensorLife(): Map<String, Any?>? {
+        val session = sessionManager.getCurrentSession() ?: return null
+        val sensors = try { Natives.activeSensors() } catch (e: Exception) { return null }
+        if (sensors.isNullOrEmpty()) return null
+        val sensorName = sensors.firstOrNull { it == session.sensorId } ?: sensors[0]
+        val dataptr = try { Natives.getdataptr(sensorName) } catch (e: Exception) { return null }
+        if (dataptr == 0L) return null
+
+        val window = try {
+            SensorLifeCalculator.window(Natives.getSensorStartmsec(dataptr), Natives.sensorends())
+        } catch (e: Throwable) {
+            android.util.Log.w("SensorPlatformImpl", "sensor life unavailable: ${e.message}")
+            null
+        } ?: return null
+        return mapOf("startMs" to window.startMs, "expectedEndMs" to window.expectedEndMs)
+    }
+
+    /** Watchdog entry point; see [BrandBleManager.checkConnection]. */
+    fun checkConnection(): Boolean = activeBleManager?.checkConnection() ?: false
+
+    /** See [BrandBleManager.ensureConnected]. */
+    fun ensureConnected(reason: String) {
+        activeBleManager?.ensureConnected(reason)
     }
 
     fun stopMonitoring() {

@@ -17,6 +17,13 @@ abstract class SensorRepository {
   Stream<SensorEvent> observeSessionEvents();
   Future<void> clearSession();
 
+  /// When the active sensor started and is expected to end; null while unknown.
+  Future<SensorLife?> getSensorLife();
+
+  /// Per-minute readings the sensor library stored since [since], ascending.
+  /// Empty when the brand or session has no readable store.
+  Future<List<StoredSensorReading>> getStoredReadings(DateTime since);
+
   // Libre 2 support: Abbott algorithm library + NFC pairing. NFC results
   // arrive through [observeSessionEvents] as [SensorEvent.nfc].
   Future<AbbottLibraryStatus> getAbbottLibraryStatus();

@@ -198,6 +198,13 @@
   "settingsLowGlucoseAlertToggleLabel": "Alerta de glicose baixa",
   "settingsHighGlucoseAlertToggleLabel": "Alerta de glicose alta",
   "settingsSignalLossToggleLabel": "Perda de sinal",
+  "settingsSensorBackfillSectionTitle": "HISTÓRICO DO SENSOR",
+  "settingsSensorBackfill24h": "Recuperar últimas 24 horas",
+  "settingsSensorBackfill48h": "Recuperar últimas 48 horas (padrão)",
+  "settingsSensorBackfill7d": "Recuperar últimos 7 dias",
+  "settingsSensorBackfill14d": "Recuperar últimos 14 dias",
+  "settingsSensorBackfillOff": "Não recuperar",
+  "settingsSensorBackfillHelp": "Preenche as leituras que o app não recebeu, como quedas de sinal. Quanto mais dias, mais dados ficam no celular e são enviados ao servidor.",
   "settingsAppearanceSectionTitle": "APARÊNCIA",
   "settingsThemeSystemLabel": "Padrão do sistema",
   "settingsThemeLightLabel": "Claro",
@@ -307,7 +314,7 @@
       "type": {}
     }
   },
-  "monitoringChartSectionTitle": "Últimas 12 horas",
+  "monitoringChartSectionTitle": "Glicose",
   "monitoringTimeInTargetLabel": "Tempo no alvo",
   "monitoringAverageLabel": "Média",
   "monitoringGmiEstimateLabel": "GMI est.",
@@ -315,6 +322,25 @@
   "@monitoringSensorDaysLeftLabel": {
     "placeholders": {
       "days": {},
+      "sensorId": {}
+    }
+  },
+  "monitoringSensorHoursLeftLabel": "{hours}h restantes · {sensorId}",
+  "@monitoringSensorHoursLeftLabel": {
+    "placeholders": {
+      "hours": {},
+      "sensorId": {}
+    }
+  },
+  "monitoringSensorExpiredLabel": "Sensor expirado · {sensorId}",
+  "@monitoringSensorExpiredLabel": {
+    "placeholders": {
+      "sensorId": {}
+    }
+  },
+  "monitoringSensorLifeUnknownLabel": "Sensor {sensorId}",
+  "@monitoringSensorLifeUnknownLabel": {
+    "placeholders": {
       "sensorId": {}
     }
   },
@@ -329,9 +355,46 @@
   "monitoringNoSensorWarmingTitle": "Aquecendo sensor",
   "monitoringNoSensorWarmingSubtitle": "O sensor está se calibrando",
   "monitoringNoSensorErrorTitle": "Erro de conexão",
-  "monitoringNoSensorErrorSubtitle": "Verifique o sensor e tente novamente",
-  "monitoringNoSensorDefaultTitle": "Sem sensor conectado",
-  "monitoringNoSensorDefaultSubtitle": "Toque no ícone Bluetooth para parear",
+  "monitoringNoSensorErrorSubtitle": "Verifique o sensor ou conecte novamente",
+  "monitoringNoSensorDefaultTitle": "Nenhum sensor conectado",
+  "monitoringNoSensorDefaultSubtitle": "Conecte um sensor para acompanhar sua glicose em tempo real",
+  "monitoringNoSensorPairButton": "Conectar sensor",
+  "glucoseStaleLabel": "Última leitura",
+  "glucoseStaleBadge": "Desatualizada",
+  "glucoseReconnectButton": "Reconectar",
+  "sensorPanelTitle": "Sensor",
+  "sensorPanelBrandLabel": "Marca",
+  "sensorPanelSerialLabel": "Número de série",
+  "sensorPanelStatusLabel": "Conexão",
+  "sensorPanelLifeTitle": "Vida do sensor",
+  "sensorPanelLifeRemaining": "{remaining} restantes",
+  "@sensorPanelLifeRemaining": {
+    "placeholders": {
+      "remaining": {}
+    }
+  },
+  "sensorPanelLifeEnded": "Sensor expirado",
+  "sensorPanelLifeUnknown": "A vida útil aparece depois da primeira leitura",
+  "sensorPanelStartedAt": "Iniciado em {date}",
+  "@sensorPanelStartedAt": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "sensorPanelEndsAt": "Termina em {date}",
+  "@sensorPanelEndsAt": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "sensorPanelRecentReadingsTitle": "Leituras recentes",
+  "sensorPanelNoReadings": "Nenhuma leitura ainda",
+  "sensorPanelRescanNfcButton": "Escanear sensor (NFC)",
+  "sensorPanelReplaceButton": "Trocar sensor",
+  "sensorPanelReplaceConfirmTitle": "Trocar sensor?",
+  "sensorPanelReplaceConfirmMessage": "A sessão atual será removida deste aparelho. O histórico já salvo continua no app.",
+  "monitoringHistorySyncTitle": "Sincronizando histórico do sensor",
+  "monitoringHistorySyncSubtitle": "A glicose atual aparece quando terminar. Você pode sair do app: ele continua em segundo plano.",
   "carbEntryTitle": "Registrar carboidrato",
   "carbEntryQuantityLabel": "Quantidade (g)",
   "carbEntryDescriptionLabel": "Descrição da refeição",
