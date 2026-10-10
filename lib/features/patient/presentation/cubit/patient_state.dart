@@ -34,6 +34,20 @@ class PatientState {
     );
   }
 
+  /// The sensor link is up (or delivering data) right now.
+  bool get isSensorLinked => switch (sensorState.status) {
+        SensorConnectionStatus.connected ||
+        SensorConnectionStatus.syncingHistory ||
+        SensorConnectionStatus.warmingUp ||
+        SensorConnectionStatus.readingAvailable =>
+          true,
+        _ => false,
+      };
+
+  /// The current reading may be shown as live only while it is recent *and*
+  /// the sensor is actually connected; otherwise it is just the last value.
+  bool get isReadingLive => hasRecentReading && isSensorLinked;
+
   bool get predictionAvailable => false;
 
   PatientState copyWith({

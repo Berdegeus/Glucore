@@ -54,6 +54,12 @@ void main() {
   });
 
   Future<void> pumpSettings(WidgetTester tester) async {
+    // A tela cresceu com a seção de histórico do sensor: uma janela alta mantém
+    // a lista inteira construída (a lista só monta o que está perto da tela).
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
@@ -90,6 +96,40 @@ void main() {
     await tester.tap(find.text(label));
     await tester.pumpAndSettle();
   }
+
+  Finder checkOf(String label) => find.descendant(
+        of: find.ancestor(of: find.text(label), matching: find.byType(InkWell)),
+        matching: find.byIcon(Icons.check),
+      );
+
+  testWidgets('sensor history section offers every window, 48 h marked by default',
+      (tester) async {
+    await pumpSettings(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.settingsSensorBackfillSectionTitle), findsOneWidget);
+    for (final label in [
+      l10n.settingsSensorBackfill24h,
+      l10n.settingsSensorBackfill48h,
+      l10n.settingsSensorBackfill7d,
+      l10n.settingsSensorBackfill14d,
+      l10n.settingsSensorBackfillOff,
+    ]) {
+      expect(find.text(label), findsOneWidget, reason: label);
+    }
+    expect(checkOf(l10n.settingsSensorBackfill48h), findsOneWidget);
+    expect(checkOf(l10n.settingsSensorBackfill7d), findsNothing);
+  });
+
+  testWidgets('sensor history section shows the saved window as selected',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'sensor_backfill_window': 'd7'});
+    await pumpSettings(tester);
+    await tester.pumpAndSettle();
+
+    expect(checkOf(l10n.settingsSensorBackfill7d), findsOneWidget);
+    expect(checkOf(l10n.settingsSensorBackfill48h), findsNothing);
+  });
 
   testWidgets('offers the three theme options with localized labels',
       (tester) async {

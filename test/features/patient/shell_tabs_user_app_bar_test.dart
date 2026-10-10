@@ -104,12 +104,12 @@ void main() {
     });
   }
 
-  testWidgets('Monitor keeps its notification and bluetooth icons',
+  testWidgets('Monitor keeps its notification icon and no longer shows bluetooth',
       (tester) async {
     await pumpTab(tester, const MonitoringHomePage());
 
     expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.bluetooth_searching), findsOneWidget);
+    expect(find.byIcon(Icons.bluetooth_searching), findsNothing);
   });
 
   testWidgets('Profile keeps its settings gear icon', (tester) async {

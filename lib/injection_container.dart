@@ -23,6 +23,7 @@ import 'features/patient/domain/repositories/patient_repository.dart';
 import 'features/patient/domain/usecases/patient_usecases.dart';
 import 'features/patient/presentation/cubit/patient_cubit.dart';
 import 'features/patient/presentation/cubit/user_identity_cubit.dart';
+import 'features/sensor/data/preferences/sensor_backfill_preference_store.dart';
 import 'features/sensor/data/platform/sensor_platform.dart';
 import 'features/sensor/data/repositories/android_sensor_repository.dart';
 import 'features/sensor/domain/sensor_repository.dart';
@@ -118,7 +119,13 @@ Future<void> initDependencies() async {
   // Single instance: the theme is app-wide state, not per-screen.
   sl.registerLazySingleton(() => ThemeCubit(store: sl<ThemePreferenceStore>()));
   sl.registerFactory(() => SensorCubit(repository: sl()));
-  sl.registerFactory(() => PatientCubit(useCases: sl()));
+  sl.registerLazySingleton(() => const SensorBackfillPreferenceStore());
+  sl.registerFactory(
+    () => PatientCubit(
+      useCases: sl(),
+      backfillWindow: sl<SensorBackfillPreferenceStore>().read,
+    ),
+  );
   sl.registerFactory(() => UserIdentityCubit(accountService: sl()));
   sl.registerFactory(
     () => SharingCubit(

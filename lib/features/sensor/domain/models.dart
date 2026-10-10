@@ -92,7 +92,59 @@ class HistorySyncInfo {
   final int receivedCount;
   final DateTime? latestTimestamp;
 
-  const HistorySyncInfo({required this.receivedCount, this.latestTimestamp});
+  /// Timestamp of the first backlog record of this sync (the oldest one).
+  final DateTime? firstTimestamp;
+
+  const HistorySyncInfo({
+    required this.receivedCount,
+    this.latestTimestamp,
+    this.firstTimestamp,
+  });
+
+  /// Estimated progress in 0..1, or null until it can be estimated. The total
+  /// isn't known up front; the backlog runs oldest-first up to [now], so the
+  /// distance covered between the first record and now stands in for it.
+  double? progress(DateTime now) {
+    final first = firstTimestamp;
+    final latest = latestTimestamp;
+    if (first == null || latest == null) return null;
+    final span = now.difference(first).inMilliseconds;
+    if (span <= 0) return null;
+    return (latest.difference(first).inMilliseconds / span).clamp(0.0, 1.0);
+  }
+}
+
+/// One per-minute reading the vendor library stored for the sensor, as read
+/// back from its own store (see `getStoredReadings` in the platform channel).
+class StoredSensorReading {
+  final DateTime timestamp;
+  final double value;
+  final double rate;
+
+  const StoredSensorReading({
+    required this.timestamp,
+    required this.value,
+    required this.rate,
+  });
+}
+
+/// When the active sensor started and when it is expected to end, as the
+/// vendor library computes them (the same figure Juggluco shows as "sensor
+/// ends"). The wear duration depends on the sensor type, so it is not a fixed
+/// number of days.
+class SensorLife {
+  final DateTime startedAt;
+  final DateTime expectedEnd;
+
+  const SensorLife({required this.startedAt, required this.expectedEnd});
+
+  /// Time left at [now]; never negative.
+  Duration remaining(DateTime now) {
+    final left = expectedEnd.difference(now);
+    return left.isNegative ? Duration.zero : left;
+  }
+
+  bool hasEnded(DateTime now) => !expectedEnd.isAfter(now);
 }
 
 /// Outcome of a Libre 2 NFC interaction, emitted by the Android layer.
@@ -123,6 +175,9 @@ class SensorUiState {
   final SensorFailure? failure;
   final SensorNfcInfo? nfcInfo;
 
+  /// Null until the library knows when the sensor started (no data yet).
+  final SensorLife? sensorLife;
+
   const SensorUiState({
     this.status = SensorConnectionStatus.idle,
     this.session,
@@ -132,6 +187,7 @@ class SensorUiState {
     this.reading,
     this.failure,
     this.nfcInfo,
+    this.sensorLife,
   });
 
   SensorUiState copyWith({
@@ -144,6 +200,8 @@ class SensorUiState {
     SensorFailure? failure,
     bool clearFailure = false,
     SensorNfcInfo? nfcInfo,
+    SensorLife? sensorLife,
+    bool clearSensorLife = false,
   }) {
     return SensorUiState(
       status: status ?? this.status,
@@ -154,6 +212,7 @@ class SensorUiState {
       reading: reading ?? this.reading,
       failure: clearFailure ? null : failure ?? this.failure,
       nfcInfo: nfcInfo ?? this.nfcInfo,
+      sensorLife: clearSensorLife ? null : sensorLife ?? this.sensorLife,
     );
   }
 

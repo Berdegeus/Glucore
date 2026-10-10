@@ -51,6 +51,12 @@ public final class Natives {
     // 0x20 = Accu-Chek SmartGuide, 0x30 = CareSens Air, 0x40 = Dexcom,
     // 3 = Libre 3, anything else = Libre 1/2).
     public static native int getLibreVersion(long dataptr);
+
+    // Sensor life, as Juggluco shows it ("Sensor ends"): the library keeps the
+    // start time and computes the expected end (start + wear duration, which
+    // depends on the sensor type and, for Sibionics EU, its subtype).
+    public static native long getSensorStartmsec(long dataptr);
+    public static native long sensorends();
     public static native int getSensorptrLibreVersion(long sensorptr);
 
     // Accu-Chek SmartGuide (SIG CGM profile; parsing lives in libg.so)

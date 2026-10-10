@@ -107,7 +107,7 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
           FilledButton.icon(
             onPressed: () => setState(() => _tutorialStep = 1),
             icon: const Icon(Icons.navigate_next),
-            label: const Text('Continuar'),
+            label: Text(_isAccuChek ? 'Continuar' : 'Já apliquei, continuar'),
           ),
         ] else if (_tutorialStep == 1) ...[
           FilledButton.icon(
@@ -319,24 +319,47 @@ class _SensorLinkPageState extends State<SensorLinkPage> {
 
 class _TutorialStepper extends StatelessWidget {
   const _TutorialStepper({required this.currentStep, this.isAccuChek = false});
+
+  /// Stage of the pairing flow (0 intro, 1 scan, 2 waiting for the link).
   final int currentStep;
   final bool isAccuChek;
 
+  /// Always shown open, whatever the stage: it is what the person has to wait
+  /// for after the sensor is on the arm.
+  static const _warmupIndex = 4;
+
   static const _sibionicsSteps = [
     (
-      Icons.inventory_2_outlined,
-      'Retire o sensor da caixa',
-      'Mantenha o código de barras acessível.',
+      Icons.back_hand_outlined,
+      'Prepare a pele',
+      'Escolha a parte de trás do braço, limpe o local e espere secar '
+          'antes de aplicar.',
+    ),
+    (
+      Icons.vaccines_outlined,
+      'Aplique o sensor',
+      'Abra a embalagem, apoie o aplicador na pele e pressione para fixar o '
+          'sensor. Depois retire o aplicador. Guarde a caixa: o código dela '
+          'é usado no próximo passo.',
     ),
     (
       Icons.qr_code_scanner,
       'Escaneie o código da caixa',
-      'Aponte a câmera para o código data matrix na caixa do sensor.',
+      'Aponte a câmera para o código data matrix impresso na caixa do sensor.',
     ),
     (
       Icons.bluetooth_searching,
       'Aguarde a conexão Bluetooth',
-      'O sensor será detectado e vinculado automaticamente.',
+      'O sensor é detectado e vinculado automaticamente. Mantenha o celular '
+          'perto do braço e o Bluetooth ligado.',
+    ),
+    (
+      Icons.hourglass_bottom_rounded,
+      'Aquecimento de 60 minutos',
+      'Depois de vinculado, o sensor leva cerca de 60 minutos para começar a '
+          'medir. Nesse período não aparecem leituras, e isso é normal. O app '
+          'segue em segundo plano e mostra a glicose assim que ela estiver '
+          'disponível.',
     ),
   ];
 
@@ -358,20 +381,34 @@ class _TutorialStepper extends StatelessWidget {
     ),
   ];
 
+  /// Steps that are the current focus, and how many come before them.
+  /// Sibionics folds "prepare" and "apply" into the intro stage.
+  (Set<int>, int) get _focus {
+    if (isAccuChek) return ({currentStep}, currentStep);
+    return switch (currentStep) {
+      0 => ({0, 1}, 0),
+      1 => ({2}, 2),
+      _ => ({3}, 3),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final steps = isAccuChek ? _accuChekSteps : _sibionicsSteps;
+    final (active, doneBefore) = _focus;
+    final colors = context.glucoreColors;
     return Column(
       children: List.generate(steps.length, (i) {
         final (icon, title, subtitle) = steps[i];
-        final done = i < currentStep;
-        final active = i == currentStep;
+        final isActive = active.contains(i);
+        final done = i < doneBefore;
+        final showBody = isActive || (!isAccuChek && i == _warmupIndex);
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _StepCircle(index: i, done: done, active: active),
+              _StepCircle(index: i, done: done, active: isActive),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -379,33 +416,38 @@ class _TutorialStepper extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(icon,
-                            size: 18,
-                            color: active
-                                ? context.glucoreColors.brandPrimary
-                                : done
-                                    ? context.glucoreColors.zoneTargetBg
-                                    : Colors.grey),
-                        const SizedBox(width: 6),
+                        Icon(
+                          icon,
+                          size: 20,
+                          color: isActive
+                              ? colors.brandPrimary
+                              : done
+                                  ? colors.zoneTargetBg
+                                  : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
                         Flexible(
                           child: Text(
                             title,
                             style: TextStyle(
-                              fontWeight: active
-                                  ? FontWeight.w700
-                                  : FontWeight.normal,
+                              fontSize: 16,
+                              fontWeight:
+                                  isActive ? FontWeight.w700 : FontWeight.w500,
                               color: done ? Colors.grey : null,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    if (active)
+                    if (showBody)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           subtitle,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: colors.inkMuted, height: 1.4),
                         ),
                       ),
                   ],

@@ -5,6 +5,9 @@ import 'package:glucore/l10n/l10n.dart';
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../../core/theme/theme_cubit.dart';
 import '../../../../injection_container.dart';
+import '../../../sensor/data/preferences/sensor_backfill_preference_store.dart';
+import '../../domain/sensor_backfill.dart';
+import '../cubit/patient_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../sharing/presentation/cubit/sharing_cubit.dart';
 import '../../../sharing/presentation/pages/sharing_page.dart';
@@ -65,6 +68,8 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          const _SensorBackfillSection(),
           const SizedBox(height: 16),
           _NotifSection(
             notifLow: _notifLow,
@@ -153,6 +158,100 @@ class _SettingsPageState extends State<SettingsPage> {
 ///
 /// Escreve direto no [ThemeCubit]: o `MaterialApp` escuta o mesmo cubit, então
 /// o toque troca o tema na hora, sem reiniciar o app.
+/// Quanto do histórico por minuto guardado pela lib do sensor o app recupera
+/// (quedas de sinal, sync). Padrão 48 h; vale por aparelho.
+class _SensorBackfillSection extends StatefulWidget {
+  const _SensorBackfillSection();
+
+  @override
+  State<_SensorBackfillSection> createState() => _SensorBackfillSectionState();
+}
+
+class _SensorBackfillSectionState extends State<_SensorBackfillSection> {
+  // Stateless and const, like ThemePreferenceStore: no DI lookup needed here.
+  final _store = const SensorBackfillPreferenceStore();
+  SensorBackfillWindow _selected = SensorBackfillWindow.defaultWindow;
+
+  @override
+  void initState() {
+    super.initState();
+    _store.read().then((window) {
+      if (mounted) setState(() => _selected = window);
+    });
+  }
+
+  Future<void> _select(SensorBackfillWindow window) async {
+    if (window == _selected) return;
+    final patientCubit = context.read<PatientCubit>();
+    setState(() => _selected = window);
+    await _store.write(window);
+    // A wider window pulls the older minutes now; a narrower one removes nothing.
+    await patientCubit.reconcileFromSensorStore();
+  }
+
+  String _label(SensorBackfillWindow window) {
+    final l10n = context.l10n;
+    return switch (window) {
+      SensorBackfillWindow.h24 => l10n.settingsSensorBackfill24h,
+      SensorBackfillWindow.h48 => l10n.settingsSensorBackfill48h,
+      SensorBackfillWindow.d7 => l10n.settingsSensorBackfill7d,
+      SensorBackfillWindow.d14 => l10n.settingsSensorBackfill14d,
+      SensorBackfillWindow.off => l10n.settingsSensorBackfillOff,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final colors = context.glucoreColors;
+    final options = SensorBackfillWindow.values;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            l10n.settingsSensorBackfillSectionTitle,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: colors.inkMuted,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: colors.surfaceCanvas,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              for (final window in options) ...[
+                if (window != options.first)
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                _ThemeOptionRow(
+                  label: _label(window),
+                  selected: window == _selected,
+                  onTap: () => _select(window),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+          child: Text(
+            l10n.settingsSensorBackfillHelp,
+            style: TextStyle(fontSize: 12, color: colors.inkMuted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ThemeSection extends StatelessWidget {
   const _ThemeSection();
 

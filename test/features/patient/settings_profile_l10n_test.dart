@@ -101,6 +101,10 @@ void main() {
   testWidgets(
     'SettingsPage renders every section title, row and toggle from AppLocalizations',
     (tester) async {
+      tester.view.physicalSize = const Size(800, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await pumpSettings(tester);
 
       expect(

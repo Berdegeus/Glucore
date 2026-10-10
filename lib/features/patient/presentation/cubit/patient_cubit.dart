@@ -7,15 +7,26 @@ import '../../../../core/usecase/usecase.dart';
 import '../../../sensor/domain/models.dart';
 import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../../domain/repositories/patient_repository.dart';
+import '../../domain/sensor_backfill.dart';
 import '../../domain/usecases/patient_usecases.dart';
 import '../../domain/entities/patient_entities.dart';
 import 'patient_state.dart';
 
 class PatientCubit extends Cubit<PatientState> {
-  PatientCubit({required this.useCases}) : super(const PatientState());
+  PatientCubit({
+    required this.useCases,
+    Future<SensorBackfillWindow> Function()? backfillWindow,
+  })  : _backfillWindow =
+            backfillWindow ?? (() async => SensorBackfillWindow.defaultWindow),
+        super(const PatientState());
 
   /// O cubit fala com o domínio, nunca com o repositório (DOMAIN-03).
   final PatientUseCases useCases;
+
+  /// Quanto do armazenamento da lib do sensor recuperar (preferência do usuário).
+  final Future<SensorBackfillWindow> Function() _backfillWindow;
+  SensorCubit? _sensorCubit;
+  bool _reconcilingSensorStore = false;
   StreamSubscription<SensorUiState>? _sensorSubscription;
 
   /// O sensor avança o cursor do backlog a cada item entregue e não o reenvia;
@@ -48,6 +59,7 @@ class PatientCubit extends Cubit<PatientState> {
       ),
     );
 
+    _sensorCubit = sensorCubit;
     await _sensorSubscription?.cancel();
     _sensorSubscription = sensorCubit.stream.listen(_handleSensorState);
     await _handleSensorState(sensorCubit.state);
@@ -217,12 +229,60 @@ class PatientCubit extends Cubit<PatientState> {
 
     emit(nextState);
 
+    // Conexão efetiva (ou fim do sync de histórico): o que a lib do sensor
+    // guardou enquanto o app não via nada entra agora.
+    if (sensorState.status == SensorConnectionStatus.readingAvailable &&
+        previousStatus != SensorConnectionStatus.readingAvailable) {
+      unawaited(reconcileFromSensorStore());
+    }
+
     // Leituras seguem no caminho de coleção com debounce (SYNC-10).
     if (persistReadings) {
       await useCases.saveGlucoseReadings(readings);
     }
     for (final alert in newAlerts) {
       await useCases.addAlertEntry(alert);
+    }
+  }
+
+  /// Recupera as leituras por minuto que a lib do sensor guardou e que o app
+  /// não tem (quedas de sinal, histórico que só chegava de 16 em 16 min).
+  ///
+  /// Só insere, nunca altera nem remove leitura existente. A mesclagem é feita
+  /// de uma vez: `_upsertReading` copia a lista a cada chamada, o que custa
+  /// O(n) por item. Roda uma por vez; chamadas simultâneas são descartadas.
+  Future<void> reconcileFromSensorStore() async {
+    final sensorCubit = _sensorCubit;
+    if (sensorCubit == null || _reconcilingSensorStore || isClosed) return;
+    _reconcilingSensorStore = true;
+    try {
+      final window = await _backfillWindow();
+      if (window == SensorBackfillWindow.off) return;
+
+      final since = DateTime.now().subtract(window.duration);
+      final stored = await sensorCubit.storedReadings(since);
+      if (stored.isEmpty || isClosed) return;
+
+      final candidates = [
+        for (final r in stored)
+          GlucoseReadingItem(
+            value: r.value,
+            timestamp: r.timestamp,
+            trend: _trendFromRate(r.rate),
+            rate: r.rate,
+          ),
+      ];
+      // Lê o estado depois do await: leituras podem ter chegado enquanto isso.
+      final merged = mergeStoredReadings(
+        existing: state.readings,
+        stored: candidates,
+      );
+      if (identical(merged, state.readings)) return;
+
+      emit(state.copyWith(readings: merged));
+      await useCases.saveGlucoseReadings(merged);
+    } finally {
+      _reconcilingSensorStore = false;
     }
   }
 
