@@ -10,6 +10,7 @@ papel. O backend ganha os papéis de profissional e administrador, o consentimen
 rotas que alimentam os três dashboards. Contrato rota a rota em `backend/README.md`.
 
 ### Added
+- **Log persistente do BLE** (`files/ble_events.log`): transições de conexão, desconexão, backoff e disparos do watchdog, para diagnosticar quedas depois que o logcat já girou.
 - **Recuperação das leituras por minuto da lib do sensor** (Sibionics): o app lê o `polls.dat` da `libg` (`getStoredReadings`) e insere os minutos que faltam por queda de sinal e a resolução de 16 min do histórico. Janela escolhida em Configurações > Histórico do sensor (24 h, 48 h padrão, 7 d, 14 d, desligado). 7 e 14 dias aguardam a correção do backend (issue #45).
 - **Gráfico**: seletor 1/3/6/12/24 h, escala ajustada aos dados, média por trecho nas janelas longas, linha laranja acima e vermelha abaixo da faixa-alvo.
 - **Barra de progresso do sync de histórico** na home e na notificação do serviço; botão "Conectar sensor" na tela sem sensor.
@@ -46,6 +47,9 @@ rotas que alimentam os três dashboards. Contrato rota a rota em `backend/README
 - `HealthProfessional` e `DashboardAccessGrant` saem da lista de tabelas de roadmap.
 
 ### Fixed
+- **O sensor não reconectava sozinho** depois de uma reconexão que caía em poucos segundos: erros transitórios de setup (escrita do descritor, auth, descoberta) e `onScanFailed` terminavam a cadeia de reconexão para sempre. Agora entram no backoff; um watchdog por alarme do sistema reinicia a conexão se ela ficar parada, e tela ligada/app em primeiro plano tentam reconectar na hora (P38).
+- **"X min atrás" e o estado "ao vivo" congelavam**: o cartão da home só recalculava quando algo reconstruía a tela, então uma leitura de 30 min ainda dizia "18 min atrás" e podia continuar com cara de ao vivo. Agora reavalia a cada 30 s.
+- Rótulo do eixo X do gráfico desenhado em duplicata na ponta direita.
 - **Dias restantes do sensor** vinham de um `createdAt` fabricado e sempre mostravam 14d; agora vêm da lib (P24).
 - **Código 2 do Sibionics** terminava num `disconnect()` terminal que parava o monitoramento mesmo com o sensor saudável.
 - `services/auth-service/.env.test.example` usa `TEST_AUTH_DATABASE_URL`: com `TEST_DATABASE_URL`, o

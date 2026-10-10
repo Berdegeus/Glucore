@@ -106,26 +106,21 @@ class SibionicsBleManager(
     override fun onBrandServicesDiscovered(gatt: BluetoothGatt) {
         val service = gatt.getService(SERVICE_UUID)
         if (service == null) {
-            Log.e(tag, "Sibionics service ff30 not found")
-            emitError("Sibionics service not found on device")
-            disconnect()
+            recoverFromSetupFailure("service ff30 not found", "Sibionics service not found on device")
             return
         }
 
         val notifyChar = service.getCharacteristic(NOTIFY_UUID)
         val wChar = service.getCharacteristic(WRITE_UUID)
         if (notifyChar == null || wChar == null) {
-            Log.e(tag, "Required characteristics ff31/ff32 not found")
-            emitError("Required BLE characteristics not found")
-            disconnect()
+            recoverFromSetupFailure("characteristics ff31/ff32 not found", "Required BLE characteristics not found")
             return
         }
         writeChar = wChar
         setupComplete = true
 
         if (!enableCharacteristicNotification(gatt, notifyChar)) {
-            emitError("Failed to enable notifications")
-            disconnect()
+            recoverFromSetupFailure("could not enable notifications", "Failed to enable notifications")
             return
         }
         Log.i(tag, "Notifications enabled, waiting for descriptor write confirmation")
@@ -133,9 +128,7 @@ class SibionicsBleManager(
 
     override fun onBrandDescriptorWrite(characteristicUuid: UUID, status: Int) {
         if (status != BluetoothGatt.GATT_SUCCESS) {
-            Log.e(tag, "Descriptor write failed: $status")
-            emitError("Failed to enable notifications ($status)")
-            disconnect()
+            recoverFromSetupFailure("descriptor write failed ($status)", "Failed to enable notifications ($status)")
             return
         }
 
@@ -157,15 +150,16 @@ class SibionicsBleManager(
                 null
             }
             if (authBytes == null) {
-                emitError("siAuthBytes returned null — check dataptr and sensor registration")
-                disconnect()
+                recoverFromSetupFailure(
+                    "siAuthBytes returned null",
+                    "siAuthBytes returned null — check dataptr and sensor registration"
+                )
                 return
             }
 
             Log.i(tag, "Sending auth bytes (${authBytes.size} bytes)")
             if (!enqueueWrite(writeChar, authBytes)) {
-                emitError("Failed to write auth bytes")
-                disconnect()
+                recoverFromSetupFailure("could not write auth bytes", "Failed to write auth bytes")
                 return
             }
         } else {
@@ -174,15 +168,16 @@ class SibionicsBleManager(
                 null
             }
             if (askBytes == null) {
-                emitError("siAsknewdata returned null during bootstrap")
-                disconnect()
+                recoverFromSetupFailure(
+                    "siAsknewdata returned null",
+                    "siAsknewdata returned null during bootstrap"
+                )
                 return
             }
 
             Log.i(tag, "Sending ask-new-data bytes (${askBytes.size} bytes)")
             if (!enqueueWrite(writeChar, askBytes)) {
-                emitError("Failed to write initial sensor request")
-                disconnect()
+                recoverFromSetupFailure("could not write initial request", "Failed to write initial sensor request")
                 return
             }
         }

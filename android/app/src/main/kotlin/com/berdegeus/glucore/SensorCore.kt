@@ -140,6 +140,20 @@ class SensorCore(context: Context) {
     }
 
     /**
+     * OS-alarm entry point ([ConnectionWatchdogReceiver]): restarts the BLE
+     * connection if its lifecycle looks stuck. Runs on the main thread, where
+     * all BLE manager state lives.
+     */
+    fun checkConnection() {
+        mainHandler.post { platform.checkConnection() }
+    }
+
+    /** The user is looking at the app/phone: reconnect now if the sensor is not connected. */
+    fun ensureConnected(reason: String) {
+        mainHandler.post { platform.ensureConnected(reason) }
+    }
+
+    /**
      * Per-minute readings the vendor library stored since [sinceMs], as
      * `[timestampMs, mg/dL, rate]` triples ascending by time. Empty when the
      * active sensor has no readable store. The sensor lookup runs on the

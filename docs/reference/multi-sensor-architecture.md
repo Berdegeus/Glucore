@@ -65,6 +65,20 @@ O `BrandBleManager` é compartilhado, mas o Sibionics sobrescreve três pontos (
 
 Também: o adaptador desligado fecha o GATT e religar retoma a conexão; um timeout numa sessão restaurada entra no backoff em vez de terminar em erro; e os códigos 2, 8 e 10 armam um watchdog (30 s, 5 min, 3 min; `NoValueWatchdog`) que só reinicia a conexão se nenhum valor chegar nesse prazo. O código 4 (re-auth) espera 1 s, como no Juggluco. Antes, o código 2 terminava num `disconnect()` terminal que parava o monitoramento de vez.
 
+#### Auto-recuperação: a cadeia de reconexão não pode morrer
+
+A reconexão acima é uma cadeia (scan → connect → timer de backoff → scan …) que vive no `mainHandler`. Em 2026-10-10 ela morreu em silêncio: 10 s depois de uma reconexão o app ficou sem GATT, sem scan e sem timer, e só voltava com o toque manual (evidência e análise: P38 em `ARCHITECTURE_REVIEW.md`; spec: `docs/architecture/ble-reconnection-spec.md`). Para isso não se repetir, `BrandBleManager` tem três camadas independentes:
+
+- **Nada de erro de setup é terminal.** `disconnect()` encerra a sessão de vez (liga `isStopping`, zera `dataptr`), então só ações explícitas o chamam (`stopMonitoring`, troca de sensor/marca). Falhas de setup (descoberta de serviços, notificação, escrita do descritor, auth, escrita da fila) e `onScanFailed` passam por `recoverFromSetupFailure`/`scheduleReconnect`: derrubam o link e entram no backoff. Só uma sequência de 3 falhas sem leitura entre elas é reportada ao usuário (`error`), e as tentativas continuam.
+- **Watchdog por alarme do sistema** (`ConnectionWatchdogReceiver`, `setAndAllowWhileIdle`, ~1 min, armado pelo `CgmForegroundService`). O alarme não depende do timer do handler (que usa o relógio de uptime e para com a CPU suspensa). A decisão é pura e testada (`ConnectionWatchdog`): com sessão ativa e Bluetooth ligado, reinicia do zero se o manager está **ocioso** há ≥ 1 min (sem GATT, scan nem timer), se uma tentativa está **sem progresso** há ≥ 6 min (acima do degrau de 5 min do backoff), ou se um link conectado fica **sem valor** por ≥ 5 min. Os relógios usam `elapsedRealtime`, que continua com a CPU dormindo.
+- **Gatilhos de "alguém está olhando"**: tela ligando, `USER_PRESENT` e `MainActivity.onResume` chamam `ensureConnected`, que tenta agora se não há conexão nem tentativa em andamento (corta um backoff pendente, não interrompe um scan ou connect em curso).
+
+Também: `PARTIAL_WAKE_LOCK` com timeout (45 s) em volta de cada passo de reconexão e (10 s) de cada notificação, para o timer de espera curta não congelar com a CPU.
+
+**Log persistente.** O logcat gira em minutos e perdeu o momento da queda. `BleEventLog` grava as transições (conexão, desconexão, backoff, falha de setup, cada chamada terminal a `disconnect()` com quem chamou, disparos do watchdog) em `files/ble_events.log` (dois arquivos em anel de 256 KB). Ler com `adb shell run-as com.berdegeus.glucore cat files/ble_events.log`. Sem leituras nem identificadores.
+
+Limite conhecido: Accu-Chek e Libre 2 compartilham essas proteções (alarme, gatilhos, `scheduleReconnect`, falha de escrita da fila), mas seus próprios `disconnect()` de fluxo (PIN, NFC) não foram alterados e **não foram testados com hardware**.
+
 #### Leituras por minuto guardadas pela lib
 
 O BLE só entrega ao Kotlin **uma leitura por notificação**, mas a lib grava **todos os minutos** em `sensors/<id>/polls.dat` (registros de 20 bytes: tempo, índice, mg/dL, tendência, variação; ver `getStoredReadings` em `platform-channels.md`). Sem isso o histórico chegava ao app de 16 em 16 min e as quedas de sinal deixavam minutos sem leitura.

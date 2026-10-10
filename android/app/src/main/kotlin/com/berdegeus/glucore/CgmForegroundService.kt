@@ -64,6 +64,7 @@ class CgmForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         goForeground()
         core.addEventListener(eventListener)
+        ConnectionWatchdogScheduler.arm(this)
 
         if (intent == null) {
             // Restarted by the system after a process kill. Resume monitoring
@@ -85,6 +86,7 @@ class CgmForegroundService : Service() {
     }
 
     override fun onDestroy() {
+        ConnectionWatchdogScheduler.cancel(this)
         core.removeEventListener(eventListener)
         inForeground = false
         super.onDestroy()

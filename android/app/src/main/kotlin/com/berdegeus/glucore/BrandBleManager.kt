@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.os.ParcelUuid
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import tk.glucodata.Natives
@@ -41,6 +42,17 @@ abstract class BrandBleManager(
         private const val MAX_CONNECT_RETRIES = 3
         private const val HISTORY_SYNC_SETTLE_MS = 2_000L
         private const val CURRENT_READING_MAX_AGE_MS = 20 * 60 * 1000L
+
+        // Held around a reconnect step so the CPU can't suspend between the
+        // timer being posted and it firing (the handler clock stops with it).
+        // Bounded by its own timeout: nothing has to release it.
+        private const val ATTEMPT_WAKE_LOCK_MS = 45_000L
+        private const val READING_WAKE_LOCK_MS = 10_000L
+
+        // Setup failures right after a reconnect are routine (the sensor is
+        // often half-awake). They are retried silently; only a streak with no
+        // reading in between is worth telling the user about.
+        private const val SETUP_FAILURES_BEFORE_ERROR = 3
 
         protected val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
     }
@@ -91,6 +103,12 @@ abstract class BrandBleManager(
     private var reconnectAttempt = 0
     private var connectedAtMs = 0L
 
+    // Inputs for [ConnectionWatchdog]; elapsed-realtime so they keep counting
+    // while the CPU sleeps, unlike the handler's uptime clock.
+    private var lastProgressAtMs = SystemClock.elapsedRealtime()
+    private var lastValueAtMs = 0L
+    private var consecutiveSetupFailures = 0
+
     // Set when the adapter went off while a session was active, so turning it
     // back on resumes the connection. The OS never delivers a GATT disconnect
     // for a stack that was switched off, so without this the manager would
@@ -122,20 +140,55 @@ abstract class BrandBleManager(
     private val isDebugBuild =
         (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
+    private val eventLog = BleEventLog.get(context.filesDir)
+
+    private val attemptWakeLock: PowerManager.WakeLock? =
+        context.getSystemService(PowerManager::class.java)
+            ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Glucore::ble")
+            ?.apply { setReferenceCounted(false) }
+
     init {
-        // System broadcast; the receiver lives as long as this app-scoped manager.
+        // System broadcasts; the receiver lives as long as this app-scoped manager.
         context.registerReceiver(
             object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context?, intent: Intent?) {
-                    if (intent?.action != BluetoothAdapter.ACTION_STATE_CHANGED) return
-                    when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
-                        BluetoothAdapter.STATE_OFF -> mainHandler.post { handleBluetoothOff() }
-                        BluetoothAdapter.STATE_ON -> mainHandler.post { handleBluetoothOn() }
+                    when (intent?.action) {
+                        BluetoothAdapter.ACTION_STATE_CHANGED ->
+                            when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
+                                BluetoothAdapter.STATE_OFF -> mainHandler.post { handleBluetoothOff() }
+                                BluetoothAdapter.STATE_ON -> mainHandler.post { handleBluetoothOn() }
+                            }
+                        // Someone is about to look at the phone: if the sensor
+                        // is not connected, don't make them wait out a backoff.
+                        Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT ->
+                            mainHandler.post { ensureConnected("screen-on") }
                     }
                 }
             },
-            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+            IntentFilter().apply {
+                addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_USER_PRESENT)
+            }
         )
+    }
+
+    /** Console + persistent log; see [BleEventLog]. */
+    protected fun logEvent(message: String) {
+        Log.i(tag, message)
+        eventLog.log(tag, message)
+    }
+
+    private fun markProgress() {
+        lastProgressAtMs = SystemClock.elapsedRealtime()
+    }
+
+    private fun holdWakeLock(timeoutMs: Long) {
+        try {
+            attemptWakeLock?.acquire(timeoutMs)
+        } catch (e: Exception) {
+            Log.w(tag, "wake lock: ${e.message}")
+        }
     }
 
     protected fun assertMainThread() {
@@ -228,6 +281,9 @@ abstract class BrandBleManager(
 
         this.dataptr = dataptr
         this.isStopping = false
+        markProgress()
+        holdWakeLock(ATTEMPT_WAKE_LOCK_MS)
+        logEvent("start scan/connect (preferSaved=$preferSavedAddress attempt=$reconnectAttempt)")
         this.connectRetryCount = 0
         if (resetFailureState) {
             this.didRescanAfterFailure = false
@@ -281,9 +337,20 @@ abstract class BrandBleManager(
                 }
             }
             override fun onScanFailed(errorCode: Int) {
-                Log.e(tag, "Scan failed: $errorCode")
-                stopScan()
-                emitError("BLE scan failed (code $errorCode)")
+                // Callback thread: state is main-thread-only.
+                mainHandler.post {
+                    logEvent("scan failed (code $errorCode)")
+                    stopScan()
+                    if (isStopping || dataptr == 0L) return@post
+                    if (isAutoRecovering()) {
+                        // e.g. SCANNING_TOO_FREQUENTLY: transient. Ending here
+                        // would leave nothing to retry; back off and try again.
+                        emitStatus("disconnected")
+                        scheduleReconnect()
+                    } else {
+                        emitError("BLE scan failed (code $errorCode)")
+                    }
+                }
             }
         }
 
@@ -319,6 +386,10 @@ abstract class BrandBleManager(
     }
 
     open fun disconnect() {
+        // Terminal: it ends the reconnect chain for good, so record who asked.
+        val caller = Throwable().stackTrace
+            .firstOrNull { it.className.startsWith("com.berdegeus.glucore") && it.methodName != "disconnect" }
+        logEvent("disconnect() TERMINAL from ${caller?.className?.substringAfterLast('.')}.${caller?.methodName}:${caller?.lineNumber}")
         isStopping = true
         cancelReconnect()
         reconnectAttempt = 0
@@ -371,6 +442,7 @@ abstract class BrandBleManager(
         val uuid = characteristic.uuid
         val data = characteristic.value?.copyOf() ?: return
         val timestamp = System.currentTimeMillis()
+        holdWakeLock(READING_WAKE_LOCK_MS)
         mainHandler.post { handleCharacteristicChanged(uuid, data, timestamp) }
     }
 
@@ -382,6 +454,7 @@ abstract class BrandBleManager(
     ) {
         val uuid = characteristic.uuid
         val timestamp = System.currentTimeMillis()
+        holdWakeLock(READING_WAKE_LOCK_MS)
         mainHandler.post { handleCharacteristicChanged(uuid, value, timestamp) }
     }
 
@@ -419,11 +492,14 @@ abstract class BrandBleManager(
         assertMainThread()
         when (newState) {
             BluetoothProfile.STATE_CONNECTED -> {
-                Log.i(tag, "GATT connected, discovering services")
+                logEvent("GATT connected, discovering services")
                 cancelDisconnectTimer()
                 cancelConnectTimeout()
                 cancelReconnect()
                 connectedAtMs = SystemClock.elapsedRealtime()
+                markProgress()
+                // A fresh link gets a full window to produce its first value.
+                lastValueAtMs = connectedAtMs
                 // Policies with a stability window keep the attempt count until
                 // the link has lived long enough (see the disconnect branch).
                 if (reconnectPolicy.stableConnectionMs == 0L) reconnectAttempt = 0
@@ -442,13 +518,9 @@ abstract class BrandBleManager(
                 }
             }
             BluetoothProfile.STATE_DISCONNECTED -> {
-                Log.i(tag, "GATT disconnected (status=$status)")
-                if (connectedAtMs != 0L) {
-                    val livedMs = SystemClock.elapsedRealtime() - connectedAtMs
-                    connectedAtMs = 0L
-                    if (reconnectPolicy.isStable(livedMs)) reconnectAttempt = 0
-                    else Log.w(tag, "Connection lasted only ${livedMs}ms; keeping reconnect backoff")
-                }
+                logEvent("GATT disconnected (status=$status)")
+                markProgress()
+                noteConnectionEnded()
                 onBrandConnectionLost(status)
                 cancelDisconnectTimer()
                 cancelConnectTimeout()
@@ -474,12 +546,22 @@ abstract class BrandBleManager(
         }
     }
 
+    /**
+     * Bookkeeping for a link that just ended: a connection that lived long
+     * enough resets the backoff schedule, a flapping one does not.
+     */
+    private fun noteConnectionEnded() {
+        if (connectedAtMs == 0L) return
+        val livedMs = SystemClock.elapsedRealtime() - connectedAtMs
+        connectedAtMs = 0L
+        if (reconnectPolicy.isStable(livedMs)) reconnectAttempt = 0
+        else logEvent("connection lasted only ${livedMs}ms; keeping reconnect backoff")
+    }
+
     private fun handleServicesDiscovered(gatt: BluetoothGatt, status: Int) {
         assertMainThread()
         if (status != BluetoothGatt.GATT_SUCCESS) {
-            Log.e(tag, "Service discovery failed: $status")
-            emitError("Service discovery failed ($status)")
-            disconnect()
+            recoverFromSetupFailure("service discovery failed ($status)", "Service discovery failed ($status)")
             return
         }
         onBrandServicesDiscovered(gatt)
@@ -513,7 +595,7 @@ abstract class BrandBleManager(
     private fun handleBluetoothOff() {
         assertMainThread()
         if (isStopping || dataptr == 0L) return
-        Log.w(tag, "Bluetooth turned off; releasing GATT, will resume when it is back on")
+        logEvent("Bluetooth turned off; releasing GATT, will resume when it is back on")
         resumeWhenBluetoothOn = true
         cancelReconnect()
         cancelPendingConnect()
@@ -537,7 +619,7 @@ abstract class BrandBleManager(
         if (!resumeWhenBluetoothOn) return
         resumeWhenBluetoothOn = false
         if (isStopping || dataptr == 0L) return
-        Log.i(tag, "Bluetooth back on; resuming connection")
+        logEvent("Bluetooth back on; resuming connection")
         // Give the stack a moment to finish coming up before scanning/connecting.
         // reconnectAttempt > 0 routes a failure into the backoff instead of a
         // terminal error.
@@ -563,6 +645,8 @@ abstract class BrandBleManager(
     ) {
         pendingDevice = device
         persistMatchedDevice(device)
+        markProgress()
+        if (!autoConnect) holdWakeLock(ATTEMPT_WAKE_LOCK_MS)
         // A pending auto-connect is waiting for the sensor, not connecting yet.
         if (!autoConnect) emitStatus("connecting")
 
@@ -582,7 +666,7 @@ abstract class BrandBleManager(
             if (isStopping || dataptr == 0L) {
                 return@Runnable
             }
-            Log.i(tag, "Connecting to ${device.address} (${device.name ?: "unknown"}) via $reason")
+            logEvent("connecting to ${device.address} (${device.name ?: "unknown"}) via $reason autoConnect=$autoConnect")
             currentGatt = device.connectGatt(context, autoConnect, this, BluetoothDevice.TRANSPORT_LE)
             // A pending auto-connect has no deadline: it waits for the sensor.
             if (!autoConnect) scheduleConnectTimeout()
@@ -607,6 +691,128 @@ abstract class BrandBleManager(
         cancelConnectTimeout()
         onBrandDisconnected()
         connectToDevice(device, reason, delayMs = CONNECT_RETRY_DELAY_MS)
+    }
+
+    // ── Recovery: setup failures, watchdog, "someone is looking" ──────────────
+
+    private fun sessionActive(): Boolean = !isStopping && dataptr != 0L
+
+    private fun connectionPhase(): ConnectionWatchdog.Phase = when {
+        currentGatt != null && setupComplete -> ConnectionWatchdog.Phase.CONNECTED
+        currentGatt != null || isScanning || reconnectRunnable != null || connectRunnable != null ->
+            ConnectionWatchdog.Phase.ATTEMPTING
+        else -> ConnectionWatchdog.Phase.IDLE
+    }
+
+    /**
+     * A step of connection setup failed (discovery, notifications, handshake
+     * writes). Right after a reconnect these are routine — the sensor is often
+     * half-awake — so unlike [disconnect] this never ends the session: the
+     * link is dropped and the reconnect backoff takes over. Only a streak of
+     * failures with no reading in between is reported to the user, and the
+     * retries continue even then.
+     *
+     * [reason] goes to the log; [userMessage] is what the user would see.
+     */
+    protected fun recoverFromSetupFailure(reason: String, userMessage: String) {
+        assertMainThread()
+        if (!sessionActive()) return
+        consecutiveSetupFailures += 1
+        logEvent("setup failed #$consecutiveSetupFailures: $reason; recovering with backoff")
+
+        cancelReconnect()
+        cancelPendingConnect()
+        cancelConnectTimeout()
+        cancelDisconnectTimer()
+        currentGatt?.let {
+            if (hasBlePermissions()) it.disconnect()
+            it.close()
+        }
+        currentGatt = null
+        setupComplete = false
+        noteConnectionEnded()
+        resetReadingSyncState()
+        clearWriteQueue()
+        onBrandDisconnected()
+        markProgress()
+
+        emitStatus("disconnected")
+        if (consecutiveSetupFailures == SETUP_FAILURES_BEFORE_ERROR) emitError(userMessage)
+        scheduleReconnect()
+    }
+
+    /**
+     * Called by the OS alarm (see [CgmForegroundService]). Restarts the
+     * connection from scratch if the lifecycle looks stuck, whatever state the
+     * reconnect chain itself believes it is in. Returns true if it kicked.
+     */
+    fun checkConnection(): Boolean {
+        assertMainThread()
+        val now = SystemClock.elapsedRealtime()
+        val phase = connectionPhase()
+        val action = ConnectionWatchdog.evaluate(
+            sessionActive = sessionActive(),
+            adapterEnabled = bluetoothAdapter?.isEnabled == true,
+            phase = phase,
+            sinceProgressMs = now - lastProgressAtMs,
+            sinceValueMs = now - maxOf(lastValueAtMs, connectedAtMs)
+        )
+        if (action != ConnectionWatchdog.Action.KICK) return false
+        logEvent(
+            "watchdog: stuck in $phase (no progress ${(now - lastProgressAtMs) / 1000}s, " +
+                "no value ${(now - maxOf(lastValueAtMs, connectedAtMs)) / 1000}s); restarting"
+        )
+        restartFromScratch("watchdog")
+        return true
+    }
+
+    /**
+     * The user is about to look at the sensor state (screen on, app in the
+     * foreground). If it is not connected and nothing is actively trying —
+     * idle, or just waiting out a backoff — try right now instead.
+     */
+    fun ensureConnected(reason: String) {
+        assertMainThread()
+        if (!sessionActive() || bluetoothAdapter?.isEnabled != true) return
+        when (connectionPhase()) {
+            ConnectionWatchdog.Phase.CONNECTED -> return
+            ConnectionWatchdog.Phase.ATTEMPTING -> {
+                // A scan or connect in flight is already the attempt; only a
+                // pending backoff timer is worth cutting short.
+                val waitingOutBackoff = reconnectRunnable != null && currentGatt == null && !isScanning
+                if (!waitingOutBackoff) return
+            }
+            ConnectionWatchdog.Phase.IDLE -> Unit
+        }
+        logEvent("ensureConnected($reason): not connected; trying now")
+        restartFromScratch(reason)
+    }
+
+    private fun restartFromScratch(reason: String) {
+        assertMainThread()
+        if (!sessionActive()) return
+        logEvent("restart from scratch: $reason")
+        cancelReconnect()
+        cancelPendingConnect()
+        cancelConnectTimeout()
+        cancelDisconnectTimer()
+        stopScan()
+        currentGatt?.let {
+            if (hasBlePermissions()) it.disconnect()
+            it.close()
+        }
+        currentGatt = null
+        setupComplete = false
+        noteConnectionEnded()
+        clearWriteQueue()
+        onBrandDisconnected()
+        // A failure to start must fall into the backoff, not end in an error.
+        reconnectAttempt = maxOf(reconnectAttempt, 1)
+        startSensorScan(dataptr, preferSavedAddress = true, resetFailureState = true)
+            .onFailure {
+                logEvent("restart could not start: ${it.message}")
+                scheduleReconnect()
+            }
     }
 
     // ── Notification / descriptor helpers ─────────────────────────────────────
@@ -691,6 +897,7 @@ abstract class BrandBleManager(
      * is promoted to current after the stream settles.
      */
     protected fun deliverReading(decoded: DecodedGlucoseReading) {
+        noteValueReceived()
         if (hasDeliveredCurrentReading) {
             if (shouldPublishReading(decoded)) {
                 emitGlucoseReading(decoded)
@@ -713,13 +920,22 @@ abstract class BrandBleManager(
      * emits `syncingHistory` progress while no current reading exists.
      */
     protected fun notifyHistoryStored() {
+        noteValueReceived()
         if (hasDeliveredCurrentReading) return
         historySyncActive = true
         historyReadingsReceived += 1
         emitHistorySyncProgress()
     }
 
+    /** Any reading, live or back-filled: the link is producing data. */
+    private fun noteValueReceived() {
+        lastValueAtMs = SystemClock.elapsedRealtime()
+        markProgress()
+        consecutiveSetupFailures = 0
+    }
+
     protected fun completeHistorySyncAndEmit(reading: DecodedGlucoseReading) {
+        noteValueReceived()
         if (!shouldPublishReading(reading)) {
             return
         }
@@ -869,9 +1085,7 @@ abstract class BrandBleManager(
             drainWriteQueue()
             return
         }
-        Log.e(tag, "Characteristic write failed twice ($cause); disconnecting")
-        emitError("BLE write failed ($cause)")
-        disconnect()
+        recoverFromSetupFailure("characteristic write failed twice ($cause)", "BLE write failed ($cause)")
     }
 
     private fun dispatchWrite(
@@ -947,7 +1161,7 @@ abstract class BrandBleManager(
         cancelConnectTimeout()
         connectTimeoutRunnable = Runnable {
             if (currentGatt != null && !setupComplete) {
-                Log.e(tag, "Connection timeout")
+                logEvent("connection timeout (no setup within ${CONNECT_TIMEOUT_MS / 1000}s)")
                 if (isAutoRecovering()) {
                     // Automatic reconnect cycle: release the pending GATT and
                     // retry later with backoff instead of tearing everything
@@ -959,7 +1173,7 @@ abstract class BrandBleManager(
                     emitStatus("disconnected")
                     val device = pendingDevice
                     if (autoConnectAfterTimeout && device != null) {
-                        Log.i(tag, "Direct connect timed out; waiting via auto-connect")
+                        logEvent("direct connect timed out; waiting via auto-connect")
                         connectToDevice(device, "auto-connect", delayMs = 0L, autoConnect = true)
                     } else {
                         scheduleReconnect()
@@ -986,7 +1200,12 @@ abstract class BrandBleManager(
         cancelReconnect()
         val delayMs = reconnectPolicy.delayMs(reconnectAttempt)
         reconnectAttempt += 1
-        Log.i(tag, "Scheduling reconnect attempt #$reconnectAttempt in ${delayMs / 1000}s")
+        markProgress()
+        // The timer below runs on the handler's uptime clock, which stops with
+        // the CPU. Short waits are kept awake; long ones are covered by the OS
+        // alarm behind [checkConnection].
+        if (delayMs <= ATTEMPT_WAKE_LOCK_MS) holdWakeLock(delayMs + ATTEMPT_WAKE_LOCK_MS)
+        logEvent("scheduling reconnect attempt #$reconnectAttempt in ${delayMs / 1000}s")
         reconnectRunnable = Runnable {
             reconnectRunnable = null
             if (isStopping || dataptr == 0L) return@Runnable

@@ -255,6 +255,14 @@ class SensorPlatformImpl(
         return mapOf("startMs" to window.startMs, "expectedEndMs" to window.expectedEndMs)
     }
 
+    /** Watchdog entry point; see [BrandBleManager.checkConnection]. */
+    fun checkConnection(): Boolean = activeBleManager?.checkConnection() ?: false
+
+    /** See [BrandBleManager.ensureConnected]. */
+    fun ensureConnected(reason: String) {
+        activeBleManager?.ensureConnected(reason)
+    }
+
     fun stopMonitoring() {
         activeBleManager?.stopScan()
         activeBleManager?.disconnect()

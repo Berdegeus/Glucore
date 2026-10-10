@@ -13,6 +13,7 @@ import '../widgets/glucore_widgets.dart';
 import '../widgets/glucose_chart.dart';
 import '../widgets/glucose_window_selector.dart';
 import '../widgets/patient_widgets.dart';
+import '../widgets/periodic_rebuild.dart';
 import '../widgets/user_app_bar.dart';
 import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
@@ -201,6 +202,12 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
   }
 
   Widget _buildHero(BuildContext context, PatientState state) {
+    // `isReadingLive` and the "N min atrás" text depend on the clock, not on
+    // state: without a tick they stay as they were at the last rebuild.
+    return PeriodicRebuild(builder: (context) => _heroCard(context, state));
+  }
+
+  Widget _heroCard(BuildContext context, PatientState state) {
     final current = state.currentReading;
     final sensorState = state.sensorState;
 

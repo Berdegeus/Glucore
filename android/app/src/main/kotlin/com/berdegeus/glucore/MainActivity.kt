@@ -167,6 +167,8 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Back in front: if the sensor dropped while we were away, reconnect now.
+        (application as GlucoreApp).sensorCore.ensureConnected("activity-resume")
         if (nfcScanRequested) {
             NfcAdapter.getDefaultAdapter(this)?.takeIf { it.isEnabled }?.let {
                 enableReaderMode(it)
