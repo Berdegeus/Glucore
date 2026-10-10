@@ -216,16 +216,15 @@ class SensorPlatformImpl(
         if (!sensorsRoot.isDirectory) return null
 
         // Same pick as startMonitoring: the persisted id when the library knows
-        // it, otherwise its first sensor. The directory is named after the
-        // library's sensor name, which is not the session id (it has a prefix).
+        // it, otherwise its first sensor. `activeSensors()` reports the id, not
+        // the directory name (that has a prefix), so SensorStoreLocator matches.
         val sensors = try { Natives.activeSensors() } catch (e: Exception) { null }
         val sensorName = sensors?.firstOrNull { it == session.sensorId } ?: sensors?.firstOrNull()
-        var dir = sensorName?.let { java.io.File(sensorsRoot, it) }?.takeIf { it.isDirectory }
-        if (dir == null) {
-            // Fall back to the only sensor directory, if there is exactly one.
-            val dirs = sensorsRoot.listFiles { f -> f.isDirectory }.orEmpty()
-            dir = dirs.singleOrNull()
+        val candidates = sensorsRoot.listFiles { f -> f.isDirectory }.orEmpty().map {
+            SensorStoreLocator.Candidate(it.name, java.io.File(it, STORE_FILE).lastModified())
         }
+        val dir = SensorStoreLocator.pick(sensorName, candidates)
+            ?.let { java.io.File(sensorsRoot, it) }
         val file = dir?.let { java.io.File(it, STORE_FILE) }?.takeIf { it.isFile }
         android.util.Log.d(
             "SensorPlatformImpl",
