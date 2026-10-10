@@ -52,6 +52,13 @@ class MainActivity : FlutterActivity() {
                             core.stopMonitoring()
                             result.success(null)
                         }
+                        // Asynchronous: answers once the store has been read off the
+                        // main thread, so it must not fall through to the shared
+                        // `result` handling.
+                        "getStoredReadings" -> {
+                            val sinceMs = (call.argument<Number>("sinceMs") ?: 0).toLong()
+                            core.getStoredReadings(sinceMs) { readings -> result.success(readings) }
+                        }
                         "clearSession" -> {
                             core.clearSession()
                             result.success(null)

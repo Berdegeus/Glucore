@@ -11,6 +11,7 @@
 | `startMonitoring` | — | `null` | dispara scan BLE; progresso via eventos |
 | `stopMonitoring` | — | `null` | emite `disconnected` |
 | `clearSession` | — | `null` | stopMonitoring + limpa SQLite; emite `idle` |
+| `getStoredReadings` | `{sinceMs: int}` | `[[timestampMs, mgdl, rate], ...]` | leituras **por minuto** que a lib do sensor guardou desde `sinceMs`, em ordem crescente de tempo. Lê o `polls.dat` do sensor ativo (`files/sensors/<sensor>/`), registros de 20 bytes little-endian: `uint32 tempo(s), uint32 índice, uint32 mg/dL, int32 tendência, float variação` (`variação` == `rate`). Só Sibionics; outra marca, sessão ausente ou arquivo ausente → `[]`, nunca erro. Registros com tempo < 2014, mg/dL fora de 40..600 ou variação não finita são descartados (a lib escreve enquanto lemos). Assíncrono: a leitura roda fora da main thread. Existe porque o BLE só entrega ao Kotlin uma leitura por notificação, enquanto a lib grava todas |
 | `scanBarcode` | — | `String` (texto cru) ou `null` | abre o **Google code scanner** (`play-services-code-scanner`, DataMatrix + QR) para a caixa do sensor; assíncrono. `null` = usuário cancelou; `PlatformException("SCANNER_UNAVAILABLE")` = sem Play Services/módulo ainda baixando — o Dart (`GoogleBarcodeScanner`) cai no scanner do `mobile_scanner`. Mesmo scanner que o Juggluco usa na caixa do Sibionics |
 
 Exceções Kotlin → `PlatformException(code: "NATIVE_ERROR", message)`.

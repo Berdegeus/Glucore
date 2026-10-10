@@ -7,6 +7,8 @@ import tk.glucodata.Natives
 data class GlucoseReadingPayload(val value: Double)
 data class FailurePayload(val message: String)
 
+private const val STORE_FILE = "polls.dat"
+
 class SensorPlatformImpl(
     private val sessionManager: SensorSessionManager,
     private val nativeBridgeAdapter: SibionicsNativeBridgeAdapter,
@@ -199,6 +201,37 @@ class SensorPlatformImpl(
         bm.startSensorScan(dataptr)
             .onFailure { emitError(it.message ?: "BLE scan failed"); return false }
         return true
+    }
+
+    /**
+     * The vendor library's per-minute store (`polls.dat`) for the active
+     * Sibionics sensor, or null when there is none to read. Main thread only:
+     * it asks the native layer which sensor is active.
+     */
+    fun storedReadingsFile(): java.io.File? {
+        val session = sessionManager.getCurrentSession() ?: return null
+        if (session.brand != SensorBrand.SIBIONICS) return null
+
+        val sensorsRoot = java.io.File(nativeFilesDir, NativeSensorState.SENSORS_DIR)
+        if (!sensorsRoot.isDirectory) return null
+
+        // Same pick as startMonitoring: the persisted id when the library knows
+        // it, otherwise its first sensor. The directory is named after the
+        // library's sensor name, which is not the session id (it has a prefix).
+        val sensors = try { Natives.activeSensors() } catch (e: Exception) { null }
+        val sensorName = sensors?.firstOrNull { it == session.sensorId } ?: sensors?.firstOrNull()
+        var dir = sensorName?.let { java.io.File(sensorsRoot, it) }?.takeIf { it.isDirectory }
+        if (dir == null) {
+            // Fall back to the only sensor directory, if there is exactly one.
+            val dirs = sensorsRoot.listFiles { f -> f.isDirectory }.orEmpty()
+            dir = dirs.singleOrNull()
+        }
+        val file = dir?.let { java.io.File(it, STORE_FILE) }?.takeIf { it.isFile }
+        android.util.Log.d(
+            "SensorPlatformImpl",
+            "Stored readings: activeSensors=${sensors?.toList()} dir=${dir?.name} file=${file?.length() ?: -1}B"
+        )
+        return file
     }
 
     fun stopMonitoring() {
