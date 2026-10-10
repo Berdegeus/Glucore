@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import tk.glucodata.Natives
 import java.util.UUID
@@ -26,6 +27,9 @@ class SibionicsBleManager(
     override val tag = "SibionicsBleManager"
     override val brandName = "Sibionics"
     override val scanServiceUuid: UUID = SERVICE_UUID
+    override val reconnectPolicy: ReconnectPolicy = ReconnectPolicy.FAST_FIRST
+    // autoConnect is unreliable on older stacks; Juggluco gates it on Android 13 too.
+    override val autoConnectAfterTimeout = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
     private var writeChar: BluetoothGattCharacteristic? = null
     private var currentBluetoothNum: String? = null

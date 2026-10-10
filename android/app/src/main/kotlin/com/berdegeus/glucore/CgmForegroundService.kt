@@ -133,13 +133,30 @@ class CgmForegroundService : Service() {
             .setContentIntent(contentIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .apply {
+                val pct = syncPercent
+                if (pct != null) setProgress(100, pct, false)
+            }
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }
 
+    // Last title/text posted. History sync emits one event per reading with the
+    // same status, and re-posting an identical notification ~3x/s is wasted work.
+    private var postedTitle: String? = null
+    private var postedText: String? = null
+    private var postedPercent: Int? = null
+    private var syncPercent: Int? = null
+
     private fun updateNotification() {
         if (!inForeground) return
+        val text = readingText ?: "Aguardando leituras do sensor"
+        if (statusText == postedTitle && text == postedText && syncPercent == postedPercent) return
+        postedTitle = statusText
+        postedText = text
+        postedPercent = syncPercent
         getSystemService(NotificationManager::class.java)
             ?.notify(NOTIFICATION_ID, buildNotification())
     }
@@ -148,12 +165,24 @@ class CgmForegroundService : Service() {
 
     private fun onSensorEvent(event: Map<String, Any?>) {
         val status = event["status"]?.toString() ?: return
+        syncPercent = if (status == "syncingHistory") {
+            val sync = event["sync"] as? Map<*, *>
+            HistorySyncProgress.percent(
+                firstMs = (sync?.get("firstTimestampMs") as? Number)?.toLong(),
+                latestMs = (sync?.get("latestTimestampMs") as? Number)?.toLong(),
+                nowMs = System.currentTimeMillis()
+            )
+        } else {
+            null
+        }
+
         statusText = when (status) {
             "scanning" -> "Procurando sensor…"
             "connecting" -> "Conectando ao sensor…"
             "pairing" -> "Confirme o pareamento (PIN) no aparelho"
             "connected" -> "Sensor conectado"
-            "syncingHistory" -> "Sincronizando histórico…"
+            "syncingHistory" -> syncPercent?.let { "Sincronizando histórico… $it%" }
+                ?: "Sincronizando histórico…"
             "readingAvailable" -> "Sensor conectado"
             "disconnected" -> "Sensor desconectado"
             "error" -> "Falha na conexão do sensor"
