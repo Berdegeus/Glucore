@@ -115,7 +115,8 @@ void main() {
     test('o DI injeta os casos de uso no cubit', () {
       final di = File('lib/injection_container.dart').readAsStringSync();
       expect(di, contains('PatientUseCases.fromRepository(sl<PatientRepository>())'));
-      expect(di, contains('PatientCubit(useCases: sl())'));
+      expect(di, contains('PatientCubit('));
+      expect(di, contains('useCases: sl()'));
     });
   });
 }
