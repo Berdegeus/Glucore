@@ -444,6 +444,38 @@
   "monitoringNoSensorPairButton": "Conectar sensor",
   "glucoseStaleLabel": "Última leitura",
   "glucoseStaleBadge": "Desatualizada",
+  "glucoseReconnectButton": "Reconectar",
+  "sensorPanelTitle": "Sensor",
+  "sensorPanelBrandLabel": "Marca",
+  "sensorPanelSerialLabel": "Número de série",
+  "sensorPanelStatusLabel": "Conexão",
+  "sensorPanelLifeTitle": "Vida do sensor",
+  "sensorPanelLifeRemaining": "{remaining} restantes",
+  "@sensorPanelLifeRemaining": {
+    "placeholders": {
+      "remaining": {}
+    }
+  },
+  "sensorPanelLifeEnded": "Sensor expirado",
+  "sensorPanelLifeUnknown": "A vida útil aparece depois da primeira leitura",
+  "sensorPanelStartedAt": "Iniciado em {date}",
+  "@sensorPanelStartedAt": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "sensorPanelEndsAt": "Termina em {date}",
+  "@sensorPanelEndsAt": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "sensorPanelRecentReadingsTitle": "Leituras recentes",
+  "sensorPanelNoReadings": "Nenhuma leitura ainda",
+  "sensorPanelRescanNfcButton": "Escanear sensor (NFC)",
+  "sensorPanelReplaceButton": "Trocar sensor",
+  "sensorPanelReplaceConfirmTitle": "Trocar sensor?",
+  "sensorPanelReplaceConfirmMessage": "A sessão atual será removida deste aparelho. O histórico já salvo continua no app.",
   "monitoringHistorySyncTitle": "Sincronizando histórico do sensor",
   "monitoringHistorySyncSubtitle": "A glicose atual aparece quando terminar. Você pode sair do app: ele continua em segundo plano.",
   "sharingTitle": "Compartilhar com profissional",

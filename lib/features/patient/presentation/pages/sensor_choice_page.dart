@@ -8,6 +8,7 @@ import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import 'libre_nfc_page.dart';
 import 'sensor_link_page.dart';
+import 'sensor_panel_page.dart';
 
 class SensorChoicePage extends StatelessWidget {
   const SensorChoicePage({super.key});
@@ -20,9 +21,7 @@ class SensorChoicePage extends StatelessWidget {
       builder: (context, state) {
         final session = state.session;
         if (session == null) return _buildBrandList(context);
-        return session.brand == SensorBrand.libre2
-            ? const LibreNFCPage()
-            : SensorLinkPage(brand: session.brand);
+        return const SensorPanelPage();
       },
     );
   }

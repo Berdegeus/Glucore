@@ -19,6 +19,7 @@ import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/libre_nfc_page.dart';
 import 'package:glucore/features/patient/presentation/pages/sensor_choice_page.dart';
 import 'package:glucore/features/patient/presentation/pages/sensor_link_page.dart';
+import 'package:glucore/features/patient/presentation/pages/sensor_panel_page.dart';
 import 'package:glucore/features/sensor/domain/events.dart';
 import 'package:glucore/features/sensor/domain/models.dart';
 import 'package:glucore/features/sensor/domain/sensor_repository.dart';
@@ -145,11 +146,11 @@ void main() {
       );
     await pumpChoicePage(tester, sensorCubit);
 
-    expect(find.byType(SensorLinkPage), findsOneWidget);
+    expect(find.byType(SensorPanelPage), findsOneWidget);
     expect(find.text('Accu-Chek SmartGuide'), findsNothing);
   });
 
-  testWidgets('a linked Libre 2 sensor opens the Libre panel', (tester) async {
+  testWidgets('a linked Libre 2 sensor opens the sensor panel', (tester) async {
     final sensorCubit = _FakeSensorCubit()
       ..setState(
         SensorUiState(
@@ -159,7 +160,8 @@ void main() {
       );
     await pumpChoicePage(tester, sensorCubit);
 
-    expect(find.byType(LibreNFCPage), findsOneWidget);
+    expect(find.byType(SensorPanelPage), findsOneWidget);
+    expect(find.byType(LibreNFCPage), findsNothing);
     expect(find.text('Accu-Chek SmartGuide'), findsNothing);
   });
 }

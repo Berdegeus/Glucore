@@ -67,8 +67,11 @@ class GlucoreStatusCard extends StatelessWidget {
     this.sensorId,
     this.updatedAt,
     this.isLive = false,
+    this.onReconnect,
   });
 
+  /// Opens the sensor panel from the stale card (null hides the button).
+  final VoidCallback? onReconnect;
   final double value;
   final GlucoseZone zone;
   final GlucoseTrend trend;
@@ -86,6 +89,7 @@ class GlucoreStatusCard extends StatelessWidget {
         updatedAt: updatedAt,
         trendIcon: _trendIcon(trend),
         timeAgo: updatedAt == null ? null : _timeAgo(updatedAt!),
+        onReconnect: onReconnect,
       );
     }
 
@@ -200,8 +204,10 @@ class _StaleReadingCard extends StatelessWidget {
     this.sensorId,
     this.updatedAt,
     this.timeAgo,
+    this.onReconnect,
   });
 
+  final VoidCallback? onReconnect;
   final double value;
   final GlucoseTrend trend;
   final IconData trendIcon;
@@ -267,21 +273,35 @@ class _StaleReadingCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: colors.inkMuted.withValues(alpha: 0.5)),
-                ),
-                child: Text(
-                  l10n.glucoseStaleBadge,
-                  style: TextStyle(
-                    color: colors.inkMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              if (onReconnect != null)
+                FilledButton.icon(
+                  onPressed: onReconnect,
+                  style: FilledButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  icon: const Icon(Icons.bluetooth_searching, size: 16),
+                  label: Text(l10n.glucoseReconnectButton),
+                )
+              else
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: colors.inkMuted.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Text(
+                    l10n.glucoseStaleBadge,
+                    style: TextStyle(
+                      color: colors.inkMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           if (sensorId != null) ...[

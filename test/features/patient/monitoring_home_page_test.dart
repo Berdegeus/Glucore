@@ -76,22 +76,21 @@ void main() {
     await tester.pump();
   }
 
+  testWidgets('the app bar no longer carries a bluetooth pairing icon', (
+    tester,
+  ) async {
+    await pump(tester, const PatientState());
+
+    expect(find.byTooltip(l10n.monitoringPairSensorTooltip), findsNothing);
+    expect(find.byIcon(Icons.bluetooth_searching), findsNothing);
+  });
+
   testWidgets(
-    'shows the localized bluetooth tooltip instead of a hardcoded string',
+    'P30: the pair button opens brand selection, not a fixed brand flow',
     (tester) async {
       await pump(tester, const PatientState());
 
-      final tooltipFinder = find.byTooltip(l10n.monitoringPairSensorTooltip);
-      expect(tooltipFinder, findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'P30: pairing icon opens brand selection, not a fixed brand flow',
-    (tester) async {
-      await pump(tester, const PatientState());
-
-      await tester.tap(find.byTooltip(l10n.monitoringPairSensorTooltip));
+      await tester.tap(find.text(l10n.monitoringNoSensorPairButton));
       await tester.pumpAndSettle();
 
       expect(find.byType(SensorChoicePage), findsOneWidget);

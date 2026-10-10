@@ -18,6 +18,7 @@ import 'carb_edit_page.dart';
 import 'insulin_edit_page.dart';
 import 'notifications_page.dart';
 import 'sensor_choice_page.dart';
+import 'sensor_panel_page.dart';
 
 class MonitoringHomePage extends StatefulWidget {
   const MonitoringHomePage({super.key});
@@ -134,7 +135,6 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     return Scaffold(
       backgroundColor: context.glucoreColors.surfaceElevated,
       appBar: UserAppBar(
@@ -153,11 +153,6 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
             onPressed: () => Navigator.of(context).push(
               buildPatientScopedRoute(context, const NotificationsPage()),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.bluetooth_searching),
-            tooltip: l10n.monitoringPairSensorTooltip,
-            onPressed: () => _openSensorChoice(context),
           ),
         ],
       ),
@@ -184,7 +179,10 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
                 _StatsRow(state: state),
               ],
               const SizedBox(height: 8),
-              _SensorStrip(state: state),
+              _SensorStrip(
+                state: state,
+                onTap: () => _openSensorChoice(context),
+              ),
             ],
           );
         },
@@ -226,6 +224,9 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
       sensorId: sensorState.session?.sensorId,
       updatedAt: current.timestamp,
       isLive: state.isReadingLive,
+      onReconnect: sensorState.session != null
+          ? () => _openSensorChoice(context)
+          : null,
     );
   }
 }
@@ -644,8 +645,9 @@ String sensorLifeLabel({
 }
 
 class _SensorStrip extends StatelessWidget {
-  const _SensorStrip({required this.state});
+  const _SensorStrip({required this.state, required this.onTap});
   final PatientState state;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -663,26 +665,38 @@ class _SensorStrip extends StatelessWidget {
       now: DateTime.now(),
     );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: context.glucoreColors.surfaceCanvas,
+    final colors = context.glucoreColors;
+    return Material(
+      color: colors.surfaceCanvas,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.sensors, size: 18, color: context.glucoreColors.inkMuted),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: context.glucoreColors.inkMuted,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Icon(Icons.sensors, size: 18, color: colors.inkMuted),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(fontSize: 12, color: colors.inkMuted),
+                ),
               ),
-            ),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: sensorStatusColor(context, state.sensorState.status),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(Icons.chevron_right_rounded, size: 18, color: colors.inkMuted),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
