@@ -322,6 +322,9 @@ class _GlucoseChartState extends State<GlucoseChart> {
                       ),
                       borderData: FlBorderData(show: false),
                       extraLinesData: ExtraLinesData(
+                        // Threshold lines sit behind the data, so the entry
+                        // badges are drawn over them.
+                        extraLinesOnTop: false,
                         horizontalLines: [
                           HorizontalLine(
                             y: lowThreshold.toDouble(),
@@ -370,6 +373,11 @@ class _GlucoseChartState extends State<GlucoseChart> {
                             reservedSize: 22,
                             // Called once per minute; only round times draw.
                             interval: 1,
+                            // The chart ends at the last reading, not on a whole
+                            // minute: the extra edge titles would truncate to the
+                            // same minute as a neighbour and draw its label twice.
+                            minIncluded: false,
+                            maxIncluded: false,
                             getTitlesWidget: (value, meta) {
                               final t = oldest.add(
                                 Duration(minutes: value.toInt()),
