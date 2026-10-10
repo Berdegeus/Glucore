@@ -18,6 +18,7 @@ import 'package:glucore/features/patient/presentation/cubit/patient_state.dart';
 import 'package:glucore/features/patient/presentation/cubit/user_identity_cubit.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/presentation/pages/monitoring_home_page.dart';
+import 'package:glucore/features/patient/presentation/widgets/glucose_chart.dart';
 import 'package:glucore/features/patient/presentation/pages/sensor_choice_page.dart';
 import 'package:glucore/features/sensor/domain/models.dart';
 import 'package:glucore/features/sensor/domain/events.dart';
@@ -151,6 +152,34 @@ void main() {
       expect(find.text(l10n.monitoringGmiEstimateLabel), findsOneWidget);
     },
   );
+
+  testWidgets('the window picked in the card selector reaches the chart', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    final readings = List.generate(
+      40,
+      (i) => GlucoseReadingItem(
+        value: 100,
+        timestamp: now.subtract(Duration(minutes: i * 5)),
+        trend: GlucoseTrend.stable,
+        rate: 0,
+      ),
+    );
+    await pump(tester, PatientState(readings: readings));
+
+    int chartWindow() =>
+        tester.widget<GlucoseChart>(find.byType(GlucoseChart)).windowHours;
+    expect(chartWindow(), 12);
+
+    await tester.tap(find.text('3h'));
+    await tester.pumpAndSettle();
+    expect(chartWindow(), 3);
+
+    await tester.tap(find.text('24h'));
+    await tester.pumpAndSettle();
+    expect(chartWindow(), 24);
+  });
 
   testWidgets('shows the sensor strip using the localized days-left template', (
     tester,

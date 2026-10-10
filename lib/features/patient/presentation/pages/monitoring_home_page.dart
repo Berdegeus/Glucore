@@ -11,6 +11,7 @@ import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/glucose_chart.dart';
+import '../widgets/glucose_window_selector.dart';
 import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
 import 'carb_edit_page.dart';
@@ -501,16 +502,24 @@ class _NoSensorCard extends StatelessWidget {
   }
 }
 
-class _ChartCard extends StatelessWidget {
-  const _ChartCard({
-    required this.state,
-    this.onCarbTap,
-    this.onInsulinTap,
-  });
+class _ChartCard extends StatefulWidget {
+  const _ChartCard({required this.state, this.onCarbTap, this.onInsulinTap});
 
   final PatientState state;
   final void Function(CarbEntry)? onCarbTap;
   final void Function(InsulinEntry)? onInsulinTap;
+
+  @override
+  State<_ChartCard> createState() => _ChartCardState();
+}
+
+class _ChartCardState extends State<_ChartCard> {
+  /// Look-back windows offered above the chart, in hours.
+  static const _windowOptions = [1, 3, 6, 12, 24];
+
+  int _windowHours = 12;
+
+  PatientState get state => widget.state;
 
   @override
   Widget build(BuildContext context) {
@@ -523,26 +532,38 @@ class _ChartCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Text(
-              context.l10n.monitoringChartSectionTitle,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: context.glucoreColors.inkMuted,
-              ),
+            padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.l10n.monitoringChartSectionTitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: context.glucoreColors.inkMuted,
+                    ),
+                  ),
+                ),
+                GlucoseWindowSelector(
+                  options: _windowOptions,
+                  selected: _windowHours,
+                  onChanged: (hours) => setState(() => _windowHours = hours),
+                ),
+              ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(0, 4, 8, 12),
+            padding: const EdgeInsets.fromLTRB(0, 6, 6, 8),
             child: GlucoseChart(
               readings: state.readings,
               lowThreshold: state.alertSettings.lowThreshold,
               highThreshold: state.alertSettings.highThreshold,
               carbs: state.carbs,
               insulin: state.insulin,
-              onCarbTap: onCarbTap,
-              onInsulinTap: onInsulinTap,
+              onCarbTap: widget.onCarbTap,
+              onInsulinTap: widget.onInsulinTap,
+              windowHours: _windowHours,
             ),
           ),
         ],

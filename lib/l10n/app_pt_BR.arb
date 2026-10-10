@@ -397,7 +397,7 @@
       "type": {}
     }
   },
-  "monitoringChartSectionTitle": "Últimas 12 horas",
+  "monitoringChartSectionTitle": "Glicose",
   "monitoringTimeInTargetLabel": "Tempo no alvo",
   "monitoringAverageLabel": "Média",
   "monitoringGmiEstimateLabel": "GMI est.",

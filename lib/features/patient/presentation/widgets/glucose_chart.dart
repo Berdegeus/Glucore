@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../domain/glucose_series.dart';
 
 class GlucoseChart extends StatefulWidget {
   const GlucoseChart({
@@ -15,7 +18,11 @@ class GlucoseChart extends StatefulWidget {
     this.insulin = const [],
     this.onCarbTap,
     this.onInsulinTap,
+    this.windowHours = 12,
   });
+
+  /// How far back the chart looks, in hours. Chosen by the card around it.
+  final int windowHours;
 
   final List<GlucoseReadingItem> readings;
   final int lowThreshold;
@@ -30,13 +37,17 @@ class GlucoseChart extends StatefulWidget {
 }
 
 class _GlucoseChartState extends State<GlucoseChart> {
-  static const double _minY = 0;
-  static const double _maxY = 400;
-  static const double _carbMarkerY = 44;
-  static const double _insulinMarkerY = 16;
-  static const double _leftReserved = 40;
-  static const double _rightPadding = 16;
+  static const double _chartHeight = 300;
+  static const double _leftReserved = 34;
+  static const double _rightPadding = 6;
   static const double _minSpanMinutes = 30;
+
+  /// Empty room after the newest point, as a fraction of the visible span, so
+  /// the end of the line (and its dot) doesn't sit against the chart's edge.
+  static const double _rightMargin = 0.06;
+
+  /// Axis steps for the glucose scale, smallest first.
+  static const _yIntervals = [10.0, 20.0, 25.0, 50.0, 100.0];
 
   List<GlucoseReadingItem> get readings => widget.readings;
   int get lowThreshold => widget.lowThreshold;
@@ -80,10 +91,12 @@ class _GlucoseChartState extends State<GlucoseChart> {
       _totalMinutes,
     );
 
+    // The plot shows the span plus the empty margin on the right.
+    const scale = 1 + _rightMargin;
     final focal =
-        _start + ((prevCenter - _leftReserved) / _plotWidth) * oldSpan;
+        _start + ((prevCenter - _leftReserved) / _plotWidth) * oldSpan * scale;
     final newStart =
-        focal - ((curCenter - _leftReserved) / _plotWidth) * newSpan;
+        focal - ((curCenter - _leftReserved) / _plotWidth) * newSpan * scale;
 
     setState(() {
       if (newSpan >= _totalMinutes - 0.5) {
@@ -102,19 +115,30 @@ class _GlucoseChartState extends State<GlucoseChart> {
   });
 
   @override
+  void didUpdateWidget(GlucoseChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A new window has a different time axis, so a pinch-zoom range from the
+    // old one would point at the wrong minutes.
+    if (oldWidget.windowHours != widget.windowHours) {
+      _span = null;
+      _start = 0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final onCarbTap = widget.onCarbTap;
     final onInsulinTap = widget.onInsulinTap;
     final now = DateTime.now();
-    final window = now.subtract(const Duration(hours: 12));
+    final window = now.subtract(Duration(hours: widget.windowHours));
 
-    final points = readings
+    final rawPoints = readings
         .where((r) => r.timestamp.isAfter(window))
         .toList()
         .reversed
         .toList();
 
-    if (points.length < 2) {
+    if (rawPoints.length < 2) {
       return SizedBox(
         height: 180,
         child: Center(
@@ -128,7 +152,38 @@ class _GlucoseChartState extends State<GlucoseChart> {
       );
     }
 
+    // A wide window of one-minute readings is far more detail than the screen
+    // can show: average it down, keeping the real latest reading.
+    final points = thinForChart(
+      rawPoints,
+      bucketMinutes: chartBucketMinutes(widget.windowHours),
+    );
     final oldest = points.first.timestamp;
+
+    // Fit the glucose scale to the data instead of a fixed 0..400, so the line
+    // uses the whole height. A threshold stays in view while the glucose is
+    // within 40 mg/dL of it; far from it, it would only squash the curve.
+    var dataMin = double.infinity;
+    var dataMax = double.negativeInfinity;
+    for (final r in points) {
+      dataMin = math.min(dataMin, r.value);
+      dataMax = math.max(dataMax, r.value);
+    }
+    final showLow = lowThreshold >= dataMin - 40;
+    final showHigh = highThreshold <= dataMax + 40;
+    final rawMin = math.min(dataMin - 15, showLow ? lowThreshold - 25.0 : dataMin);
+    final rawMax = math.max(dataMax + 15, showHigh ? highThreshold + 25.0 : dataMax);
+    final yInterval = _yIntervals.firstWhere(
+      (i) => (rawMax - rawMin) / i <= 7,
+      orElse: () => _yIntervals.last,
+    );
+    final minY = math.max(0.0, (rawMin / yInterval).floorToDouble() * yInterval);
+    var maxY = (rawMax / yInterval).ceilToDouble() * yInterval;
+    if (maxY - minY < 100) maxY = minY + 100;
+    final yRange = maxY - minY;
+    // Entry markers ride along the bottom of whatever scale is showing.
+    final carbMarkerY = minY + yRange * 0.15;
+    final insulinMarkerY = minY + yRange * 0.05;
 
     Color lineColor;
     final last = points.last;
@@ -138,6 +193,41 @@ class _GlucoseChartState extends State<GlucoseChart> {
       lineColor = Colors.orange;
     } else {
       lineColor = context.glucoreColors.zoneTargetBg;
+    }
+
+    // The line itself changes colour where it leaves the target range: red
+    // below the low threshold, orange above the high one. fl_chart spreads the
+    // gradient over the bar's own extent (its lowest to its highest spot), so
+    // the stops are fractions of [dataMin, dataMax], not of the axis.
+    final lowColor = context.glucoreColors.zoneLowBg;
+    final targetColor = context.glucoreColors.zoneTargetBg;
+    const highColor = Colors.orange;
+    LinearGradient? zoneGradient;
+    final dataSpan = dataMax - dataMin;
+    if (dataSpan > 0) {
+      double fraction(num value) =>
+          ((value - dataMin) / dataSpan).clamp(0.0, 1.0).toDouble();
+      final lowStop = fraction(lowThreshold);
+      final highStop = fraction(highThreshold);
+      final colors = <Color>[];
+      final stops = <double>[];
+      void band(double from, double to, Color color) {
+        if (to - from <= 0) return;
+        colors.addAll([color, color]);
+        stops.addAll([from, to]);
+      }
+
+      band(0, lowStop, lowColor);
+      band(lowStop, highStop, targetColor);
+      band(highStop, 1, highColor);
+      if (colors.isNotEmpty) {
+        zoneGradient = LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: colors,
+          stops: stops,
+        );
+      }
     }
 
     final spots = points.map((r) {
@@ -167,19 +257,21 @@ class _GlucoseChartState extends State<GlucoseChart> {
         .toDouble();
     final viewStart = _start.clamp(0.0, _totalMinutes - viewSpan).toDouble();
     final viewEnd = viewStart + viewSpan;
+    // Empty room to the right of the newest point (see [_rightMargin]).
+    final viewEndPadded = viewEnd + viewSpan * _rightMargin;
 
     final carbSpots = carbsInWindow.map((c) {
       final x = c.time.difference(oldest).inMinutes.toDouble();
-      return FlSpot(x, _carbMarkerY);
+      return FlSpot(x, carbMarkerY);
     }).toList();
 
     final insulinSpots = insulinInWindow.map((i) {
       final x = i.time.difference(oldest).inMinutes.toDouble();
-      return FlSpot(x, _insulinMarkerY);
+      return FlSpot(x, insulinMarkerY);
     }).toList();
 
     // Roughly six labels across the visible span, snapped to round times.
-    const steps = [5, 10, 15, 30, 60, 120, 180, 240];
+    const steps = [5, 10, 15, 30, 60, 120, 180, 240, 360, 720];
     final labelStep = steps.firstWhere(
       (m) => viewSpan / m <= 6,
       orElse: () => steps.last,
@@ -188,11 +280,11 @@ class _GlucoseChartState extends State<GlucoseChart> {
     final hasExtras = carbSpots.isNotEmpty || insulinSpots.isNotEmpty;
 
     return SizedBox(
-      height: 240,
+      height: _chartHeight,
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: _rightPadding, top: 8),
+            padding: const EdgeInsets.only(right: _rightPadding, top: 4),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 _plotWidth = (constraints.maxWidth - _leftReserved).clamp(
@@ -207,10 +299,10 @@ class _GlucoseChartState extends State<GlucoseChart> {
                   onPointerCancel: (e) => _pointers.remove(e.pointer),
                   child: LineChart(
                     LineChartData(
-                      minY: _minY,
-                      maxY: _maxY,
+                      minY: minY,
+                      maxY: maxY,
                       minX: viewStart,
-                      maxX: viewEnd,
+                      maxX: viewEndPadded,
                       clipData: const FlClipData(
                         top: true,
                         bottom: false,
@@ -220,7 +312,7 @@ class _GlucoseChartState extends State<GlucoseChart> {
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
-                        horizontalInterval: 100,
+                        horizontalInterval: yInterval,
                         getDrawingHorizontalLine: (value) => FlLine(
                           color: Colors.grey.withValues(alpha: 0.18),
                           strokeWidth: 1,
@@ -228,14 +320,19 @@ class _GlucoseChartState extends State<GlucoseChart> {
                         ),
                       ),
                       // Soft band for the target range
+                      // Clamped to the visible scale: an annotation is not clipped
+                      // by the chart, so a threshold off-scale would tint the
+                      // card around it.
                       rangeAnnotations: RangeAnnotations(
                         horizontalRangeAnnotations: [
-                          HorizontalRangeAnnotation(
-                            y1: lowThreshold.toDouble(),
-                            y2: highThreshold.toDouble(),
-                            color: context.glucoreColors.zoneTargetBg
-                                .withValues(alpha: 0.09),
-                          ),
+                          if (math.max(lowThreshold.toDouble(), minY) <
+                              math.min(highThreshold.toDouble(), maxY))
+                            HorizontalRangeAnnotation(
+                              y1: math.max(lowThreshold.toDouble(), minY),
+                              y2: math.min(highThreshold.toDouble(), maxY),
+                              color: context.glucoreColors.zoneTargetBg
+                                  .withValues(alpha: 0.09),
+                            ),
                         ],
                       ),
                       borderData: FlBorderData(show: false),
@@ -282,9 +379,9 @@ class _GlucoseChartState extends State<GlucoseChart> {
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: _leftReserved,
-                            interval: 100,
+                            interval: yInterval,
                             getTitlesWidget: (value, meta) {
-                              if (value <= _minY || value >= _maxY) {
+                              if (value <= minY || value >= maxY) {
                                 return const SizedBox.shrink();
                               }
                               return SideTitleWidget(
@@ -305,7 +402,7 @@ class _GlucoseChartState extends State<GlucoseChart> {
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 26,
+                            reservedSize: 22,
                             // Called once per minute; only round times draw.
                             interval: 1,
                             getTitlesWidget: (value, meta) {
@@ -344,7 +441,8 @@ class _GlucoseChartState extends State<GlucoseChart> {
                           isCurved: true,
                           curveSmoothness: 0.3,
                           color: lineColor,
-                          barWidth: 3,
+                          gradient: zoneGradient,
+                          barWidth: 2.6,
                           isStrokeCapRound: true,
                           dotData: FlDotData(
                             show: true,
@@ -408,6 +506,46 @@ class _GlucoseChartState extends State<GlucoseChart> {
                       ],
                       lineTouchData: LineTouchData(
                         touchSpotThreshold: 28,
+                        // The default indicator reads the first colour of the
+                        // line's gradient (always the "low" red); colour it by
+                        // the zone of the value actually touched instead.
+                        getTouchedSpotIndicator: (barData, indexes) {
+                          final isGlucose = barData.spots.length == spots.length &&
+                              identical(barData.spots, spots);
+                          return [
+                            for (final index in indexes)
+                              if (!isGlucose)
+                                const TouchedSpotIndicatorData(
+                                  FlLine(color: Colors.transparent),
+                                  FlDotData(show: false),
+                                )
+                              else
+                                () {
+                                  final value = barData.spots[index].y;
+                                  final color = value < lowThreshold
+                                      ? lowColor
+                                      : (value > highThreshold
+                                            ? highColor
+                                            : targetColor);
+                                  return TouchedSpotIndicatorData(
+                                    FlLine(
+                                      color: color.withValues(alpha: 0.55),
+                                      strokeWidth: 2,
+                                      dashArray: [4, 4],
+                                    ),
+                                    FlDotData(
+                                      getDotPainter: (spot, _, __, ___) =>
+                                          FlDotCirclePainter(
+                                            radius: 6,
+                                            color: color,
+                                            strokeWidth: 2.5,
+                                            strokeColor: Colors.white,
+                                          ),
+                                    ),
+                                  );
+                                }(),
+                          ];
+                        },
                         touchCallback: hasExtras
                             ? (event, response) {
                                 if (event is! FlTapUpEvent) return;
