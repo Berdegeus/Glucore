@@ -319,22 +319,6 @@ class _GlucoseChartState extends State<GlucoseChart> {
                           dashArray: [2, 4],
                         ),
                       ),
-                      // Soft band for the target range
-                      // Clamped to the visible scale: an annotation is not clipped
-                      // by the chart, so a threshold off-scale would tint the
-                      // card around it.
-                      rangeAnnotations: RangeAnnotations(
-                        horizontalRangeAnnotations: [
-                          if (math.max(lowThreshold.toDouble(), minY) <
-                              math.min(highThreshold.toDouble(), maxY))
-                            HorizontalRangeAnnotation(
-                              y1: math.max(lowThreshold.toDouble(), minY),
-                              y2: math.min(highThreshold.toDouble(), maxY),
-                              color: context.glucoreColors.zoneTargetBg
-                                  .withValues(alpha: 0.09),
-                            ),
-                        ],
-                      ),
                       borderData: FlBorderData(show: false),
                       extraLinesData: ExtraLinesData(
                         verticalLines: [
