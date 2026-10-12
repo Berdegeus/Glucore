@@ -12,6 +12,7 @@ export function createReadingsRouter(controller: ReadingsController): Router {
 
   router.get('/', asyncHandler(controller.list));
   router.post('/', asyncHandler(controller.sync));
+  router.put('/summaries', asyncHandler(controller.syncSummaries));
   router.delete('/', asyncHandler(controller.clear));
 
   return router;

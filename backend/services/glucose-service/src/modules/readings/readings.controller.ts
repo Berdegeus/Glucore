@@ -4,6 +4,7 @@ import type { Response } from 'express';
 import type { AuthRequest } from '../../middleware/auth';
 import type { ReadingsService } from './readings.service';
 import { parseReadingBatch } from './readings.schema';
+import { parseSummaryBatch } from './summaries.schema';
 
 /**
  * Translates between HTTP and the service. Nothing here knows about Prisma, and
@@ -19,6 +20,12 @@ export class ReadingsController {
   sync = async (req: AuthRequest, res: Response): Promise<void> => {
     const readings = parseReadingBatch(req.body);
     await this.service.syncForUser(req.userId!, readings);
+    res.status(204).send();
+  };
+
+  syncSummaries = async (req: AuthRequest, res: Response): Promise<void> => {
+    const days = parseSummaryBatch(req.body);
+    await this.service.syncSummariesForUser(req.userId!, days);
     res.status(204).send();
   };
 

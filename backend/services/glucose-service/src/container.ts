@@ -42,6 +42,7 @@ import { SettingsController } from './modules/settings/settings.controller';
 import { PrismaSettingsRepository } from './modules/settings/settings.repository';
 import { SettingsService } from './modules/settings/settings.service';
 import { ReadingsService } from './modules/readings/readings.service';
+import { PrismaSummaryRepository } from './modules/readings/summaries.repository';
 
 /**
  * Everything `buildApp` needs to mount a router.
@@ -86,7 +87,12 @@ export function createContainer(prisma: PrismaClient = defaultPrisma): Container
 
   return {
     readings: new ReadingsController(
-      new ReadingsService(new PrismaReadingRepository(prisma), patients, recordAudit),
+      new ReadingsService(
+        new PrismaReadingRepository(prisma),
+        new PrismaSummaryRepository(prisma),
+        patients,
+        recordAudit,
+      ),
     ),
     carbs: new CarbsController(
       new CarbsService(new PrismaCarbRepository(prisma), patients, recordAudit),

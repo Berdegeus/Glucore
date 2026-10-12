@@ -58,6 +58,7 @@ model Patient {
   targetRangeMax        Int                    @default(180)
   sensorBindings        SensorBinding[]
   readings              GlucoseReading[]
+  dailySummaries        GlucoseDailySummary[]
   alertEvents           AlertEvent[]
   carbs                 CarbEvent[]
   insulin               InsulinEvent[]
@@ -154,6 +155,28 @@ model GlucoseReading {
 
   @@unique([patientId, recordedAt])
   @@index([sensorSessionId])
+}
+
+/// One patient-local day of glucose, as counts per whole mg/dL. The app builds
+/// it from the sensor's 1/min series, which the server never receives (it gets
+/// a 5-minute thinning), so TIR, GMI and CV can still be exact for any range.
+/// Index 0 of `histogram` is 40 mg/dL, the last (index 560) is 600 mg/dL; see
+/// contracts/glucose-histogram.json. Hand-written CHECKs live in the migration.
+model GlucoseDailySummary {
+  patientId        String   @db.Uuid
+  /// The patient's calendar day, in the offset below.
+  localDate        DateTime @db.Date
+  /// Minutes east of UTC when the app cut the day (-180 for Brasilia).
+  utcOffsetMinutes Int
+  readingsCount    Int
+  /// 5-minute slots of the day with at least one reading: sensor use, whatever
+  /// the sensor's own cadence.
+  coveredSlots     Int
+  histogram        Int[]
+  updatedAt        DateTime @default(now())
+  patient          Patient  @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+
+  @@id([patientId, localDate])
 }
 
 model AlertThresholdConfig {

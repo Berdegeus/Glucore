@@ -1,0 +1,9 @@
+{
+  "description": "Shape of the per-day glucose summary the app uploads (PUT /readings/summaries). The histogram counts readings per whole mg/dL: index 0 is minMgDl, the last index is maxMgDl, and a value outside the range is counted in the nearest edge bin. Shared by the app, the backend and their tests.",
+  "minMgDl": 40,
+  "maxMgDl": 600,
+  "bins": 561,
+  "slotMinutes": 5,
+  "maxSlotsPerDay": 300,
+  "maxDaysPerRequest": 14
+}

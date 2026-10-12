@@ -30,6 +30,8 @@ import type {
 } from '../../src/modules/sharing/sharing.repository';
 import type { IReadingRepository } from '../../src/modules/readings/readings.repository';
 import type { ReadingInput } from '../../src/modules/readings/readings.schema';
+import type { ISummaryRepository } from '../../src/modules/readings/summaries.repository';
+import type { DailySummaryInput } from '../../src/modules/readings/summaries.schema';
 import type {
   ISettingsRepository,
   ThresholdValues,
@@ -122,6 +124,19 @@ export class FakeReadingRepository implements IReadingRepository {
 
   async upsertMany(_patientId: string, readings: readonly ReadingInput[]): Promise<void> {
     this.lastUpsert = readings;
+  }
+
+  async deleteAll(_patientId: string): Promise<void> {
+    this.deleted += 1;
+  }
+}
+
+export class FakeSummaryRepository implements ISummaryRepository {
+  lastUpsert: readonly DailySummaryInput[] = [];
+  deleted = 0;
+
+  async upsertMany(_patientId: string, days: readonly DailySummaryInput[]): Promise<void> {
+    this.lastUpsert = days;
   }
 
   async deleteAll(_patientId: string): Promise<void> {

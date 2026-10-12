@@ -4,6 +4,8 @@ import type { IPatientRepository } from '../patient/patient.repository';
 import { toReadingDto, type ReadingDto } from './readings.mapper';
 import type { IReadingRepository } from './readings.repository';
 import type { ReadingInput } from './readings.schema';
+import type { ISummaryRepository } from './summaries.repository';
+import type { DailySummaryInput } from './summaries.schema';
 
 /**
  * Most readings one GET returns, newest first, and the default when `limit` is
@@ -17,6 +19,7 @@ export const MAX_READ_ROWS = 5000;
 export class ReadingsService {
   constructor(
     private readonly readings: IReadingRepository,
+    private readonly summaries: ISummaryRepository,
     private readonly patients: IPatientRepository,
     private readonly recordAudit: RecordAudit,
   ) {}
@@ -41,8 +44,16 @@ export class ReadingsService {
     await this.readings.upsertMany(patientId, readings);
   }
 
+  async syncSummariesForUser(userId: string, days: readonly DailySummaryInput[]): Promise<void> {
+    const patientId = await this.patients.ensure(userId);
+    await this.summaries.upsertMany(patientId, days);
+  }
+
   async clearForUser(userId: string, context: AuditContext): Promise<void> {
     const patientId = await this.patients.ensure(userId);
+    // Summaries first: if the second delete fails, what is left is readings the
+    // dashboard can still read, never a summary of readings that are gone.
+    await this.summaries.deleteAll(patientId);
     await this.readings.deleteAll(patientId);
     await this.recordAudit({
       userId,
