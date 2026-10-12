@@ -11,6 +11,7 @@ import 'package:glucore/features/patient/data/datasources/patient_datasource.dar
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
+import 'package:glucore/features/patient/domain/daily_summary.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
 import 'package:glucore/features/patient/domain/usecases/patient_usecases.dart';
@@ -265,6 +266,9 @@ class _FakePatientCubit extends PatientCubit {
 }
 
 class _FakePatientRemote implements PatientRemoteApi {
+  @override
+  Future<void> saveDailySummaries(List<DailySummary> days) async {}
+
   @override
   Future<PatientSnapshot> loadSince(DateTime readingsFrom) => load();
 

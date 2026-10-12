@@ -1,3 +1,4 @@
+import '../../domain/daily_summary.dart';
 import '../../domain/entities/patient_entities.dart';
 
 /// Contrato comum aos datasources de dados do paciente.
@@ -34,6 +35,11 @@ abstract class PatientRemoteApi implements PatientDataSource {
   /// páginas — o delta desde a última sincronização, ou a janela de retenção na
   /// primeira. O diário e os limiares vêm inteiros, como em [load].
   Future<PatientSnapshot> loadSince(DateTime readingsFrom);
+
+  /// `PUT /readings/summaries`: o resumo diário, com a resolução cheia do
+  /// aparelho. Idempotente — o servidor só substitui um dia por outro com ao
+  /// menos tantas leituras. No máximo [dailySummaryPushBatchSize] dias por chamada.
+  Future<void> saveDailySummaries(List<DailySummary> days);
 
   Future<void> upsertCarb(CarbEntry entry);
   Future<void> deleteCarb(String id);

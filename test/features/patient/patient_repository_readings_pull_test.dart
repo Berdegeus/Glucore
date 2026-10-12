@@ -6,6 +6,7 @@ import 'package:glucore/features/patient/data/datasources/patient_datasource.dar
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
+import 'package:glucore/features/patient/domain/daily_summary.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/domain/reading_decimation.dart';
 import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
@@ -147,6 +148,9 @@ class _RecordingRemote implements PatientRemoteApi {
   List<GlucoseReadingItem> serves = const [];
   final askedFrom = <DateTime>[];
   bool fails = false;
+
+  @override
+  Future<void> saveDailySummaries(List<DailySummary> days) async {}
 
   @override
   Future<PatientSnapshot> loadSince(DateTime readingsFrom) async {

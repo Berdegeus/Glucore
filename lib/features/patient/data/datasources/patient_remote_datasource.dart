@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../domain/daily_summary.dart';
 import '../../domain/entities/patient_entities.dart';
 import 'patient_datasource.dart';
 
@@ -115,6 +116,15 @@ class RemotePatientDataSource implements PatientRemoteApi {
       data: {'readings': readings.map(_readingToRow).toList()},
     );
   }
+
+  @override
+  Future<void> saveDailySummaries(List<DailySummary> days) =>
+      _guardAuth(() async {
+        await _dio.put<void>(
+          '/readings/summaries',
+          data: {'days': days.map((d) => d.toJson()).toList()},
+        );
+      });
 
   @override
   Future<void> saveAlerts(List<AppAlertItem> alerts) async {

@@ -8,6 +8,7 @@ import 'package:glucore/features/patient/data/repositories/patient_repository_im
 import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
+import 'package:glucore/features/patient/domain/daily_summary.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -323,6 +324,9 @@ class _FakeTokenStore extends AuthTokenStore {
 }
 
 class _FakeRemote implements PatientRemoteApi {
+  @override
+  Future<void> saveDailySummaries(List<DailySummary> days) async {}
+
   @override
   Future<PatientSnapshot> loadSince(DateTime readingsFrom) => load();
 

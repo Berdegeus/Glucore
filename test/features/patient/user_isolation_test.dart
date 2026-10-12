@@ -8,6 +8,7 @@ import 'package:glucore/features/patient/data/datasources/patient_local_datasour
 import 'package:glucore/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
+import 'package:glucore/features/patient/domain/daily_summary.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -180,6 +181,9 @@ class _FakeRemote implements PatientRemoteApi {
   final savedInsulin = <List<InsulinEntry>>[];
   final savedSettings = <AlertSettingsModel>[];
   final upsertedCarbs = <CarbEntry>[];
+
+  @override
+  Future<void> saveDailySummaries(List<DailySummary> days) async {}
 
   @override
   Future<PatientSnapshot> loadSince(DateTime readingsFrom) => load();

@@ -229,6 +229,40 @@ void main() {
     });
   });
 
+  group('SYNC: resumo diário (v4)', () {
+    test('o schema novo tem as tabelas do resumo', () async {
+      final dataSource = LocalPatientDataSource(
+        databaseFactory: databaseFactoryFfi,
+        databasePath: dbPath,
+      );
+      await dataSource.load();
+      await dataSource.close();
+
+      final db = await openRaw();
+      final names = (await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table'",
+      )).map((r) => r['name']);
+      expect(names, containsAll(['daily_summaries', 'summary_dirty_days']));
+      await db.close();
+    });
+
+    test('um banco da v2 com leituras chega à v4 com os dias delas na fila', () async {
+      await seedVersion2();
+
+      final dataSource = LocalPatientDataSource(
+        databaseFactory: databaseFactoryFfi,
+        databasePath: dbPath,
+      );
+      final readings = (await dataSource.load()).readings;
+      final dirty = await dataSource.dirtySummaryDays();
+      await dataSource.close();
+
+      expect(readings, isNotEmpty);
+      expect(dirty, isNotEmpty);
+      expect(dirty, hasLength(dirty.toSet().length));
+    });
+  });
+
   group('IDENT-05: migração v2 → v3', () {
     test('cria a tabela pending_ops num banco vindo da v2', () async {
       await seedVersion2();

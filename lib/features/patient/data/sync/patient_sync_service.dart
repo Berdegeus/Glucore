@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/api/auth_token_store.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../domain/daily_summary.dart';
 import '../../domain/reading_decimation.dart';
 import '../../domain/repositories/patient_repository.dart';
 import '../datasources/patient_datasource.dart';
@@ -37,12 +38,14 @@ class PatientSyncService {
       Duration(seconds: 4),
     ],
     DateTime Function() clock = DateTime.now,
+    DayCutter dayCutter = const DeviceDayCutter(),
   })  : _local = local,
         _remote = remote,
         _tokenStore = tokenStore,
         _debounce = debounce,
         _retryDelays = retryDelays,
-        _clock = clock {
+        _clock = clock,
+        _dayCutter = dayCutter {
     final changes = connectivityChanges ?? Connectivity().onConnectivityChanged;
     _connectivitySubscription = changes.listen((results) {
       final online =
@@ -59,6 +62,11 @@ class PatientSyncService {
   final Duration _debounce;
   final List<Duration> _retryDelays;
   final DateTime Function() _clock;
+  final DayCutter _dayCutter;
+
+  /// O dia em curso muda a cada leitura; recalculá-lo e reenviá-lo a cada uma
+  /// seria um PUT por minuto. Os dias já passados não esperam.
+  static const _openDaySummaryInterval = Duration(minutes: 30);
 
   /// Quantas operações são lidas da fila por vez; a drenagem segue enquanto
   /// vier lote cheio.
@@ -127,9 +135,6 @@ class PatientSyncService {
     final pending = await _local.pendingCollections();
     final pushesReadings = pending.contains(PatientCollection.readings);
     final pushesSettings = pending.contains(PatientCollection.settings);
-    if (!pushesReadings && !pushesSettings) {
-      return;
-    }
 
     if (pushesReadings) {
       await _pushReadings();
@@ -138,6 +143,57 @@ class PatientSyncService {
       final snapshot = await _local.load();
       await _remote.saveAlertSettings(snapshot.alertSettings);
       await _local.markSettingsSynced();
+    }
+
+    await _pushDailySummaries();
+  }
+
+  /// Refaz o resumo dos dias cujas leituras mudaram e envia os que o servidor
+  /// ainda não confirmou.
+  ///
+  /// O resumo é o que leva ao painel a resolução de 1/min que as leituras
+  /// enviadas (5 min) não têm. É um complemento: uma falha aqui — servidor que
+  /// ainda não tem a rota, rede, payload recusado — **não derruba o push** nem
+  /// impede o pull de leituras. O que não subiu continua pendente e é tentado de
+  /// novo no próximo push. Só a sessão recusada (401) sobe, como em todo envio.
+  Future<void> _pushDailySummaries() async {
+    try {
+      await _recomputeDirtySummaries();
+      final pending = await _local.pendingDailySummaries();
+      for (var start = 0; start < pending.length; start += dailySummaryPushBatchSize) {
+        final end = start + dailySummaryPushBatchSize < pending.length
+            ? start + dailySummaryPushBatchSize
+            : pending.length;
+        final batch = pending.sublist(start, end);
+        await _remote.saveDailySummaries(batch);
+        await _local.markDailySummariesSynced(batch);
+      }
+    } on PatientUnauthorizedException {
+      rethrow;
+    } catch (error) {
+      debugPrint('Resumo diário não enviado (fica pendente): $error');
+    }
+  }
+
+  Future<void> _recomputeDirtySummaries() async {
+    final now = _clock();
+    final today = _dayCutter.keyOf(now);
+    for (final day in await _local.dirtySummaryDays()) {
+      if (day == today) {
+        final computedAt = await _local.dailySummaryComputedAtMs(day);
+        if (computedAt != null &&
+            now.millisecondsSinceEpoch - computedAt <
+                _openDaySummaryInterval.inMilliseconds) {
+          continue;
+        }
+      }
+      final summary =
+          summarizeDay(day, await _local.readingsOnLocalDay(day), _dayCutter);
+      if (summary == null) {
+        await _local.clearSummaryDirty(day);
+      } else {
+        await _local.saveDailySummary(summary, nowMs: now.millisecondsSinceEpoch);
+      }
     }
   }
 

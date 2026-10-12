@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
+import 'package:glucore/features/patient/domain/daily_summary.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -543,6 +544,201 @@ void main() {
         await dataSource.pendingCollections(),
         {PatientCollection.settings},
       );
+    });
+  });
+
+  group('resumo diário', () {
+    const brasilia = FixedOffsetDayCutter(-180);
+    late LocalPatientDataSource summaries;
+
+    setUp(() {
+      summaries = LocalPatientDataSource(
+        databaseFactory: databaseFactoryFfi,
+        databasePath: inMemoryDatabasePath,
+        dayCutter: brasilia,
+      );
+    });
+
+    tearDown(() => summaries.close());
+
+    // 05/08/2026 00:00 em Brasília.
+    final midnight = DateTime.utc(2026, 8, 5, 3);
+    GlucoseReadingItem at(Duration offset, double value) => GlucoseReadingItem(
+          value: value,
+          timestamp: midnight.add(offset),
+          trend: GlucoseTrend.stable,
+          rate: 0,
+        );
+    DailySummary summaryOf(int count, {int value = 100, String day = '2026-08-05'}) =>
+        DailySummary(
+          localDate: day,
+          utcOffsetMinutes: -180,
+          readingsCount: count,
+          coveredSlots: 1,
+          histogram: [
+            for (var i = 0; i < glucoseHistogramBins; i++)
+              i == value - glucoseHistogramMinMgDl ? count : 0,
+          ],
+        );
+
+    group('dias sujos', () {
+      test('guardar leituras marca o dia delas, no corte do paciente', () async {
+        await summaries.saveReadings([
+          at(const Duration(hours: -1), 90), // 23:00 de 04/08
+          at(const Duration(hours: 1), 100), // 01:00 de 05/08
+        ]);
+
+        expect(await summaries.dirtySummaryDays(), ['2026-08-04', '2026-08-05']);
+      });
+
+      test('regravar o mesmo conjunto não suja de novo', () async {
+        final readings = [at(const Duration(hours: 1), 100)];
+        await summaries.saveReadings(readings);
+        await summaries.saveDailySummary(
+          summarizeDay('2026-08-05', readings, brasilia)!,
+          nowMs: 1,
+        );
+
+        await summaries.saveReadings(readings);
+
+        expect(await summaries.dirtySummaryDays(), isEmpty);
+      });
+
+      test('uma leitura nova suja só o dia dela', () async {
+        final first = [at(const Duration(hours: 1), 100)];
+        await summaries.saveReadings(first);
+        await summaries.saveDailySummary(
+          summarizeDay('2026-08-05', first, brasilia)!,
+          nowMs: 1,
+        );
+
+        await summaries.saveReadings([...first, at(const Duration(days: 1, hours: 1), 110)]);
+
+        expect(await summaries.dirtySummaryDays(), ['2026-08-06']);
+      });
+
+      test('uma leitura que sai do conjunto (a poda) não suja o dia', () async {
+        final readings = [
+          at(const Duration(hours: 1), 100),
+          at(const Duration(days: 1, hours: 1), 110),
+        ];
+        await summaries.saveReadings(readings);
+        for (final day in ['2026-08-05', '2026-08-06']) {
+          await summaries.clearSummaryDirty(day);
+        }
+
+        await summaries.saveReadings([readings.last]); // a de 05/08 foi podada
+
+        expect(await summaries.dirtySummaryDays(), isEmpty);
+      });
+
+      test('readingsOnLocalDay devolve as leituras do dia e só elas', () async {
+        await summaries.saveReadings([
+          at(const Duration(minutes: -1), 90), // 23:59 de 04/08
+          at(Duration.zero, 100), // 00:00 de 05/08
+          at(const Duration(hours: 23, minutes: 59), 110), // 23:59 de 05/08
+          at(const Duration(days: 1), 120), // 00:00 de 06/08
+        ]);
+
+        final day = await summaries.readingsOnLocalDay('2026-08-05');
+
+        expect(day.map((r) => r.value), [100, 110]);
+      });
+    });
+
+    group('saveDailySummary', () {
+      test('um dia novo fica pendente e sai da fila de sujos', () async {
+        await summaries.saveReadings([at(const Duration(hours: 1), 100)]);
+
+        await summaries.saveDailySummary(summaryOf(10), nowMs: 5);
+
+        expect((await summaries.pendingDailySummaries()).single.readingsCount, 10);
+        expect(await summaries.dirtySummaryDays(), isEmpty);
+        expect(await summaries.dailySummaryComputedAtMs('2026-08-05'), 5);
+      });
+
+      test('o histograma sobrevive ao armazenamento', () async {
+        await summaries.saveDailySummary(summaryOf(10, value: 137), nowMs: 1);
+
+        final stored = (await summaries.pendingDailySummaries()).single;
+
+        expect(stored.histogram, summaryOf(10, value: 137).histogram);
+        expect(stored.utcOffsetMinutes, -180);
+        expect(stored.coveredSlots, 1);
+      });
+
+      test('um dia só cresce: com menos leituras, o guardado fica', () async {
+        await summaries.saveDailySummary(summaryOf(1000), nowMs: 1);
+
+        await summaries.saveDailySummary(summaryOf(288, value: 150), nowMs: 2);
+
+        final stored = (await summaries.pendingDailySummaries()).single;
+        expect(stored.readingsCount, 1000);
+        expect(stored.histogram[100 - 40], 1000);
+        expect(await summaries.dailySummaryComputedAtMs('2026-08-05'), 1);
+      });
+
+      test('com mais leituras, substitui e volta a ser pendente', () async {
+        await summaries.saveDailySummary(summaryOf(10), nowMs: 1);
+        await summaries.markDailySummariesSynced([summaryOf(10)]);
+        expect(await summaries.pendingDailySummaries(), isEmpty);
+
+        await summaries.saveDailySummary(summaryOf(20), nowMs: 2);
+
+        expect((await summaries.pendingDailySummaries()).single.readingsCount, 20);
+      });
+
+      test('igual ao já enviado, não volta a ser pendente', () async {
+        await summaries.saveDailySummary(summaryOf(10), nowMs: 1);
+        await summaries.markDailySummariesSynced([summaryOf(10)]);
+
+        await summaries.saveDailySummary(summaryOf(10), nowMs: 2);
+
+        expect(await summaries.pendingDailySummaries(), isEmpty);
+      });
+
+      test('mesma contagem e outro histograma é uma correção: substitui', () async {
+        await summaries.saveDailySummary(summaryOf(10, value: 100), nowMs: 1);
+        await summaries.markDailySummariesSynced([summaryOf(10, value: 100)]);
+
+        await summaries.saveDailySummary(summaryOf(10, value: 120), nowMs: 2);
+
+        expect((await summaries.pendingDailySummaries()).single.histogram[120 - 40], 10);
+      });
+
+      test('os pendentes saem do dia mais antigo ao mais novo', () async {
+        await summaries.saveDailySummary(summaryOf(5, day: '2026-08-07'), nowMs: 1);
+        await summaries.saveDailySummary(summaryOf(5, day: '2026-08-05'), nowMs: 1);
+        await summaries.saveDailySummary(summaryOf(5, day: '2026-08-06'), nowMs: 1);
+
+        expect((await summaries.pendingDailySummaries()).map((s) => s.localDate),
+            ['2026-08-05', '2026-08-06', '2026-08-07']);
+      });
+    });
+
+    group('markDailySummariesSynced', () {
+      test('um dia recalculado no meio do envio continua pendente', () async {
+        await summaries.saveDailySummary(summaryOf(10), nowMs: 1);
+        final sent = await summaries.pendingDailySummaries();
+        // Enquanto o PUT estava no ar, o dia cresceu.
+        await summaries.saveDailySummary(summaryOf(20), nowMs: 2);
+
+        await summaries.markDailySummariesSynced(sent);
+
+        expect((await summaries.pendingDailySummaries()).single.readingsCount, 20);
+      });
+    });
+
+    test('trocar de conta apaga os resumos e os dias sujos', () async {
+      await summaries.saveReadings([at(const Duration(hours: 1), 100)]);
+      await summaries.saveDailySummary(summaryOf(10), nowMs: 1);
+      await summaries.saveReadings([at(const Duration(days: 1, hours: 1), 100)]);
+
+      await summaries.wipeAllData();
+
+      expect(await summaries.pendingDailySummaries(), isEmpty);
+      expect(await summaries.dirtySummaryDays(), isEmpty);
+      expect(await summaries.dailySummaryComputedAtMs('2026-08-05'), isNull);
     });
   });
 }

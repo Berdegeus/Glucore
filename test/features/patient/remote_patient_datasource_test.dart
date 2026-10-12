@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/features/patient/data/datasources/patient_remote_datasource.dart';
+import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
+import 'package:glucore/features/patient/domain/daily_summary.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 
 /// Adaptador Dio dublê: devolve o corpo configurado por caminho e guarda o que
@@ -480,6 +482,51 @@ void main() {
 
       expect(snapshot.alertSettings.lowThreshold, 80);
       expect(snapshot.alertSettings.highThreshold, 180);
+    });
+  });
+
+  group('saveDailySummaries', () {
+    DailySummary day(String date) => DailySummary(
+          localDate: date,
+          utcOffsetMinutes: -180,
+          readingsCount: 3,
+          coveredSlots: 2,
+          histogram: [
+            for (var i = 0; i < glucoseHistogramBins; i++) i == 60 ? 3 : 0,
+          ],
+        );
+
+    test('faz PUT /readings/summaries com {days: [...]} no formato do contrato', () async {
+      buildWith(defaultBodies());
+
+      await remote.saveDailySummaries([day('2026-08-05'), day('2026-08-06')]);
+
+      final request = adapter.requests.singleWhere((r) => r.path == '/readings/summaries');
+      expect(request.method, 'PUT');
+      final days = (request.data as Map<String, dynamic>)['days'] as List<dynamic>;
+      expect(days, hasLength(2));
+      expect(days.first, {
+        'localDate': '2026-08-05',
+        'utcOffsetMinutes': -180,
+        'readingsCount': 3,
+        'coveredSlots': 2,
+        'histogram': day('2026-08-05').histogram,
+      });
+    });
+
+    test('um 401 vira a exceção que para o push e preserva a fila', () async {
+      buildWith(defaultBodies(), statuses: {'PUT /readings/summaries': 401});
+
+      expect(
+        remote.saveDailySummaries([day('2026-08-05')]),
+        throwsA(isA<PatientUnauthorizedException>()),
+      );
+    });
+
+    test('outro erro sobe como está, para o serviço decidir', () async {
+      buildWith(defaultBodies(), statuses: {'PUT /readings/summaries': 404});
+
+      expect(remote.saveDailySummaries([day('2026-08-05')]), throwsA(isA<DioException>()));
     });
   });
 }
