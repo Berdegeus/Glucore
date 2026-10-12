@@ -34,6 +34,7 @@ export {
   MAX_PAGE_LIMIT,
   INVALID_PAGINATION,
   type PageQuery,
+  type PageQueryOptions,
 } from './util/pageQuery';
 export {
   ADMIN_RANGE_DAYS,

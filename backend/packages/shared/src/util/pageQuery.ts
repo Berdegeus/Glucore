@@ -10,9 +10,20 @@ export const DEFAULT_PAGE_LIMIT = 100;
 export const MAX_PAGE_LIMIT = 500;
 
 export interface PageQuery {
+  /** Inclusive lower bound in epoch ms; only listings that opt in read it. */
+  from?: number;
   /** Exclusive upper bound in epoch ms; absent means "from the newest". */
   before?: number;
   limit: number;
+}
+
+export interface PageQueryOptions {
+  /** Rows when `limit` is absent. Defaults to {@link DEFAULT_PAGE_LIMIT}. */
+  defaultLimit?: number;
+  /** Largest `limit` accepted. Defaults to {@link MAX_PAGE_LIMIT}. */
+  maxLimit?: number;
+  /** Also read `from`, an inclusive epoch-ms lower bound (a delta sync). */
+  from?: boolean;
 }
 
 const INTEGER_RE = /^-?\d+$/;
@@ -24,31 +35,41 @@ function parseInteger(value: unknown): number | null {
   return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
+function parseEpoch(name: string, value: unknown): number {
+  const parsed = parseInteger(value);
+  if (parsed === null || parsed < 0) {
+    throw new BadRequestError(`${name} must be an epoch in milliseconds`, INVALID_PAGINATION);
+  }
+  return parsed;
+}
+
 /**
- * Reads `before`/`limit` off a listing's query string.
+ * Reads `before`/`limit` (and, on request, `from`) off a listing's query string.
  *
- * Shared by carbs, insulin and alerts: the three diary collections page the
- * same way, cursor on the event time, newest first. Readings and settings do
- * not call this — they stay append-only/singleton and keep their fixed cap.
+ * Carbs, insulin and alerts page the same way, cursor on the event time, newest
+ * first, with the defaults. Readings are the one listing with its own bounds
+ * (thousands of rows per page, and `from` for a delta); settings stay a
+ * singleton and do not page.
  */
-export function parsePageQuery(query: { before?: unknown; limit?: unknown }): PageQuery {
-  let limit = DEFAULT_PAGE_LIMIT;
+export function parsePageQuery(
+  query: { from?: unknown; before?: unknown; limit?: unknown },
+  options: PageQueryOptions = {},
+): PageQuery {
+  const maxLimit = options.maxLimit ?? MAX_PAGE_LIMIT;
+  let limit = options.defaultLimit ?? DEFAULT_PAGE_LIMIT;
   if (query.limit !== undefined) {
     const parsed = parseInteger(query.limit);
-    if (parsed === null || parsed < 1 || parsed > MAX_PAGE_LIMIT) {
+    if (parsed === null || parsed < 1 || parsed > maxLimit) {
       throw new BadRequestError(
-        `limit must be an integer between 1 and ${MAX_PAGE_LIMIT}`,
+        `limit must be an integer between 1 and ${maxLimit}`,
         INVALID_PAGINATION,
       );
     }
     limit = parsed;
   }
 
-  if (query.before === undefined) return { limit };
-
-  const before = parseInteger(query.before);
-  if (before === null || before < 0) {
-    throw new BadRequestError('before must be an epoch in milliseconds', INVALID_PAGINATION);
-  }
-  return { before, limit };
+  const page: PageQuery = { limit };
+  if (options.from && query.from !== undefined) page.from = parseEpoch('from', query.from);
+  if (query.before !== undefined) page.before = parseEpoch('before', query.before);
+  return page;
 }

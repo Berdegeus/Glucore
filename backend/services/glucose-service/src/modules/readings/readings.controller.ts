@@ -13,7 +13,7 @@ export class ReadingsController {
   constructor(private readonly service: ReadingsService) {}
 
   list = async (req: AuthRequest, res: Response): Promise<void> => {
-    res.json(await this.service.listForUser(req.userId!));
+    res.json(await this.service.listForUser(req.userId!, req.query));
   };
 
   sync = async (req: AuthRequest, res: Response): Promise<void> => {

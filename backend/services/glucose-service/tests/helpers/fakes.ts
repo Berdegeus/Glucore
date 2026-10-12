@@ -111,8 +111,13 @@ export class FakeReadingRepository implements IReadingRepository {
   lastUpsert: readonly ReadingInput[] = [];
   deleted = 0;
 
-  async listRecent(patientId: string, limit: number): Promise<GlucoseReading[]> {
-    return this.rows.filter((row) => row.patientId === patientId).slice(0, limit);
+  async listPage(patientId: string, { from, before, limit }: PageQuery): Promise<GlucoseReading[]> {
+    return this.rows
+      .filter((row) => row.patientId === patientId)
+      .filter((row) => from === undefined || row.recordedAt.getTime() >= from)
+      .filter((row) => before === undefined || row.recordedAt.getTime() < before)
+      .sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime())
+      .slice(0, limit);
   }
 
   async upsertMany(_patientId: string, readings: readonly ReadingInput[]): Promise<void> {

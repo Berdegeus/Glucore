@@ -74,3 +74,37 @@ describe('parsePageQuery', () => {
     expect(parsePageQuery({ before: '1000' })).toEqual({ before: 1000, limit: DEFAULT_PAGE_LIMIT });
   });
 });
+
+describe('parsePageQuery with options', () => {
+  const readings = { defaultLimit: 5000, maxLimit: 5000, from: true };
+
+  it('uses the default limit it was given', () => {
+    expect(parsePageQuery({}, readings)).toEqual({ limit: 5000 });
+  });
+
+  it('raises the ceiling to the one it was given and no further', () => {
+    expect(parsePageQuery({ limit: 5000 }, readings)).toEqual({ limit: 5000 });
+    expect(() => parsePageQuery({ limit: 5001 }, readings)).toThrow(
+      'limit must be an integer between 1 and 5000',
+    );
+  });
+
+  it('reads from as an inclusive epoch-ms bound only when asked to', () => {
+    expect(parsePageQuery({ from: '1000', before: '2000' }, readings)).toEqual({
+      from: 1000,
+      before: 2000,
+      limit: 5000,
+    });
+    expect(parsePageQuery({ from: '1000' })).toEqual({ limit: DEFAULT_PAGE_LIMIT });
+  });
+
+  it.each(['-1', 'yesterday', '1.5'])('rejects from=%s with INVALID_PAGINATION', (from) => {
+    try {
+      parsePageQuery({ from }, readings);
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(BadRequestError);
+      expect((error as BadRequestError).code).toBe(INVALID_PAGINATION);
+    }
+  });
+});

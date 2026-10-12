@@ -121,6 +121,71 @@ describe('GET /readings', () => {
     expect(res.body[0].timestampMs).toBe(base + MAX_READ_ROWS * 60_000);
   });
 
+  describe('paging', () => {
+    const base = Date.UTC(2026, 7, 1);
+    const minute = 60_000;
+
+    beforeEach(async () => {
+      await prisma.glucoseReading.createMany({
+        data: Array.from({ length: 30 }, (_, i) => ({
+          patientId: user.userId,
+          recordedAt: new Date(base + i * minute),
+          valueMgDl: 100 + i,
+        })),
+      });
+    });
+
+    const get = (query: string) => request(app).get(`/readings${query}`).set(auth());
+    const stamps = (body: { timestampMs: number }[]) => body.map((r) => (r.timestampMs - base) / minute);
+
+    it('returns the newest `limit` rows', async () => {
+      const res = await get('?limit=3');
+      expect(res.status).toBe(200);
+      expect(stamps(res.body)).toEqual([29, 28, 27]);
+    });
+
+    it('treats `from` as inclusive and `before` as exclusive', async () => {
+      const res = await get(`?from=${base + 10 * minute}&before=${base + 14 * minute}`);
+      expect(stamps(res.body)).toEqual([13, 12, 11, 10]);
+    });
+
+    it('returns only the delta since a watermark', async () => {
+      const res = await get(`?from=${base + 27 * minute}`);
+      expect(stamps(res.body)).toEqual([29, 28, 27]);
+    });
+
+    it('walks the whole history by `before`, with no gap and no repeat', async () => {
+      const seen: number[] = [];
+      let before: number | undefined;
+      for (let guard = 0; guard < 10; guard += 1) {
+        const res = await get(`?limit=7${before === undefined ? '' : `&before=${before}`}`);
+        const page = stamps(res.body);
+        seen.push(...page);
+        if (page.length < 7) break;
+        before = res.body[res.body.length - 1].timestampMs;
+      }
+      expect(seen).toEqual(Array.from({ length: 30 }, (_, i) => 29 - i));
+    });
+
+    it('keeps the old answer when no parameter is sent', async () => {
+      const res = await get('');
+      expect(res.body).toHaveLength(30);
+      expect(stamps(res.body)[0]).toBe(29);
+    });
+
+    it.each([
+      ['limit=0'],
+      [`limit=${MAX_READ_ROWS + 1}`],
+      ['limit=lots'],
+      ['from=-5'],
+      ['before=tomorrow'],
+    ])('rejects ?%s with INVALID_PAGINATION', async (query) => {
+      const res = await get(`?${query}`);
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('INVALID_PAGINATION');
+    });
+  });
+
   it('never returns another patient rows', async () => {
     const other = await signedInPatient();
     await prisma.glucoseReading.create({

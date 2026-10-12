@@ -1,10 +1,15 @@
 import type { GlucoseReading, PrismaClient } from '@prisma/client';
 
+import type { PageQuery } from '@glucore/shared';
+
 import type { ReadingInput } from './readings.schema';
 
 export interface IReadingRepository {
-  /** Most recent samples first. */
-  listRecent(patientId: string, limit: number): Promise<GlucoseReading[]>;
+  /**
+   * Newest samples first, within `[from, before)` when those are given. A full
+   * page is the caller's cue to ask again with `before` set to its oldest row.
+   */
+  listPage(patientId: string, page: PageQuery): Promise<GlucoseReading[]>;
   /**
    * Writes a batch atomically, keyed by [patientId, recordedAt].
    *
@@ -19,9 +24,19 @@ export interface IReadingRepository {
 export class PrismaReadingRepository implements IReadingRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  listRecent(patientId: string, limit: number): Promise<GlucoseReading[]> {
+  listPage(patientId: string, { from, before, limit }: PageQuery): Promise<GlucoseReading[]> {
     return this.prisma.glucoseReading.findMany({
-      where: { patientId },
+      where: {
+        patientId,
+        ...(from !== undefined || before !== undefined
+          ? {
+              recordedAt: {
+                ...(from !== undefined ? { gte: new Date(from) } : {}),
+                ...(before !== undefined ? { lt: new Date(before) } : {}),
+              },
+            }
+          : {}),
+      },
       orderBy: { recordedAt: 'desc' },
       take: limit,
     });

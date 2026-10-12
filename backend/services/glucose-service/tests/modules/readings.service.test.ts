@@ -69,6 +69,27 @@ describe('ReadingsService', () => {
     expect(await service.listForUser(USER)).toHaveLength(MAX_READ_ROWS);
   });
 
+  it('narrows the listing to [from, before) and keeps newest first', async () => {
+    const { readings, service } = build();
+    const at = (minute: number) => new Date(Date.UTC(2026, 7, 25, 12, minute));
+    readings.rows = [0, 1, 2, 3, 4].map((minute) =>
+      readingRow(USER, { recordedAt: at(minute), valueMgDl: 100 + minute }),
+    );
+
+    const page = await service.listForUser(USER, {
+      from: String(at(1).getTime()),
+      before: String(at(4).getTime()),
+    });
+
+    expect(page.map((r) => r.value)).toEqual([103, 102, 101]);
+  });
+
+  it('rejects a bad cursor before touching the patient', async () => {
+    const { patients, service } = build();
+    await expect(service.listForUser(USER, { before: 'soon' })).rejects.toThrow(BadRequestError);
+    expect(patients.ensured).toEqual([]);
+  });
+
   it('writes a whole batch without dropping any entry', async () => {
     const { readings, service } = build();
     const batch = Array.from({ length: MAX_READING_BATCH }, (_unused, index) => ({
