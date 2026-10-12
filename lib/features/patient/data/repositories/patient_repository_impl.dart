@@ -13,18 +13,26 @@ import '../sync/patient_sync_service.dart';
 class PatientRepositoryImpl implements PatientRepository {
   const PatientRepositoryImpl({
     required LocalPatientDataSource local,
-    required PatientDataSource remote,
+    required PatientRemoteApi remote,
     required PatientSyncService syncService,
     required AuthTokenStore tokenStore,
+    DateTime Function() clock = DateTime.now,
   })  : _local = local,
         _remote = remote,
         _syncService = syncService,
-        _tokenStore = tokenStore;
+        _tokenStore = tokenStore,
+        _clock = clock;
+
+  /// Folga sobre a marca d'água ao pedir o delta de leituras: cobre a leitura
+  /// que o servidor gravou um instante depois da anterior ser lida. Repetir
+  /// uma leitura já incorporada é inofensivo (a incorporação a ignora).
+  static const _readingPullOverlap = Duration(minutes: 10);
 
   final LocalPatientDataSource _local;
-  final PatientDataSource _remote;
+  final PatientRemoteApi _remote;
   final PatientSyncService _syncService;
   final AuthTokenStore _tokenStore;
+  final DateTime Function() _clock;
 
   @override
   Future<PatientSnapshot> load() => _local.load();
@@ -131,9 +139,16 @@ class PatientRepositoryImpl implements PatientRepository {
     _syncService.schedulePush();
   }
 
-  /// Reconciliação com o backend: empurra pendências, baixa o snapshot remoto,
-  /// persiste localmente (`synced = 1`, preservando pendências que restarem) e
-  /// devolve o snapshot local resultante. Sem rede → `null`, silencioso.
+  /// Reconciliação com o backend: empurra pendências, baixa o que o servidor
+  /// tem de novo, persiste localmente (`synced = 1`, preservando pendências que
+  /// restarem) e devolve o snapshot local resultante. Sem rede → `null`,
+  /// silencioso.
+  ///
+  /// As leituras vêm incrementais: a primeira sincronização de um banco (ou
+  /// depois de trocar de conta) pede a janela de retenção inteira, as seguintes
+  /// só o que veio depois da marca d'água. O aparelho nunca tem as leituras
+  /// substituídas pelas do servidor — ele guarda a resolução cheia e o servidor
+  /// uma versão rala (ver `reading_decimation.dart`).
   @override
   Future<PatientSnapshot?> refreshFromRemote() async {
     try {
@@ -141,12 +156,24 @@ class PatientRepositoryImpl implements PatientRepository {
       if (!pushed) {
         return null;
       }
-      final remoteSnapshot = await _remote.load();
+      final remoteSnapshot = await _remote.loadSince(await _readingsPullStart());
       await _local.replaceWithServerSnapshot(remoteSnapshot);
       return await _local.load();
     } catch (_) {
       // Offline ou backend indisponível: o snapshot local continua valendo.
       return null;
     }
+  }
+
+  /// De quando pedir as leituras ao servidor: da marca d'água (com folga), mas
+  /// nunca antes da janela de retenção — o que seria podado logo em seguida.
+  Future<DateTime> _readingsPullStart() async {
+    final horizon = _clock().subtract(PatientRepository.readingRetention);
+    final watermarkMs = await _local.readingsWatermarkMs();
+    if (watermarkMs == null) return horizon;
+
+    final fromWatermark = DateTime.fromMillisecondsSinceEpoch(watermarkMs)
+        .subtract(_readingPullOverlap);
+    return fromWatermark.isAfter(horizon) ? fromWatermark : horizon;
   }
 }

@@ -17,27 +17,78 @@ class RemotePatientDataSource implements PatientRemoteApi {
 
   final Dio _dio;
 
+  /// Linhas por página de `GET /readings`; é o teto do servidor
+  /// (`MAX_READ_ROWS`), então uma página cheia pode ter mais atrás.
+  static const readingPageSize = 5000;
+
+  /// Freio contra um servidor que ignora `before` e devolveria sempre a mesma
+  /// página: 20 páginas já são 100 mil leituras.
+  static const _maxReadingPages = 20;
+
   @override
-  Future<PatientSnapshot> load() async {
-    final results = await Future.wait([
-      _dio.get<List<dynamic>>('/readings'),
+  Future<PatientSnapshot> load() => _load(readingsFrom: null);
+
+  @override
+  Future<PatientSnapshot> loadSince(DateTime readingsFrom) =>
+      _load(readingsFrom: readingsFrom);
+
+  /// `GET /readings` desde [from], da mais nova para a mais antiga, seguindo o
+  /// cursor `before` (a leitura mais antiga da página) enquanto a página vier
+  /// cheia. Para quando o cursor não anda: um servidor anterior à paginação
+  /// ignora os parâmetros e repetiria a mesma página.
+  Future<List<GlucoseReadingItem>> _loadReadingsSince(DateTime from) async {
+    final readings = <GlucoseReadingItem>[];
+    int? before;
+    for (var page = 0; page < _maxReadingPages; page++) {
+      final response = await _dio.get<List<dynamic>>(
+        '/readings',
+        queryParameters: {
+          'from': from.millisecondsSinceEpoch,
+          'limit': readingPageSize,
+          if (before != null) 'before': before,
+        },
+      );
+      final rows = (response.data ?? const <dynamic>[])
+          .cast<Map<String, dynamic>>()
+          .map(_rowToReading)
+          .toList();
+      readings.addAll(rows);
+      if (rows.length < readingPageSize) break;
+
+      final oldest = rows.last.timestamp.millisecondsSinceEpoch;
+      if (before != null && oldest >= before) break;
+      before = oldest;
+    }
+    return readings;
+  }
+
+  Future<List<GlucoseReadingItem>> _loadReadingsLegacy() async {
+    final response = await _dio.get<List<dynamic>>('/readings');
+    return (response.data ?? const <dynamic>[])
+        .cast<Map<String, dynamic>>()
+        .map(_rowToReading)
+        .toList();
+  }
+
+  Future<PatientSnapshot> _load({required DateTime? readingsFrom}) async {
+    final results = await Future.wait<Object?>([
+      readingsFrom == null
+          ? _loadReadingsLegacy()
+          : _loadReadingsSince(readingsFrom),
       _dio.get<List<dynamic>>('/alerts'),
       _dio.get<List<dynamic>>('/carbs'),
       _dio.get<List<dynamic>>('/insulin'),
       _dio.get<Map<String, dynamic>>('/settings/alerts'),
     ]);
 
-    final readingRows = (results[0] as Response).data as List<dynamic>;
+    final readings = results[0] as List<GlucoseReadingItem>;
     final alertRows = (results[1] as Response).data as List<dynamic>;
     final carbRows = (results[2] as Response).data as List<dynamic>;
     final insulinRows = (results[3] as Response).data as List<dynamic>;
     final settingsRow = (results[4] as Response).data as Map<String, dynamic>;
 
     return PatientSnapshot(
-      readings: readingRows
-          .cast<Map<String, dynamic>>()
-          .map(_rowToReading)
-          .toList(),
+      readings: readings,
       alerts: alertRows
           .cast<Map<String, dynamic>>()
           .map(_rowToAlert)

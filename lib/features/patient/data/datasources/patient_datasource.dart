@@ -30,6 +30,11 @@ class PatientUnauthorizedException implements Exception {
 /// `upsert*` é idempotente por desenho — vale como criação e como edição —, e
 /// remover algo que o servidor já não tem é sucesso, não erro.
 abstract class PatientRemoteApi implements PatientDataSource {
+  /// Como [load], mas as leituras só desde [readingsFrom] (inclusive), em
+  /// páginas — o delta desde a última sincronização, ou a janela de retenção na
+  /// primeira. O diário e os limiares vêm inteiros, como em [load].
+  Future<PatientSnapshot> loadSince(DateTime readingsFrom);
+
   Future<void> upsertCarb(CarbEntry entry);
   Future<void> deleteCarb(String id);
   Future<void> upsertInsulin(InsulinEntry entry);

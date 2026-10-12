@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart'
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/patient_entities.dart';
+import '../../domain/reading_decimation.dart';
 import '../sync/pending_op.dart';
 import 'patient_datasource.dart';
 
@@ -29,7 +30,7 @@ class LocalPatientDataSource implements PatientDataSource {
         _databasePath = databasePath;
 
   static const _dbName = 'glucore_patient.db';
-  static const _dbVersion = 3;
+  static const _dbVersion = 4;
 
   final DatabaseFactory? _factory;
   final String? _databasePath;
@@ -71,6 +72,7 @@ class LocalPatientDataSource implements PatientDataSource {
             )
           ''');
           await _createMetaTable(db);
+          await _addReadingsWatermark(db);
           await db.execute(_createPendingOpsTable);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
@@ -80,6 +82,9 @@ class LocalPatientDataSource implements PatientDataSource {
           }
           if (oldVersion < 3) {
             await _migrateDiaryToUuidKeys(db);
+          }
+          if (oldVersion < 4) {
+            await _addReadingsWatermark(db);
           }
         },
       ),
@@ -208,6 +213,11 @@ class LocalPatientDataSource implements PatientDataSource {
         )
       ''');
 
+  /// Marca d'água do pull de leituras: o `timestamp_ms` da leitura mais nova do
+  /// servidor já incorporada. O próximo pull pede só o que veio depois.
+  static Future<void> _addReadingsWatermark(Database db) =>
+      db.execute('ALTER TABLE meta ADD COLUMN readings_watermark_ms INTEGER');
+
   // ── Ownership (P19) ─────────────────────────────────────────────────────
 
   /// The user id this local database currently belongs to, or null if unset.
@@ -240,7 +250,24 @@ class LocalPatientDataSource implements PatientDataSource {
       // A fila vai junto: uma operação do dono anterior enviada sob o novo
       // login gravaria o diário de um paciente na conta de outro (P19).
       await txn.delete('pending_ops');
+      // Outro dono, outra história: o próximo pull recomeça pela janela inteira.
+      await txn.update('meta', {'readings_watermark_ms': null});
     });
+  }
+
+  /// `timestamp_ms` da leitura mais nova do servidor já incorporada, ou `null`
+  /// se nenhum pull incorporou leituras ainda (a primeira sincronização busca a
+  /// janela de retenção inteira).
+  Future<int?> readingsWatermarkMs() async {
+    final db = await _db;
+    final rows = await db.query(
+      'meta',
+      columns: ['readings_watermark_ms'],
+      where: 'id = 1',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['readings_watermark_ms'] as int?;
   }
 
   // ── op-log do diário (SYNC-01/SYNC-02) ────────────────────────────────────
@@ -427,6 +454,21 @@ class LocalPatientDataSource implements PatientDataSource {
     });
   }
 
+  /// Leituras locais em `[fromMs, toExclusiveMs)`, qualquer que seja o `synced`.
+  Future<List<GlucoseReadingItem>> readingsBetween(
+    int fromMs,
+    int toExclusiveMs,
+  ) async {
+    final db = await _db;
+    final rows = await db.query(
+      'readings',
+      where: 'timestamp_ms >= ? AND timestamp_ms < ?',
+      whereArgs: [fromMs, toExclusiveMs],
+      orderBy: 'timestamp_ms ASC',
+    );
+    return rows.map(_rowToReading).toList();
+  }
+
   /// Leituras com `synced = 0`, da mais nova para a mais antiga.
   Future<List<GlucoseReadingItem>> pendingReadings() async {
     final db = await _db;
@@ -480,8 +522,14 @@ class LocalPatientDataSource implements PatientDataSource {
   /// Marca como sincronizadas apenas as linhas cujas chaves foram enviadas —
   /// escritas que corram em paralelo com o push continuam pendentes.
   Future<void> markReadingsSynced(Iterable<GlucoseReadingItem> readings) =>
-      _markSyncedByKey('readings', 'timestamp_ms',
+      markReadingKeysSynced(
           readings.map((r) => r.timestamp.millisecondsSinceEpoch));
+
+  /// Igual a [markReadingsSynced], por `timestamp_ms`. O envio ralo (5 min)
+  /// confirma uma linha que representa várias leituras locais; marca-se cada
+  /// uma delas.
+  Future<void> markReadingKeysSynced(Iterable<int> timestampsMs) =>
+      _markSyncedByKey('readings', 'timestamp_ms', timestampsMs);
 
   /// Marcação por `id` das três coleções do diário (IDENT-07).
   ///
@@ -510,23 +558,19 @@ class LocalPatientDataSource implements PatientDataSource {
   /// Persiste um snapshot vindo do servidor com `synced = 1`, sem atropelar o
   /// que ainda não subiu.
   ///
-  /// Em leituras, a pendência é `synced = 0`. Nas três coleções do diário, é a
-  /// linha citada em `pending_ops`: a entrada com operação na fila sobrevive à
-  /// reconciliação e vence o servidor até ser empurrada (IDENT-07).
+  /// **Leituras são incorporadas, não substituídas.** O servidor guarda uma
+  /// versão rala (1 por 5 min) do que o aparelho tem a 1/min; trocar a tabela
+  /// pelo que ele devolve apagaria a resolução cheia local. Uma leitura do
+  /// servidor só entra se o aparelho não tiver nenhuma no mesmo intervalo de
+  /// 5 min, e nada é apagado aqui — a poda é a retenção de 14 dias. O snapshot
+  /// pode ser só o delta desde a marca d'água ([readingsWatermarkMs]).
+  ///
+  /// Nas três coleções do diário a pendência é a linha citada em `pending_ops`:
+  /// a entrada com operação na fila sobrevive à reconciliação e vence o
+  /// servidor até ser empurrada (IDENT-07).
   Future<void> replaceWithServerSnapshot(PatientSnapshot snapshot) async {
     final db = await _db;
     await db.transaction((txn) async {
-      Future<void> replace(
-        String table,
-        Iterable<Map<String, Object?>> rows,
-      ) async {
-        await txn.delete(table, where: 'synced = 1');
-        final batch = txn.batch();
-        for (final row in rows) {
-          batch.insert(table, row, conflictAlgorithm: ConflictAlgorithm.ignore);
-        }
-        await batch.commit(noResult: true);
-      }
 
       Future<void> replaceDiary(
         String table,
@@ -553,8 +597,7 @@ class LocalPatientDataSource implements PatientDataSource {
         await batch.commit(noResult: true);
       }
 
-      await replace('readings',
-          snapshot.readings.map((r) => _readingToRow(r, synced: 1)));
+      await _mergeServerReadings(txn, snapshot.readings);
       await replaceDiary('alerts', PendingOpEntity.alerts,
           snapshot.alerts.map((a) => _alertToRow(a, synced: 1)));
       await replaceDiary('carbs', PendingOpEntity.carbs,
@@ -578,6 +621,46 @@ class LocalPatientDataSource implements PatientDataSource {
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
+
+  Future<void> _mergeServerReadings(
+    DatabaseExecutor txn,
+    List<GlucoseReadingItem> readings,
+  ) async {
+    if (readings.isEmpty) return;
+
+    final slotMs = readingUploadSlot.inMilliseconds;
+    final batch = txn.batch();
+    var newest = 0;
+    for (final reading in readings) {
+      final row = _readingToRow(reading, synced: 1);
+      final key = row['timestamp_ms'] as int;
+      if (key > newest) newest = key;
+      final slot = readingSlotStart(key);
+      batch.rawInsert(
+        'INSERT INTO readings(timestamp_ms, value, trend, rate, alarm_code, synced) '
+        'SELECT ?, ?, ?, ?, ?, 1 WHERE NOT EXISTS ('
+        'SELECT 1 FROM readings WHERE timestamp_ms >= ? AND timestamp_ms < ?)',
+        [
+          key,
+          row['value'],
+          row['trend'],
+          row['rate'],
+          row['alarm_code'],
+          slot,
+          slot + slotMs,
+        ],
+      );
+    }
+    await batch.commit(noResult: true);
+
+    // A linha de `meta` pode não existir (dono nunca gravado): cria sem dono.
+    await txn.rawInsert('INSERT OR IGNORE INTO meta(id) VALUES(1)');
+    await txn.rawUpdate(
+      'UPDATE meta SET readings_watermark_ms = ? WHERE id = 1 AND '
+      '(readings_watermark_ms IS NULL OR readings_watermark_ms < ?)',
+      [newest, newest],
+    );
+  }
 
   Future<void> _replaceTable(
     String table,

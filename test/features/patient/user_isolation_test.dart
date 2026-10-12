@@ -182,6 +182,9 @@ class _FakeRemote implements PatientRemoteApi {
   final upsertedCarbs = <CarbEntry>[];
 
   @override
+  Future<PatientSnapshot> loadSince(DateTime readingsFrom) => load();
+
+  @override
   Future<PatientSnapshot> load() => throw UnimplementedError();
   @override
   Future<void> upsertCarb(CarbEntry entry) async => upsertedCarbs.add(entry);

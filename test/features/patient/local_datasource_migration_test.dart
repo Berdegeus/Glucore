@@ -4,8 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-/// IDENT-04 e IDENT-05: schema local na versão 3 (chave por `id`) e migração
-/// v2 → v3 que preserva o diário do paciente.
+/// IDENT-04 e IDENT-05: schema local (chave por `id` desde a versão 3) e migração
+/// v2 → v3 que preserva o diário do paciente. A versão 4 acrescenta a marca
+/// d'água do pull de leituras à tabela `meta`.
 void main() {
   sqfliteFfiInit();
 
@@ -124,7 +125,7 @@ void main() {
     return rows.first.values.first! as int;
   }
 
-  group('IDENT-04: schema da versão 3', () {
+  group('IDENT-04: schema atual (versão 4)', () {
     test('onCreate dá id TEXT PRIMARY KEY e índice de horário às três tabelas',
         () async {
       final dataSource = LocalPatientDataSource(
@@ -135,7 +136,7 @@ void main() {
       await dataSource.close();
 
       final db = await openRaw();
-      expect(await userVersion(db), 3);
+      expect(await userVersion(db), 4);
 
       for (final entry in {
         'carbs': 'time_ms',
@@ -193,6 +194,41 @@ void main() {
     });
   });
 
+  group('SYNC: marca d\'água do pull de leituras (v4)', () {
+    test('onCreate dá a meta a coluna readings_watermark_ms, vazia', () async {
+      final dataSource = LocalPatientDataSource(
+        databaseFactory: databaseFactoryFfi,
+        databasePath: dbPath,
+      );
+      expect(await dataSource.readingsWatermarkMs(), isNull);
+      await dataSource.close();
+
+      final db = await openRaw();
+      final columns = await db.rawQuery('PRAGMA table_info(meta)');
+      expect(columns.map((c) => c['name']), contains('readings_watermark_ms'));
+      await db.close();
+    });
+
+    test('um banco da v2 chega à v4 com a coluna nova e o dono intacto', () async {
+      await seedVersion2();
+      final seeded = await openRaw();
+      await seeded.insert('meta', {'id': 1, 'owner_user_id': 'user-7'});
+      await seeded.close();
+
+      final dataSource = LocalPatientDataSource(
+        databaseFactory: databaseFactoryFfi,
+        databasePath: dbPath,
+      );
+      expect(await dataSource.getOwner(), 'user-7');
+      expect(await dataSource.readingsWatermarkMs(), isNull);
+      await dataSource.close();
+
+      final db = await openRaw();
+      expect(await userVersion(db), 4);
+      await db.close();
+    });
+  });
+
   group('IDENT-05: migração v2 → v3', () {
     test('cria a tabela pending_ops num banco vindo da v2', () async {
       await seedVersion2();
@@ -205,7 +241,7 @@ void main() {
       await dataSource.close();
 
       final db = await openRaw();
-      expect(await userVersion(db), 3);
+      expect(await userVersion(db), 4);
       final columns = await db.rawQuery('PRAGMA table_info(pending_ops)');
       expect(columns.map((c) => c['name']), contains('entity_id'));
       await db.close();
@@ -228,7 +264,7 @@ void main() {
       expect(snapshot.readings, hasLength(1));
 
       final db = await openRaw();
-      expect(await userVersion(db), 3);
+      expect(await userVersion(db), 4);
 
       final carbs = await db.query('carbs', orderBy: 'time_ms ASC');
       expect(carbs, hasLength(2));

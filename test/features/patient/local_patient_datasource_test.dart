@@ -381,6 +381,146 @@ void main() {
       expect(await dataSource.pendingCollections(), {PatientCollection.carbs});
     });
 
+    group('leituras do servidor são incorporadas, não substituídas', () {
+      // Um múltiplo de 5 min, para os intervalos caírem onde se espera.
+      final slot0 = DateTime.fromMillisecondsSinceEpoch(
+        1700000100000 - 1700000100000 % 300000,
+      );
+      GlucoseReadingItem reading(DateTime time, double value) => GlucoseReadingItem(
+            value: value,
+            timestamp: time,
+            trend: GlucoseTrend.stable,
+            rate: 0,
+          );
+      PatientSnapshot snapshotOf(List<GlucoseReadingItem> readings) => PatientSnapshot(
+            readings: readings,
+            alerts: const [],
+            carbs: const [],
+            insulin: const [],
+            alertSettings:
+                const AlertSettingsModel(lowThreshold: 80, highThreshold: 180),
+          );
+
+      test('nunca apaga: o servidor devolver pouco ou nada preserva o que há',
+          () async {
+        final minutes = [
+          for (var m = 0; m < 10; m++)
+            reading(slot0.add(Duration(minutes: m)), 100.0 + m),
+        ];
+        await dataSource.saveReadings(minutes);
+        await dataSource.markReadingsSynced(minutes);
+
+        await dataSource.replaceWithServerSnapshot(snapshotOf(const []));
+
+        expect((await dataSource.load()).readings, hasLength(10));
+      });
+
+      test('uma linha do servidor num intervalo que o aparelho já tem é ignorada',
+          () async {
+        final minutes = [
+          for (var m = 0; m < 5; m++)
+            reading(slot0.add(Duration(minutes: m)), 100.0 + m),
+        ];
+        await dataSource.saveReadings(minutes);
+        await dataSource.markReadingsSynced(minutes);
+
+        // O servidor tem o intervalo, carimbado no início, com outro valor.
+        await dataSource
+            .replaceWithServerSnapshot(snapshotOf([reading(slot0, 999)]));
+
+        final stored = (await dataSource.load()).readings;
+        expect(stored, hasLength(5));
+        expect(stored.any((r) => r.value == 999), isFalse);
+      });
+
+      test('uma linha do servidor num intervalo vazio entra, já sincronizada',
+          () async {
+        final next = slot0.add(const Duration(minutes: 5));
+        await dataSource.replaceWithServerSnapshot(
+          snapshotOf([reading(slot0, 100), reading(next, 110)]),
+        );
+
+        expect((await dataSource.load()).readings.map((r) => r.value),
+            [110, 100]);
+        expect(await dataSource.pendingReadings(), isEmpty);
+      });
+
+      test('o intervalo vizinho de uma leitura local não a bloqueia', () async {
+        await dataSource.saveReadings([reading(slot0.add(const Duration(minutes: 4)), 104)]);
+
+        await dataSource.replaceWithServerSnapshot(snapshotOf([
+          reading(slot0.add(const Duration(minutes: 5)), 105),
+        ]));
+
+        expect((await dataSource.load()).readings, hasLength(2));
+      });
+
+      test('uma leitura pendente não é tocada pelo servidor', () async {
+        final pending = reading(slot0.add(const Duration(minutes: 2)), 102);
+        await dataSource.saveReadings([pending]);
+
+        await dataSource.replaceWithServerSnapshot(snapshotOf([reading(slot0, 999)]));
+
+        expect((await dataSource.pendingReadings()).single.value, 102);
+        expect((await dataSource.load()).readings.single.value, 102);
+      });
+
+      test('a marca d\'água é a leitura mais nova do servidor e não recua',
+          () async {
+        expect(await dataSource.readingsWatermarkMs(), isNull);
+
+        final newer = slot0.add(const Duration(minutes: 30));
+        await dataSource.replaceWithServerSnapshot(
+          snapshotOf([reading(newer, 1), reading(slot0, 2)]),
+        );
+        expect(await dataSource.readingsWatermarkMs(), newer.millisecondsSinceEpoch);
+
+        await dataSource.replaceWithServerSnapshot(snapshotOf([reading(slot0, 2)]));
+        expect(await dataSource.readingsWatermarkMs(), newer.millisecondsSinceEpoch);
+      });
+
+      test('um snapshot sem leituras deixa a marca d\'água onde estava', () async {
+        await dataSource.replaceWithServerSnapshot(snapshotOf([reading(slot0, 2)]));
+
+        await dataSource.replaceWithServerSnapshot(snapshotOf(const []));
+
+        expect(await dataSource.readingsWatermarkMs(), slot0.millisecondsSinceEpoch);
+      });
+
+      test('a marca d\'água vale mesmo sem dono gravado, e não o apaga', () async {
+        await dataSource.setOwner('user-1');
+        await dataSource.replaceWithServerSnapshot(snapshotOf([reading(slot0, 2)]));
+
+        expect(await dataSource.getOwner(), 'user-1');
+        expect(await dataSource.readingsWatermarkMs(), isNotNull);
+      });
+
+      test('trocar de conta zera a marca d\'água junto com os dados', () async {
+        await dataSource.setOwner('user-1');
+        await dataSource.replaceWithServerSnapshot(snapshotOf([reading(slot0, 2)]));
+
+        await dataSource.wipeAllData();
+
+        expect(await dataSource.readingsWatermarkMs(), isNull);
+        expect(await dataSource.getOwner(), 'user-1');
+        expect((await dataSource.load()).readings, isEmpty);
+      });
+
+      test('readingsBetween devolve o intervalo semiaberto, em ordem', () async {
+        await dataSource.saveReadings([
+          for (var m = 0; m < 10; m++)
+            reading(slot0.add(Duration(minutes: m)), 100.0 + m),
+        ]);
+
+        final inRange = await dataSource.readingsBetween(
+          slot0.add(const Duration(minutes: 2)).millisecondsSinceEpoch,
+          slot0.add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+        );
+
+        expect(inRange.map((r) => r.value), [102, 103, 104]);
+      });
+    });
+
     test('pending settings win over server settings', () async {
       await dataSource.saveAlertSettings(
         const AlertSettingsModel(lowThreshold: 65, highThreshold: 210),

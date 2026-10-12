@@ -266,6 +266,9 @@ class _FakePatientCubit extends PatientCubit {
 
 class _FakePatientRemote implements PatientRemoteApi {
   @override
+  Future<PatientSnapshot> loadSince(DateTime readingsFrom) => load();
+
+  @override
   Future<PatientSnapshot> load() async =>
       throw UnimplementedError('not used in this test');
 

@@ -37,6 +37,60 @@ class _StubAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// Servidor dublê de `GET /readings`: respeita `from` (inclusivo), `before`
+/// (exclusivo) e `limit`, do mais novo ao mais antigo — como o glucose-service.
+/// Com [honoursPaging] falso se comporta como o servidor anterior à paginação:
+/// ignora os parâmetros e devolve sempre as `limit` mais novas.
+class _ReadingsServer implements HttpClientAdapter {
+  _ReadingsServer(this.timestamps, {this.honoursPaging = true});
+
+  /// Todos os instantes que o servidor tem, em ms.
+  final List<int> timestamps;
+  final bool honoursPaging;
+  final readingRequests = <Map<String, dynamic>>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    Object body = const <dynamic>[];
+    if (options.path == '/readings') {
+      readingRequests.add(Map.of(options.queryParameters));
+      final q = options.queryParameters;
+      final limit = honoursPaging ? (q['limit'] as int? ?? 5000) : 5000;
+      final from = honoursPaging ? (q['from'] as int?) : null;
+      final before = honoursPaging ? (q['before'] as int?) : null;
+      final rows = (timestamps.toList()..sort((a, b) => b.compareTo(a)))
+          .where((t) => from == null || t >= from)
+          .where((t) => before == null || t < before)
+          .take(limit)
+          .map((t) => {
+                'value': 100,
+                'timestampMs': t,
+                'trend': 'stable',
+                'rate': 0,
+                'alarmCode': null,
+              })
+          .toList();
+      body = rows;
+    } else if (options.path == '/settings/alerts') {
+      body = {'lowThreshold': 80, 'highThreshold': 180};
+    }
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   final uuidV4 = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
@@ -344,6 +398,88 @@ void main() {
       expect(snapshot.insulin.single.id, isNot('not-a-uuid'));
       expect(snapshot.insulin.single.id, matches(uuidV4));
       expect(snapshot.insulin.single.units, 2);
+    });
+  });
+
+  group('loadSince: leituras em páginas desde um instante', () {
+    RemotePatientDataSource against(_ReadingsServer server) {
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000/api/v1'))
+        ..httpClientAdapter = server;
+      return RemotePatientDataSource(dio);
+    }
+
+    List<int> minutes(int count) =>
+        [for (var i = 0; i < count; i++) 1700000000000 + i * 300000];
+
+    test('pede desde o instante dado, com o limite da página', () async {
+      final server = _ReadingsServer(minutes(10));
+      final from = DateTime.fromMillisecondsSinceEpoch(1700000000000 + 7 * 300000);
+
+      final snapshot = await against(server).loadSince(from);
+
+      expect(snapshot.readings, hasLength(3));
+      expect(server.readingRequests.single, {
+        'from': from.millisecondsSinceEpoch,
+        'limit': RemotePatientDataSource.readingPageSize,
+      });
+    });
+
+    test('uma página que não enche é a última', () async {
+      final server = _ReadingsServer(minutes(100));
+
+      await against(server).loadSince(DateTime.fromMillisecondsSinceEpoch(0));
+
+      expect(server.readingRequests, hasLength(1));
+    });
+
+    test('segue o cursor enquanto a página vem cheia, sem falha nem repetição',
+        () async {
+      final total = RemotePatientDataSource.readingPageSize * 2 + 123;
+      final server = _ReadingsServer(minutes(total));
+
+      final snapshot =
+          await against(server).loadSince(DateTime.fromMillisecondsSinceEpoch(0));
+
+      expect(server.readingRequests, hasLength(3));
+      final stamps = snapshot.readings.map((r) => r.timestamp.millisecondsSinceEpoch);
+      expect(stamps.toSet(), hasLength(total));
+      expect(
+        server.readingRequests[1]['before'],
+        snapshot.readings[RemotePatientDataSource.readingPageSize - 1]
+            .timestamp.millisecondsSinceEpoch,
+      );
+    });
+
+    test('um servidor que ignora a paginação não prende o app num laço', () async {
+      final server = _ReadingsServer(
+        minutes(RemotePatientDataSource.readingPageSize + 50),
+        honoursPaging: false,
+      );
+
+      final snapshot =
+          await against(server).loadSince(DateTime.fromMillisecondsSinceEpoch(0));
+
+      // A 1ª página é cheia, a 2ª repete a 1ª e o cursor não anda: para.
+      expect(server.readingRequests, hasLength(2));
+      expect(snapshot.readings, isNotEmpty);
+    });
+
+    test('load() sem instante continua pedindo /readings sem parâmetros', () async {
+      final server = _ReadingsServer(minutes(5));
+
+      await against(server).load();
+
+      expect(server.readingRequests.single, isEmpty);
+    });
+
+    test('o diário e os limiares vêm inteiros, como em load()', () async {
+      final server = _ReadingsServer(minutes(1));
+
+      final snapshot =
+          await against(server).loadSince(DateTime.fromMillisecondsSinceEpoch(0));
+
+      expect(snapshot.alertSettings.lowThreshold, 80);
+      expect(snapshot.alertSettings.highThreshold, 180);
     });
   });
 }

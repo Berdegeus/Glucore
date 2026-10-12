@@ -212,6 +212,9 @@ class _FakeTokenStore extends AuthTokenStore {
 
 class _FakeRemote implements PatientRemoteApi {
   @override
+  Future<PatientSnapshot> loadSince(DateTime readingsFrom) => load();
+
+  @override
   Future<PatientSnapshot> load() => throw UnimplementedError();
   @override
   Future<void> saveReadings(List<GlucoseReadingItem> readings) async {}

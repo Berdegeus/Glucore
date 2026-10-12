@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/api/auth_token_store.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../domain/reading_decimation.dart';
 import '../../domain/repositories/patient_repository.dart';
 import '../datasources/patient_datasource.dart';
 import '../datasources/patient_local_datasource.dart';
@@ -17,6 +18,9 @@ import 'pending_op.dart';
 /// - `pushNow()`: push imediato, serializado (nunca há dois pushes em voo);
 ///   retorna `false` se sobrou pendência após os retries.
 /// - Reagenda automaticamente quando a conectividade volta.
+///
+/// Leituras saem decimadas a 5 min e só dos intervalos fechados; o que sobra
+/// pendente (o intervalo em curso) não faz `pushNow` retornar `false`.
 ///
 /// Dois caminhos convivem: as mutações de diário (carbs, insulin, alerts) saem
 /// como operações unitárias, drenadas do op-log em ordem de `seq`; leituras e
@@ -32,11 +36,13 @@ class PatientSyncService {
       Duration(seconds: 1),
       Duration(seconds: 4),
     ],
+    DateTime Function() clock = DateTime.now,
   })  : _local = local,
         _remote = remote,
         _tokenStore = tokenStore,
         _debounce = debounce,
-        _retryDelays = retryDelays {
+        _retryDelays = retryDelays,
+        _clock = clock {
     final changes = connectivityChanges ?? Connectivity().onConnectivityChanged;
     _connectivitySubscription = changes.listen((results) {
       final online =
@@ -52,6 +58,7 @@ class PatientSyncService {
   final AuthTokenStore? _tokenStore;
   final Duration _debounce;
   final List<Duration> _retryDelays;
+  final DateTime Function() _clock;
 
   /// Quantas operações são lidas da fila por vez; a drenagem segue enquanto
   /// vier lote cheio.
@@ -125,24 +132,46 @@ class PatientSyncService {
     }
 
     if (pushesReadings) {
-      // Só as pendentes, em lotes que o backend aceita inteiros (ele rejeita,
-      // não trunca). Cada lote é marcado ao ser confirmado: se um falhar, os
-      // anteriores não são reenviados e os demais seguem pendentes.
-      final pendingReadings = await _local.pendingReadings();
-      const size = PatientRepository.readingPushBatchSize;
-      for (var start = 0; start < pendingReadings.length; start += size) {
-        final end = start + size < pendingReadings.length
-            ? start + size
-            : pendingReadings.length;
-        final chunk = pendingReadings.sublist(start, end);
-        await _remote.saveReadings(chunk);
-        await _local.markReadingsSynced(chunk);
-      }
+      await _pushReadings();
     }
     if (pushesSettings) {
       final snapshot = await _local.load();
       await _remote.saveAlertSettings(snapshot.alertSettings);
       await _local.markSettingsSynced();
+    }
+  }
+
+  /// Envia as leituras pendentes **ralas**: uma por intervalo de 5 min já
+  /// fechado (ver `reading_decimation.dart`). O banco local segue a 1/min.
+  ///
+  /// Em lotes que o backend aceita inteiros (ele rejeita, não trunca). Cada lote
+  /// é marcado ao ser confirmado — todas as leituras locais que as suas linhas
+  /// representam, não só a enviada: se um lote falhar, os anteriores não são
+  /// reenviados e os demais seguem pendentes. As leituras do intervalo em curso
+  /// também seguem pendentes; saem quando ele fechar.
+  Future<void> _pushReadings() async {
+    final pending = await _local.pendingReadings();
+    if (pending.isEmpty) return;
+
+    final pendingMs = [
+      for (final reading in pending) reading.timestamp.millisecondsSinceEpoch,
+    ]..sort();
+    final local = await _local.readingsBetween(
+      readingSlotStart(pendingMs.first),
+      readingSlotStart(pendingMs.last) +
+          readingUploadSlot.inMilliseconds,
+    );
+
+    final uploads =
+        planReadingUpload(pending: pending, local: local, now: _clock());
+    const size = PatientRepository.readingPushBatchSize;
+    for (var start = 0; start < uploads.length; start += size) {
+      final end = start + size < uploads.length ? start + size : uploads.length;
+      final batch = uploads.sublist(start, end);
+      await _remote.saveReadings([for (final u in batch) u.reading]);
+      await _local.markReadingKeysSynced(
+        [for (final u in batch) ...u.coveredKeys],
+      );
     }
   }
 

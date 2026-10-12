@@ -8,6 +8,7 @@ import 'package:glucore/features/patient/data/datasources/patient_local_datasour
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
+import 'package:glucore/features/patient/domain/reading_decimation.dart';
 import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -62,6 +63,9 @@ class _FakeRemote implements PatientRemoteApi {
     }
     _maybeFail();
   }
+
+  @override
+  Future<PatientSnapshot> loadSince(DateTime readingsFrom) => load();
 
   @override
   Future<PatientSnapshot> load() => throw UnimplementedError();
@@ -495,9 +499,10 @@ void main() {
       )));
     });
 
+    // Uma leitura por intervalo de 5 min: cada uma vira uma linha no servidor.
     GlucoseReadingItem reading(int index) => GlucoseReadingItem(
           value: 100,
-          timestamp: entryTime.add(Duration(minutes: index)),
+          timestamp: entryTime.add(Duration(minutes: index * 5)),
           trend: GlucoseTrend.stable,
           rate: 0,
         );
@@ -534,7 +539,12 @@ void main() {
       expect(remote.savedReadings, hasLength(1));
       expect(
         remote.savedReadings.single.map((r) => r.timestamp),
-        containsAll([reading(600).timestamp, reading(601).timestamp]),
+        [
+          for (final i in [600, 601])
+            DateTime.fromMillisecondsSinceEpoch(
+              readingSlotStart(reading(i).timestamp.millisecondsSinceEpoch),
+            ),
+        ],
       );
       expect(remote.savedReadings.single, hasLength(2));
     });
@@ -547,6 +557,122 @@ void main() {
       await service.pushNow();
 
       expect(await local.pendingReadings(), hasLength(700));
+    });
+  });
+
+  group('leituras saem decimadas a 5 min; o banco local segue a 1/min', () {
+    // 2 intervalos cheios de 1 leitura por minuto, a partir de um múltiplo de 5 min.
+    final base = DateTime.fromMillisecondsSinceEpoch(
+      readingSlotStart(DateTime.utc(2026, 8, 5, 12).millisecondsSinceEpoch),
+    );
+
+    GlucoseReadingItem at(int minute, double value) => GlucoseReadingItem(
+          value: value,
+          timestamp: base.add(Duration(minutes: minute)),
+          trend: GlucoseTrend.stable,
+          rate: 0,
+        );
+
+    PatientSyncService serviceAt(DateTime now) => PatientSyncService(
+          local: local,
+          remote: remote,
+          connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
+          debounce: const Duration(milliseconds: 10),
+          retryDelays: const [Duration.zero],
+          clock: () => now,
+        );
+
+    test('10 leituras por minuto viram 2 linhas, a mais antiga de cada intervalo',
+        () async {
+      await local.saveReadings([
+        for (var m = 0; m < 10; m++) at(m, 100.0 + m),
+      ]);
+      final late = serviceAt(base.add(const Duration(hours: 1)));
+
+      final pushed = await late.pushNow();
+      late.dispose();
+
+      expect(pushed, isTrue);
+      final sent = remote.savedReadings.single;
+      expect(sent.map((r) => (r.timestamp, r.value)), [
+        (base, 100.0),
+        (base.add(const Duration(minutes: 5)), 105.0),
+      ]);
+    });
+
+    test('todas as leituras que a linha representa ficam synced; o local fica inteiro',
+        () async {
+      await local.saveReadings([
+        for (var m = 0; m < 10; m++) at(m, 100.0 + m),
+      ]);
+      final late = serviceAt(base.add(const Duration(hours: 1)));
+
+      await late.pushNow();
+      late.dispose();
+
+      expect(await local.pendingReadings(), isEmpty);
+      expect((await local.load()).readings, hasLength(10));
+    });
+
+    test('o intervalo em curso continua pendente e não faz o push falhar',
+        () async {
+      await local.saveReadings([
+        for (var m = 0; m < 8; m++) at(m, 100.0 + m),
+      ]);
+      // 2 min depois do início do 2º intervalo: o 1º está fechado, o 2º não.
+      final during = serviceAt(base.add(const Duration(minutes: 7)));
+
+      final pushed = await during.pushNow();
+
+      expect(pushed, isTrue);
+      expect(remote.savedReadings.single.map((r) => r.timestamp), [base]);
+      expect(
+        (await local.pendingReadings()).map((r) => r.timestamp),
+        [at(7, 0).timestamp, at(6, 0).timestamp, at(5, 0).timestamp],
+      );
+
+      // Fechado o intervalo, o resto sai.
+      final after = serviceAt(base.add(const Duration(minutes: 10)));
+      await after.pushNow();
+      during.dispose();
+      after.dispose();
+
+      expect(remote.savedReadings, hasLength(2));
+      expect(await local.pendingReadings(), isEmpty);
+    });
+
+    test('uma leitura mais antiga que chega depois reenvia a mesma chave com o valor novo',
+        () async {
+      final now = base.add(const Duration(hours: 1));
+      final svc = serviceAt(now);
+      await local.saveReadings([at(2, 102), at(3, 103)]);
+      await svc.pushNow();
+
+      // O backfill do sensor traz o minuto 0 do mesmo intervalo.
+      await local.saveReadings([at(0, 100), at(2, 102), at(3, 103)]);
+      await svc.pushNow();
+      svc.dispose();
+
+      expect(remote.savedReadings, hasLength(2));
+      expect(remote.savedReadings[0].single.timestamp, base);
+      expect(remote.savedReadings[0].single.value, 102);
+      expect(remote.savedReadings[1].single.timestamp, base);
+      expect(remote.savedReadings[1].single.value, 100);
+    });
+
+    test('uma leitura nova no meio de um intervalo já enviado não troca o que o servidor tem',
+        () async {
+      final svc = serviceAt(base.add(const Duration(hours: 1)));
+      await local.saveReadings([at(0, 100)]);
+      await svc.pushNow();
+
+      await local.saveReadings([at(0, 100), at(3, 150)]);
+      await svc.pushNow();
+      svc.dispose();
+
+      // A mais antiga do intervalo continua sendo o minuto 0: mesma linha.
+      expect(remote.savedReadings.last.single.value, 100);
+      expect(await local.pendingReadings(), isEmpty);
     });
   });
 }
