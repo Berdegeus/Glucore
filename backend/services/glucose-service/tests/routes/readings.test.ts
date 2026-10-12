@@ -192,6 +192,124 @@ describe('POST /readings', () => {
     expect(rows[0].valueMgDl).toBe(155);
   });
 
+  it('keeps the last of two readings that share an instant in one batch', async () => {
+    const timestampMs = Date.UTC(2026, 7, 20, 10);
+    const res = await request(app)
+      .post('/readings')
+      .set(auth())
+      .send({
+        readings: [
+          { value: 100, timestampMs, trend: 'stable', rate: 0 },
+          { value: 130, timestampMs, trend: 'rising', rate: 1 },
+        ],
+      });
+
+    expect(res.status).toBe(204);
+    const rows = await prisma.glucoseReading.findMany({ where: { patientId: user.userId } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ valueMgDl: 130, trend: 'rising', trendRate: 1 });
+  });
+
+  it('stores the instant to the millisecond, a missing rate as 0 and the alarm code', async () => {
+    const timestampMs = Date.UTC(2026, 7, 20, 10, 5, 7, 321);
+    await request(app)
+      .post('/readings')
+      .set(auth())
+      .send({ readings: [{ value: 88, timestampMs, trend: 'falling', alarmCode: 3 }] });
+
+    const row = await prisma.glucoseReading.findFirstOrThrow({ where: { patientId: user.userId } });
+    expect(row.recordedAt.getTime()).toBe(timestampMs);
+    expect(row.trendRate).toBe(0);
+    expect(row.alarmCode).toBe(3);
+  });
+
+  it('keeps the stored alarm code when a resend omits it', async () => {
+    const timestampMs = Date.UTC(2026, 7, 20, 10);
+    const send = (reading: Record<string, unknown>) =>
+      request(app)
+        .post('/readings')
+        .set(auth())
+        .send({ readings: [{ timestampMs, trend: 'stable', rate: 0, ...reading }] });
+
+    await send({ value: 60, alarmCode: 2 });
+    await send({ value: 62 });
+
+    const row = await prisma.glucoseReading.findFirstOrThrow({ where: { patientId: user.userId } });
+    expect(row).toMatchObject({ valueMgDl: 62, alarmCode: 2 });
+  });
+
+  it('writes nothing when a resend changes nothing', async () => {
+    const readings = [
+      { value: 100, timestampMs: Date.UTC(2026, 7, 20, 10), trend: 'stable', rate: 0.5 },
+      { value: 110, timestampMs: Date.UTC(2026, 7, 20, 10, 5), trend: 'rising', rate: 1 },
+    ];
+    const versions = () =>
+      prisma.$queryRaw<{ xmin: string }[]>`
+        SELECT xmin::text FROM "GlucoseReading" ORDER BY "recordedAt"
+      `;
+
+    const first = await request(app).post('/readings').set(auth()).send({ readings });
+    const before = await versions();
+    const second = await request(app).post('/readings').set(auth()).send({ readings });
+
+    expect([first.status, second.status]).toEqual([204, 204]);
+    expect(before).toHaveLength(2);
+    // A rewritten row would carry the xmin of the second transaction.
+    expect(await versions()).toEqual(before);
+  });
+
+  it('accepts an all-integer rate batch followed by a fractional one', async () => {
+    // Prisma types a JS number array by its values; a statement prepared for
+    // the first shape used to reject the second (22P03).
+    const post = (rate: number, minute: number) =>
+      request(app)
+        .post('/readings')
+        .set(auth())
+        .send({
+          readings: [
+            { value: 100, timestampMs: Date.UTC(2026, 7, 20, 10, minute), trend: 'stable', rate },
+            { value: 101, timestampMs: Date.UTC(2026, 7, 20, 10, minute + 1), trend: 'stable', rate },
+          ],
+        });
+
+    const statuses = [(await post(0, 0)).status, (await post(0.75, 10)).status, (await post(2, 20)).status];
+
+    expect(statuses).toEqual([204, 204, 204]);
+    expect(await prisma.glucoseReading.count({ where: { patientId: user.userId } })).toBe(6);
+  });
+
+  it('applies a batch whole or not at all', async () => {
+    const res = await request(app)
+      .post('/readings')
+      .set(auth())
+      .send({
+        readings: [
+          { value: 100, timestampMs: Date.UTC(2026, 7, 20, 10), trend: 'stable', rate: 0 },
+          // A null trend violates NOT NULL on the second row.
+          { value: 101, timestampMs: Date.UTC(2026, 7, 20, 11), trend: null, rate: 0 },
+        ],
+      });
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(await prisma.glucoseReading.count({ where: { patientId: user.userId } })).toBe(0);
+  });
+
+  it('never touches another patient on the same instant', async () => {
+    const other = await signedInPatient();
+    const timestampMs = Date.UTC(2026, 7, 20, 10);
+    await prisma.glucoseReading.create({
+      data: { patientId: other.userId, recordedAt: new Date(timestampMs), valueMgDl: 199 },
+    });
+
+    await request(app)
+      .post('/readings')
+      .set(auth())
+      .send({ readings: [{ value: 90, timestampMs, trend: 'stable', rate: 0 }] });
+
+    const theirs = await prisma.glucoseReading.findFirstOrThrow({ where: { patientId: other.userId } });
+    expect(theirs.valueMgDl).toBe(199);
+  });
+
   it('stores a full-size batch whole (no 288 cap)', async () => {
     const base = Date.UTC(2026, 7, 1);
     const res = await request(app)

@@ -28,28 +28,62 @@ export class PrismaReadingRepository implements IReadingRepository {
   }
 
   async upsertMany(patientId: string, readings: readonly ReadingInput[]): Promise<void> {
-    await this.prisma.$transaction(
-      readings.map((reading) => {
-        const recordedAt = new Date(reading.timestampMs);
-        return this.prisma.glucoseReading.upsert({
-          where: { patientId_recordedAt: { patientId, recordedAt } },
-          update: {
-            valueMgDl: Math.round(reading.value),
-            trend: reading.trend,
-            trendRate: reading.rate,
-            alarmCode: reading.alarmCode,
-          },
-          create: {
-            patientId,
-            valueMgDl: Math.round(reading.value),
-            recordedAt,
-            trend: reading.trend,
-            trendRate: reading.rate ?? 0,
-            alarmCode: reading.alarmCode,
-          },
-        });
-      }),
-    );
+    // The same instant twice in one statement would make ON CONFLICT DO UPDATE
+    // fail ("cannot affect row a second time"). The last one wins, as it did
+    // when the upserts ran one after another.
+    const byInstant = new Map<number, ReadingInput>();
+    for (const reading of readings) byInstant.set(reading.timestampMs, reading);
+    if (byInstant.size === 0) return;
+
+    const batch = [...byInstant.values()];
+    // `recordedAt` is a naive `timestamp(3)`; an ISO string with its `Z` cast to
+    // `timestamp` keeps the UTC wall clock, which is what the column holds.
+    const recordedAt = batch.map((r) => new Date(r.timestampMs).toISOString());
+    const trends = batch.map((r) => r.trend);
+    // Numbers travel as text and are cast in SQL. Prisma encodes a JS number
+    // array as int or float depending on what the values happen to be, and
+    // Postgres reuses the prepared statement from the first batch: an all-integer
+    // `rate` column followed by a fractional one fails with 22P03.
+    const values = batch.map((r) => String(Math.round(r.value)));
+    const rates = batch.map((r) => String(r.rate ?? 0));
+    // No NULL inside an array either: an all-null (or mixed) array has no type
+    // Prisma can infer, and it fails the same way (08P01). Empty means "none".
+    const alarms = batch.map((r) => (r.alarmCode == null ? '' : String(r.alarmCode)));
+
+    // One statement instead of one upsert per row: it is atomic by itself (a
+    // partially applied sync would leave a hole no retry closes) and costs one
+    // round trip. A resend that changes nothing writes nothing: IS DISTINCT FROM
+    // skips the row, so no dead tuples pile up from retried batches. A missing
+    // alarm keeps the stored one, as the old per-row update did.
+    await this.prisma.$executeRaw`
+      INSERT INTO "GlucoseReading"
+        ("patientId", "recordedAt", "valueMgDl", "trend", "trendRate", "alarmCode")
+      SELECT ${patientId}::uuid, r."recordedAt", r."valueMgDl", r."trend", r."trendRate",
+        NULLIF(r."alarmCode", '')::int
+      FROM unnest(
+        ${recordedAt}::timestamp[],
+        ${values}::text[]::int[],
+        ${trends}::text[],
+        ${rates}::text[]::float8[],
+        ${alarms}::text[]
+      ) AS r("recordedAt", "valueMgDl", "trend", "trendRate", "alarmCode")
+      ON CONFLICT ("patientId", "recordedAt") DO UPDATE SET
+        "valueMgDl" = EXCLUDED."valueMgDl",
+        "trend" = EXCLUDED."trend",
+        "trendRate" = EXCLUDED."trendRate",
+        "alarmCode" = COALESCE(EXCLUDED."alarmCode", "GlucoseReading"."alarmCode")
+      WHERE (
+        "GlucoseReading"."valueMgDl",
+        "GlucoseReading"."trend",
+        "GlucoseReading"."trendRate",
+        "GlucoseReading"."alarmCode"
+      ) IS DISTINCT FROM (
+        EXCLUDED."valueMgDl",
+        EXCLUDED."trend",
+        EXCLUDED."trendRate",
+        COALESCE(EXCLUDED."alarmCode", "GlucoseReading"."alarmCode")
+      )
+    `;
   }
 
   async deleteAll(patientId: string): Promise<void> {
