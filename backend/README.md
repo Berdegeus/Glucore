@@ -1020,6 +1020,21 @@ Fora da faixa, a resposta é `400` com `error` e `code`:
 
 `before` não inteiro ou negativo responde `{ "error": "before must be an epoch in milliseconds", "code": "INVALID_PAGINATION" }`.
 
+## Retenção das leituras e dados para ML
+
+**O servidor não apaga leituras.** Decisão de 2026-10-12: os dados serão usados para treinar um modelo de machine learning, então não há retenção, TTL nem job de limpeza. Fica registrado aqui para ninguém acrescentar um sem rever isso.
+
+O que o servidor guarda, para sempre, por paciente:
+
+| Dado | Resolução | Tabela | Crescimento estimado |
+|---|---|---|---|
+| Leituras | **1 por intervalo de 5 min**, a mais antiga, com o horário trocado pelo início do intervalo | `GlucoseReading` | ~105 mil linhas por ano; ~330 B/linha estimados ≈ 34 MB/ano (não medido) |
+| Blocos de glicose | 15 min alinhados a UTC, com a contagem de leituras por mg/dL inteiro | `GlucoseBucket` | ~35 mil linhas por ano, ~6 MB/ano (estimado) |
+
+**O que o servidor não tem: a série ordenada de 1/min.** Os blocos guardam *quantas* leituras de cada valor houve em 15 minutos, não *em que minuto*. Isso basta para TIR, GMI, CV, média e zonas exatos em qualquer fuso, mas **não reconstrói a curva minuto a minuto**. A série de 1/min existe só no aparelho (retenção de 14 dias lá). Se o treino do modelo precisar da curva de 1/min, é preciso decidir **antes** de depender dela: parar de decimar o envio (de volta a ~20 mil linhas por 14 dias por usuário, ~170 MB por usuário por ano a ~330 B/linha) ou enviar a série de minuto por outro caminho. Hoje, o que se perdeu fora do aparelho não volta.
+
+AGP, heatmap e excursões saem das leituras de 5 min, não dos blocos.
+
 ## Índices da paginação
 
 As três listagens do diário rodam a mesma consulta: igualdade em `patientId`, faixa em
