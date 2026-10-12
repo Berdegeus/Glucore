@@ -335,6 +335,14 @@ class SibionicsBleManager(
             timestampMs = timestampMs
         )
         if (decoded == null) {
+            if (SibionicsGlucoseDecoder.isBareGlucoseResult(result)) {
+                // The per-minute push: a bare glucose number, not a packed reading.
+                // Not interpreted here (it could be a protocol code); it only
+                // signals that the library stored a reading, so ask for it.
+                Log.d(tag, "Bare SIprocessData result $result: reading it through getlastGlucose")
+                handleGlucoseReady()
+                return
+            }
             Log.w(tag, "Discarded unsolicited SIprocessData result: $result")
             return
         }
