@@ -63,7 +63,7 @@ describe('glucose_metrics() GMI against the contract', () => {
   it.each(cases)('mean $meanMgDl mg/dL gives GMI $gmi', async ({ meanMgDl, gmi }) => {
     await seedWithMean(meanMgDl);
 
-    const metrics = await repository.getPeriodMetrics(patientId, RANGE, 80, 180);
+    const metrics = await repository.getPeriodMetrics(patientId, RANGE, 80, 180, 'UTC');
 
     expect(metrics.avgGlucose).toBe(meanMgDl);
     expect(round2(metrics.gmiPercent as number)).toBe(gmi);

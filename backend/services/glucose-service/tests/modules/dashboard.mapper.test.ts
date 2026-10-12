@@ -48,9 +48,10 @@ describe('toNumber / toNullableNumber — the coercion boundary', () => {
       cv: new Prisma.Decimal('28.10'),
       tir_percent: '71.50',
       readings_count: 288n,
+      covered_slots: 280n,
     });
     expect(() => JSON.stringify(row)).not.toThrow();
-    expect(row).toEqual({ avgGlucose: 142.3, gmiPercent: 6.65, cvPercent: 28.1, timeInRangePercent: 71.5, readingsCount: 288 });
+    expect(row).toEqual({ avgGlucose: 142.3, gmiPercent: 6.65, cvPercent: 28.1, timeInRangePercent: 71.5, readingsCount: 288, coveredSlots: 280 });
   });
 });
 
@@ -62,6 +63,7 @@ describe('mapPeriodMetricsRow', () => {
       cvPercent: null,
       timeInRangePercent: null,
       readingsCount: 0,
+      coveredSlots: 0,
     });
   });
 });

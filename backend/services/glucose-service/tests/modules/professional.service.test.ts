@@ -49,14 +49,14 @@ const listQuery = (overrides: Partial<PatientListQuery> = {}): PatientListQuery 
 });
 
 describe('ProfessionalService.listPatients', () => {
-  it('answers each patient metrics without a name, in grant order, with sensor use derived from the readings', async () => {
+  it('answers each patient metrics without a name, in grant order, with sensor use derived from the covered slots', async () => {
     const { service, cohort } = build();
     const [a, b] = [patientId(1), patientId(2)];
     cohort.granted = [a, b];
     // Staged out of order: the page must keep the grant order.
     cohort.metrics = [
-      metricsRow(b, { readingsCount: 288 * 7, timeInRangePercent: 55 }),
-      metricsRow(a, { readingsCount: 0, hypoEpisodes: 2, alertsCount: 3 }),
+      metricsRow(b, { coveredSlots: 288 * 7, timeInRangePercent: 55 }),
+      metricsRow(a, { coveredSlots: 0, hypoEpisodes: 2, alertsCount: 3 }),
     ];
 
     const result = await service.listPatients(PRO, listQuery({ days: 14 }), CONTEXT);

@@ -46,7 +46,7 @@ import type {
   AgpPointDto,
   AlertsByTypeDto,
   DailyBucketDto,
-  DashboardTotals,
+  DiaryTotals,
   ExcursionDto,
   HeatCellDto,
   InsulinByTypeDto,
@@ -281,13 +281,14 @@ export class FakeSettingsRepository implements ISettingsRepository {
  */
 export class FakeDashboardRepository implements IDashboardRepository {
   thresholdConfig: { lowGlucoseMgDl: number; highGlucoseMgDl: number } | null = null;
-  totals: DashboardTotals = { readingsCount: 0, carbEntries: 0, insulinEntries: 0, alertsCount: 0 };
+  totals: DiaryTotals = { carbEntries: 0, insulinEntries: 0, alertsCount: 0 };
   periodMetrics: PeriodMetricsDto = {
     avgGlucose: null,
     gmiPercent: null,
     cvPercent: null,
     timeInRangePercent: null,
     readingsCount: 0,
+    coveredSlots: 0,
   };
   zoneDistribution: ZoneDistributionDto = { veryLow: 0, low: 0, target: 0, high: 0, veryHigh: 0 };
   lastReadingAt: string | null = null;
@@ -307,8 +308,13 @@ export class FakeDashboardRepository implements IDashboardRepository {
   /** The patient id each `getTotals` call came with. */
   readonly patientIdsSeen: string[] = [];
   /** The zone each zone-aware method was called with, keyed by method name. */
-  readonly tzSeen: Record<'resolveBounds' | 'getAgp' | 'getHeatmap' | 'getDailyBuckets', string[]> = {
+  readonly tzSeen: Record<
+    'resolveBounds' | 'getPeriodMetrics' | 'getZoneDistribution' | 'getAgp' | 'getHeatmap' | 'getDailyBuckets',
+    string[]
+  > = {
     resolveBounds: [],
+    getPeriodMetrics: [],
+    getZoneDistribution: [],
     getAgp: [],
     getHeatmap: [],
     getDailyBuckets: [],
@@ -326,7 +332,7 @@ export class FakeDashboardRepository implements IDashboardRepository {
     return this.thresholdConfig;
   }
 
-  async getTotals(patientId: string, range: DateRange): Promise<DashboardTotals> {
+  async getTotals(patientId: string, range: DateRange): Promise<DiaryTotals> {
     this.patientIdsSeen.push(patientId);
     this.rangesSeen.push(range);
     return this.totals;
@@ -345,12 +351,21 @@ export class FakeDashboardRepository implements IDashboardRepository {
     _range: DateRange,
     low: number,
     high: number,
+    tz: string,
   ): Promise<PeriodMetricsDto> {
     this.thresholdsSeen.push({ low, high });
+    this.tzSeen.getPeriodMetrics.push(tz);
     return this.periodMetrics;
   }
 
-  async getZoneDistribution(): Promise<ZoneDistributionDto> {
+  async getZoneDistribution(
+    _patientId: string,
+    _range: DateRange,
+    _low: number,
+    _high: number,
+    tz: string,
+  ): Promise<ZoneDistributionDto> {
+    this.tzSeen.getZoneDistribution.push(tz);
     return this.zoneDistribution;
   }
 
@@ -499,7 +514,7 @@ export class FakeCohortRepository implements ICohortRepository {
   hypoHours: HypoHourCount[] = [];
 
   readonly listCalls: Array<{ professionalId: string; now: Date; request?: PatientPageRequest }> = [];
-  readonly metricsCalls: Array<{ ids: readonly string[]; range: DateRange }> = [];
+  readonly metricsCalls: Array<{ ids: readonly string[]; range: DateRange; tz: string }> = [];
   readonly hypoCalls: Array<{ ids: readonly string[]; range: DateRange; tz: string }> = [];
 
   async listGrantedPatientIds(
@@ -512,8 +527,12 @@ export class FakeCohortRepository implements ICohortRepository {
     return { ids: this.granted.slice((page - 1) * limit, page * limit), total: this.granted.length };
   }
 
-  async getPatientMetrics(ids: readonly string[], range: DateRange): Promise<PatientMetrics[]> {
-    this.metricsCalls.push({ ids, range });
+  async getPatientMetrics(
+    ids: readonly string[],
+    range: DateRange,
+    tz: string,
+  ): Promise<PatientMetrics[]> {
+    this.metricsCalls.push({ ids, range, tz });
     return this.metrics.filter((row) => ids.includes(row.patientId));
   }
 
@@ -531,7 +550,7 @@ export function metricsRow(patientId: string, overrides: Partial<PatientMetrics>
     timeInRangePercent: 70,
     gmiPercent: 7,
     cvPercent: 30,
-    readingsCount: 0,
+    coveredSlots: 0,
     zoneDistribution: { veryLow: 0, low: 0, target: 100, high: 0, veryHigh: 0 },
     hypoEpisodes: 0,
     alertsCount: 0,

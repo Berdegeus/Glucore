@@ -14,8 +14,8 @@ export interface PatientMetrics {
   timeInRangePercent: number | null;
   gmiPercent: number | null;
   cvPercent: number | null;
-  /** Readings inside the period; the service turns it into `sensorUsePercent`. */
-  readingsCount: number;
+  /** 5-minute slots of the period with a reading; the service turns it into `sensorUsePercent`. */
+  coveredSlots: number;
   zoneDistribution: ZoneDistributionDto;
   hypoEpisodes: number;
   alertsCount: number;
@@ -28,7 +28,7 @@ export interface RawPatientMetricsRow extends RawZonesRow {
   tir_percent: unknown;
   gmi: unknown;
   cv: unknown;
-  readings_count: unknown;
+  covered_slots: unknown;
   hypo_episodes: unknown;
   alerts_count: unknown;
 }
@@ -40,7 +40,7 @@ export function mapPatientMetricsRow(row: RawPatientMetricsRow): PatientMetrics 
     timeInRangePercent: toNullableNumber(row.tir_percent),
     gmiPercent: toNullableNumber(row.gmi),
     cvPercent: toNullableNumber(row.cv),
-    readingsCount: toNumber(row.readings_count),
+    coveredSlots: toNumber(row.covered_slots),
     zoneDistribution: mapZonesRow(row),
     hypoEpisodes: toNumber(row.hypo_episodes),
     alertsCount: toNumber(row.alerts_count),
@@ -74,7 +74,7 @@ export function toPatientListItem(metrics: PatientMetrics, days: number): Patien
     timeInRangePercent: metrics.timeInRangePercent,
     gmiPercent: metrics.gmiPercent,
     cvPercent: metrics.cvPercent,
-    sensorUsePercent: sensorUsePercent(metrics.readingsCount, days),
+    sensorUsePercent: sensorUsePercent(metrics.coveredSlots, days),
     zoneDistribution: metrics.zoneDistribution,
     hypoEpisodes: metrics.hypoEpisodes,
     alertsCount: metrics.alertsCount,

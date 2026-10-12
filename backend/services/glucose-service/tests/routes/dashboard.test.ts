@@ -7,6 +7,7 @@ import { signAccessToken } from '@glucore/shared';
 
 import { buildApp } from '../../src/app';
 import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
+import { summaryOf } from '../helpers/histogram';
 import { TEST_JWT_SECRET } from '../helpers/testEnv';
 
 /**
@@ -496,5 +497,60 @@ describe('GET /dashboard/summary', () => {
         .set(auth());
       expect(res.status).toBe(400);
     });
+  });
+});
+
+describe('GET /dashboard/summary — from the daily summaries a patient uploaded', () => {
+  const put = (days: unknown[]) =>
+    request(app).put('/readings/summaries').set(auth()).send({ days });
+
+  it('answers from the summaries alone, with no reading on the server', async () => {
+    // Two days cut in Brasilia: 200 readings at 100 mg/dL and 100 at 200 mg/dL, 288 slots each.
+    await put([
+      summaryOf('2026-08-05', { 100: 200, 200: 100 }, { coveredSlots: 288 }),
+      summaryOf('2026-08-06', { 100: 300 }, { coveredSlots: 144 }),
+    ]);
+
+    const res = await request(app)
+      .get('/dashboard/summary?from=2026-08-05&to=2026-08-06&tz=America/Sao_Paulo')
+      .set(auth());
+
+    expect(res.status).toBe(200);
+    expect(res.body.totals.readingsCount).toBe(600);
+    // 500 of 600 readings sit in 80-180 (the default range).
+    expect(res.body.timeInRangePercent).toBe(83.33);
+    expect(res.body.sensorUsePercent).toBe(75); // 432 of 576 slots
+    const rounded = (value: number) => Math.round(value * 100) / 100;
+    expect(
+      res.body.byDay.map((d: { day: string; readingsCount: number; avgGlucose: number }) => [
+        d.day,
+        d.readingsCount,
+        rounded(d.avgGlucose),
+      ]),
+    ).toEqual([
+      ['2026-08-05', 300, 133.33],
+      ['2026-08-06', 300, 100],
+    ]);
+    expect(res.body.zoneDistribution.target).toBe(83.33);
+  });
+
+  it('ignores them when the caller asks for another time zone', async () => {
+    await put([summaryOf('2026-08-05', { 100: 300 })]); // cut in Brasilia, -180
+
+    const res = await request(app).get('/dashboard/summary?from=2026-08-05&to=2026-08-05').set(auth());
+
+    expect(res.body.totals.readingsCount).toBe(0); // tz defaults to UTC
+  });
+
+  it('reflects a day that grew', async () => {
+    await put([summaryOf('2026-08-05', { 100: 10 })]);
+    await put([summaryOf('2026-08-05', { 100: 10, 250: 10 })]);
+
+    const res = await request(app)
+      .get('/dashboard/summary?from=2026-08-05&to=2026-08-05&tz=America/Sao_Paulo')
+      .set(auth());
+
+    expect(res.body.totals.readingsCount).toBe(20);
+    expect(res.body.timeInRangePercent).toBe(50);
   });
 });

@@ -25,6 +25,9 @@ export interface DashboardTotals {
   alertsCount: number;
 }
 
+/** The counts of the dashboard's `totals` that come from the diary tables (readings come from the metrics). */
+export type DiaryTotals = Omit<DashboardTotals, 'readingsCount'>;
+
 export interface InsulinByTypeDto {
   insulinType: string;
   totalUnits: number;
@@ -42,7 +45,10 @@ export interface PeriodMetricsDto {
   gmiPercent: number | null;
   cvPercent: number | null;
   timeInRangePercent: number | null;
+  /** Readings the sensor produced in the period (a summary counts the minute series). */
   readingsCount: number;
+  /** 5-minute slots of the period with at least one reading: what sensor use is measured in. */
+  coveredSlots: number;
 }
 
 /** Share of readings in each CGM zone, in percent; the five add up to 100 (0 each with no readings). */
@@ -181,11 +187,19 @@ export interface RawPeriodMetricsRow {
   cv: unknown;
   tir_percent: unknown;
   readings_count: unknown;
+  covered_slots: unknown;
 }
 
 export function mapPeriodMetricsRow(row: RawPeriodMetricsRow | undefined): PeriodMetricsDto {
   if (!row) {
-    return { avgGlucose: null, gmiPercent: null, cvPercent: null, timeInRangePercent: null, readingsCount: 0 };
+    return {
+      avgGlucose: null,
+      gmiPercent: null,
+      cvPercent: null,
+      timeInRangePercent: null,
+      readingsCount: 0,
+      coveredSlots: 0,
+    };
   }
   return {
     avgGlucose: toNullableNumber(row.avg_glucose),
@@ -193,6 +207,7 @@ export function mapPeriodMetricsRow(row: RawPeriodMetricsRow | undefined): Perio
     cvPercent: toNullableNumber(row.cv),
     timeInRangePercent: toNullableNumber(row.tir_percent),
     readingsCount: toNumber(row.readings_count),
+    coveredSlots: toNumber(row.covered_slots),
   };
 }
 

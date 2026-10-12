@@ -77,13 +77,14 @@ describe('DashboardService — date range', () => {
 describe('DashboardService — response shape', () => {
   it('echoes from/to as calendar dates and passes every aggregate through untouched', async () => {
     const { dashboard, service } = build();
-    dashboard.totals = { readingsCount: 10, carbEntries: 2, insulinEntries: 3, alertsCount: 1 };
+    dashboard.totals = { carbEntries: 2, insulinEntries: 3, alertsCount: 1 };
     dashboard.periodMetrics = {
       avgGlucose: 140,
       gmiPercent: 6.6,
       cvPercent: 30,
       timeInRangePercent: 72.5,
       readingsCount: 10,
+      coveredSlots: 10,
     };
     dashboard.insulinByType = [{ insulinType: 'bolus', totalUnits: 12, count: 3, avgUnits: 4 }];
     dashboard.alertsByType = [{ alertType: 'HYPO_RISK', count: 2 }];
@@ -109,7 +110,8 @@ describe('DashboardService — response shape', () => {
       zoneDistribution: dashboard.zoneDistribution,
       agp: [],
       heatmap: [],
-      totals: dashboard.totals,
+      // The readings count is the metrics' (the minute series), not a row count of the thinned one.
+      totals: { readingsCount: 10, ...dashboard.totals },
       timeInRangePercent: 72.5,
       gmiPercent: 6.6,
       coefficientOfVariationPercent: 30,
@@ -169,6 +171,8 @@ describe('DashboardService — extended summary', () => {
 
     expect(dashboard.tzSeen).toEqual({
       resolveBounds: ['America/Sao_Paulo'],
+      getPeriodMetrics: ['America/Sao_Paulo'],
+      getZoneDistribution: ['America/Sao_Paulo'],
       getAgp: ['America/Sao_Paulo'],
       getHeatmap: ['America/Sao_Paulo'],
       getDailyBuckets: ['America/Sao_Paulo'],
@@ -195,9 +199,9 @@ describe('DashboardService — extended summary', () => {
     [287, '2026-08-05', '2026-08-05', 99.65],
     [288, '2026-08-05', '2026-08-05', 100],
     [500, '2026-08-05', '2026-08-05', 100], // capped
-  ])('sensorUsePercent for %i readings from %s to %s is %d', async (readingsCount, from, to, expected) => {
+  ])('sensorUsePercent for %i covered slots from %s to %s is %d', async (coveredSlots, from, to, expected) => {
     const { dashboard, service } = build();
-    dashboard.periodMetrics = { ...dashboard.periodMetrics, readingsCount };
+    dashboard.periodMetrics = { ...dashboard.periodMetrics, coveredSlots };
 
     const result = await service.getSummaryForUser(
       USER,
