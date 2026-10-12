@@ -428,9 +428,9 @@ Erros: `400 Invalid input`, `400 WEAK_PASSWORD`, `400 Invalid or expired token` 
 
 Bearer + papel `PATIENT` em todas as rotas.
 
-### `GET /readings` — últimas 288 leituras (24 h a cada 5 min)
+### `GET /readings` — leituras, da mais recente para a mais antiga
 
-`200`, ordenado da mais recente para a mais antiga:
+`200`, um array simples:
 
 ```json
 [
@@ -439,9 +439,29 @@ Bearer + papel `PATIENT` em todas as rotas.
 ]
 ```
 
+| Query | Padrão | Regra |
+|---|---|---|
+| `from` | — | Epoch em ms, **inclusivo**: só leituras a partir dele (o delta desde a última sincronização) |
+| `before` | — | Epoch em ms, **exclusivo**: só leituras anteriores (o cursor da página seguinte) |
+| `limit` | 5000 | Inteiro de 1 a 5000 |
+
+Sem nenhum parâmetro, a resposta é a de sempre — as 5000 mais recentes —, de modo que o app antigo continua
+funcionando. Uma página **cheia** (`limit` linhas) pode ter mais atrás: peça a seguinte com `before` igual ao
+`timestampMs` da última linha. Parâmetro malformado: `400 INVALID_PAGINATION`.
+
+O app envia **uma leitura a cada 5 min** (ver `POST`), então 5000 linhas cobrem ~17 dias. Um cliente que
+guarda mais que isso (o app guarda 14 dias a 1/min) deve paginar, não confiar no corte.
+
 ### `POST /readings` — grava leituras (upsert por horário)
 
-Corpo com no máximo 288 itens; itens além disso são descartados. A chave é `(paciente, recordedAt)`: reenviar a mesma leitura atualiza em vez de duplicar, o que torna o push do app seguro para repetir.
+Corpo com no máximo 500 itens; um lote maior é **recusado** (`400`), nunca truncado. A chave é
+`(paciente, recordedAt)`: reenviar a mesma leitura atualiza em vez de duplicar, o que torna o push do app
+seguro para repetir. O lote vira **um único** `INSERT … ON CONFLICT DO UPDATE` (atômico), e um reenvio que
+não muda nada não escreve. Dois itens com o mesmo instante no lote: vale o último. Um `alarmCode` ausente
+mantém o guardado.
+
+O app envia ao servidor **uma leitura por intervalo de 5 min**, a mais antiga do intervalo, carimbada com o
+início dele; o aparelho guarda a 1/min. A resolução cheia chega ao servidor pelo resumo diário, abaixo.
 
 ```json
 {
@@ -453,7 +473,42 @@ Corpo com no máximo 288 itens; itens além disso são descartados. A chave é `
 
 `204` sem corpo. Erro: `400 readings must be array`.
 
-### `DELETE /readings` — apaga todas as leituras do paciente
+### `PUT /readings/summaries` — resumo diário
+
+Um resumo por dia local do paciente, calculado no aparelho a partir da série de 1/min: leituras contadas por
+mg/dL inteiro. Com ele o servidor calcula TIR (para **qualquer** faixa-alvo), zonas, média, DP, CV e GMI com a
+resolução cheia, sem as leituras de minuto. A forma é a de `contracts/glucose-histogram.json`, lida pelo app,
+pelo backend e pelos testes dos dois.
+
+```json
+{
+  "days": [
+    {
+      "localDate": "2026-08-05",
+      "utcOffsetMinutes": -180,
+      "readingsCount": 1387,
+      "coveredSlots": 281,
+      "histogram": [0, 0, 3, "… 561 contagens: o índice 0 é 40 mg/dL, o último é 600 mg/dL …"]
+    }
+  ]
+}
+```
+
+| Campo | Regra |
+|---|---|
+| `localDate` | `YYYY-MM-DD` válido; sem repetição no lote |
+| `utcOffsetMinutes` | Inteiro de −840 a 840; minutos a leste de UTC **ao meio-dia local** do dia |
+| `readingsCount` | Inteiro ≥ 1 |
+| `coveredSlots` | Inteiro de 0 a 300 e ≤ `readingsCount`: intervalos de 5 min do dia com ao menos uma leitura |
+| `histogram` | 561 inteiros ≥ 0 que **somam `readingsCount`**; valor fora de 40–600 conta no extremo mais próximo |
+
+Até 14 dias por requisição, aplicados inteiros ou nenhum (`400 days[i]: …` nomeia o dia errado). `204`.
+**Um dia só cresce:** uma linha substitui a guardada apenas se tiver ao menos tantas leituras. O app calcula o
+dia com o que ainda guarda (retenção de 14 dias) e um aparelho reinstalado reconstrói a partir da versão rala
+do servidor; nenhum dos dois pode encolher o que já está lá. As mesmas regras valem como CHECK da tabela
+`GlucoseDailySummary`.
+
+### `DELETE /readings` — apaga todas as leituras do paciente e os resumos diários
 
 `204` sem corpo.
 
@@ -665,9 +720,9 @@ Resposta (`DashboardSummaryDto`, `modules/dashboard/dashboard.mapper.ts`):
 |---|---|
 | `from`, `to`, `tz` | O período e o fuso usados |
 | `lastReadingAt` | Leitura mais recente do paciente, em qualquer período; `null` sem leituras |
-| `totals` | Leituras, entradas de carboidrato, de insulina e alertas |
+| `totals` | Leituras (as que o sensor entregou, contadas pelo resumo diário quando há um), entradas de carboidrato, de insulina e alertas |
 | `timeInRangePercent`, `gmiPercent`, `coefficientOfVariationPercent` | Métricas do período (`null` sem leituras) |
-| `sensorUsePercent` | Leituras do período sobre as esperadas (uma a cada 5 min), limitado a 100 |
+| `sensorUsePercent` | Intervalos de 5 min do período com ao menos uma leitura sobre os esperados (288 por dia), limitado a 100. Mede o mesmo para um sensor a 1/min, a 5 ou a 15 min |
 | `zoneDistribution` | `veryLow`, `low`, `target`, `high`, `veryHigh` em %, soma 100 |
 | `byDay[]` | Por dia local: média, mín, máx, tempo no alvo, média móvel de 7 dias, `readingsCount`, `carbsGrams`, `insulinUnits` (0 quando não há registro) |
 | `agp[]` | Perfil ambulatorial por hora local: `hour`, `p5`, `p25`, `p50`, `p75`, `p95`, `count` |
@@ -681,7 +736,19 @@ como antes; nenhum campo antigo mudou de nome ou de tipo.
 
 Faixa inválida responde `400 INVALID_DASHBOARD_RANGE`. As métricas vêm das stored functions
 `glucose_metrics()` e `glucose_zones()` e de `groupBy`/window functions
-(`modules/dashboard/dashboard.repository.ts`). As zonas usam os limiares do paciente:
+(`modules/dashboard/dashboard.repository.ts`).
+
+**De onde vem cada dia.** TIR, GMI, CV, média, zonas e `byDay` são calculados sobre uma só relação,
+`glucose_day_counts(paciente, de, até, tz)` — (dia local, mg/dL, nº de leituras) —, que lê um dia do **resumo
+diário** quando há um e das **leituras** quando não há (migration
+`20261012130000_glucose_metrics_from_daily_summary`). Um resumo só vale para um dia se (1) o dia cabe inteiro no
+período pedido e (2) foi cortado no mesmo deslocamento que o `tz` pedido tem naquele dia (`utcOffsetMinutes`
+contra o offset do `tz` ao meio-dia local); senão o painel o ignora e lê as leituras, porque um resumo cortado
+em outro fuso mostraria outro dia do calendário. Média e DP saem de somas exatas sobre as contagens, iguais a
+`AVG`/`STDDEV_SAMP` sobre as linhas. AGP, heatmap e excursões continuam saindo das leituras (5 min). O painel do
+profissional (`/professional/*`) usa as mesmas funções, então o número de um paciente na tabela do profissional
+é o do seu próprio painel. A migration de criação da tabela preenche os dias já existentes a partir das leituras,
+cortados em `America/Sao_Paulo` (o padrão do `tz` do painel é UTC, que deslocaria em 3 h os dias brasileiros). As zonas usam os limiares do paciente:
 muito baixo `< min(54, low)`, baixo até `low`, alvo de `low` a `high`, alto até `max(250, high)`, muito
 alto acima disso (migration `20261004120000_add_glucose_zones_function`). A migration
 `20260831232506_dashboard_metrics_and_constraints` também cria índices parciais e CHECK constraints
@@ -924,6 +991,9 @@ naquele banco para referenciar.
 ## Paginação
 
 `GET /carbs`, `GET /insulin` e `GET /alerts` compartilham o mesmo contrato de query string.
+`GET /readings` usa o mesmo parser (`parsePageQuery`) com limites próprios — `limit` padrão e máximo de 5000
+— e um parâmetro a mais, `from` (epoch ms, **inclusivo**), para o delta desde a última sincronização; ver
+`GET /readings`.
 
 | Parâmetro | Tipo | Default | Regra |
 | --------- | ---- | ------- | ----- |
@@ -976,6 +1046,16 @@ A verificação não encontrou índice faltando, então esta release não acresc
 - Índice BRIN `GlucoseReading_recordedAt_brin_idx` (migration
   `20261006090000_add_reading_recordedat_brin_index`): atende a contagem de leituras por dia de todos os
   pacientes em `/admin/overview`, que nenhum índice iniciado por `patientId` cobre.
+- `GlucoseDailySummary` (migration `20261012120000_add_glucose_daily_summary`): um dia local do paciente
+  como contagens por mg/dL inteiro (`histogram int[561]`), `readingsCount` e `coveredSlots`. Chave
+  `(patientId, localDate)`, `ON DELETE CASCADE` com o `Patient`, CHECKs para o formato do histograma, a soma
+  igual a `readingsCount`, os intervalos e o deslocamento (a função `glucose_histogram_total()` existe para
+  isso: um CHECK não aceita subconsulta). Preenchida na migration a partir das leituras existentes, em
+  `America/Sao_Paulo`. Ver `PUT /readings/summaries`.
+- Funções `glucose_day_counts()`, `glucose_usable_summaries()`, `glucose_covered_slots()` e
+  `glucose_local_offset_minutes()` (migration `20261012130000_glucose_metrics_from_daily_summary`), sobre as
+  quais `glucose_metrics()` e `glucose_zones()` foram refeitas. As duas ganharam o parâmetro `p_tz` e
+  `glucose_metrics()` a coluna `covered_slots`: assinatura nova, as antigas foram removidas.
 
 **auth-service** (`services/auth-service/prisma/schema.prisma`): `DashboardLayout` (`userId` como chave,
 `widgets` JSONB, `updatedAt`), FK para `User` com `ON DELETE CASCADE`. Migration

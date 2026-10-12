@@ -165,8 +165,21 @@ paths:
   /readings:
     get:
       tags: [Leituras]
-      summary: Últimas 288 leituras
-      description: Ordenadas da mais recente para a mais antiga (24 h a cada 5 min).
+      summary: Leituras, da mais recente para a mais antiga
+      description: |
+        Sem parâmetros, as 5000 mais recentes. O app envia uma leitura por intervalo de 5 min, então isso são
+        ~17 dias. Com `from`, `before` e `limit` pagina: uma página cheia pode ter mais atrás, e a seguinte pede
+        `before` igual ao `timestampMs` da última linha.
+      parameters:
+        - name: from
+          in: query
+          schema: { type: integer, format: int64 }
+          description: Limite inferior inclusivo, em epoch ms. O delta desde a última sincronização.
+        - { $ref: '#/components/parameters/Before' }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 5000, default: 5000 }
+          description: Tamanho da página.
       responses:
         '200':
           description: Lista de leituras
@@ -175,11 +188,15 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Reading' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [Leituras]
       summary: Grava leituras (upsert por horário)
-      description: Reenviar a mesma leitura atualiza em vez de duplicar, então o push do app é seguro de repetir.
+      description: |
+        Reenviar a mesma leitura atualiza em vez de duplicar, então o push do app é seguro de repetir. Um lote
+        maior que 500 é recusado, nunca truncado. O app envia uma leitura por intervalo de 5 min, carimbada
+        com o início do intervalo; a resolução cheia chega pelo resumo diário (`PUT /readings/summaries`).
       requestBody:
         required: true
         content:
@@ -201,9 +218,35 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
     delete:
       tags: [Leituras]
-      summary: Apaga todas as leituras do paciente
+      summary: Apaga todas as leituras do paciente e os resumos diários
       responses:
         '204': { description: Apagadas }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /readings/summaries:
+    put:
+      tags: [Leituras]
+      summary: Resumo diário de glicose
+      description: |
+        Um resumo por dia local, calculado no aparelho a partir da série de 1/min: leituras contadas por mg/dL
+        inteiro (561 posições; o índice 0 é 40 mg/dL, o último 600 mg/dL). Com ele o servidor calcula TIR para
+        qualquer faixa-alvo, zonas, média, CV e GMI com a resolução cheia. Até 14 dias por requisição, aplicados
+        inteiros ou nenhum. Um dia só cresce: a linha substitui a guardada apenas se tiver ao menos tantas
+        leituras. Forma compartilhada com o app em `contracts/glucose-histogram.json`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [days]
+              properties:
+                days:
+                  type: array
+                  maxItems: 14
+                  items: { $ref: '#/components/schemas/DailySummary' }
+      responses:
+        '204': { description: Gravado }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
   /carbs:
     get:
@@ -563,6 +606,24 @@ components:
         rate: { type: number }
         alarmCode: { type: integer }
       example: { value: 104, timestampMs: 1751800200000, trend: steady, rate: 0.021, alarmCode: 0 }
+    DailySummary:
+      type: object
+      required: [localDate, utcOffsetMinutes, readingsCount, coveredSlots, histogram]
+      properties:
+        localDate: { type: string, format: date, description: Dia local do paciente, example: '2026-08-05' }
+        utcOffsetMinutes:
+          type: integer
+          minimum: -840
+          maximum: 840
+          description: Minutos a leste de UTC ao meio-dia local do dia (-180 em Brasília). O painel só usa o resumo quando pede o mesmo deslocamento.
+        readingsCount: { type: integer, minimum: 1, description: Leituras que o sensor entregou no dia }
+        coveredSlots: { type: integer, minimum: 0, maximum: 300, description: Intervalos de 5 min do dia com ao menos uma leitura }
+        histogram:
+          type: array
+          minItems: 561
+          maxItems: 561
+          items: { type: integer, minimum: 0 }
+          description: Leituras por mg/dL, índice 0 = 40 e último = 600. Soma `readingsCount`.
     Carb:
       type: object
       required: [grams, description, timeMs]
