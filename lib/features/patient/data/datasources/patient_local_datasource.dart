@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart'
     show ConflictAlgorithm, Database, DatabaseExecutor, DatabaseFactory;
 import 'package:uuid/uuid.dart';
 
-import '../../domain/daily_summary.dart';
 import '../../domain/entities/patient_entities.dart';
+import '../../domain/glucose_bucket.dart';
 import '../../domain/reading_decimation.dart';
 import '../sync/pending_op.dart';
 import 'patient_datasource.dart';
@@ -28,20 +28,15 @@ enum PatientCollection { readings, alerts, carbs, insulin, settings }
 /// `pending_ops` ([pendingOps], [pendingEntityIds]), não a flag — que nessas
 /// três tabelas sobrevive só como marca de origem do dado.
 class LocalPatientDataSource implements PatientDataSource {
-  LocalPatientDataSource({
-    DatabaseFactory? databaseFactory,
-    String? databasePath,
-    DayCutter dayCutter = const DeviceDayCutter(),
-  })  : _factory = databaseFactory,
-        _databasePath = databasePath,
-        _dayCutter = dayCutter;
+  LocalPatientDataSource({DatabaseFactory? databaseFactory, String? databasePath})
+      : _factory = databaseFactory,
+        _databasePath = databasePath;
 
   static const _dbName = 'glucore_patient.db';
   static const _dbVersion = 4;
 
   final DatabaseFactory? _factory;
   final String? _databasePath;
-  final DayCutter _dayCutter;
   Future<Database>? _database;
 
   Future<Database> get _db => _database ??= _open();
@@ -81,7 +76,7 @@ class LocalPatientDataSource implements PatientDataSource {
           ''');
           await _createMetaTable(db);
           await _addReadingsWatermark(db);
-          await _createSummaryTables(db);
+          await _createBucketTables(db);
           await db.execute(_createPendingOpsTable);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
@@ -94,8 +89,8 @@ class LocalPatientDataSource implements PatientDataSource {
           }
           if (oldVersion < 4) {
             await _addReadingsWatermark(db);
-            await _createSummaryTables(db);
-            await _markEveryReadingDayDirty(db);
+            await _createBucketTables(db);
+            await _markEveryReadingBucketDirty(db);
           }
         },
       ),
@@ -224,40 +219,33 @@ class LocalPatientDataSource implements PatientDataSource {
         )
       ''');
 
-  /// Resumo diário (v4): o que o servidor guarda de cada dia com a resolução
-  /// cheia do aparelho, e os dias cujas leituras mudaram desde o último cálculo.
-  static Future<void> _createSummaryTables(Database db) async {
+  /// Blocos de glicose (v4): o que o servidor guarda de cada intervalo de 15 min
+  /// com a resolução cheia do aparelho, e os blocos cujas leituras mudaram desde
+  /// o último cálculo.
+  static Future<void> _createBucketTables(Database db) async {
     await db.execute('''
-      CREATE TABLE daily_summaries(
-        local_date TEXT PRIMARY KEY,
-        utc_offset_minutes INTEGER NOT NULL,
+      CREATE TABLE glucose_buckets(
+        start_ms INTEGER PRIMARY KEY,
         readings_count INTEGER NOT NULL,
         covered_slots INTEGER NOT NULL,
-        histogram TEXT NOT NULL,
-        computed_at_ms INTEGER NOT NULL,
+        mg_dl TEXT NOT NULL,
+        counts TEXT NOT NULL,
         synced INTEGER NOT NULL DEFAULT 0
       )
     ''');
     await db.execute(
-      'CREATE TABLE summary_dirty_days(local_date TEXT PRIMARY KEY)',
+      'CREATE TABLE bucket_dirty(start_ms INTEGER PRIMARY KEY)',
     );
   }
 
-  /// Num banco que vem da v3 já há leituras e nenhum resumo: todos os dias com
+  /// Num banco que vem da v3 já há leituras e nenhum bloco: todos os blocos com
   /// leitura entram na fila para serem calculados.
-  Future<void> _markEveryReadingDayDirty(Database db) async {
-    final rows = await db.query('readings', columns: ['timestamp_ms']);
-    final days = {
-      for (final row in rows)
-        _dayCutter.keyOf(
-          DateTime.fromMillisecondsSinceEpoch(row['timestamp_ms'] as int),
-        ),
-    };
-    final batch = db.batch();
-    for (final day in days) {
-      batch.insert('summary_dirty_days', {'local_date': day});
-    }
-    await batch.commit(noResult: true);
+  Future<void> _markEveryReadingBucketDirty(Database db) async {
+    await db.execute(
+      'INSERT OR IGNORE INTO bucket_dirty(start_ms) '
+      'SELECT DISTINCT timestamp_ms - timestamp_ms % ${glucoseBucketDuration.inMilliseconds} '
+      'FROM readings',
+    );
   }
 
   /// Marca d'água do pull de leituras: o `timestamp_ms` da leitura mais nova do
@@ -299,8 +287,8 @@ class LocalPatientDataSource implements PatientDataSource {
       await txn.delete('pending_ops');
       // Outro dono, outra história: o próximo pull recomeça pela janela inteira.
       await txn.update('meta', {'readings_watermark_ms': null});
-      await txn.delete('daily_summaries');
-      await txn.delete('summary_dirty_days');
+      await txn.delete('glucose_buckets');
+      await txn.delete('bucket_dirty');
     });
   }
 
@@ -485,10 +473,10 @@ class LocalPatientDataSource implements PatientDataSource {
       };
       final batch = txn.batch();
       final incoming = <int>{};
-      // Os dias cujas leituras mudaram: o resumo deles precisa ser refeito. Uma
-      // leitura que só saiu do conjunto (a poda) não conta — o resumo de um dia
-      // não encolhe porque o aparelho esqueceu os minutos dele.
-      final changedDays = <String>{};
+      // Os blocos cujas leituras mudaram: eles precisam ser refeitos. Uma leitura
+      // que só saiu do conjunto (a poda) não conta — um bloco não encolhe porque
+      // o aparelho esqueceu os minutos dele.
+      final changedBuckets = <int>{};
       for (final reading in readings) {
         final row = _readingToRow(reading, synced: 0);
         final key = row['timestamp_ms'] as int;
@@ -497,10 +485,10 @@ class LocalPatientDataSource implements PatientDataSource {
         if (stored != null && _sameReadingRow(stored, row)) continue;
         batch.insert('readings', row,
             conflictAlgorithm: ConflictAlgorithm.replace);
-        changedDays.add(_dayCutter.keyOf(reading.timestamp));
+        changedBuckets.add(glucoseBucketStart(key));
       }
-      for (final day in changedDays) {
-        batch.insert('summary_dirty_days', {'local_date': day},
+      for (final bucket in changedBuckets) {
+        batch.insert('bucket_dirty', {'start_ms': bucket},
             conflictAlgorithm: ConflictAlgorithm.ignore);
       }
       for (final key in existing.keys) {
@@ -678,124 +666,108 @@ class LocalPatientDataSource implements PatientDataSource {
     });
   }
 
-  // ── resumo diário ─────────────────────────────────────────────────────────
+  // ── blocos de glicose ─────────────────────────────────────────────────────
 
-  /// Dias (`AAAA-MM-DD`) cujas leituras mudaram desde que o resumo foi calculado.
-  Future<List<String>> dirtySummaryDays() async {
+  /// Início (`ms`) dos blocos cujas leituras mudaram desde que foram calculados,
+  /// do mais antigo ao mais novo.
+  Future<List<int>> dirtyBucketStarts() async {
     final db = await _db;
-    final rows = await db.query('summary_dirty_days', orderBy: 'local_date ASC');
-    return [for (final row in rows) row['local_date'] as String];
+    final rows = await db.query('bucket_dirty', orderBy: 'start_ms ASC');
+    return [for (final row in rows) row['start_ms'] as int];
   }
 
-  /// Leituras locais do dia [key], qualquer que seja o `synced`.
-  Future<List<GlucoseReadingItem>> readingsOnLocalDay(String key) {
-    final (start, end) = _dayCutter.boundsOf(key);
-    return readingsBetween(
-      start.millisecondsSinceEpoch,
-      end.millisecondsSinceEpoch,
-    );
-  }
+  /// Leituras locais do bloco que começa em [startMs], qualquer que seja o
+  /// `synced`.
+  Future<List<GlucoseReadingItem>> readingsInBucket(int startMs) =>
+      readingsBetween(startMs, startMs + glucoseBucketDuration.inMilliseconds);
 
-  /// Quando o resumo de [key] foi calculado pela última vez, ou `null`.
-  Future<int?> dailySummaryComputedAtMs(String key) async {
-    final db = await _db;
-    final rows = await db.query(
-      'daily_summaries',
-      columns: ['computed_at_ms'],
-      where: 'local_date = ?',
-      whereArgs: [key],
-    );
-    return rows.isEmpty ? null : rows.first['computed_at_ms'] as int;
-  }
-
-  /// Guarda o resumo recalculado de um dia e o tira da fila de dias sujos.
+  /// Guarda o bloco recalculado e o tira da fila de sujos.
   ///
-  /// **Um dia só cresce**: um resumo com menos leituras que o guardado não o
-  /// substitui. O aparelho calcula o dia com o que ainda tem, e o dia na borda
-  /// da retenção de 14 dias já perdeu os primeiros minutos — o servidor aplica a
-  /// mesma regra. Igual ao guardado, não volta a ser pendente.
-  Future<void> saveDailySummary(DailySummary summary, {required int nowMs}) async {
+  /// **Um bloco só cresce**: um bloco com menos leituras que o guardado não o
+  /// substitui. O aparelho calcula o bloco com o que ainda tem, e o do limite da
+  /// retenção de 14 dias já perdeu os primeiros minutos — o servidor aplica a
+  /// mesma regra. Igual ao guardado e com o mesmo conteúdo, não volta a ser
+  /// pendente.
+  Future<void> saveGlucoseBucket(GlucoseBucket bucket) async {
     final db = await _db;
+    final mgDl = jsonEncode(bucket.mgDl);
+    final counts = jsonEncode(bucket.counts);
     await db.transaction((txn) async {
       final stored = await txn.query(
-        'daily_summaries',
-        where: 'local_date = ?',
-        whereArgs: [summary.localDate],
+        'glucose_buckets',
+        where: 'start_ms = ?',
+        whereArgs: [bucket.startMs],
       );
-      final grows = stored.isEmpty ||
-          summary.readingsCount > (stored.first['readings_count'] as int);
-      final sameSize = stored.isNotEmpty &&
-          summary.readingsCount == (stored.first['readings_count'] as int);
-      final changed = grows ||
-          (sameSize &&
-              (stored.first['histogram'] as String) !=
-                  jsonEncode(summary.histogram));
+      final storedCount =
+          stored.isEmpty ? null : stored.first['readings_count'] as int;
+      final grows = storedCount == null || bucket.readingsCount > storedCount;
+      final corrected = storedCount == bucket.readingsCount &&
+          (stored.first['mg_dl'] != mgDl || stored.first['counts'] != counts);
 
-      if (changed) {
+      if (grows || corrected) {
         await txn.insert(
-          'daily_summaries',
+          'glucose_buckets',
           {
-            'local_date': summary.localDate,
-            'utc_offset_minutes': summary.utcOffsetMinutes,
-            'readings_count': summary.readingsCount,
-            'covered_slots': summary.coveredSlots,
-            'histogram': jsonEncode(summary.histogram),
-            'computed_at_ms': nowMs,
+            'start_ms': bucket.startMs,
+            'readings_count': bucket.readingsCount,
+            'covered_slots': bucket.coveredSlots,
+            'mg_dl': mgDl,
+            'counts': counts,
             'synced': 0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
       await txn.delete(
-        'summary_dirty_days',
-        where: 'local_date = ?',
-        whereArgs: [summary.localDate],
+        'bucket_dirty',
+        where: 'start_ms = ?',
+        whereArgs: [bucket.startMs],
       );
     });
   }
 
-  /// Tira [key] da fila de dias sujos sem resumo (o dia ficou sem leituras).
-  Future<void> clearSummaryDirty(String key) async {
+  /// Tira o bloco da fila de sujos sem guardar nada (ficou sem leituras).
+  Future<void> clearBucketDirty(int startMs) async {
     final db = await _db;
-    await db.delete(
-      'summary_dirty_days',
-      where: 'local_date = ?',
-      whereArgs: [key],
-    );
+    await db.delete('bucket_dirty', where: 'start_ms = ?', whereArgs: [startMs]);
   }
 
-  /// Resumos que o servidor ainda não confirmou, do dia mais antigo ao mais novo.
-  Future<List<DailySummary>> pendingDailySummaries() async {
+  /// Blocos que o servidor ainda não confirmou, do mais antigo ao mais novo.
+  Future<List<GlucoseBucket>> pendingGlucoseBuckets() async {
     final db = await _db;
     final rows = await db.query(
-      'daily_summaries',
+      'glucose_buckets',
       where: 'synced = 0',
-      orderBy: 'local_date ASC',
+      orderBy: 'start_ms ASC',
     );
     return [
       for (final row in rows)
-        DailySummary(
-          localDate: row['local_date'] as String,
-          utcOffsetMinutes: row['utc_offset_minutes'] as int,
+        GlucoseBucket(
+          startMs: row['start_ms'] as int,
           readingsCount: row['readings_count'] as int,
           coveredSlots: row['covered_slots'] as int,
-          histogram: (jsonDecode(row['histogram'] as String) as List<dynamic>)
-              .cast<int>(),
+          mgDl: (jsonDecode(row['mg_dl'] as String) as List<dynamic>).cast<int>(),
+          counts:
+              (jsonDecode(row['counts'] as String) as List<dynamic>).cast<int>(),
         ),
     ];
   }
 
-  /// Marca como confirmados os resumos enviados — só se não foram recalculados
-  /// no meio do envio (o histograma guardado continua o enviado).
-  Future<void> markDailySummariesSynced(Iterable<DailySummary> sent) async {
+  /// Marca como confirmados os blocos enviados — só se não foram recalculados no
+  /// meio do envio (o conteúdo guardado continua o enviado).
+  Future<void> markGlucoseBucketsSynced(Iterable<GlucoseBucket> sent) async {
     final db = await _db;
     final batch = db.batch();
-    for (final summary in sent) {
+    for (final bucket in sent) {
       batch.update(
-        'daily_summaries',
+        'glucose_buckets',
         {'synced': 1},
-        where: 'local_date = ? AND histogram = ?',
-        whereArgs: [summary.localDate, jsonEncode(summary.histogram)],
+        where: 'start_ms = ? AND mg_dl = ? AND counts = ?',
+        whereArgs: [
+          bucket.startMs,
+          jsonEncode(bucket.mgDl),
+          jsonEncode(bucket.counts),
+        ],
       );
     }
     await batch.commit(noResult: true);

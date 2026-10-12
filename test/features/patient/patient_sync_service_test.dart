@@ -7,7 +7,7 @@ import 'package:glucore/features/patient/data/datasources/patient_datasource.dar
 import 'package:glucore/features/patient/data/datasources/patient_local_datasource.dart';
 import 'package:glucore/features/patient/data/sync/patient_sync_service.dart';
 import 'package:glucore/features/patient/data/sync/pending_op.dart';
-import 'package:glucore/features/patient/domain/daily_summary.dart';
+import 'package:glucore/features/patient/domain/glucose_bucket.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 import 'package:glucore/features/patient/domain/reading_decimation.dart';
 import 'package:glucore/features/patient/domain/repositories/patient_repository.dart';
@@ -65,15 +65,15 @@ class _FakeRemote implements PatientRemoteApi {
     _maybeFail();
   }
 
-  final savedSummaries = <List<DailySummary>>[];
+  final savedBuckets = <List<GlucoseBucket>>[];
 
-  /// Faz `saveDailySummaries` falhar com este erro, se definido.
-  Object? summaryError;
+  /// Faz `saveGlucoseBuckets` falhar com este erro, se definido.
+  Object? bucketError;
 
   @override
-  Future<void> saveDailySummaries(List<DailySummary> days) async {
-    if (summaryError != null) throw summaryError!;
-    savedSummaries.add(days);
+  Future<void> saveGlucoseBuckets(List<GlucoseBucket> buckets) async {
+    if (bucketError != null) throw bucketError!;
+    savedBuckets.add(buckets);
   }
 
   @override
@@ -688,189 +688,219 @@ void main() {
     });
   });
 
-  group('resumo diário: calculado com a série de 1/min, enviado à parte', () {
-    const brasilia = FixedOffsetDayCutter(-180);
-    late LocalPatientDataSource summaryLocal;
+  group('blocos de 15 min: calculados com a série de 1/min, enviados à parte', () {
+    // Um múltiplo de 15 min de UTC: o início de um bloco.
+    final start = DateTime.fromMillisecondsSinceEpoch(
+      glucoseBucketStart(DateTime.utc(2026, 8, 5, 12).millisecondsSinceEpoch),
+      isUtc: true,
+    );
+    final startMs = start.millisecondsSinceEpoch;
+    const bucketMs = 15 * 60000;
+    final afterwards = start.add(const Duration(days: 2));
 
-    // 05/08/2026 00:00 em Brasília.
-    final midnight = DateTime.utc(2026, 8, 5, 3);
     GlucoseReadingItem at(Duration offset, double value) => GlucoseReadingItem(
           value: value,
-          timestamp: midnight.add(offset),
+          timestamp: start.add(offset),
           trend: GlucoseTrend.stable,
           rate: 0,
         );
 
     PatientSyncService serviceAt(DateTime now) => PatientSyncService(
-          local: summaryLocal,
+          local: local,
           remote: remote,
           connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
           debounce: const Duration(milliseconds: 10),
           retryDelays: const [Duration.zero],
           clock: () => now,
-          dayCutter: brasilia,
         );
 
-    setUp(() {
-      summaryLocal = LocalPatientDataSource(
-        databaseFactory: databaseFactoryFfi,
-        databasePath: inMemoryDatabasePath,
-        dayCutter: brasilia,
-      );
-    });
-
-    tearDown(() => summaryLocal.close());
-
-    test('o resumo conta as leituras de minuto, não as 5 min que sobem', () async {
-      await summaryLocal.saveReadings([
-        for (var m = 0; m < 120; m++) at(Duration(minutes: m), 100),
+    test('o bloco conta as leituras de minuto, não as de 5 min que sobem', () async {
+      await local.saveReadings([
+        for (var m = 0; m < 15; m++) at(Duration(minutes: m), 100),
       ]);
-      final svc = serviceAt(midnight.add(const Duration(days: 2)));
+      final svc = serviceAt(afterwards);
 
       await svc.pushNow();
       svc.dispose();
 
-      expect(remote.savedReadings.single, hasLength(24)); // 120 min / 5
-      final day = remote.savedSummaries.single.single;
-      expect(day.readingsCount, 120);
-      expect(day.coveredSlots, 24);
-      expect(day.localDate, '2026-08-05');
-      expect(day.utcOffsetMinutes, -180);
-      expect(day.histogram[100 - 40], 120);
+      expect(remote.savedReadings.single, hasLength(3)); // 15 min / 5
+      final bucket = remote.savedBuckets.single.single;
+      expect(bucket.startMs, startMs);
+      expect(bucket.readingsCount, 15);
+      expect(bucket.coveredSlots, 3);
+      expect(bucket.mgDl, [100]);
+      expect(bucket.counts, [15]);
     });
 
-    test('depois de enviado o dia não volta a ser enviado', () async {
-      await summaryLocal.saveReadings([at(Duration.zero, 100)]);
-      final svc = serviceAt(midnight.add(const Duration(days: 2)));
+    test('depois de enviado o bloco não volta a ser enviado', () async {
+      await local.saveReadings([at(Duration.zero, 100)]);
+      final svc = serviceAt(afterwards);
       await svc.pushNow();
 
       await svc.pushNow();
       svc.dispose();
 
-      expect(remote.savedSummaries, hasLength(1));
-      expect(await summaryLocal.pendingDailySummaries(), isEmpty);
+      expect(remote.savedBuckets, hasLength(1));
+      expect(await local.pendingGlucoseBuckets(), isEmpty);
     });
 
-    test('um backfill de um dia passado refaz o resumo dele, com todo o dia', () async {
-      final svc = serviceAt(midnight.add(const Duration(days: 3)));
-      await summaryLocal.saveReadings([at(const Duration(hours: 10), 100)]);
-      await svc.pushNow();
-
-      // O sensor entrega, depois, as horas anteriores do mesmo dia.
-      await summaryLocal.saveReadings([
-        for (var m = 0; m < 60; m++) at(Duration(minutes: m), 90),
-        at(const Duration(hours: 10), 100),
-      ]);
-      await svc.pushNow();
-      svc.dispose();
-
-      expect(remote.savedSummaries, hasLength(2));
-      expect(remote.savedSummaries.last.single.readingsCount, 61);
-    });
-
-    test('o dia em curso não é recalculado a cada leitura', () async {
-      // 10:00 do dia 05; o resumo do dia sai agora e não mais por meia hora.
-      final tenAm = midnight.add(const Duration(hours: 10));
-      await summaryLocal.saveReadings([at(const Duration(hours: 9, minutes: 50), 100)]);
-      final first = serviceAt(tenAm);
-      await first.pushNow();
-
-      await summaryLocal.saveReadings([
-        at(const Duration(hours: 9, minutes: 50), 100),
-        at(const Duration(hours: 9, minutes: 55), 105),
-      ]);
-      final tooSoon = serviceAt(tenAm.add(const Duration(minutes: 10)));
-      await tooSoon.pushNow();
-      expect(remote.savedSummaries, hasLength(1));
-      expect(await summaryLocal.dirtySummaryDays(), ['2026-08-05']);
-
-      final later = serviceAt(tenAm.add(const Duration(minutes: 31)));
-      await later.pushNow();
-      first.dispose();
-      tooSoon.dispose();
-      later.dispose();
-
-      expect(remote.savedSummaries, hasLength(2));
-      expect(remote.savedSummaries.last.single.readingsCount, 2);
-      expect(await summaryLocal.dirtySummaryDays(), isEmpty);
-    });
-
-    test('um dia que já passou não espera os 30 minutos', () async {
-      await summaryLocal.saveReadings([at(const Duration(hours: 23), 100)]);
-      final inTheDay = serviceAt(midnight.add(const Duration(hours: 23, minutes: 5)));
-      await inTheDay.pushNow();
-
-      await summaryLocal.saveReadings([
-        at(const Duration(hours: 23), 100),
-        at(const Duration(hours: 23, minutes: 30), 110),
-      ]);
-      // Dois minutos depois da meia-noite: o dia 05 já é passado.
-      final afterMidnight = serviceAt(midnight.add(const Duration(days: 1, minutes: 2)));
-      await afterMidnight.pushNow();
-      inTheDay.dispose();
-      afterMidnight.dispose();
-
-      expect(remote.savedSummaries.last.single.readingsCount, 2);
-    });
-
-    test('mais de 14 dias sobem em requisições de no máximo 14', () async {
-      await summaryLocal.saveReadings([
-        for (var d = 0; d < 30; d++) at(Duration(days: d, hours: 1), 100),
-      ]);
-      final svc = serviceAt(midnight.add(const Duration(days: 40)));
-
-      await svc.pushNow();
-      svc.dispose();
-
-      expect(remote.savedSummaries.map((b) => b.length), [14, 14, 2]);
-      expect(await summaryLocal.pendingDailySummaries(), isEmpty);
-    });
-
-    test('uma falha no resumo não derruba o push: o resto sobe e o resumo fica pendente',
+    test('um backfill de um bloco passado refaz o bloco, com todas as leituras dele',
         () async {
-      remote.summaryError = Exception('404');
-      await summaryLocal.saveReadings([at(Duration.zero, 100)]);
-      final svc = serviceAt(midnight.add(const Duration(days: 2)));
+      final svc = serviceAt(afterwards);
+      await local.saveReadings([at(const Duration(minutes: 10), 100)]);
+      await svc.pushNow();
+
+      // O sensor entrega, depois, os minutos anteriores do mesmo bloco.
+      await local.saveReadings([
+        for (var m = 0; m < 6; m++) at(Duration(minutes: m), 90),
+        at(const Duration(minutes: 10), 100),
+      ]);
+      await svc.pushNow();
+      svc.dispose();
+
+      expect(remote.savedBuckets, hasLength(2));
+      expect(remote.savedBuckets.last.single.readingsCount, 7);
+      expect(remote.savedBuckets.last.single.mgDl, [90, 100]);
+    });
+
+    test('o bloco em curso não sobe: fica sujo até fechar', () async {
+      await local.saveReadings([at(const Duration(minutes: 1), 100)]);
+      // 5 min dentro do bloco.
+      final during = serviceAt(start.add(const Duration(minutes: 5)));
+
+      await during.pushNow();
+      expect(remote.savedBuckets, isEmpty);
+      expect(await local.dirtyBucketStarts(), [startMs]);
+
+      // Fechado o bloco, sai.
+      final after = serviceAt(start.add(const Duration(minutes: 15)));
+      await after.pushNow();
+      during.dispose();
+      after.dispose();
+
+      expect(remote.savedBuckets.single.single.startMs, startMs);
+      expect(await local.dirtyBucketStarts(), isEmpty);
+    });
+
+    test('o bloco sobe no instante em que fecha, e não antes', () async {
+      await local.saveReadings([at(const Duration(minutes: 1), 100)]);
+
+      final early = serviceAt(start.add(const Duration(minutes: 14, seconds: 59)));
+      await early.pushNow();
+      expect(remote.savedBuckets, isEmpty);
+
+      final onTime = serviceAt(start.add(const Duration(minutes: 15)));
+      await onTime.pushNow();
+      early.dispose();
+      onTime.dispose();
+      expect(remote.savedBuckets, hasLength(1));
+    });
+
+    test('leituras de blocos diferentes viram blocos diferentes', () async {
+      await local.saveReadings([
+        at(const Duration(minutes: 1), 100),
+        at(const Duration(minutes: 16), 110),
+        at(const Duration(minutes: 46), 120),
+      ]);
+      final svc = serviceAt(afterwards);
+
+      await svc.pushNow();
+      svc.dispose();
+
+      expect(remote.savedBuckets.single.map((b) => b.startMs),
+          [startMs, startMs + bucketMs, startMs + 3 * bucketMs]);
+    });
+
+    test('mais de 288 blocos sobem em requisições de no máximo 288', () async {
+      await local.saveReadings([
+        for (var b = 0; b < 600; b++) at(Duration(minutes: b * 15 + 1), 100),
+      ]);
+      final svc = serviceAt(start.add(const Duration(days: 30)));
+
+      await svc.pushNow();
+      svc.dispose();
+
+      expect(remote.savedBuckets.map((b) => b.length), [288, 288, 24]);
+      expect(await local.pendingGlucoseBuckets(), isEmpty);
+    });
+
+    test('duas semanas a 1/min viram 1344 blocos e 4032 leituras de 5 min', () async {
+      await local.saveReadings([
+        for (var m = 0; m < 14 * 24 * 60; m++) at(Duration(minutes: m), 100.0 + m % 50),
+      ]);
+      final svc = serviceAt(start.add(const Duration(days: 30)));
+
+      await svc.pushNow();
+      svc.dispose();
+
+      expect(remote.savedReadings.fold<int>(0, (n, batch) => n + batch.length), 4032);
+      expect(remote.savedBuckets.fold<int>(0, (n, batch) => n + batch.length), 1344);
+      expect(remote.savedBuckets.map((b) => b.length), [288, 288, 288, 288, 192]);
+    });
+
+    test('uma falha nos blocos não derruba o push: o resto sobe e os blocos ficam pendentes',
+        () async {
+      remote.bucketError = Exception('404');
+      await local.saveReadings([at(Duration.zero, 100)]);
+      final svc = serviceAt(afterwards);
 
       final pushed = await svc.pushNow();
 
       expect(pushed, isTrue);
       expect(remote.savedReadings, hasLength(1));
-      expect(await summaryLocal.pendingDailySummaries(), hasLength(1));
+      expect(await local.pendingGlucoseBuckets(), hasLength(1));
 
       // Quando o servidor passa a aceitar, o que ficou pendente sobe.
-      remote.summaryError = null;
+      remote.bucketError = null;
       await svc.pushNow();
       svc.dispose();
-      expect(remote.savedSummaries.single.single.readingsCount, 1);
-      expect(await summaryLocal.pendingDailySummaries(), isEmpty);
+      expect(remote.savedBuckets.single.single.readingsCount, 1);
+      expect(await local.pendingGlucoseBuckets(), isEmpty);
     });
 
-    test('uma sessão recusada (401) no resumo interrompe o push como em todo envio',
+    test('uma sessão recusada (401) nos blocos interrompe o push como em todo envio',
         () async {
-      remote.summaryError = const PatientUnauthorizedException();
-      await summaryLocal.saveReadings([at(Duration.zero, 100)]);
-      final svc = serviceAt(midnight.add(const Duration(days: 2)));
+      remote.bucketError = const PatientUnauthorizedException();
+      await local.saveReadings([at(Duration.zero, 100)]);
+      final svc = serviceAt(afterwards);
 
       final pushed = await svc.pushNow();
       svc.dispose();
 
       expect(pushed, isFalse);
-      expect(await summaryLocal.pendingDailySummaries(), hasLength(1));
+      expect(await local.pendingGlucoseBuckets(), hasLength(1));
     });
 
-    test('sem leituras pendentes, ainda envia um resumo que ficou pendente', () async {
-      remote.summaryError = Exception('rede');
-      await summaryLocal.saveReadings([at(Duration.zero, 100)]);
-      final svc = serviceAt(midnight.add(const Duration(days: 2)));
+    test('sem leituras pendentes, ainda envia um bloco que ficou pendente', () async {
+      remote.bucketError = Exception('rede');
+      await local.saveReadings([at(Duration.zero, 100)]);
+      final svc = serviceAt(afterwards);
       await svc.pushNow();
-      expect(await summaryLocal.pendingCollections(), isEmpty);
+      expect(await local.pendingCollections(), isEmpty);
 
-      remote.summaryError = null;
+      remote.bucketError = null;
       await svc.pushNow();
       svc.dispose();
 
-      expect(remote.savedSummaries, hasLength(1));
+      expect(remote.savedBuckets, hasLength(1));
+    });
+
+    test('um bloco de leitura podada não encolhe o que já foi enviado', () async {
+      final svc = serviceAt(afterwards);
+      await local.saveReadings([
+        for (var m = 0; m < 15; m++) at(Duration(minutes: m), 100),
+      ]);
+      await svc.pushNow();
+
+      // A retenção descarta as primeiras leituras do bloco e o conjunto é regravado.
+      await local.saveReadings([
+        for (var m = 10; m < 15; m++) at(Duration(minutes: m), 100),
+      ]);
+      await svc.pushNow();
+      svc.dispose();
+
+      expect(remote.savedBuckets, hasLength(1));
+      expect(remote.savedBuckets.single.single.readingsCount, 15);
     });
   });
 }

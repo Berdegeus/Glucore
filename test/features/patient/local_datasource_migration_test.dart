@@ -229,8 +229,8 @@ void main() {
     });
   });
 
-  group('SYNC: resumo diário (v4)', () {
-    test('o schema novo tem as tabelas do resumo', () async {
+  group('SYNC: blocos de glicose (v4)', () {
+    test('o schema novo tem as tabelas dos blocos', () async {
       final dataSource = LocalPatientDataSource(
         databaseFactory: databaseFactoryFfi,
         databasePath: dbPath,
@@ -242,11 +242,12 @@ void main() {
       final names = (await db.rawQuery(
         "SELECT name FROM sqlite_master WHERE type = 'table'",
       )).map((r) => r['name']);
-      expect(names, containsAll(['daily_summaries', 'summary_dirty_days']));
+      expect(names, containsAll(['glucose_buckets', 'bucket_dirty']));
       await db.close();
     });
 
-    test('um banco da v2 com leituras chega à v4 com os dias delas na fila', () async {
+    test('um banco da v2 com leituras chega à v4 com os blocos delas na fila',
+        () async {
       await seedVersion2();
 
       final dataSource = LocalPatientDataSource(
@@ -254,12 +255,15 @@ void main() {
         databasePath: dbPath,
       );
       final readings = (await dataSource.load()).readings;
-      final dirty = await dataSource.dirtySummaryDays();
+      final dirty = await dataSource.dirtyBucketStarts();
       await dataSource.close();
 
       expect(readings, isNotEmpty);
       expect(dirty, isNotEmpty);
       expect(dirty, hasLength(dirty.toSet().length));
+      for (final startMs in dirty) {
+        expect(startMs % (15 * 60000), 0);
+      }
     });
   });
 

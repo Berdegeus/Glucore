@@ -14,7 +14,7 @@
 
 Endpoints: `GET/POST/DELETE /readings` (GET devolve as 5.000 mais recentes, ou uma página com `from`/`before`/`limit`; POST = batch upsert de até 500, lote maior = 400).
 
-**O aparelho e o servidor não têm as mesmas linhas.** O aparelho guarda tudo o que o sensor entrega (até 1/min, retenção de 14 dias) e é a fonte dos gráficos e relatórios. O servidor recebe **uma leitura por intervalo de 5 min**: a mais antiga do intervalo, com o `timestampMs` trocado pelo início dele (`domain/reading_decimation.dart`), e só de intervalos já fechados. A resolução cheia chega ao servidor pelo resumo diário (abaixo).
+**O aparelho e o servidor não têm as mesmas linhas.** O aparelho guarda tudo o que o sensor entrega (até 1/min, retenção de 14 dias) e é a fonte dos gráficos e relatórios. O servidor recebe **uma leitura por intervalo de 5 min**: a mais antiga do intervalo, com o `timestampMs` trocado pelo início dele (`domain/reading_decimation.dart`), e só de intervalos já fechados. A resolução cheia chega ao servidor pelos blocos de 15 min (abaixo).
 
 ## CarbEntry
 
@@ -88,7 +88,7 @@ pending_ops(
 | Coleção | O que é "pendente" | Quem limpa |
 |---|---|---|
 | `readings`, `settings` | `synced = 0` — continuam no caminho de coleção (com debounce). Em `readings`, o intervalo de 5 min **em curso** fica pendente até fechar, e marcar uma linha enviada marca todas as leituras locais que ela representa | `PatientSyncService` via `pendingCollections()` + `markReadingKeysSynced`/`markSettingsSynced` |
-| `daily_summaries` | `synced = 0` — um dia recalculado e ainda não confirmado | `PatientSyncService`, `markDailySummariesSynced` (só se o histograma guardado ainda for o enviado) |
+| `glucose_buckets` | `synced = 0` — um bloco recalculado e ainda não confirmado | `PatientSyncService`, `markGlucoseBucketsSynced` (só se o conteúdo guardado ainda for o enviado) |
 | `carbs`, `insulin`, `alerts` | a linha correspondente em `pending_ops` | a drenagem do op-log, que apaga a op ao receber 2xx |
 
 Nas três tabelas do diário a flag sobrevive só como marca de origem do dado (`1` = veio do servidor, `0` = nasceu no aparelho) e **não** é consultada para decidir o que falta enviar. Quem decide é o op-log. As duas metades da reconciliação em `replaceWithServerSnapshot` são diferentes por isso:
@@ -98,19 +98,31 @@ Nas três tabelas do diário a flag sobrevive só como marca de origem do dado (
 
 `pendingCollections()` ainda reporta as três tabelas do diário quando existe linha `synced = 0`, mas o `PatientSyncService` filtra o resultado para `readings` e `settings`; o diário nunca é empurrado por esse caminho.
 
-## Resumo diário (`daily_summaries`, banco local v4)
+## Blocos de glicose (`glucose_buckets`, banco local v4)
 
-O servidor não tem as leituras de minuto, então o aparelho resume cada **dia local** como leituras contadas por mg/dL inteiro e o envia com `PUT /readings/summaries`. Forma em `contracts/glucose-histogram.json`, lida pelo app, pelo backend e pelos testes dos dois.
+O servidor não tem as leituras de minuto, então o aparelho agrupa as leituras em **blocos de 15 minutos
+alinhados a UTC**, contadas por mg/dL inteiro, e os envia com `PUT /readings/buckets`. Forma em
+`contracts/glucose-histogram.json`, lida pelo app, pelo backend e pelos testes dos dois.
+
+Alinhado a UTC e não ao fuso do paciente de propósito: um dia cortado num fuso não pode ser recortado em
+outro, e o painel pede o fuso de quem olha. Todo deslocamento de fuso real é múltiplo de 15 minutos, então um
+bloco nunca atravessa uma meia-noite local e o servidor monta o dia em qualquer fuso, exatamente. O app não
+sabe nem guarda fuso nenhum para isso.
 
 | Coluna / campo | Significado |
 |---|---|
-| `local_date` / `localDate` | `AAAA-MM-DD` no fuso do aparelho |
-| `utc_offset_minutes` | minutos a leste de UTC **ao meio-dia local** (−180 em Brasília); o painel só usa o resumo se pedir o mesmo deslocamento |
-| `readings_count` | leituras que o sensor entregou no dia |
-| `covered_slots` | intervalos de 5 min do dia com ao menos uma leitura (0–288): o uso do sensor, seja qual for a cadência |
-| `histogram` | 561 contagens; índice 0 = 40 mg/dL, último = 600 mg/dL; fora da faixa conta no extremo mais próximo |
+| `start_ms` / `startMs` | início do bloco, em ms de época; múltiplo de 15 min |
+| `readings_count` | leituras que o sensor entregou no bloco |
+| `covered_slots` | intervalos de 5 min do bloco com ao menos uma leitura (1–3): o uso do sensor, seja qual for a cadência |
+| `mg_dl` / `mgDl` | valores distintos em mg/dL, crescentes, de 40 a 600; fora da faixa conta no extremo mais próximo |
+| `counts` | quantas leituras teve cada valor de `mgDl`, na mesma ordem |
 
-`summary_dirty_days` guarda os dias cujas leituras mudaram. `saveReadings` marca o dia de cada leitura que insere ou altera, e **não** o de uma que só saiu do conjunto (a poda de 14 dias): o resumo de um dia não encolhe porque o aparelho esqueceu os minutos dele. O `PatientSyncService` recalcula cada dia sujo com **todas** as leituras locais do dia, guarda o resultado e envia os pendentes, até 14 por requisição. **Um dia só cresce**, localmente e no servidor. O dia em curso é recalculado no máximo a cada 30 min. Uma falha no envio é logada e o dia fica pendente: nunca falha o push nem impede o pull de leituras.
+`bucket_dirty` guarda os blocos cujas leituras mudaram. `saveReadings` marca o bloco de cada leitura que
+insere ou altera, e **não** o de uma que só saiu do conjunto (a poda de 14 dias): um bloco não encolhe porque o
+aparelho esqueceu os minutos dele. O `PatientSyncService` recalcula só os blocos **fechados** (o em curso fica
+sujo até fechar, senão seria um PUT por minuto), com **todas** as leituras locais do bloco, guarda o resultado
+e envia os pendentes, até 288 por requisição. **Um bloco só cresce**, localmente e no servidor. Uma falha no
+envio é logada e o bloco fica pendente: nunca falha o push nem impede o pull de leituras.
 
 ## Arquivos-chave
 
@@ -118,7 +130,7 @@ O servidor não tem as leituras de minuto, então o aparelho resume cada **dia l
 |---|---|
 | `lib/features/patient/domain/entities/` | Entidades Flutter + `kDaysOfWeek`, atrás do barrel `patient_entities.dart` |
 | `lib/features/patient/data/datasources/patient_remote_datasource.dart` | Mappers Dart↔JSON (fonte do contrato do app) |
-| `lib/features/patient/data/datasources/patient_local_datasource.dart` | Tabelas sqflite locais (`glucore_patient.db` v4, mesmas colunas + `id` + flag `synced`, `meta.readings_watermark_ms`, `daily_summaries` e `summary_dirty_days`) |
+| `lib/features/patient/data/datasources/patient_local_datasource.dart` | Tabelas sqflite locais (`glucore_patient.db` v4, mesmas colunas + `id` + flag `synced`, `meta.readings_watermark_ms`, `glucose_buckets` e `bucket_dirty`) |
 | `lib/features/patient/data/sync/pending_op.dart` | Modelo da operação enfileirada (`entity`, `op`, `payload_json`) |
 | `backend/services/glucose-service/src/modules/*/*.mapper.ts` | Mappers JSON↔Prisma (fonte do contrato do servidor) |
 | `backend/services/glucose-service/src/modules/*/*.schema.ts` | Validação e parse do body de entrada |

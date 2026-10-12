@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import type { DailySummaryInput } from '../../src/modules/readings/summaries.schema';
+import type { GlucoseBucketInput } from '../../src/modules/readings/buckets.schema';
 
 /** `contracts/glucose-histogram.json`, the file the app and the backend share. */
 export const HISTOGRAM_CONTRACT = JSON.parse(
@@ -9,34 +9,37 @@ export const HISTOGRAM_CONTRACT = JSON.parse(
 ) as {
   minMgDl: number;
   maxMgDl: number;
-  bins: number;
+  bucketMinutes: number;
   slotMinutes: number;
-  maxSlotsPerDay: number;
-  maxDaysPerRequest: number;
+  slotsPerBucket: number;
+  maxBucketsPerRequest: number;
 };
 
-/** A histogram with `counts[mgDl]` readings at each listed value. */
-export function histogramOf(counts: Record<number, number>): number[] {
-  const histogram = new Array<number>(HISTOGRAM_CONTRACT.bins).fill(0);
-  for (const [mgDl, count] of Object.entries(counts)) {
-    histogram[Number(mgDl) - HISTOGRAM_CONTRACT.minMgDl] = count;
-  }
-  return histogram;
-}
+export const BUCKET_MS = HISTOGRAM_CONTRACT.bucketMinutes * 60_000;
+const SLOT_MS = HISTOGRAM_CONTRACT.slotMinutes * 60_000;
 
-/** A valid summary of one day; override what the test cares about. */
-export function summaryOf(
-  localDate: string,
-  counts: Record<number, number> = { 100: 200, 150: 100 },
-  overrides: Partial<DailySummaryInput> = {},
-): DailySummaryInput {
-  const readingsCount = Object.values(counts).reduce((sum, n) => sum + n, 0);
+/** The start of the 15-minute interval that holds `ms`. */
+export const bucketStartOf = (ms: number): number => ms - (ms % BUCKET_MS);
+
+/**
+ * A valid bucket at `startMs`: `counts[mgDl]` readings at each listed value.
+ * `startMs` is moved down to the interval it falls in.
+ */
+export function bucketOf(
+  startMs: number,
+  counts: Record<number, number> = { 100: 10, 150: 5 },
+  overrides: Partial<GlucoseBucketInput> = {},
+): GlucoseBucketInput {
+  const mgDl = Object.keys(counts)
+    .map(Number)
+    .sort((a, b) => a - b);
+  const readingsCount = mgDl.reduce((sum, value) => sum + counts[value], 0);
   return {
-    localDate,
-    utcOffsetMinutes: -180,
+    startMs: bucketStartOf(startMs),
     readingsCount,
-    coveredSlots: Math.min(288, readingsCount),
-    histogram: histogramOf(counts),
+    coveredSlots: Math.min(HISTOGRAM_CONTRACT.slotsPerBucket, readingsCount),
+    mgDl,
+    counts: mgDl.map((value) => counts[value]),
     ...overrides,
   };
 }
@@ -48,36 +51,34 @@ export interface SeedReading {
 }
 
 /**
- * The summaries the app would upload for these readings, cut in a fixed offset
- * (minutes east of UTC; Brasilia has had no daylight saving since 2019). This is
- * the app's rule written down once more, so the backend tests can build the
- * summary of a series and check the dashboard reads the two alike.
+ * The buckets the app would upload for these readings: grouped by 15-minute
+ * interval aligned to UTC, values clamped to the contract's range, slots counted
+ * from the series. This is the app's rule written down once more, so the backend
+ * tests can build the buckets of a series and check the dashboard reads the two
+ * alike.
  */
-export function summariesFromReadings(
-  readings: readonly SeedReading[],
-  utcOffsetMinutes: number,
-): DailySummaryInput[] {
-  const days = new Map<string, SeedReading[]>();
+export function bucketsFromReadings(readings: readonly SeedReading[]): GlucoseBucketInput[] {
+  const byBucket = new Map<number, SeedReading[]>();
   for (const reading of readings) {
-    const local = new Date(reading.at + utcOffsetMinutes * 60_000).toISOString().slice(0, 10);
-    days.set(local, [...(days.get(local) ?? []), reading]);
+    const key = bucketStartOf(reading.at);
+    byBucket.set(key, [...(byBucket.get(key) ?? []), reading]);
   }
 
-  return [...days.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([localDate, rows]) => {
-      const histogram = new Array<number>(HISTOGRAM_CONTRACT.bins).fill(0);
+  return [...byBucket.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([startMs, rows]) => {
+      const counts = new Map<number, number>();
       for (const { mgDl } of rows) {
         const clamped = Math.min(HISTOGRAM_CONTRACT.maxMgDl, Math.max(HISTOGRAM_CONTRACT.minMgDl, mgDl));
-        histogram[clamped - HISTOGRAM_CONTRACT.minMgDl] += 1;
+        counts.set(clamped, (counts.get(clamped) ?? 0) + 1);
       }
-      const slotMs = HISTOGRAM_CONTRACT.slotMinutes * 60_000;
+      const mgDl = [...counts.keys()].sort((a, b) => a - b);
       return {
-        localDate,
-        utcOffsetMinutes,
+        startMs,
         readingsCount: rows.length,
-        coveredSlots: new Set(rows.map((r) => Math.floor(r.at / slotMs))).size,
-        histogram,
+        coveredSlots: new Set(rows.map((r) => Math.floor(r.at / SLOT_MS))).size,
+        mgDl,
+        counts: mgDl.map((value) => counts.get(value)!),
       };
     });
 }

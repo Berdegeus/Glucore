@@ -19,10 +19,9 @@ export interface ICohortRepository {
   /**
    * Period metrics for every id in one query: `glucose_metrics` and `glucose_zones`
    * through `LATERAL`, plus hypo episodes, alerts and the last reading. The result
-   * is unordered; an id with no readings still answers (null metrics, zero counts). `tz` is the
-   * zone the range was cut in: a patient's daily summary is used only when it was cut in its offset.
+   * is unordered; an id with no readings still answers (null metrics, zero counts).
    */
-  getPatientMetrics(ids: readonly string[], range: DateRange, tz: string): Promise<PatientMetrics[]>;
+  getPatientMetrics(ids: readonly string[], range: DateRange): Promise<PatientMetrics[]>;
   /** One page of the professional's actively granted patients, with the total across pages (PRO-11, PRO-16). */
   listGrantedPatientIds(
     professionalId: string,
@@ -48,11 +47,7 @@ export class PrismaCohortRepository implements ICohortRepository {
     return getHypoStartHours(this.prisma, ids, range, tz);
   }
 
-  async getPatientMetrics(
-    ids: readonly string[],
-    range: DateRange,
-    tz: string,
-  ): Promise<PatientMetrics[]> {
+  async getPatientMetrics(ids: readonly string[], range: DateRange): Promise<PatientMetrics[]> {
     if (ids.length === 0) return [];
 
     const { from, toExclusive } = range;
@@ -81,16 +76,14 @@ export class PrismaCohortRepository implements ICohortRepository {
         ${from} AT TIME ZONE 'UTC',
         ${toExclusive} AT TIME ZONE 'UTC',
         t.low::integer,
-        t.high::integer,
-        ${tz}
+        t.high::integer
       ) AS m
       CROSS JOIN LATERAL glucose_zones(
         t.patient_id,
         ${from} AT TIME ZONE 'UTC',
         ${toExclusive} AT TIME ZONE 'UTC',
         t.low::integer,
-        t.high::integer,
-        ${tz}
+        t.high::integer
       ) AS z
       CROSS JOIN LATERAL (
         SELECT COUNT(*) AS alerts_count

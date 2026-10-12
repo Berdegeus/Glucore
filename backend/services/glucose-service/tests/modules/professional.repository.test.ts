@@ -6,10 +6,10 @@ import { sensorUsePercent } from '../../src/modules/dashboard/dashboard.metrics'
 import { DashboardService } from '../../src/modules/dashboard/dashboard.service';
 import { PrismaPatientRepository } from '../../src/modules/patient/patient.repository';
 import { PrismaCohortRepository } from '../../src/modules/professional/professional.repository';
-import { PrismaSummaryRepository } from '../../src/modules/readings/summaries.repository';
+import { PrismaBucketRepository } from '../../src/modules/readings/buckets.repository';
 import { FakeTimeZoneChecker } from '../helpers/fakes';
 import { disconnect, prisma, signedInPatient, truncateAll } from '../helpers/db';
-import { seededValues, summariesFromReadings } from '../helpers/histogram';
+import { bucketsFromReadings, seededValues } from '../helpers/histogram';
 
 /**
  * Portfolio metrics against a real Postgres: the numbers of each patient must
@@ -81,7 +81,7 @@ describe('getPatientMetrics', () => {
   it('gives each patient the metrics of that patient own dashboard summary', async () => {
     const { defaults, empty, custom } = await seedCohort();
 
-    const rows = await new PrismaCohortRepository(prisma).getPatientMetrics([defaults, empty, custom], RANGE, 'UTC');
+    const rows = await new PrismaCohortRepository(prisma).getPatientMetrics([defaults, empty, custom], RANGE);
 
     expect(rows.map((row) => row.patientId).sort()).toEqual([defaults, empty, custom].sort());
     for (const patientId of [defaults, empty, custom]) {
@@ -102,30 +102,32 @@ describe('getPatientMetrics', () => {
     }
   });
 
-  it('gives a patient who has only daily summaries the same figures as their own dashboard and as the readings', async () => {
+  it('gives a patient who has only glucose buckets the same figures as their own dashboard and as the readings', async () => {
     const readings = Array.from({ length: 3 * 288 }, (_, i) => ({
       at: Date.UTC(2026, 7, 5) + i * 5 * 60_000,
       mgDl: seededValues(3 * 288)[i],
     }));
     const withReadings = (await signedInPatient()).userId;
-    const withSummaries = (await signedInPatient()).userId;
-    for (const patientId of [withReadings, withSummaries]) {
+    const withBuckets = (await signedInPatient()).userId;
+    for (const patientId of [withReadings, withBuckets]) {
       await prisma.glucoseReading.createMany({
         data: readings.map((r) => ({ patientId, recordedAt: new Date(r.at), valueMgDl: r.mgDl })),
       });
     }
-    await new PrismaSummaryRepository(prisma).upsertMany(withSummaries, summariesFromReadings(readings, 0));
-    await prisma.glucoseReading.deleteMany({ where: { patientId: withSummaries } });
+    const all = bucketsFromReadings(readings);
+    for (let i = 0; i < all.length; i += 288) {
+      await new PrismaBucketRepository(prisma).upsertMany(withBuckets, all.slice(i, i + 288));
+    }
+    await prisma.glucoseReading.deleteMany({ where: { patientId: withBuckets } });
 
     const rows = await new PrismaCohortRepository(prisma).getPatientMetrics(
-      [withReadings, withSummaries],
+      [withReadings, withBuckets],
       RANGE,
-      'UTC',
     );
-    const [fromReadings, fromSummaries] = [withReadings, withSummaries].map(
+    const [fromReadings, fromBuckets] = [withReadings, withBuckets].map(
       (id) => rows.find((row) => row.patientId === id)!,
     );
-    const summary = await summaries.getSummary(withSummaries, { from: FROM, to: TO, bucket: 'day', tz: 'UTC' });
+    const summary = await summaries.getSummary(withBuckets, { from: FROM, to: TO, bucket: 'day', tz: 'UTC' });
 
     const figures = ({ timeInRangePercent, gmiPercent, cvPercent, coveredSlots, zoneDistribution }: typeof fromReadings) => ({
       timeInRangePercent,
@@ -135,19 +137,19 @@ describe('getPatientMetrics', () => {
       zoneDistribution,
     });
     expect(fromReadings.coveredSlots).toBe(3 * 288);
-    expect(figures(fromSummaries)).toEqual(figures(fromReadings));
+    expect(figures(fromBuckets)).toEqual(figures(fromReadings));
     // The same patient, asked the same question by the patient and by the professional.
-    expect(fromSummaries.timeInRangePercent).toBe(summary.timeInRangePercent);
-    expect(fromSummaries.gmiPercent).toBe(summary.gmiPercent);
-    expect(fromSummaries.cvPercent).toBe(summary.coefficientOfVariationPercent);
-    expect(fromSummaries.zoneDistribution).toEqual(summary.zoneDistribution);
-    expect(sensorUsePercent(fromSummaries.coveredSlots, DAYS)).toBe(summary.sensorUsePercent);
+    expect(fromBuckets.timeInRangePercent).toBe(summary.timeInRangePercent);
+    expect(fromBuckets.gmiPercent).toBe(summary.gmiPercent);
+    expect(fromBuckets.cvPercent).toBe(summary.coefficientOfVariationPercent);
+    expect(fromBuckets.zoneDistribution).toEqual(summary.zoneDistribution);
+    expect(sensorUsePercent(fromBuckets.coveredSlots, DAYS)).toBe(summary.sensorUsePercent);
   });
 
   it('counts the sustained hypo runs and the alerts inside the period, per patient thresholds', async () => {
     const { defaults, custom } = await seedCohort();
 
-    const rows = await new PrismaCohortRepository(prisma).getPatientMetrics([defaults, custom], RANGE, 'UTC');
+    const rows = await new PrismaCohortRepository(prisma).getPatientMetrics([defaults, custom], RANGE);
 
     const byId = new Map(rows.map((row) => [row.patientId, row]));
     // defaults: the 15-minute run counts, the 5-minute one does not; the alert at 12 Aug 00:00 is outside.
@@ -159,7 +161,7 @@ describe('getPatientMetrics', () => {
   it('keeps the last reading unbounded by the period', async () => {
     const { defaults } = await seedCohort();
 
-    const [row] = await new PrismaCohortRepository(prisma).getPatientMetrics([defaults], RANGE, 'UTC');
+    const [row] = await new PrismaCohortRepository(prisma).getPatientMetrics([defaults], RANGE);
 
     expect(row.lastReadingAt).toBe('2026-08-20T09:30:00.000Z');
   });
@@ -167,7 +169,7 @@ describe('getPatientMetrics', () => {
   it('answers a patient with no readings with null metrics and zero counts', async () => {
     const { empty } = await seedCohort();
 
-    const [row] = await new PrismaCohortRepository(prisma).getPatientMetrics([empty], RANGE, 'UTC');
+    const [row] = await new PrismaCohortRepository(prisma).getPatientMetrics([empty], RANGE);
 
     expect(row).toEqual({
       patientId: empty,
@@ -185,7 +187,7 @@ describe('getPatientMetrics', () => {
   it('returns only the ids it was given', async () => {
     const { defaults, custom } = await seedCohort();
 
-    const rows = await new PrismaCohortRepository(prisma).getPatientMetrics([custom], RANGE, 'UTC');
+    const rows = await new PrismaCohortRepository(prisma).getPatientMetrics([custom], RANGE);
 
     expect(rows.map((row) => row.patientId)).toEqual([custom]);
     expect(rows.some((row) => row.patientId === defaults)).toBe(false);
@@ -196,10 +198,10 @@ describe('getPatientMetrics', () => {
     const queryRaw = vi.fn((...args: Parameters<PrismaClient['$queryRaw']>) => prisma.$queryRaw(...args));
     const counted = new PrismaCohortRepository({ $queryRaw: queryRaw } as unknown as PrismaClient);
 
-    await counted.getPatientMetrics([defaults, empty, custom], RANGE, 'UTC');
+    await counted.getPatientMetrics([defaults, empty, custom], RANGE);
     expect(queryRaw).toHaveBeenCalledTimes(1);
 
-    expect(await counted.getPatientMetrics([], RANGE, 'UTC')).toEqual([]);
+    expect(await counted.getPatientMetrics([], RANGE)).toEqual([]);
     expect(queryRaw).toHaveBeenCalledTimes(1);
   });
 });

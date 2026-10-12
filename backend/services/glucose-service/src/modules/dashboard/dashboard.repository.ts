@@ -47,7 +47,7 @@ export interface IDashboardRepository {
   /**
    * Plain counts of the diary tables — no aggregation technique needed here, just the WHERE the
    * rest of the module shares. The readings count comes from `getPeriodMetrics`: it has to agree
-   * with the figures computed from the daily summaries, not with the rows the server happens to hold.
+   * with the figures computed from the glucose buckets, not with the rows the server happens to hold.
    */
   getTotals(patientId: string, range: DateRange): Promise<DiaryTotals>;
   /** Prisma `groupBy` (a). */
@@ -55,23 +55,17 @@ export interface IDashboardRepository {
   /** Prisma `groupBy` (a). */
   getAlertsByType(patientId: string, range: DateRange): Promise<AlertsByTypeDto[]>;
   /**
-   * `glucose_metrics()` stored procedure (c) — GMI/CV/TIR for the whole period. Days with a daily
-   * summary in the offset of `tz` are read from it, every other day from the readings.
+   * `glucose_metrics()` stored procedure (c) — GMI/CV/TIR for the whole period. Intervals with a
+   * glucose bucket are read from it, every other from the readings. No time zone: a period's
+   * figures do not depend on where its days are cut.
    */
-  getPeriodMetrics(
-    patientId: string,
-    range: DateRange,
-    low: number,
-    high: number,
-    tz: string,
-  ): Promise<PeriodMetricsDto>;
+  getPeriodMetrics(patientId: string, range: DateRange, low: number, high: number): Promise<PeriodMetricsDto>;
   /** `glucose_zones()` stored function (c) — the five CGM zones, as percentages summing to 100. */
   getZoneDistribution(
     patientId: string,
     range: DateRange,
     low: number,
     high: number,
-    tz: string,
   ): Promise<ZoneDistributionDto>;
   /**
    * ISO timestamp of the patient's most recent reading, `null` if there is none.
@@ -84,8 +78,8 @@ export interface IDashboardRepository {
   /** SQL cru (b) — mean and count per local weekday (0 = Sunday) × local hour; empty cells are absent. */
   getHeatmap(patientId: string, range: DateRange, tz: string): Promise<HeatCellDto[]>;
   /**
-   * SQL cru, Q1 (b) — per local day (from `glucose_day_counts`, so a daily summary and the readings
-   * are read alike) + 7-day moving average window function, full-outer-joined with the daily carb and insulin sums so a day that has only
+   * SQL cru, Q1 (b) — per local day (from `glucose_counts`, so a bucket and the readings are read
+   * alike, and cut into days in `tz` here) + 7-day moving average window function, full-outer-joined with the daily carb and insulin sums so a day that has only
    * diary entries still shows up (glucose fields `null`, `readingsCount` 0).
    */
   getDailyBuckets(
@@ -175,7 +169,6 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     { from, toExclusive }: DateRange,
     low: number,
     high: number,
-    tz: string,
   ): Promise<PeriodMetricsDto> {
     // `recordedAt` is a naive `timestamp` (UTC by convention, no tz column) but
     // Prisma always binds a JS `Date` raw-query parameter as `timestamptz`.
@@ -190,8 +183,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
         ${from} AT TIME ZONE 'UTC',
         ${toExclusive} AT TIME ZONE 'UTC',
         ${low}::integer,
-        ${high}::integer,
-        ${tz}
+        ${high}::integer
       )
     `;
     return mapPeriodMetricsRow(rows[0]);
@@ -202,7 +194,6 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     { from, toExclusive }: DateRange,
     low: number,
     high: number,
-    tz: string,
   ): Promise<ZoneDistributionDto> {
     // Same `AT TIME ZONE 'UTC'` binding as `getPeriodMetrics`; see the comment there.
     const rows = await this.prisma.$queryRaw<RawZonesRow[]>`
@@ -211,8 +202,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
         ${from} AT TIME ZONE 'UTC',
         ${toExclusive} AT TIME ZONE 'UTC',
         ${low}::integer,
-        ${high}::integer,
-        ${tz}
+        ${high}::integer
       )
     `;
     return mapZonesRow(rows[0]);
@@ -267,11 +257,12 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     high: number,
     tz: string,
   ): Promise<DailyBucketDto[]> {
-    // The glucose days come from `glucose_day_counts` (a daily summary where one
-    // fits, the readings elsewhere) already cut in `tz`; the diary tables are
-    // read as UTC wall clock first and then shown as `tz` wall clock before
-    // `date_trunc`, so all three aggregates cut the same local days (see
-    // `getAgp`). The moving average is computed inside `glucose_days`,
+    // The glucose days come from `glucose_counts` (a bucket where one fits, the
+    // readings elsewhere), cut here in `tz` the way the diary tables are: read as
+    // UTC wall clock first and then shown as `tz` wall clock, so all three
+    // aggregates cut the same local days (see `getAgp`). A bucket is 15 minutes
+    // aligned to UTC, so it never straddles a local midnight. The moving average
+    // is computed inside `glucose_days`,
     // before the join: diary-only days must not take a slot in its 6-row window,
     // or the average would reach back fewer glucose days than it always did.
     const rows = await this.prisma.$queryRaw<RawDailyBucketRow[]>`
@@ -289,19 +280,18 @@ export class PrismaDashboardRepository implements IDashboardRepository {
           AVG(avg_glucose) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS moving_avg_7d
         FROM (
           SELECT
-            local_day::timestamp AS day,
+            date_trunc('day', (moment AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS day,
             SUM(cnt * mg_dl)::numeric / SUM(cnt) AS avg_glucose,
             MIN(mg_dl) AS min_glucose,
             MAX(mg_dl) AS max_glucose,
             SUM(cnt) AS readings_count,
             COALESCE(SUM(cnt) FILTER (WHERE mg_dl BETWEEN ${low}::integer AND ${high}::integer), 0) AS in_range_count
-          FROM glucose_day_counts(
+          FROM glucose_counts(
             ${patientId}::uuid,
             ${from} AT TIME ZONE 'UTC',
-            ${toExclusive} AT TIME ZONE 'UTC',
-            ${tz}
+            ${toExclusive} AT TIME ZONE 'UTC'
           )
-          GROUP BY local_day
+          GROUP BY 1
         ) AS per_day
       ),
       carb_days AS (

@@ -55,8 +55,8 @@ export class DashboardService {
       excursions,
     ] = await Promise.all([
       this.dashboard.getTotals(patientId, range),
-      this.dashboard.getPeriodMetrics(patientId, range, low, high, query.tz),
-      this.dashboard.getZoneDistribution(patientId, range, low, high, query.tz),
+      this.dashboard.getPeriodMetrics(patientId, range, low, high),
+      this.dashboard.getZoneDistribution(patientId, range, low, high),
       this.dashboard.getLastReadingAt(patientId),
       this.dashboard.getDailyBuckets(patientId, range, low, high, query.tz),
       this.dashboard.getAgp(patientId, range, query.tz),

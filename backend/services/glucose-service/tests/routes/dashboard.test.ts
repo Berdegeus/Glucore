@@ -7,7 +7,7 @@ import { signAccessToken } from '@glucore/shared';
 
 import { buildApp } from '../../src/app';
 import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
-import { summaryOf } from '../helpers/histogram';
+import { BUCKET_MS, bucketOf } from '../helpers/histogram';
 import { TEST_JWT_SECRET } from '../helpers/testEnv';
 
 /**
@@ -500,57 +500,57 @@ describe('GET /dashboard/summary', () => {
   });
 });
 
-describe('GET /dashboard/summary — from the daily summaries a patient uploaded', () => {
-  const put = (days: unknown[]) =>
-    request(app).put('/readings/summaries').set(auth()).send({ days });
+describe('GET /dashboard/summary — from the glucose buckets a patient uploaded', () => {
+  const put = (buckets: unknown[]) => request(app).put('/readings/buckets').set(auth()).send({ buckets });
 
-  it('answers from the summaries alone, with no reading on the server', async () => {
-    // Two days cut in Brasilia: 200 readings at 100 mg/dL and 100 at 200 mg/dL, 288 slots each.
-    await put([
-      summaryOf('2026-08-05', { 100: 200, 200: 100 }, { coveredSlots: 288 }),
-      summaryOf('2026-08-06', { 100: 300 }, { coveredSlots: 144 }),
-    ]);
+  /** Every 15-minute interval of the UTC days `from`..`to` (inclusive), each holding `counts`. */
+  const daysOfBuckets = (from: string, days: number, counts: Record<number, number>) =>
+    Array.from({ length: days * 96 }, (_, i) => bucketOf(Date.parse(from) + i * BUCKET_MS, counts));
 
-    const res = await request(app)
-      .get('/dashboard/summary?from=2026-08-05&to=2026-08-06&tz=America/Sao_Paulo')
-      .set(auth());
+  const uploadAll = async (buckets: ReturnType<typeof bucketOf>[]) => {
+    for (let i = 0; i < buckets.length; i += 288) expect((await put(buckets.slice(i, i + 288))).status).toBe(204);
+  };
+
+  it('answers from the buckets alone, with no reading on the server', async () => {
+    // Two UTC days of 1/min: 10 readings at 100 and 5 at 200 in every quarter hour.
+    await uploadAll(daysOfBuckets('2026-08-05', 2, { 100: 10, 200: 5 }));
+
+    const res = await request(app).get('/dashboard/summary?from=2026-08-05&to=2026-08-06').set(auth());
 
     expect(res.status).toBe(200);
-    expect(res.body.totals.readingsCount).toBe(600);
-    // 500 of 600 readings sit in 80-180 (the default range).
-    expect(res.body.timeInRangePercent).toBe(83.33);
-    expect(res.body.sensorUsePercent).toBe(75); // 432 of 576 slots
-    const rounded = (value: number) => Math.round(value * 100) / 100;
-    expect(
-      res.body.byDay.map((d: { day: string; readingsCount: number; avgGlucose: number }) => [
-        d.day,
-        d.readingsCount,
-        rounded(d.avgGlucose),
-      ]),
-    ).toEqual([
-      ['2026-08-05', 300, 133.33],
-      ['2026-08-06', 300, 100],
+    expect(res.body.totals.readingsCount).toBe(2 * 96 * 15);
+    expect(res.body.timeInRangePercent).toBe(66.67); // the 100s are in 80-180, the 200s are not
+    expect(res.body.sensorUsePercent).toBe(100);
+    expect(res.body.zoneDistribution.target).toBe(66.67);
+    expect(res.body.byDay.map((d: { day: string; readingsCount: number }) => [d.day, d.readingsCount])).toEqual([
+      ['2026-08-05', 96 * 15],
+      ['2026-08-06', 96 * 15],
     ]);
-    expect(res.body.zoneDistribution.target).toBe(83.33);
   });
 
-  it('ignores them when the caller asks for another time zone', async () => {
-    await put([summaryOf('2026-08-05', { 100: 300 })]); // cut in Brasilia, -180
+  it('cuts the same buckets into different days for a different time zone', async () => {
+    await uploadAll(daysOfBuckets('2026-08-05', 2, { 100: 15 }));
 
-    const res = await request(app).get('/dashboard/summary?from=2026-08-05&to=2026-08-05').set(auth());
-
-    expect(res.body.totals.readingsCount).toBe(0); // tz defaults to UTC
-  });
-
-  it('reflects a day that grew', async () => {
-    await put([summaryOf('2026-08-05', { 100: 10 })]);
-    await put([summaryOf('2026-08-05', { 100: 10, 250: 10 })]);
-
-    const res = await request(app)
+    const utc = await request(app).get('/dashboard/summary?from=2026-08-05&to=2026-08-06').set(auth());
+    const brasilia = await request(app)
       .get('/dashboard/summary?from=2026-08-05&to=2026-08-05&tz=America/Sao_Paulo')
       .set(auth());
 
-    expect(res.body.totals.readingsCount).toBe(20);
+    expect(utc.body.byDay.map((d: { day: string }) => d.day)).toEqual(['2026-08-05', '2026-08-06']);
+    // Brasilia (UTC-3): the local 5th is 03:00Z on the 5th to 03:00Z on the 6th, a whole day of buckets.
+    expect(brasilia.body.byDay.map((d: { day: string; readingsCount: number }) => [d.day, d.readingsCount])).toEqual([
+      ['2026-08-05', 96 * 15],
+    ]);
+  });
+
+  it('reflects an interval that grew', async () => {
+    const at = Date.UTC(2026, 7, 5, 12);
+    await put([bucketOf(at, { 100: 5 })]);
+    await put([bucketOf(at, { 100: 5, 250: 5 })]);
+
+    const res = await request(app).get('/dashboard/summary?from=2026-08-05&to=2026-08-05').set(auth());
+
+    expect(res.body.totals.readingsCount).toBe(10);
     expect(res.body.timeInRangePercent).toBe(50);
   });
 });

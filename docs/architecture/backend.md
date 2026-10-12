@@ -135,8 +135,8 @@ As tabelas abaixo são as rotas **nos serviços**; via gateway, prefixe `/api/v1
 
 | Rota | Métodos | Comportamento |
 |---|---|---|
-| `/readings` | GET (mais recentes primeiro, até 5.000; `from`/`before`/`limit` paginam) / POST (um `INSERT … ON CONFLICT` por lote, chave `[patientId, recordedAt]`, até 500 por lote — acima disso, 400; o app envia uma leitura por 5 min) / DELETE (leituras e resumos diários) |
-| `/readings/summaries` | PUT (`PATIENT`) — resumo diário de glicose, até 14 dias por requisição, histograma de 561 posições (`GlucoseDailySummary`); um dia só cresce |
+| `/readings` | GET (mais recentes primeiro, até 5.000; `from`/`before`/`limit` paginam) / POST (um `INSERT … ON CONFLICT` por lote, chave `[patientId, recordedAt]`, até 500 por lote — acima disso, 400; o app envia uma leitura por 5 min) / DELETE (leituras e blocos de glicose) |
+| `/readings/buckets` | PUT (`PATIENT`) — blocos de glicose de 15 min alinhados a UTC, até 288 por requisição, contagens por mg/dL (`GlucoseBucket`); um bloco só cresce |
 | `/carbs` | GET (100, inclui `id`) / POST — **replace-all (deprecated)**: `deleteMany` + `createMany`, preserva `id` enviado |
 | `/carbs/item` | POST — cria 1 entrada, aceita `id` UUID do cliente, retorna `{id}` (201) |
 | `/carbs/item/:id` | PUT / DELETE — escopo `{id, patientId}`; 404 se não pertencer ao paciente |
@@ -146,7 +146,7 @@ As tabelas abaixo são as rotas **nos serviços**; via gateway, prefixe `/api/v1
 | `/alerts` | GET (paginado, padrão 100) / POST — **replace-all (deprecated)**; mapeia enums app↔DB (`glucoseLow`↔`HYPO_RISK` etc.) |
 | `/alerts/item`, `/alerts/item/:id` | POST / PUT / DELETE — por item, mesmo escopo `{id, patientId}` |
 | `/settings/alerts` | GET / PUT — thresholds em `AlertThresholdConfig` (defaults 80/180); `low < high` validado no service e por CHECK no banco |
-| `/dashboard/summary` | GET — agregações do período (groupBy, window functions, stored functions `glucose_metrics` e `glucose_zones`, ambas sobre `glucose_day_counts`, que lê o resumo diário onde há um e as leituras onde não há). Query `tz` opcional (IANA, padrão `UTC`; `400 INVALID_TIMEZONE`). Campos aditivos: `tz`, `lastReadingAt`, `zoneDistribution`, `sensorUsePercent`, `agp`, `heatmap`, `byDay[].carbsGrams`/`insulinUnits`; sem `tz` o corte segue em UTC, como antes. Cliente: dashboard web do paciente |
+| `/dashboard/summary` | GET — agregações do período (groupBy, window functions, stored functions `glucose_metrics` e `glucose_zones`, ambas sobre `glucose_counts`, que lê o bloco de 15 min onde há um e as leituras onde não há). Query `tz` opcional (IANA, padrão `UTC`; `400 INVALID_TIMEZONE`). Campos aditivos: `tz`, `lastReadingAt`, `zoneDistribution`, `sensorUsePercent`, `agp`, `heatmap`, `byDay[].carbsGrams`/`insulinUnits`; sem `tz` o corte segue em UTC, como antes. Cliente: dashboard web do paciente |
 | `/sharing/invites` | POST (`PATIENT`) — código de 8 caracteres, 24 h, uso único; só o hash é guardado; invalida o pendente anterior |
 | `/sharing/grants`, `/sharing/grants/:id` | GET / DELETE (`PATIENT`) — vínculos ativos; revogar preenche `revokedAt` (404 se não for do paciente) |
 | `/sharing/redeem` | POST (`HEALTH_PROFESSIONAL`) — `201` vínculo novo, `200` já existia; `400 INVALID_INVITE`, `403 PROFESSIONAL_PROFILE_MISSING` |
@@ -245,7 +245,7 @@ O identificador de login do Glucore é o e-mail (`POST /auth/login` recebe `emai
 
 ## Schema Prisma: usado vs planejado
 
-**Usados hoje:** no auth, `User`, `AuthCredential`, `PasswordResetToken`, `AuthSession`, `DashboardLayout`, `AuditLog`; no glucose, `Patient`, `HealthProfessional`, `DashboardAccessGrant` (com `revokedAt`), `PatientInvite`, `GlucoseReading`, `AlertEvent`, `CarbEvent`, `InsulinEvent`, `AlertThresholdConfig`, `AuditLog`. Funções SQL `glucose_metrics()` e `glucose_zones()` (sobre `glucose_day_counts()`); tabela `GlucoseDailySummary`; índice BRIN `GlucoseReading_recordedAt_brin_idx` para a contagem global de leituras do admin.
+**Usados hoje:** no auth, `User`, `AuthCredential`, `PasswordResetToken`, `AuthSession`, `DashboardLayout`, `AuditLog`; no glucose, `Patient`, `HealthProfessional`, `DashboardAccessGrant` (com `revokedAt`), `PatientInvite`, `GlucoseReading`, `AlertEvent`, `CarbEvent`, `InsulinEvent`, `AlertThresholdConfig`, `AuditLog`. Funções SQL `glucose_metrics()` e `glucose_zones()` (sobre `glucose_counts()`); tabela `GlucoseBucket`; índice BRIN `GlucoseReading_recordedAt_brin_idx` para a contagem global de leituras do admin.
 
 **Definidos mas sem nenhuma rota/uso (planejamento futuro, `/// roadmap`):** `Administrator`, `SensorDevice`, `SensorBinding`, `SensorSession`, `SensorStatusEvent`, `GlucosePrediction`, `ClinicalReport`, `MetricsSnapshot`. Não assumir que existam endpoints para eles.
 

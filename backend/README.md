@@ -461,7 +461,7 @@ não muda nada não escreve. Dois itens com o mesmo instante no lote: vale o úl
 mantém o guardado.
 
 O app envia ao servidor **uma leitura por intervalo de 5 min**, a mais antiga do intervalo, carimbada com o
-início dele; o aparelho guarda a 1/min. A resolução cheia chega ao servidor pelo resumo diário, abaixo.
+início dele; o aparelho guarda a 1/min. A resolução cheia chega ao servidor pelos blocos de 15 min, abaixo.
 
 ```json
 {
@@ -473,22 +473,28 @@ início dele; o aparelho guarda a 1/min. A resolução cheia chega ao servidor p
 
 `204` sem corpo. Erro: `400 readings must be array`.
 
-### `PUT /readings/summaries` — resumo diário
+### `PUT /readings/buckets` — blocos de glicose de 15 min
 
-Um resumo por dia local do paciente, calculado no aparelho a partir da série de 1/min: leituras contadas por
-mg/dL inteiro. Com ele o servidor calcula TIR (para **qualquer** faixa-alvo), zonas, média, DP, CV e GMI com a
-resolução cheia, sem as leituras de minuto. A forma é a de `contracts/glucose-histogram.json`, lida pelo app,
-pelo backend e pelos testes dos dois.
+Um bloco por intervalo de **15 minutos alinhado a UTC**, calculado no aparelho a partir da série de 1/min:
+as leituras do intervalo contadas por mg/dL inteiro. Com ele o servidor calcula TIR (para **qualquer**
+faixa-alvo), zonas, média, DP, CV e GMI com a resolução cheia, sem as leituras de minuto. A forma é a de
+`contracts/glucose-histogram.json`, lida pelo app, pelo backend e pelos testes dos dois.
+
+**Por que 15 minutos em UTC, e não um dia no fuso do paciente.** Um dia cortado num fuso não pode ser
+recortado em outro, e o painel pede o fuso de quem olha (o navegador do profissional pode não ser o do
+paciente, e o paciente viaja). Todo deslocamento de fuso real é múltiplo de 15 minutos, então um bloco nunca
+atravessa uma meia-noite local, qualquer que seja o fuso pedido: o servidor monta os dias exatamente, em
+qualquer lugar, e o bloco serve sempre.
 
 ```json
 {
-  "days": [
+  "buckets": [
     {
-      "localDate": "2026-08-05",
-      "utcOffsetMinutes": -180,
-      "readingsCount": 1387,
-      "coveredSlots": 281,
-      "histogram": [0, 0, 3, "… 561 contagens: o índice 0 é 40 mg/dL, o último é 600 mg/dL …"]
+      "startMs": 1788609600000,
+      "readingsCount": 14,
+      "coveredSlots": 3,
+      "mgDl": [92, 95, 98, 104],
+      "counts": [3, 6, 4, 1]
     }
   ]
 }
@@ -496,19 +502,19 @@ pelo backend e pelos testes dos dois.
 
 | Campo | Regra |
 |---|---|
-| `localDate` | `YYYY-MM-DD` válido; sem repetição no lote |
-| `utcOffsetMinutes` | Inteiro de −840 a 840; minutos a leste de UTC **ao meio-dia local** do dia |
+| `startMs` | Epoch em ms, **múltiplo de 15 min**; sem repetição no lote |
 | `readingsCount` | Inteiro ≥ 1 |
-| `coveredSlots` | Inteiro de 0 a 300 e ≤ `readingsCount`: intervalos de 5 min do dia com ao menos uma leitura |
-| `histogram` | 561 inteiros ≥ 0 que **somam `readingsCount`**; valor fora de 40–600 conta no extremo mais próximo |
+| `coveredSlots` | Inteiro de 1 a 3 e ≤ `readingsCount`: intervalos de 5 min do bloco com ao menos uma leitura |
+| `mgDl` | 1 a 561 inteiros **estritamente crescentes**, de 40 a 600 (fora disso o app conta no extremo mais próximo) |
+| `counts` | Inteiros ≥ 1, do mesmo tamanho de `mgDl`, que **somam `readingsCount`** |
 
-Até 14 dias por requisição, aplicados inteiros ou nenhum (`400 days[i]: …` nomeia o dia errado). `204`.
-**Um dia só cresce:** uma linha substitui a guardada apenas se tiver ao menos tantas leituras. O app calcula o
-dia com o que ainda guarda (retenção de 14 dias) e um aparelho reinstalado reconstrói a partir da versão rala
-do servidor; nenhum dos dois pode encolher o que já está lá. As mesmas regras valem como CHECK da tabela
-`GlucoseDailySummary`.
+Até 288 blocos por requisição (3 dias; um backfill de 14 dias são 5 requisições), aplicados inteiros ou nenhum
+(`400 buckets[i]: …` nomeia o bloco errado). `204`. **Um bloco só cresce:** uma linha substitui a guardada
+apenas se tiver ao menos tantas leituras. O app calcula o bloco com o que ainda guarda (retenção de 14 dias) e
+um aparelho reinstalado reconstrói a partir da versão rala do servidor; nenhum dos dois pode encolher o que já
+está lá. As mesmas regras valem como CHECK da tabela `GlucoseBucket`.
 
-### `DELETE /readings` — apaga todas as leituras do paciente e os resumos diários
+### `DELETE /readings` — apaga todas as leituras do paciente e os blocos de glicose
 
 `204` sem corpo.
 
@@ -720,7 +726,7 @@ Resposta (`DashboardSummaryDto`, `modules/dashboard/dashboard.mapper.ts`):
 |---|---|
 | `from`, `to`, `tz` | O período e o fuso usados |
 | `lastReadingAt` | Leitura mais recente do paciente, em qualquer período; `null` sem leituras |
-| `totals` | Leituras (as que o sensor entregou, contadas pelo resumo diário quando há um), entradas de carboidrato, de insulina e alertas |
+| `totals` | Leituras (as que o sensor entregou, contadas pelo bloco quando há um), entradas de carboidrato, de insulina e alertas |
 | `timeInRangePercent`, `gmiPercent`, `coefficientOfVariationPercent` | Métricas do período (`null` sem leituras) |
 | `sensorUsePercent` | Intervalos de 5 min do período com ao menos uma leitura sobre os esperados (288 por dia), limitado a 100. Mede o mesmo para um sensor a 1/min, a 5 ou a 15 min |
 | `zoneDistribution` | `veryLow`, `low`, `target`, `high`, `veryHigh` em %, soma 100 |
@@ -738,17 +744,19 @@ Faixa inválida responde `400 INVALID_DASHBOARD_RANGE`. As métricas vêm das st
 `glucose_metrics()` e `glucose_zones()` e de `groupBy`/window functions
 (`modules/dashboard/dashboard.repository.ts`).
 
-**De onde vem cada dia.** TIR, GMI, CV, média, zonas e `byDay` são calculados sobre uma só relação,
-`glucose_day_counts(paciente, de, até, tz)` — (dia local, mg/dL, nº de leituras) —, que lê um dia do **resumo
-diário** quando há um e das **leituras** quando não há (migration
-`20261012130000_glucose_metrics_from_daily_summary`). Um resumo só vale para um dia se (1) o dia cabe inteiro no
-período pedido e (2) foi cortado no mesmo deslocamento que o `tz` pedido tem naquele dia (`utcOffsetMinutes`
-contra o offset do `tz` ao meio-dia local); senão o painel o ignora e lê as leituras, porque um resumo cortado
-em outro fuso mostraria outro dia do calendário. Média e DP saem de somas exatas sobre as contagens, iguais a
-`AVG`/`STDDEV_SAMP` sobre as linhas. AGP, heatmap e excursões continuam saindo das leituras (5 min). O painel do
-profissional (`/professional/*`) usa as mesmas funções, então o número de um paciente na tabela do profissional
-é o do seu próprio painel. A migration de criação da tabela preenche os dias já existentes a partir das leituras,
-cortados em `America/Sao_Paulo` (o padrão do `tz` do painel é UTC, que deslocaria em 3 h os dias brasileiros). As zonas usam os limiares do paciente:
+**De onde vem cada intervalo.** TIR, GMI, CV, média, zonas e `byDay` são calculados sobre uma só relação,
+`glucose_counts(paciente, de, até)` — (instante, mg/dL, nº de leituras) —, que lê um intervalo do **bloco de
+glicose** quando há um e das **leituras** quando não há (migration
+`20261012130000_glucose_metrics_from_buckets`). Um bloco só vale se cabe inteiro no período pedido; um que o
+período corta é ignorado e as leituras dele respondem no lugar, e uma leitura sob um bloco que vale não é
+contada duas vezes. Os números de um período não dependem de fuso; só o corte em dias (`byDay`) depende, e é
+feito pelo repositório a partir do instante, em qualquer `tz`: como o bloco é de 15 min alinhados a UTC e todo
+deslocamento real é múltiplo de 15 min, ele cai inteiro num só dia local. Média e DP saem de somas exatas
+sobre as contagens, iguais a `AVG`/`STDDEV_SAMP` sobre as linhas, e o valor é limitado a 40–600 nas duas
+fontes. AGP, heatmap e excursões continuam saindo das leituras (5 min). O painel do profissional
+(`/professional/*`) usa as mesmas funções, então o número de um paciente na tabela do profissional é o do seu
+próprio painel. A migration de criação da tabela preenche os intervalos já existentes a partir das leituras,
+sem precisar de fuso. As zonas usam os limiares do paciente:
 muito baixo `< min(54, low)`, baixo até `low`, alvo de `low` a `high`, alto até `max(250, high)`, muito
 alto acima disso (migration `20261004120000_add_glucose_zones_function`). A migration
 `20260831232506_dashboard_metrics_and_constraints` também cria índices parciais e CHECK constraints
@@ -1046,16 +1054,16 @@ A verificação não encontrou índice faltando, então esta release não acresc
 - Índice BRIN `GlucoseReading_recordedAt_brin_idx` (migration
   `20261006090000_add_reading_recordedat_brin_index`): atende a contagem de leituras por dia de todos os
   pacientes em `/admin/overview`, que nenhum índice iniciado por `patientId` cobre.
-- `GlucoseDailySummary` (migration `20261012120000_add_glucose_daily_summary`): um dia local do paciente
-  como contagens por mg/dL inteiro (`histogram int[561]`), `readingsCount` e `coveredSlots`. Chave
-  `(patientId, localDate)`, `ON DELETE CASCADE` com o `Patient`, CHECKs para o formato do histograma, a soma
-  igual a `readingsCount`, os intervalos e o deslocamento (a função `glucose_histogram_total()` existe para
-  isso: um CHECK não aceita subconsulta). Preenchida na migration a partir das leituras existentes, em
-  `America/Sao_Paulo`. Ver `PUT /readings/summaries`.
-- Funções `glucose_day_counts()`, `glucose_usable_summaries()`, `glucose_covered_slots()` e
-  `glucose_local_offset_minutes()` (migration `20261012130000_glucose_metrics_from_daily_summary`), sobre as
-  quais `glucose_metrics()` e `glucose_zones()` foram refeitas. As duas ganharam o parâmetro `p_tz` e
-  `glucose_metrics()` a coluna `covered_slots`: assinatura nova, as antigas foram removidas.
+- `GlucoseBucket` (migration `20261012120000_add_glucose_bucket`): um intervalo de 15 minutos alinhado a
+  UTC como contagens por mg/dL inteiro (`mgDl int[]` e `counts int[]`), `readingsCount` e `coveredSlots`.
+  Chave `(patientId, bucketStart)`, `ON DELETE CASCADE` com o `Patient`, CHECKs para o alinhamento, o
+  formato dos arrays, a soma igual a `readingsCount` e os intervalos (a função `glucose_counts_total()`
+  existe para isso: um CHECK não aceita subconsulta). Preenchida na migration a partir das leituras
+  existentes. Ver `PUT /readings/buckets`.
+- Funções `glucose_usable_buckets()`, `glucose_counts()` e `glucose_covered_slots()` (migration
+  `20261012130000_glucose_metrics_from_buckets`), sobre as quais `glucose_metrics()` e `glucose_zones()`
+  foram refeitas. `glucose_metrics()` ganhou a coluna `covered_slots` (a função antiga foi removida);
+  `glucose_zones()` manteve a assinatura.
 
 **auth-service** (`services/auth-service/prisma/schema.prisma`): `DashboardLayout` (`userId` como chave,
 `widgets` JSONB, `updatedAt`), FK para `User` com `ON DELETE CASCADE`. Migration

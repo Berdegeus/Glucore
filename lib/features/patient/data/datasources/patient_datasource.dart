@@ -1,4 +1,4 @@
-import '../../domain/daily_summary.dart';
+import '../../domain/glucose_bucket.dart';
 import '../../domain/entities/patient_entities.dart';
 
 /// Contrato comum aos datasources de dados do paciente.
@@ -36,10 +36,10 @@ abstract class PatientRemoteApi implements PatientDataSource {
   /// primeira. O diário e os limiares vêm inteiros, como em [load].
   Future<PatientSnapshot> loadSince(DateTime readingsFrom);
 
-  /// `PUT /readings/summaries`: o resumo diário, com a resolução cheia do
-  /// aparelho. Idempotente — o servidor só substitui um dia por outro com ao
-  /// menos tantas leituras. No máximo [dailySummaryPushBatchSize] dias por chamada.
-  Future<void> saveDailySummaries(List<DailySummary> days);
+  /// `PUT /readings/buckets`: os blocos de 15 min, com a resolução cheia do
+  /// aparelho. Idempotente — o servidor só substitui um bloco por outro com ao
+  /// menos tantas leituras. No máximo [glucoseBucketPushBatchSize] por chamada.
+  Future<void> saveGlucoseBuckets(List<GlucoseBucket> buckets);
 
   Future<void> upsertCarb(CarbEntry entry);
   Future<void> deleteCarb(String id);

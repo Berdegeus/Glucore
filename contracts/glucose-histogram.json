@@ -1,9 +1,9 @@
 {
-  "description": "Shape of the per-day glucose summary the app uploads (PUT /readings/summaries). The histogram counts readings per whole mg/dL: index 0 is minMgDl, the last index is maxMgDl, and a value outside the range is counted in the nearest edge bin. Shared by the app, the backend and their tests.",
+  "description": "Shape of the glucose bucket the app uploads (PUT /readings/buckets). A bucket is one 15-minute interval aligned to UTC, with its readings counted per whole mg/dL: 'mgDl' lists the distinct values (ascending, clamped to minMgDl..maxMgDl) and 'counts' how many readings had each. Every real time zone has a UTC offset that is a multiple of 15 minutes, so a bucket never straddles a local midnight and the server can build a day in any zone exactly. Shared by the app, the backend and their tests.",
   "minMgDl": 40,
   "maxMgDl": 600,
-  "bins": 561,
+  "bucketMinutes": 15,
   "slotMinutes": 5,
-  "maxSlotsPerDay": 300,
-  "maxDaysPerRequest": 14
+  "slotsPerBucket": 3,
+  "maxBucketsPerRequest": 288
 }

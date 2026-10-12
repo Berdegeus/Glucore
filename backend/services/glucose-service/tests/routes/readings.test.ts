@@ -6,7 +6,7 @@ import { buildApp } from '../../src/app';
 import { MAX_READING_BATCH } from '../../src/modules/readings/readings.schema';
 import { MAX_READ_ROWS } from '../../src/modules/readings/readings.service';
 import { disconnect, prisma, signedInPatient, truncateAll, type SignedInPatient } from '../helpers/db';
-import { summaryOf } from '../helpers/histogram';
+import { bucketOf } from '../helpers/histogram';
 
 /**
  * Characterization tests for GET/POST/DELETE /readings.
@@ -437,19 +437,19 @@ describe('DELETE /readings', () => {
     expect(await prisma.glucoseReading.count({ where: { patientId: other.userId } })).toBe(1);
   });
 
-  it('removes the daily summaries with the readings, for the caller only', async () => {
+  it('removes the glucose buckets with the readings, for the caller only', async () => {
     const other = await signedInPatient();
     for (const who of [user, other]) {
       await request(app)
-        .put('/readings/summaries')
+        .put('/readings/buckets')
         .set({ Authorization: `Bearer ${who.token}` })
-        .send({ days: [summaryOf('2026-10-10')] });
+        .send({ buckets: [bucketOf(Date.UTC(2026, 9, 10, 12))] });
     }
 
     await request(app).delete('/readings').set(auth());
 
-    expect(await prisma.glucoseDailySummary.count({ where: { patientId: user.userId } })).toBe(0);
-    expect(await prisma.glucoseDailySummary.count({ where: { patientId: other.userId } })).toBe(1);
+    expect(await prisma.glucoseBucket.count({ where: { patientId: user.userId } })).toBe(0);
+    expect(await prisma.glucoseBucket.count({ where: { patientId: other.userId } })).toBe(1);
   });
 
   it('writes an audit entry naming the patient', async () => {

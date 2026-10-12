@@ -10,7 +10,7 @@ import { CarbDtoSchema, InsulinDtoSchema, ReadingDtoSchema } from './diarySchema
  * the readings (up to 5000, about 17 days) reach. That count holds because the
  * app uploads one reading per 5 minutes; at the sensor's own 1/min the same
  * 5000 rows would be 3.5 days. The summary cards do not read the readings at
- * all: they come from `/dashboard/summary`, which the daily summaries feed.
+ * all: they come from `/dashboard/summary`, which the glucose buckets feed.
  */
 const PAGE = '?limit=500';
 

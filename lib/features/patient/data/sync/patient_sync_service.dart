@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/api/auth_token_store.dart';
 import '../../domain/entities/patient_entities.dart';
-import '../../domain/daily_summary.dart';
+import '../../domain/glucose_bucket.dart';
 import '../../domain/reading_decimation.dart';
 import '../../domain/repositories/patient_repository.dart';
 import '../datasources/patient_datasource.dart';
@@ -38,14 +38,12 @@ class PatientSyncService {
       Duration(seconds: 4),
     ],
     DateTime Function() clock = DateTime.now,
-    DayCutter dayCutter = const DeviceDayCutter(),
   })  : _local = local,
         _remote = remote,
         _tokenStore = tokenStore,
         _debounce = debounce,
         _retryDelays = retryDelays,
-        _clock = clock,
-        _dayCutter = dayCutter {
+        _clock = clock {
     final changes = connectivityChanges ?? Connectivity().onConnectivityChanged;
     _connectivitySubscription = changes.listen((results) {
       final online =
@@ -62,11 +60,6 @@ class PatientSyncService {
   final Duration _debounce;
   final List<Duration> _retryDelays;
   final DateTime Function() _clock;
-  final DayCutter _dayCutter;
-
-  /// O dia em curso muda a cada leitura; recalculá-lo e reenviá-lo a cada uma
-  /// seria um PUT por minuto. Os dias já passados não esperam.
-  static const _openDaySummaryInterval = Duration(minutes: 30);
 
   /// Quantas operações são lidas da fila por vez; a drenagem segue enquanto
   /// vier lote cheio.
@@ -145,54 +138,52 @@ class PatientSyncService {
       await _local.markSettingsSynced();
     }
 
-    await _pushDailySummaries();
+    await _pushGlucoseBuckets();
   }
 
-  /// Refaz o resumo dos dias cujas leituras mudaram e envia os que o servidor
+  /// Refaz os blocos de 15 min cujas leituras mudaram e envia os que o servidor
   /// ainda não confirmou.
   ///
-  /// O resumo é o que leva ao painel a resolução de 1/min que as leituras
+  /// O bloco é o que leva ao painel a resolução de 1/min que as leituras
   /// enviadas (5 min) não têm. É um complemento: uma falha aqui — servidor que
   /// ainda não tem a rota, rede, payload recusado — **não derruba o push** nem
   /// impede o pull de leituras. O que não subiu continua pendente e é tentado de
   /// novo no próximo push. Só a sessão recusada (401) sobe, como em todo envio.
-  Future<void> _pushDailySummaries() async {
+  Future<void> _pushGlucoseBuckets() async {
     try {
-      await _recomputeDirtySummaries();
-      final pending = await _local.pendingDailySummaries();
-      for (var start = 0; start < pending.length; start += dailySummaryPushBatchSize) {
-        final end = start + dailySummaryPushBatchSize < pending.length
-            ? start + dailySummaryPushBatchSize
+      await _recomputeDirtyBuckets();
+      final pending = await _local.pendingGlucoseBuckets();
+      for (var start = 0;
+          start < pending.length;
+          start += glucoseBucketPushBatchSize) {
+        final end = start + glucoseBucketPushBatchSize < pending.length
+            ? start + glucoseBucketPushBatchSize
             : pending.length;
         final batch = pending.sublist(start, end);
-        await _remote.saveDailySummaries(batch);
-        await _local.markDailySummariesSynced(batch);
+        await _remote.saveGlucoseBuckets(batch);
+        await _local.markGlucoseBucketsSynced(batch);
       }
     } on PatientUnauthorizedException {
       rethrow;
     } catch (error) {
-      debugPrint('Resumo diário não enviado (fica pendente): $error');
+      debugPrint('Blocos de glicose não enviados (ficam pendentes): $error');
     }
   }
 
-  Future<void> _recomputeDirtySummaries() async {
-    final now = _clock();
-    final today = _dayCutter.keyOf(now);
-    for (final day in await _local.dirtySummaryDays()) {
-      if (day == today) {
-        final computedAt = await _local.dailySummaryComputedAtMs(day);
-        if (computedAt != null &&
-            now.millisecondsSinceEpoch - computedAt <
-                _openDaySummaryInterval.inMilliseconds) {
-          continue;
-        }
-      }
-      final summary =
-          summarizeDay(day, await _local.readingsOnLocalDay(day), _dayCutter);
-      if (summary == null) {
-        await _local.clearSummaryDirty(day);
+  /// Só blocos **fechados** (que terminaram até agora): o bloco em curso muda a
+  /// cada leitura, e enviá-lo a cada uma seria um PUT por minuto. Ele fica sujo e
+  /// sai quando fecha — o painel lê as leituras de 5 min para esse trecho.
+  Future<void> _recomputeDirtyBuckets() async {
+    final nowMs = _clock().millisecondsSinceEpoch;
+    for (final startMs in await _local.dirtyBucketStarts()) {
+      if (startMs + glucoseBucketDuration.inMilliseconds > nowMs) continue;
+
+      final bucket =
+          summarizeBucket(startMs, await _local.readingsInBucket(startMs));
+      if (bucket == null) {
+        await _local.clearBucketDirty(startMs);
       } else {
-        await _local.saveDailySummary(summary, nowMs: now.millisecondsSinceEpoch);
+        await _local.saveGlucoseBucket(bucket);
       }
     }
   }

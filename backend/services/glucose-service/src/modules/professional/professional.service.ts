@@ -70,7 +70,7 @@ export class ProfessionalService {
       page: query.page,
       limit: query.limit,
     });
-    const metrics = await this.cohort.getPatientMetrics(ids, range, query.tz);
+    const metrics = await this.cohort.getPatientMetrics(ids, range);
 
     // The repository answers unordered; the page keeps the order the grants gave.
     const byId = new Map(metrics.map((row) => [row.patientId, row]));
@@ -115,7 +115,7 @@ export class ProfessionalService {
     });
 
     const [metrics, hypoHours] = await Promise.all([
-      this.cohort.getPatientMetrics(ids, range, query.tz),
+      this.cohort.getPatientMetrics(ids, range),
       this.cohort.getHypoStartHours(ids, range, query.tz),
     ]);
     const summary = buildCohortSummary(metrics, hypoHours, now);

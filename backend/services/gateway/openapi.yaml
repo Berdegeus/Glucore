@@ -196,7 +196,7 @@ paths:
       description: |
         Reenviar a mesma leitura atualiza em vez de duplicar, então o push do app é seguro de repetir. Um lote
         maior que 500 é recusado, nunca truncado. O app envia uma leitura por intervalo de 5 min, carimbada
-        com o início do intervalo; a resolução cheia chega pelo resumo diário (`PUT /readings/summaries`).
+        com o início do intervalo; a resolução cheia chega pelos blocos de 15 min (`PUT /readings/buckets`).
       requestBody:
         required: true
         content:
@@ -218,32 +218,33 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
     delete:
       tags: [Leituras]
-      summary: Apaga todas as leituras do paciente e os resumos diários
+      summary: Apaga todas as leituras do paciente e os blocos de glicose
       responses:
         '204': { description: Apagadas }
         '401': { $ref: '#/components/responses/Unauthorized' }
-  /readings/summaries:
+  /readings/buckets:
     put:
       tags: [Leituras]
-      summary: Resumo diário de glicose
+      summary: Blocos de glicose de 15 minutos
       description: |
-        Um resumo por dia local, calculado no aparelho a partir da série de 1/min: leituras contadas por mg/dL
-        inteiro (561 posições; o índice 0 é 40 mg/dL, o último 600 mg/dL). Com ele o servidor calcula TIR para
-        qualquer faixa-alvo, zonas, média, CV e GMI com a resolução cheia. Até 14 dias por requisição, aplicados
-        inteiros ou nenhum. Um dia só cresce: a linha substitui a guardada apenas se tiver ao menos tantas
-        leituras. Forma compartilhada com o app em `contracts/glucose-histogram.json`.
+        Um bloco por intervalo de 15 minutos alinhado a UTC, calculado no aparelho a partir da série de 1/min:
+        as leituras contadas por mg/dL inteiro. Com ele o servidor calcula TIR para qualquer faixa-alvo, zonas,
+        média, CV e GMI com a resolução cheia, em qualquer fuso (todo deslocamento real é múltiplo de 15 min,
+        então um bloco nunca atravessa uma meia-noite local). Até 288 blocos por requisição, aplicados inteiros
+        ou nenhum. Um bloco só cresce: a linha substitui a guardada apenas se tiver ao menos tantas leituras.
+        Forma compartilhada com o app em `contracts/glucose-histogram.json`.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [days]
+              required: [buckets]
               properties:
-                days:
+                buckets:
                   type: array
-                  maxItems: 14
-                  items: { $ref: '#/components/schemas/DailySummary' }
+                  maxItems: 288
+                  items: { $ref: '#/components/schemas/GlucoseBucket' }
       responses:
         '204': { description: Gravado }
         '400': { $ref: '#/components/responses/BadRequest' }
@@ -606,24 +607,25 @@ components:
         rate: { type: number }
         alarmCode: { type: integer }
       example: { value: 104, timestampMs: 1751800200000, trend: steady, rate: 0.021, alarmCode: 0 }
-    DailySummary:
+    GlucoseBucket:
       type: object
-      required: [localDate, utcOffsetMinutes, readingsCount, coveredSlots, histogram]
+      required: [startMs, readingsCount, coveredSlots, mgDl, counts]
       properties:
-        localDate: { type: string, format: date, description: Dia local do paciente, example: '2026-08-05' }
-        utcOffsetMinutes:
-          type: integer
-          minimum: -840
-          maximum: 840
-          description: Minutos a leste de UTC ao meio-dia local do dia (-180 em Brasília). O painel só usa o resumo quando pede o mesmo deslocamento.
-        readingsCount: { type: integer, minimum: 1, description: Leituras que o sensor entregou no dia }
-        coveredSlots: { type: integer, minimum: 0, maximum: 300, description: Intervalos de 5 min do dia com ao menos uma leitura }
-        histogram:
+        startMs: { type: integer, format: int64, description: Início do bloco em epoch ms; múltiplo de 15 minutos, example: 1788609600000 }
+        readingsCount: { type: integer, minimum: 1, description: Leituras que o sensor entregou no bloco }
+        coveredSlots: { type: integer, minimum: 1, maximum: 3, description: Intervalos de 5 min do bloco com ao menos uma leitura }
+        mgDl:
           type: array
-          minItems: 561
+          minItems: 1
           maxItems: 561
-          items: { type: integer, minimum: 0 }
-          description: Leituras por mg/dL, índice 0 = 40 e último = 600. Soma `readingsCount`.
+          items: { type: integer, minimum: 40, maximum: 600 }
+          description: Valores distintos em mg/dL, estritamente crescentes.
+        counts:
+          type: array
+          minItems: 1
+          maxItems: 561
+          items: { type: integer, minimum: 1 }
+          description: Leituras em cada valor de `mgDl`, na mesma ordem. Soma `readingsCount`.
     Carb:
       type: object
       required: [grams, description, timeMs]

@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glucore/features/patient/data/datasources/patient_remote_datasource.dart';
 import 'package:glucore/features/patient/data/datasources/patient_datasource.dart';
-import 'package:glucore/features/patient/domain/daily_summary.dart';
+import 'package:glucore/features/patient/domain/glucose_bucket.dart';
 import 'package:glucore/features/patient/domain/entities/patient_entities.dart';
 
 /// Adaptador Dio dublê: devolve o corpo configurado por caminho e guarda o que
@@ -485,48 +485,47 @@ void main() {
     });
   });
 
-  group('saveDailySummaries', () {
-    DailySummary day(String date) => DailySummary(
-          localDate: date,
-          utcOffsetMinutes: -180,
+  group('saveGlucoseBuckets', () {
+    GlucoseBucket bucket(int startMs) => GlucoseBucket(
+          startMs: startMs,
           readingsCount: 3,
           coveredSlots: 2,
-          histogram: [
-            for (var i = 0; i < glucoseHistogramBins; i++) i == 60 ? 3 : 0,
-          ],
+          mgDl: const [95, 120],
+          counts: const [2, 1],
         );
 
-    test('faz PUT /readings/summaries com {days: [...]} no formato do contrato', () async {
+    test('faz PUT /readings/buckets com {buckets: [...]} no formato do contrato',
+        () async {
       buildWith(defaultBodies());
 
-      await remote.saveDailySummaries([day('2026-08-05'), day('2026-08-06')]);
+      await remote.saveGlucoseBuckets([bucket(1788609600000), bucket(1788610500000)]);
 
-      final request = adapter.requests.singleWhere((r) => r.path == '/readings/summaries');
+      final request = adapter.requests.singleWhere((r) => r.path == '/readings/buckets');
       expect(request.method, 'PUT');
-      final days = (request.data as Map<String, dynamic>)['days'] as List<dynamic>;
-      expect(days, hasLength(2));
-      expect(days.first, {
-        'localDate': '2026-08-05',
-        'utcOffsetMinutes': -180,
+      final buckets = (request.data as Map<String, dynamic>)['buckets'] as List<dynamic>;
+      expect(buckets, hasLength(2));
+      expect(buckets.first, {
+        'startMs': 1788609600000,
         'readingsCount': 3,
         'coveredSlots': 2,
-        'histogram': day('2026-08-05').histogram,
+        'mgDl': [95, 120],
+        'counts': [2, 1],
       });
     });
 
     test('um 401 vira a exceção que para o push e preserva a fila', () async {
-      buildWith(defaultBodies(), statuses: {'PUT /readings/summaries': 401});
+      buildWith(defaultBodies(), statuses: {'PUT /readings/buckets': 401});
 
       expect(
-        remote.saveDailySummaries([day('2026-08-05')]),
+        remote.saveGlucoseBuckets([bucket(1788609600000)]),
         throwsA(isA<PatientUnauthorizedException>()),
       );
     });
 
     test('outro erro sobe como está, para o serviço decidir', () async {
-      buildWith(defaultBodies(), statuses: {'PUT /readings/summaries': 404});
+      buildWith(defaultBodies(), statuses: {'PUT /readings/buckets': 404});
 
-      expect(remote.saveDailySummaries([day('2026-08-05')]), throwsA(isA<DioException>()));
+      expect(remote.saveGlucoseBuckets([bucket(1788609600000)]), throwsA(isA<DioException>()));
     });
   });
 }

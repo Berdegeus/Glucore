@@ -1,126 +1,97 @@
 -- The dashboard's TIR, GMI, CV, zones and per-day figures now come from the
--- daily summaries (migration 20261012120000) wherever one exists, and from the
--- readings everywhere else. Every figure is derived from the same relation,
--- `glucose_day_counts`: (local day, mg/dL, how many readings), so a day read
--- from a summary and a day read from the series are indistinguishable to what
--- sits on top.
+-- glucose buckets (migration 20261012120000) wherever one exists, and from the
+-- readings everywhere else. Every figure is derived from one relation,
+-- `glucose_counts`: (moment, mg/dL, how many readings), so an interval read from
+-- a bucket and one read from the readings are indistinguishable to what sits on
+-- top.
+--
+-- A period's figures do not depend on a time zone; only the grouping into local
+-- days does, and that is done by the caller from `moment`. A bucket is 15 minutes
+-- aligned to UTC and every real zone's offset is a multiple of 15 minutes, so a
+-- bucket falls wholly inside one local day whatever the zone.
 --
 -- Hand-written, like the migrations that created the functions this replaces
 -- (20260831232506 and 20261004120000): Prisma cannot express stored functions.
 -- `migrate dev --create-only` also proposes dropping
 -- "GlucoseReading_patientId_recordedAt_desc_idx"; that DROP is not here on purpose.
 
--- A summary is only usable when the day was cut in the same offset the caller
--- asks for. The offset is read at local noon, which is also what the app sends
--- (contracts/glucose-histogram.json): a daylight-saving change never lands on it.
-CREATE FUNCTION glucose_local_offset_minutes(p_day date, p_tz text) RETURNS integer
+-- The buckets that can stand in for the readings over [p_from, p_to): the ones
+-- that lie wholly inside the range. A bucket the range cuts is ignored, and its
+-- readings are used instead.
+CREATE FUNCTION glucose_usable_buckets(p_patient_id uuid, p_from timestamp, p_to timestamp)
+RETURNS TABLE (bucket_start timestamp, readings_count integer, covered_slots integer, mg_dl integer[], counts integer[])
 LANGUAGE sql STABLE
 AS $$
-  SELECT (EXTRACT(EPOCH FROM (
-    (p_day + time '12:00') - (((p_day + time '12:00') AT TIME ZONE p_tz) AT TIME ZONE 'UTC')
-  )) / 60)::integer
+  SELECT b."bucketStart", b."readingsCount", b."coveredSlots", b."mgDl", b."counts"
+  FROM "GlucoseBucket" b
+  WHERE b."patientId" = p_patient_id
+    AND b."bucketStart" >= p_from
+    AND b."bucketStart" + interval '15 minutes' <= p_to
 $$;
 
--- The summaries that can stand in for the series over [p_from, p_to): the day
--- lies wholly inside the range (a day cut by the range falls back to the
--- readings) and was cut in the offset of p_tz.
-CREATE FUNCTION glucose_usable_summaries(
-  p_patient_id uuid,
-  p_from timestamp,
-  p_to timestamp,
-  p_tz text
-)
-RETURNS TABLE (local_day date, readings_count integer, covered_slots integer, histogram integer[])
-LANGUAGE sql STABLE
-AS $$
-  SELECT s."localDate", s."readingsCount", s."coveredSlots", s."histogram"
-  FROM "GlucoseDailySummary" s
-  WHERE s."patientId" = p_patient_id
-    AND ((s."localDate"::timestamp AT TIME ZONE p_tz) AT TIME ZONE 'UTC') >= p_from
-    AND (((s."localDate" + 1)::timestamp AT TIME ZONE p_tz) AT TIME ZONE 'UTC') <= p_to
-    AND s."utcOffsetMinutes" = glucose_local_offset_minutes(s."localDate", p_tz)
-$$;
-
--- (local day, mg/dL, readings) over [p_from, p_to), sparse: only values that
--- occur. Histogram index 1 is 40 mg/dL, so ordinality n is 39 + n.
-CREATE FUNCTION glucose_day_counts(
-  p_patient_id uuid,
-  p_from timestamp,
-  p_to timestamp,
-  p_tz text
-)
-RETURNS TABLE (local_day date, mg_dl integer, cnt bigint)
+-- (moment, mg/dL, readings) over [p_from, p_to): a bucket contributes one row
+-- per distinct value at its start, a reading outside every usable bucket one row
+-- at its own instant. Values are clamped to 40..600 like the app clamps them, so
+-- the two sources agree on a reading the sensor could not have produced.
+CREATE FUNCTION glucose_counts(p_patient_id uuid, p_from timestamp, p_to timestamp)
+RETURNS TABLE (moment timestamp, mg_dl integer, cnt bigint)
 LANGUAGE sql STABLE
 AS $$
   WITH usable AS MATERIALIZED (
-    SELECT * FROM glucose_usable_summaries(p_patient_id, p_from, p_to, p_tz)
+    SELECT * FROM glucose_usable_buckets(p_patient_id, p_from, p_to)
   )
-  SELECT u.local_day, (39 + h.ord)::integer, h.cnt::bigint
+  SELECT u.bucket_start, v.mg, v.cnt::bigint
   FROM usable u
-  CROSS JOIN LATERAL unnest(u.histogram) WITH ORDINALITY AS h(cnt, ord)
-  WHERE h.cnt > 0
+  CROSS JOIN LATERAL unnest(u.mg_dl, u.counts) AS v(mg, cnt)
   UNION ALL
-  SELECT r.local_day, r."valueMgDl", COUNT(*)
-  FROM (
-    SELECT
-      (("recordedAt" AT TIME ZONE 'UTC') AT TIME ZONE p_tz)::date AS local_day,
-      "valueMgDl"
-    FROM "GlucoseReading"
-    WHERE "patientId" = p_patient_id
-      AND "recordedAt" >= p_from
-      AND "recordedAt" < p_to
-  ) AS r
-  LEFT JOIN usable u ON u.local_day = r.local_day
-  WHERE u.local_day IS NULL
-  GROUP BY r.local_day, r."valueMgDl"
+  SELECT r."recordedAt", LEAST(600, GREATEST(40, r."valueMgDl")), 1::bigint
+  FROM "GlucoseReading" r
+  LEFT JOIN usable u
+    ON u.bucket_start = date_bin('15 minutes', r."recordedAt", TIMESTAMP '2000-01-01')
+  WHERE r."patientId" = p_patient_id
+    AND r."recordedAt" >= p_from
+    AND r."recordedAt" < p_to
+    AND u.bucket_start IS NULL
 $$;
 
 -- 5-minute slots with at least one reading: what "the sensor was reporting"
 -- means whatever the sensor's own cadence, and what sensor use is measured in.
-CREATE FUNCTION glucose_covered_slots(
-  p_patient_id uuid,
-  p_from timestamp,
-  p_to timestamp,
-  p_tz text
-)
+-- A bucket's slots are the app's count, taken from the 1/min series; a reading
+-- outside every usable bucket counts its own slot.
+CREATE FUNCTION glucose_covered_slots(p_patient_id uuid, p_from timestamp, p_to timestamp)
 RETURNS bigint
 LANGUAGE sql STABLE
 AS $$
   WITH usable AS MATERIALIZED (
-    SELECT * FROM glucose_usable_summaries(p_patient_id, p_from, p_to, p_tz)
+    SELECT * FROM glucose_usable_buckets(p_patient_id, p_from, p_to)
   )
   SELECT
     COALESCE((SELECT SUM(covered_slots) FROM usable), 0)
     + (
-      SELECT COUNT(*) FROM (
-        SELECT DISTINCT floor(extract(epoch FROM r."recordedAt") / 300)
-        FROM "GlucoseReading" r
-        LEFT JOIN usable u
-          ON u.local_day = (((r."recordedAt" AT TIME ZONE 'UTC') AT TIME ZONE p_tz)::date)
-        WHERE r."patientId" = p_patient_id
-          AND r."recordedAt" >= p_from
-          AND r."recordedAt" < p_to
-          AND u.local_day IS NULL
-      ) AS slots
+      SELECT COUNT(DISTINCT floor(extract(epoch FROM r."recordedAt") / 300))
+      FROM "GlucoseReading" r
+      LEFT JOIN usable u
+        ON u.bucket_start = date_bin('15 minutes', r."recordedAt", TIMESTAMP '2000-01-01')
+      WHERE r."patientId" = p_patient_id
+        AND r."recordedAt" >= p_from
+        AND r."recordedAt" < p_to
+        AND u.bucket_start IS NULL
     )
 $$;
 
--- The signature changes (a time zone in, `covered_slots` out), so the old
--- functions go.
+-- The return type changes (`covered_slots`), so the old function goes.
 DROP FUNCTION glucose_metrics(uuid, timestamp, timestamp, integer, integer);
-DROP FUNCTION glucose_zones(uuid, timestamp, timestamp, integer, integer);
 
 -- GMI, CV and TIR for the period. Mean and sample standard deviation come from
 -- exact sums over the counts (n, sum x, sum x^2 in numeric), so they equal what
 -- AVG and STDDEV_SAMP gave over the rows. `readings_count` counts the readings
--- the sensor produced (a summary counts the minute series, not its thinning).
+-- the sensor produced (a bucket counts the minute series, not its thinning).
 CREATE FUNCTION glucose_metrics(
   p_patient_id uuid,
   p_from timestamp,
   p_to timestamp,
   p_low integer,
-  p_high integer,
-  p_tz text
+  p_high integer
 )
 RETURNS TABLE (
   avg_glucose numeric,
@@ -134,7 +105,7 @@ LANGUAGE sql STABLE
 AS $$
   WITH c AS (
     SELECT mg_dl, SUM(cnt)::bigint AS cnt
-    FROM glucose_day_counts(p_patient_id, p_from, p_to, p_tz)
+    FROM glucose_counts(p_patient_id, p_from, p_to)
     GROUP BY mg_dl
   ),
   t AS (
@@ -154,19 +125,19 @@ AS $$
     END AS cv,
     CASE WHEN t.n > 0 THEN ROUND(100.0 * t.in_range / t.n, 2) ELSE NULL END AS tir_percent,
     t.n AS readings_count,
-    glucose_covered_slots(p_patient_id, p_from, p_to, p_tz) AS covered_slots
+    glucose_covered_slots(p_patient_id, p_from, p_to) AS covered_slots
   FROM t
 $$;
 
 -- The five CGM zones as percentages, apportioned by the largest-remainder
--- method (see 20261004120000). Only the source of the counts changed.
-CREATE FUNCTION glucose_zones(
+-- method (see 20261004120000). Only the source of the counts changed; the
+-- signature and the columns are the same, so this replaces it in place.
+CREATE OR REPLACE FUNCTION glucose_zones(
   p_patient_id uuid,
   p_from timestamp,
   p_to timestamp,
   p_low integer,
-  p_high integer,
-  p_tz text
+  p_high integer
 )
 RETURNS TABLE (
   very_low_percent numeric,
@@ -176,7 +147,8 @@ RETURNS TABLE (
   very_high_percent numeric,
   readings_count bigint
 )
-LANGUAGE sql STABLE
+LANGUAGE sql
+STABLE
 AS $$
   WITH classified AS (
     SELECT
@@ -188,7 +160,7 @@ AS $$
         ELSE 5
       END AS zone,
       cnt
-    FROM glucose_day_counts(p_patient_id, p_from, p_to, p_tz)
+    FROM glucose_counts(p_patient_id, p_from, p_to)
   ),
   total AS (
     SELECT COALESCE(SUM(cnt), 0)::bigint AS n FROM classified

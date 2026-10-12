@@ -30,8 +30,8 @@ import type {
 } from '../../src/modules/sharing/sharing.repository';
 import type { IReadingRepository } from '../../src/modules/readings/readings.repository';
 import type { ReadingInput } from '../../src/modules/readings/readings.schema';
-import type { ISummaryRepository } from '../../src/modules/readings/summaries.repository';
-import type { DailySummaryInput } from '../../src/modules/readings/summaries.schema';
+import type { IBucketRepository } from '../../src/modules/readings/buckets.repository';
+import type { GlucoseBucketInput } from '../../src/modules/readings/buckets.schema';
 import type {
   ISettingsRepository,
   ThresholdValues,
@@ -131,12 +131,12 @@ export class FakeReadingRepository implements IReadingRepository {
   }
 }
 
-export class FakeSummaryRepository implements ISummaryRepository {
-  lastUpsert: readonly DailySummaryInput[] = [];
+export class FakeBucketRepository implements IBucketRepository {
+  lastUpsert: readonly GlucoseBucketInput[] = [];
   deleted = 0;
 
-  async upsertMany(_patientId: string, days: readonly DailySummaryInput[]): Promise<void> {
-    this.lastUpsert = days;
+  async upsertMany(_patientId: string, buckets: readonly GlucoseBucketInput[]): Promise<void> {
+    this.lastUpsert = buckets;
   }
 
   async deleteAll(_patientId: string): Promise<void> {
@@ -308,13 +308,8 @@ export class FakeDashboardRepository implements IDashboardRepository {
   /** The patient id each `getTotals` call came with. */
   readonly patientIdsSeen: string[] = [];
   /** The zone each zone-aware method was called with, keyed by method name. */
-  readonly tzSeen: Record<
-    'resolveBounds' | 'getPeriodMetrics' | 'getZoneDistribution' | 'getAgp' | 'getHeatmap' | 'getDailyBuckets',
-    string[]
-  > = {
+  readonly tzSeen: Record<'resolveBounds' | 'getAgp' | 'getHeatmap' | 'getDailyBuckets', string[]> = {
     resolveBounds: [],
-    getPeriodMetrics: [],
-    getZoneDistribution: [],
     getAgp: [],
     getHeatmap: [],
     getDailyBuckets: [],
@@ -351,21 +346,12 @@ export class FakeDashboardRepository implements IDashboardRepository {
     _range: DateRange,
     low: number,
     high: number,
-    tz: string,
   ): Promise<PeriodMetricsDto> {
     this.thresholdsSeen.push({ low, high });
-    this.tzSeen.getPeriodMetrics.push(tz);
     return this.periodMetrics;
   }
 
-  async getZoneDistribution(
-    _patientId: string,
-    _range: DateRange,
-    _low: number,
-    _high: number,
-    tz: string,
-  ): Promise<ZoneDistributionDto> {
-    this.tzSeen.getZoneDistribution.push(tz);
+  async getZoneDistribution(): Promise<ZoneDistributionDto> {
     return this.zoneDistribution;
   }
 
@@ -514,7 +500,7 @@ export class FakeCohortRepository implements ICohortRepository {
   hypoHours: HypoHourCount[] = [];
 
   readonly listCalls: Array<{ professionalId: string; now: Date; request?: PatientPageRequest }> = [];
-  readonly metricsCalls: Array<{ ids: readonly string[]; range: DateRange; tz: string }> = [];
+  readonly metricsCalls: Array<{ ids: readonly string[]; range: DateRange }> = [];
   readonly hypoCalls: Array<{ ids: readonly string[]; range: DateRange; tz: string }> = [];
 
   async listGrantedPatientIds(
@@ -527,12 +513,8 @@ export class FakeCohortRepository implements ICohortRepository {
     return { ids: this.granted.slice((page - 1) * limit, page * limit), total: this.granted.length };
   }
 
-  async getPatientMetrics(
-    ids: readonly string[],
-    range: DateRange,
-    tz: string,
-  ): Promise<PatientMetrics[]> {
-    this.metricsCalls.push({ ids, range, tz });
+  async getPatientMetrics(ids: readonly string[], range: DateRange): Promise<PatientMetrics[]> {
+    this.metricsCalls.push({ ids, range });
     return this.metrics.filter((row) => ids.includes(row.patientId));
   }
 

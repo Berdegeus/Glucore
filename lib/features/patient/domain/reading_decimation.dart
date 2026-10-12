@@ -5,8 +5,8 @@ import 'entities/glucose_reading_item.dart';
 /// O banco local guarda tudo o que o sensor entrega (até 1 por minuto) e é a
 /// fonte dos gráficos e relatórios do aparelho. O servidor recebe só esta
 /// versão rala — um quinto das linhas, o que basta para a curva, o AGP e as
-/// excursões do painel — e, ao lado, o resumo diário calculado aqui com a
-/// resolução cheia (ver `daily_summary.dart`).
+/// excursões do painel — e, ao lado, os blocos de 15 min calculados aqui com a
+/// resolução cheia (ver `glucose_bucket.dart`).
 const readingUploadSlot = Duration(minutes: 5);
 
 final int _slotMs = readingUploadSlot.inMilliseconds;

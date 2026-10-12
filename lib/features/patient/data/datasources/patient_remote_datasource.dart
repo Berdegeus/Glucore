@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../../domain/daily_summary.dart';
+import '../../domain/glucose_bucket.dart';
 import '../../domain/entities/patient_entities.dart';
 import 'patient_datasource.dart';
 
@@ -118,11 +118,11 @@ class RemotePatientDataSource implements PatientRemoteApi {
   }
 
   @override
-  Future<void> saveDailySummaries(List<DailySummary> days) =>
+  Future<void> saveGlucoseBuckets(List<GlucoseBucket> buckets) =>
       _guardAuth(() async {
         await _dio.put<void>(
-          '/readings/summaries',
-          data: {'days': days.map((d) => d.toJson()).toList()},
+          '/readings/buckets',
+          data: {'buckets': buckets.map((b) => b.toJson()).toList()},
         );
       });
 

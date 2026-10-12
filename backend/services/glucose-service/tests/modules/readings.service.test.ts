@@ -6,25 +6,25 @@ import { MAX_READING_BATCH, parseReadingBatch } from '../../src/modules/readings
 import {
   FakePatientRepository,
   FakeReadingRepository,
-  FakeSummaryRepository,
+  FakeBucketRepository,
   RecordedAudit,
   readingRow,
 } from '../helpers/fakes';
-import { summaryOf } from '../helpers/histogram';
+import { bucketOf } from '../helpers/histogram';
 
 const USER = 'user-1';
 
 function build() {
   const readings = new FakeReadingRepository();
-  const summaries = new FakeSummaryRepository();
+  const buckets = new FakeBucketRepository();
   const patients = new FakePatientRepository();
   const audit = new RecordedAudit();
   return {
     readings,
-    summaries,
+    buckets,
     patients,
     audit,
-    service: new ReadingsService(readings, summaries, patients, audit.record),
+    service: new ReadingsService(readings, buckets, patients, audit.record),
   };
 }
 
@@ -117,19 +117,19 @@ describe('ReadingsService', () => {
     expect(patients.ensured).toEqual([USER]);
   });
 
-  it('hands the daily summaries to their repository, creating the patient first', async () => {
-    const { summaries, patients, service } = build();
-    const days = [summaryOf('2026-10-10')];
-    await service.syncSummariesForUser(USER, days);
+  it('hands the glucose buckets to their repository, creating the patient first', async () => {
+    const { buckets, patients, service } = build();
+    const batch = [bucketOf(Date.UTC(2026, 9, 10, 12))];
+    await service.syncBucketsForUser(USER, batch);
     expect(patients.ensured).toEqual([USER]);
-    expect(summaries.lastUpsert).toBe(days);
+    expect(buckets.lastUpsert).toBe(batch);
   });
 
   it('records an audit entry when the history is cleared', async () => {
-    const { readings, summaries, audit, service } = build();
+    const { readings, buckets, audit, service } = build();
     await service.clearForUser(USER, { ipAddress: '10.0.0.1', userAgent: 'vitest' });
     expect(readings.deleted).toBe(1);
-    expect(summaries.deleted).toBe(1);
+    expect(buckets.deleted).toBe(1);
     expect(audit.entries).toEqual([
       {
         userId: USER,

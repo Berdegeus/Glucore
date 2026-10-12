@@ -171,8 +171,6 @@ describe('DashboardService — extended summary', () => {
 
     expect(dashboard.tzSeen).toEqual({
       resolveBounds: ['America/Sao_Paulo'],
-      getPeriodMetrics: ['America/Sao_Paulo'],
-      getZoneDistribution: ['America/Sao_Paulo'],
       getAgp: ['America/Sao_Paulo'],
       getHeatmap: ['America/Sao_Paulo'],
       getDailyBuckets: ['America/Sao_Paulo'],

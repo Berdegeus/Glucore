@@ -58,7 +58,7 @@ model Patient {
   targetRangeMax        Int                    @default(180)
   sensorBindings        SensorBinding[]
   readings              GlucoseReading[]
-  dailySummaries        GlucoseDailySummary[]
+  glucoseBuckets        GlucoseBucket[]
   alertEvents           AlertEvent[]
   carbs                 CarbEvent[]
   insulin               InsulinEvent[]
@@ -157,26 +157,28 @@ model GlucoseReading {
   @@index([sensorSessionId])
 }
 
-/// One patient-local day of glucose, as counts per whole mg/dL. The app builds
-/// it from the sensor's 1/min series, which the server never receives (it gets
-/// a 5-minute thinning), so TIR, GMI and CV can still be exact for any range.
-/// Index 0 of `histogram` is 40 mg/dL, the last (index 560) is 600 mg/dL; see
-/// contracts/glucose-histogram.json. Hand-written CHECKs live in the migration.
-model GlucoseDailySummary {
-  patientId        String   @db.Uuid
-  /// The patient's calendar day, in the offset below.
-  localDate        DateTime @db.Date
-  /// Minutes east of UTC when the app cut the day (-180 for Brasilia).
-  utcOffsetMinutes Int
-  readingsCount    Int
-  /// 5-minute slots of the day with at least one reading: sensor use, whatever
-  /// the sensor's own cadence.
-  coveredSlots     Int
-  histogram        Int[]
-  updatedAt        DateTime @default(now())
-  patient          Patient  @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+/// One 15-minute interval of glucose, aligned to UTC, as counts per whole
+/// mg/dL: `mgDl` lists the distinct values (ascending) and `counts` how many
+/// readings had each. The app builds it from the sensor's 1/min series, which the
+/// server never receives (it gets a 5-minute thinning), so TIR, GMI and CV can
+/// still use the full resolution. UTC-aligned because every real zone's offset is
+/// a multiple of 15 minutes: the server can cut a day in any zone exactly. The
+/// shape is in contracts/glucose-histogram.json; hand-written CHECKs are in the
+/// migration.
+model GlucoseBucket {
+  patientId     String   @db.Uuid
+  /// Naive UTC, like GlucoseReading.recordedAt; a multiple of 15 minutes.
+  bucketStart   DateTime
+  readingsCount Int
+  /// 5-minute slots of the interval with at least one reading (1 to 3): sensor
+  /// use, whatever the sensor's own cadence.
+  coveredSlots  Int
+  mgDl          Int[]
+  counts        Int[]
+  updatedAt     DateTime @default(now())
+  patient       Patient  @relation(fields: [patientId], references: [userId], onDelete: Cascade)
 
-  @@id([patientId, localDate])
+  @@id([patientId, bucketStart])
 }
 
 model AlertThresholdConfig {
