@@ -277,6 +277,9 @@ class _StaleReadingCard extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onReconnect,
                   style: FilledButton.styleFrom(
+                    // The theme sets `Size.fromHeight(48)` (infinite width),
+                    // which breaks inside a Row.
+                    minimumSize: const Size(0, 40),
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),

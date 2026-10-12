@@ -214,6 +214,7 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
     if (current == null) {
       return _NoSensorCard(
         sensorStatus: sensorState.status,
+        hasSession: sensorState.session != null,
         onPairSensor: () => _openSensorChoice(context),
       );
     }
@@ -395,8 +396,16 @@ class _HistorySyncCard extends StatelessWidget {
 }
 
 class _NoSensorCard extends StatelessWidget {
-  const _NoSensorCard({required this.sensorStatus, required this.onPairSensor});
+  const _NoSensorCard({
+    required this.sensorStatus,
+    required this.hasSession,
+    required this.onPairSensor,
+  });
   final SensorConnectionStatus sensorStatus;
+
+  /// A sensor is already paired: the idle state means "disconnected", not
+  /// "never connected".
+  final bool hasSession;
   final VoidCallback onPairSensor;
 
   @override
@@ -439,6 +448,12 @@ class _NoSensorCard extends StatelessWidget {
           l10n.monitoringNoSensorErrorSubtitle,
           context.glucoreColors.zoneLowBg,
         ),
+      _ when hasSession => (
+          Icons.bluetooth_disabled_rounded,
+          l10n.monitoringNoSensorDisconnectedTitle,
+          l10n.monitoringNoSensorDisconnectedSubtitle,
+          context.glucoreColors.inkMuted,
+        ),
       _ => (
           Icons.sensors_off_rounded,
           l10n.monitoringNoSensorDefaultTitle,
@@ -462,9 +477,14 @@ class _NoSensorCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        // Tint over a solid surface: a bare 8% tint is nearly invisible on
+        // the page background, which made this card look like it was gone.
+        color: Color.alphaBlend(
+          color.withValues(alpha: 0.08),
+          context.glucoreColors.surfaceSunken,
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,7 +522,11 @@ class _NoSensorCard extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onPairSensor,
                 icon: const Icon(Icons.add_rounded, size: 20),
-                label: Text(l10n.monitoringNoSensorPairButton),
+                label: Text(
+                  hasSession
+                      ? l10n.glucoseReconnectButton
+                      : l10n.monitoringNoSensorPairButton,
+                ),
               ),
             ),
           ],

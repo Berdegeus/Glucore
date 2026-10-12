@@ -354,8 +354,8 @@ class _LifeCard extends StatelessWidget {
             child: LinearProgressIndicator(value: progress, minHeight: 6),
           ),
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 l10n.sensorPanelStartedAt(
@@ -363,6 +363,7 @@ class _LifeCard extends StatelessWidget {
                 ),
                 style: TextStyle(fontSize: 12, color: colors.inkMuted),
               ),
+              const SizedBox(height: 2),
               Text(
                 l10n.sensorPanelEndsAt(
                   context.formatShortDateTime(life.expectedEnd),

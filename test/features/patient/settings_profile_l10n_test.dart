@@ -210,7 +210,14 @@ void main() {
         tester,
         PatientState(
           readings: [reading],
-          sensorState: SensorUiState(session: session),
+          sensorState: SensorUiState(
+            session: session,
+            sensorLife: SensorLife(
+              startedAt: session.createdAt,
+              expectedEnd: session.createdAt
+                  .add(const Duration(days: 14, hours: 1)),
+            ),
+          ),
         ),
       );
 

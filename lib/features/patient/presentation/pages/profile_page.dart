@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart' show CupertinoPicker;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -6,12 +7,15 @@ import 'package:glucore/l10n/l10n.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../auth/data/datasources/account_service.dart';
+import '../../../sharing/presentation/cubit/sharing_cubit.dart';
+import '../../../sharing/presentation/pages/sharing_page.dart';
+import '../../../../injection_container.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
+import '../widgets/glucore_messenger.dart';
 import '../widgets/glucore_widgets.dart';
 import '../widgets/patient_widgets.dart';
 import '../widgets/user_app_bar.dart';
-import 'alert_settings_page.dart';
 import 'history_page.dart';
 import 'profile_edit_page.dart';
 import 'sensor_choice_page.dart';
@@ -65,9 +69,9 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SettingsPage())),
           ),
         ],
       ),
@@ -127,7 +131,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                                builder: (_) => const ProfileEditPage()),
+                              builder: (_) => const ProfileEditPage(),
+                            ),
                           ),
                           child: Text(l10n.profileEditProfileLink),
                         ),
@@ -178,24 +183,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     value: l10n.genericGlucoseValue(
                       state.alertSettings.lowThreshold,
                     ),
-                    onTap: () => Navigator.of(context).push(
-                      buildPatientScopedRoute(
-                        context,
-                        const AlertSettingsPage(),
-                      ),
-                    ),
+                    onTap: () => _pickThreshold(state, low: true),
                   ),
                   GlucoreSectionRow(
                     label: l10n.profileHighAlertRowLabel,
                     value: l10n.genericGlucoseValue(
                       state.alertSettings.highThreshold,
                     ),
-                    onTap: () => Navigator.of(context).push(
-                      buildPatientScopedRoute(
-                        context,
-                        const AlertSettingsPage(),
-                      ),
-                    ),
+                    onTap: () => _pickThreshold(state, low: false),
                   ),
                 ],
               ),
@@ -218,43 +213,62 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 24),
 
-              // Shared care stub
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: context.glucoreColors.surfaceCanvas,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: context.glucoreColors.surfaceSunken),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.people_outline, color: context.glucoreColors.inkMuted),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.profileSharedCareTitle,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: context.glucoreColors.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            // TODO: shared care requires doctor web dashboard
-                            l10n.profileSharedCareSubtitle,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.glucoreColors.inkMuted,
-                            ),
-                          ),
-                        ],
-                      ),
+              // Shared care
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => BlocProvider<SharingCubit>(
+                      create: (_) => sl<SharingCubit>(),
+                      child: const SharingPage(),
                     ),
-                  ],
+                  ),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: context.glucoreColors.surfaceCanvas,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: context.glucoreColors.surfaceSunken,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        color: context.glucoreColors.inkMuted,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.profileSharedCareTitle,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: context.glucoreColors.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              l10n.profileSharedCareSubtitle,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.glucoreColors.inkMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: context.glucoreColors.inkMuted,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -264,11 +278,105 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _pickThreshold(PatientState state, {required bool low}) async {
+    final l10n = context.l10n;
+    final settings = state.alertSettings;
+    final min = low ? 40 : 120;
+    final max = low ? 150 : 400;
+    final initial = (low ? settings.lowThreshold : settings.highThreshold)
+        .clamp(min, max);
+    var selected = initial;
+    final cubit = context.read<PatientCubit>();
+    final colors = context.glucoreColors;
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: colors.surfaceCanvas,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: 300,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(false),
+                      child: Text(
+                        MaterialLocalizations.of(
+                          sheetContext,
+                        ).cancelButtonLabel,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        low
+                            ? l10n.profileLowAlertRowLabel
+                            : l10n.profileHighAlertRowLabel,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colors.ink,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(true),
+                      child: Text(
+                        MaterialLocalizations.of(sheetContext).okButtonLabel,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoPicker(
+                  itemExtent: 40,
+                  scrollController: FixedExtentScrollController(
+                    initialItem: initial - min,
+                  ),
+                  onSelectedItemChanged: (i) => selected = min + i,
+                  children: [
+                    for (var v = min; v <= max; v++)
+                      Center(
+                        child: Text(
+                          l10n.genericGlucoseValue('$v'),
+                          style: TextStyle(fontSize: 22, color: colors.ink),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted || selected == initial) return;
+    if (low
+        ? selected >= settings.highThreshold
+        : selected <= settings.lowThreshold) {
+      GlucoreMessenger.error(context, l10n.alertSettingsLowMustBeLowerError);
+      return;
+    }
+    await cubit.updateAlertSettings(
+      low
+          ? settings.copyWith(lowThreshold: selected)
+          : settings.copyWith(highThreshold: selected),
+    );
+  }
+
   String _daysLeft(AppLocalizations l10n, PatientState state) {
-    final session = state.sensorState.session;
-    if (session == null) return '—';
-    final used = DateTime.now().difference(session.createdAt).inDays;
-    final left = (14 - used).clamp(0, 14);
-    return l10n.profileDaysLeftValue(left);
+    final life = state.sensorState.sensorLife;
+    if (life == null) return '—';
+    final now = DateTime.now();
+    if (life.hasEnded(now)) return l10n.profileSensorLifeEndedValue;
+    final left = life.remaining(now);
+    if (left < const Duration(days: 1)) {
+      return l10n.profileSensorLifeHoursValue(
+        left.inHours < 1 ? 1 : left.inHours,
+      );
+    }
+    return l10n.profileDaysLeftValue(left.inDays);
   }
 }

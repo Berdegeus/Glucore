@@ -274,13 +274,20 @@
   "profileEditProfileLink": "Editar perfil",
   "profileSensorIdRowLabel": "ID do sensor",
   "profileLastReadingRowLabel": "Última leitura",
-  "profileDaysLeftRowLabel": "Dias restantes",
+  "profileDaysLeftRowLabel": "Painel de controle do sensor",
   "profileDaysLeftValue": "{days} dias",
   "@profileDaysLeftValue": {
     "placeholders": {
       "days": {}
     }
   },
+  "profileSensorLifeHoursValue": "{hours}h",
+  "@profileSensorLifeHoursValue": {
+    "placeholders": {
+      "hours": {}
+    }
+  },
+  "profileSensorLifeEndedValue": "Encerrado",
   "profileGlucoseTargetsSectionTitle": "Metas de glicose",
   "profileLowAlertRowLabel": "Alerta baixo",
   "profileHighAlertRowLabel": "Alerta alto",
@@ -292,7 +299,7 @@
     }
   },
   "profileSharedCareTitle": "Cuidado compartilhado",
-  "profileSharedCareSubtitle": "Em breve — conecte seu médico",
+  "profileSharedCareSubtitle": "Conecte seu médico",
   "changePasswordTitle": "Alterar senha",
   "carbEntryTitle": "Registrar carboidrato",
   "carbEntryQuantityLabel": "Quantidade (g)",
@@ -442,6 +449,8 @@
   "monitoringNoSensorDefaultTitle": "Nenhum sensor conectado",
   "monitoringNoSensorDefaultSubtitle": "Conecte um sensor para acompanhar sua glicose em tempo real",
   "monitoringNoSensorPairButton": "Conectar sensor",
+  "monitoringNoSensorDisconnectedTitle": "Sensor desconectado",
+  "monitoringNoSensorDisconnectedSubtitle": "Sem leitura atual no momento. Reconecte para voltar a acompanhar sua glicose.",
   "glucoseStaleLabel": "Última leitura",
   "glucoseStaleBadge": "Desatualizada",
   "glucoseReconnectButton": "Reconectar",
