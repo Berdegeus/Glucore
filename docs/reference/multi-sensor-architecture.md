@@ -40,7 +40,7 @@ O que a marca **não** implementa, porque já vem pronto:
 
 `SibionicsBleManager.kt:15`. Serviço `ff30`, notificação em `ff31`, escrita em `ff32` (`:21-23`). O handshake é uma máquina de estados dirigida por `Natives.SIprocessData`: re-auth, sincronização de relógio, ativação, pedido de dados, reset. A glicose sai de `Natives.getlastGlucose()`.
 
-Um código de retorno fora dos documentados só é interpretado como leitura depois que o handshake assentou, e mesmo assim passa por `SibionicsGlucoseDecoder.decodeUnsolicited`, que descarta qualquer valor sem bits de rate/alarm — um código de protocolo não vira glicemia (`SibionicsBleManager.kt:225-235`).
+Um código de retorno fora dos documentados só é interpretado depois que o handshake assentou, e mesmo assim passa por `SibionicsGlucoseDecoder.decodeUnsolicited`, que só decodifica valores com bits de rate/alarm — um código de protocolo não vira glicemia. Um número **cru** plausível (`isBareGlucoseResult`: 400–6000 décimos, sem esses bits) é o que o sensor empurra a cada minuto: não é interpretado, serve de sinal para o app buscar a leitura com `getlastGlucose()` (`handleDirectGlucoseResult` → `handleGlucoseReady`). Ver [sensor-pipeline.md](../architecture/sensor-pipeline.md) §6 e P39.
 
 #### Estado nativo do sensor e desvinculação
 

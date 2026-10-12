@@ -83,7 +83,11 @@ onDescriptorWrite OK
 | 7 | pede dados novos (`siAsknewdata`) |
 | 8, 9 | ignorados |
 | 10 | reset (`getSIResetBytes`) |
-| outro | tenta decodificar o próprio código como leitura empacotada (`handleDirectGlucoseResult`) |
+| outro | só depois do handshake (`handshakeSettled`), em `handleDirectGlucoseResult`: se o valor carrega bits de rate/alarm é uma leitura empacotada e é decodificado (`decodeUnsolicited`); se é um número **cru** plausível (400–6000 décimos, sem esses bits) não é interpretado, mas é o sinal de que a biblioteca guardou uma leitura, e o app a busca com `getlastGlucose()` (`handleGlucoseReady()`); o resto é descartado e logado |
+
+**O valor cru é a leitura do minuto (observado, 2026-10-12).** Num sensor ao vivo, depois do handshake o `SIprocessData` devolveu `860, 880, 900, 940, 1040, 1170, 1210, 1220` a cada minuto, e cada um bateu com a glicose guardada naquele minuto (86 a 122 mg/dL, em décimos). Até a correção (P39) o `decodeUnsolicited` os descartava ("Discarded unsolicited SIprocessData result"), então só entrava leitura nova a cada (re)conexão, o watchdog via "sem valor há 5 min" e reiniciava a conexão, em ciclo. A recuperação das leituras guardadas pela biblioteca (`getStoredReadings`) preenchia os minutos no banco e escondia o problema. O número cru continua **sem ser interpretado** (poderia ser um código de protocolo); só `getlastGlucose()` produz a leitura, com timestamp, taxa e alarme. `SibionicsGlucoseDecoder.isBareGlucoseResult` é o predicado puro, disjunto de `decodeUnsolicited`.
+
+**Pendente de bancada:** o caminho novo ainda não foi visto agindo no aparelho (a sessão testada entregou leituras empacotadas e não entrou no modo cru). Roteiro na issue #18. O log a procurar é `Bare SIprocessData result N: reading it through getlastGlucose` seguido de `getlastGlucose raw` e `Decoded glucose from getlastGlucose`.
 
 ## 7. Decodificação de glicose
 

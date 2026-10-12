@@ -88,6 +88,23 @@ object SibionicsGlucoseDecoder {
     }
 
     /**
+     * True for a value the vendor state machine returned after the handshake that
+     * is a bare glucose payload: in the plausible range and without the rate and
+     * alarm bits of the packed format.
+     *
+     * The sensor pushes its reading every minute this way (observed on a live
+     * Sibionics 2026-10-12: the returns 860, 880, 900, 940, 1040, 1170, 1210 and
+     * 1220 matched the glucose stored for those minutes, in tenths of mg/dL),
+     * while the library records the reading itself. [decodeUnsolicited] refuses to
+     * turn the bare number into a reading, rightly: it cannot tell it from a
+     * protocol code. This only says "a reading probably arrived", and the caller
+     * then asks the library for it with `getlastGlucose`, which carries the
+     * timestamp, trend and alarm and is validated by [decodePacked].
+     */
+    fun isBareGlucoseResult(value: Long): Boolean =
+        value in MIN_GLUCOSE_TENTHS..MAX_GLUCOSE_TENTHS && value < MIN_UNSOLICITED_PACKED
+
+    /**
      * Normalizes a sensor timestamp to milliseconds. Values at or below zero
      * fall back to [fallbackTimestampMs]; values that look like seconds
      * (< 10^10) are converted to milliseconds. [NormalizedTimestamp.usedFallback]

@@ -14,7 +14,7 @@
 
 Endpoints: `GET/POST/DELETE /readings` (GET devolve as 5.000 mais recentes, ou uma página com `from`/`before`/`limit`; POST = batch upsert de até 500, lote maior = 400).
 
-**O aparelho e o servidor não têm as mesmas linhas.** O aparelho guarda tudo o que o sensor entrega (até 1/min, retenção de 14 dias) e é a fonte dos gráficos e relatórios. O servidor recebe **uma leitura por intervalo de 5 min**: a mais antiga do intervalo, com o `timestampMs` trocado pelo início dele (`domain/reading_decimation.dart`), e só de intervalos já fechados. A resolução cheia chega ao servidor pelos blocos de 15 min (abaixo).
+**O aparelho e o servidor não têm as mesmas linhas.** O aparelho guarda tudo o que o sensor entrega (até 1/min, retenção de 14 dias) e é a fonte dos gráficos e relatórios. O servidor recebe **uma leitura por intervalo de 5 min**: a mais antiga do intervalo, com o `timestampMs` trocado pelo início dele (`domain/reading_decimation.dart`), e só de intervalos já fechados. A resolução cheia chega ao servidor pelos blocos de 15 min (abaixo), como **contagens por valor**: o servidor não tem a série ordenada de 1/min, só o aparelho. O servidor também não apaga leituras (decisão para treino de ML; ver `backend/README.md`, "Retenção das leituras e dados para ML").
 
 ## CarbEntry
 

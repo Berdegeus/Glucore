@@ -44,6 +44,7 @@ Marcado pelo revisor, não pelo autor:
 - [ ] A contagem de testes não caiu; nenhum teste foi apagado, pulado ou teve asserção enfraquecida
 - [ ] **Mudou camada ou fluxo? Atualizou `CLAUDE.md` e/ou `docs/`** — este item existe porque o P6 (documentação divergindo do código) já reincidiu duas vezes; é o único mecanismo que impede a terceira
 - [ ] Mudou um `backend/services/*/prisma/schema.prisma`? A migration versionada está no **mesmo PR**
+- [ ] Mudou algo que só o aparelho exercita (BLE, conexão, sensor)? O plano de teste de bancada pendente está como comentário na issue #18, e o PR diz o que ainda não foi visto funcionando
 - [ ] Mudou contrato (platform channel, rota da API, modelo de dados)? O doc correspondente em `docs/reference/` foi atualizado no mesmo PR
 - [ ] O commit segue [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) e descreve o que foi feito, não o que se pretendia
 - [ ] Nada de "while I'm here": mudanças fora do escopo declarado voltam para o autor
