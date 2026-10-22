@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/glucore_colors.dart';
 import '../../../sensor/domain/models.dart';
+import '../../../sensor/presentation/cubit/sensor_cubit.dart';
 import '../cubit/patient_cubit.dart';
 import '../cubit/patient_state.dart';
 import '../../domain/entities/patient_entities.dart';
@@ -211,12 +212,19 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
     final current = state.currentReading;
     final sensorState = state.sensorState;
 
+    final hasSession = sensorState.session != null;
+    final info = _SensorStatusInfo.of(
+      context,
+      sensorStatus: sensorState.status,
+      hasSession: hasSession,
+    );
+    // A paired sensor is reconnected in place; with none the user has to pair.
+    final VoidCallback action = hasSession
+        ? () => context.read<SensorCubit>().startMonitoring()
+        : () => _openSensorChoice(context);
+
     if (current == null) {
-      return _NoSensorCard(
-        sensorStatus: sensorState.status,
-        hasSession: sensorState.session != null,
-        onPairSensor: () => _openSensorChoice(context),
-      );
+      return _NoSensorCard(info: info, onAction: action);
     }
 
     final zone = glucoseZoneOf(
@@ -232,9 +240,9 @@ class _MonitoringHomePageState extends State<MonitoringHomePage> {
       sensorId: sensorState.session?.sensorId,
       updatedAt: current.timestamp,
       isLive: state.isReadingLive,
-      onReconnect: sensorState.session != null
-          ? () => _openSensorChoice(context)
-          : null,
+      statusLabel: info.title,
+      actionLabel: info.actionLabel,
+      onAction: info.needsAction ? action : null,
     );
   }
 }
@@ -395,21 +403,43 @@ class _HistorySyncCard extends StatelessWidget {
   }
 }
 
-class _NoSensorCard extends StatelessWidget {
-  const _NoSensorCard({
-    required this.sensorStatus,
-    required this.hasSession,
-    required this.onPairSensor,
+/// Title, subtitle and action for the sensor's current state, shared by the
+/// no-reading card and the stale-reading card so they never disagree.
+class _SensorStatusInfo {
+  const _SensorStatusInfo({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.needsAction,
+    required this.actionLabel,
   });
-  final SensorConnectionStatus sensorStatus;
 
-  /// A sensor is already paired: the idle state means "disconnected", not
-  /// "never connected".
-  final bool hasSession;
-  final VoidCallback onPairSensor;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
 
-  @override
-  Widget build(BuildContext context) {
+  /// Busy states (scanning, connecting, syncing...) are already doing
+  /// something; only the idle and error states need to push the user to act.
+  final bool needsAction;
+
+  /// "Reconnect" when a sensor is already paired, "Connect" when none is.
+  final String actionLabel;
+
+  static const _busy = {
+    SensorConnectionStatus.scanning,
+    SensorConnectionStatus.connecting,
+    SensorConnectionStatus.pairing,
+    SensorConnectionStatus.syncingHistory,
+    SensorConnectionStatus.warmingUp,
+  };
+
+  factory _SensorStatusInfo.of(
+    BuildContext context, {
+    required SensorConnectionStatus sensorStatus,
+    required bool hasSession,
+  }) {
     final l10n = context.l10n;
     final (icon, title, subtitle, color) = switch (sensorStatus) {
       SensorConnectionStatus.scanning => (
@@ -461,18 +491,27 @@ class _NoSensorCard extends StatelessWidget {
           context.glucoreColors.inkMuted,
         ),
     };
+    return _SensorStatusInfo(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      color: color,
+      needsAction: !_busy.contains(sensorStatus),
+      actionLabel: hasSession
+          ? l10n.glucoseReconnectButton
+          : l10n.monitoringNoSensorPairButton,
+    );
+  }
+}
 
-    // Busy states (scanning, connecting, syncing...) are already doing
-    // something; only the idle and error states need to push the user to pair.
-    final needsAction = sensorStatus == SensorConnectionStatus.error ||
-        !const {
-          SensorConnectionStatus.scanning,
-          SensorConnectionStatus.connecting,
-          SensorConnectionStatus.pairing,
-          SensorConnectionStatus.syncingHistory,
-          SensorConnectionStatus.warmingUp,
-        }.contains(sensorStatus);
+class _NoSensorCard extends StatelessWidget {
+  const _NoSensorCard({required this.info, required this.onAction});
+  final _SensorStatusInfo info;
+  final VoidCallback onAction;
 
+  @override
+  Widget build(BuildContext context) {
+    final color = info.color;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -491,14 +530,14 @@ class _NoSensorCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 32),
+              Icon(info.icon, color: color, size: 32),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      info.title,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -507,7 +546,7 @@ class _NoSensorCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      subtitle,
+                      info.subtitle,
                       style: TextStyle(fontSize: 13, color: context.glucoreColors.inkMuted),
                     ),
                   ],
@@ -515,18 +554,14 @@ class _NoSensorCard extends StatelessWidget {
               ),
             ],
           ),
-          if (needsAction) ...[
+          if (info.needsAction) ...[
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: onPairSensor,
+                onPressed: onAction,
                 icon: const Icon(Icons.add_rounded, size: 20),
-                label: Text(
-                  hasSession
-                      ? l10n.glucoseReconnectButton
-                      : l10n.monitoringNoSensorPairButton,
-                ),
+                label: Text(info.actionLabel),
               ),
             ),
           ],
@@ -626,8 +661,9 @@ class _StatsRow extends StatelessWidget {
 
     final gmi = readings.length >= 14 ? 0.0296 * avg + 2.419 : null;
     final l10n = context.l10n;
+    final stale = !state.isReadingLive;
 
-    return Row(
+    final row = Row(
       children: [
         GlucoreStatChip(
           label: l10n.monitoringTimeInTargetLabel,
@@ -648,6 +684,21 @@ class _StatsRow extends StatelessWidget {
             value: gmi.toStringAsFixed(1),
           ),
         ],
+      ],
+    );
+    if (!stale) return row;
+
+    // Same numbers, but they describe the past: say so instead of letting
+    // them pass for the current state.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Opacity(opacity: 0.6, child: row),
+        const SizedBox(height: 4),
+        Text(
+          l10n.glucoseStatsStaleHint,
+          style: TextStyle(fontSize: 11, color: context.glucoreColors.inkMuted),
+        ),
       ],
     );
   }
