@@ -80,6 +80,51 @@ void main() {
     expect(cubit.state.status, AuthStatus.authenticated);
     expect(cubit.state.offlineValidation, isFalse);
   });
+
+  test('revalidating a session already inside never passes through loading',
+      () async {
+    repo.statusResult = AuthSessionStatus.unreachable;
+    cubit = build();
+    await cubit.checkAuthStatus();
+
+    // AuthGate shows a full-screen spinner on `loading`, which would tear down
+    // the shell (and the sensor cubit with it) on a Wi-Fi to 4G switch.
+    final seen = <AuthStatus>[];
+    final sub = cubit.stream.listen((s) => seen.add(s.status));
+
+    repo.statusResult = AuthSessionStatus.authenticated;
+    connectivity.add([ConnectivityResult.mobile]);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    await sub.cancel();
+
+    expect(seen, isNot(contains(AuthStatus.loading)));
+    expect(cubit.state.status, AuthStatus.authenticated);
+    expect(cubit.state.offlineValidation, isFalse);
+  });
+
+  test('a rejected token on revalidation still logs the user out', () async {
+    repo.statusResult = AuthSessionStatus.unreachable;
+    cubit = build();
+    await cubit.checkAuthStatus();
+
+    repo.statusResult = AuthSessionStatus.invalid;
+    connectivity.add([ConnectivityResult.mobile]);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(cubit.state.status, AuthStatus.unauthenticated);
+  });
+
+  test('the first check, with no session yet, still shows loading', () async {
+    repo.statusResult = AuthSessionStatus.authenticated;
+    cubit = build();
+    final seen = <AuthStatus>[];
+    final sub = cubit.stream.listen((s) => seen.add(s.status));
+
+    await cubit.checkAuthStatus();
+    await sub.cancel();
+
+    expect(seen.first, AuthStatus.loading);
+  });
 }
 
 class _FakeAuthRepository implements AuthRepository {
