@@ -45,4 +45,4 @@ Consulta ao banco local, por trecho:
 
 ## Gates
 
-`flutter analyze` sem problemas e `flutter test --no-pub` com **650 testes passando** na branch combinada (645 na `main` + 3 de auth + 5 do cartão, menos os 3 que o `main` já tinha e foram reaproveitados; contagem conferida na saída do runner, não somada à mão). Kotlin e backend **não** foram tocados e não foram rodados localmente; o CI roda tudo.
+`flutter analyze` sem problemas e `flutter test --no-pub` com **650 testes passando** na branch combinada (642 que a `main` já tinha segundo o PR #47, + 3 de auth + 5 do cartão; o 650 é a saída do runner, a decomposição é por diferença). Kotlin e backend **não** foram tocados e não foram rodados localmente; o CI roda tudo.
