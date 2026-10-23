@@ -371,6 +371,7 @@
   "glucoseStaleLabel": "Última leitura",
   "glucoseStaleBadge": "Desatualizada",
   "glucoseReconnectButton": "Reconectar",
+  "glucoseStatsStaleHint": "Dados anteriores, sem leitura atual",
   "sensorPanelTitle": "Sensor",
   "sensorPanelBrandLabel": "Marca",
   "sensorPanelSerialLabel": "Número de série",

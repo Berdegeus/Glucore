@@ -42,8 +42,14 @@ class AuthCubit extends Cubit<AuthState> {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   Future<void> checkAuthStatus() async {
-    emit(state.copyWith(
-        status: AuthStatus.loading, error: null, offlineValidation: false));
+    // Revalidating a session the user is already inside (network back after an
+    // offline start) must not pass through `loading`: AuthGate would swap the
+    // shell for a full-screen spinner, tearing down the sensor/patient cubits
+    // and restarting BLE. Only a first check, with no session yet, shows it.
+    if (state.status != AuthStatus.authenticated) {
+      emit(state.copyWith(
+          status: AuthStatus.loading, error: null, offlineValidation: false));
+    }
     try {
       final result = await getAuthStatusUseCase(const NoParams());
       log('checkAuthStatus → $result', name: 'AuthCubit');

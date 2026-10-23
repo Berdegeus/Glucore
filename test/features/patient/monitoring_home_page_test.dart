@@ -181,6 +181,113 @@ void main() {
     expect(chartWindow(), 24);
   });
 
+  group('stale reading card', () {
+    final session = SensorSession(sensorId: 'SN12345678ABC');
+
+    // The last value is 6 days old: the case seen on the device, where the
+    // card used to say "outdated" and offer nothing.
+    PatientState stale(SensorUiState sensor) => PatientState(
+      readings: [
+        GlucoseReadingItem(
+          value: 162,
+          timestamp: DateTime.now().subtract(const Duration(days: 6)),
+          trend: GlucoseTrend.stable,
+          rate: 0,
+        ),
+      ],
+      sensorState: sensor,
+    );
+
+    testWidgets('with no sensor it says so and offers to connect one', (
+      tester,
+    ) async {
+      await pump(tester, stale(const SensorUiState()));
+
+      expect(find.textContaining(l10n.monitoringNoSensorDefaultTitle), findsOneWidget);
+
+      await tester.tap(find.text(l10n.monitoringNoSensorPairButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SensorChoicePage), findsOneWidget);
+    });
+
+    testWidgets('with a paired sensor "Reconectar" restarts monitoring in place', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        stale(
+          SensorUiState(
+            status: SensorConnectionStatus.disconnected,
+            session: session,
+          ),
+        ),
+      );
+
+      expect(
+        find.textContaining(l10n.monitoringNoSensorDisconnectedTitle),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(l10n.glucoseReconnectButton));
+      await tester.pump();
+
+      expect(sensorCubit.fakeRepository.startMonitoringCalls, 1);
+      expect(find.byType(SensorChoicePage), findsNothing);
+    });
+
+    testWidgets('while scanning it shows the state and no button', (tester) async {
+      await pump(
+        tester,
+        stale(
+          SensorUiState(
+            status: SensorConnectionStatus.scanning,
+            session: session,
+          ),
+        ),
+      );
+
+      expect(
+        find.textContaining(l10n.monitoringNoSensorScanningTitle),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.glucoseReconnectButton), findsNothing);
+      expect(find.text(l10n.monitoringNoSensorPairButton), findsNothing);
+    });
+
+    testWidgets('the numbers are marked as past data', (tester) async {
+      await pump(tester, stale(const SensorUiState()));
+
+      expect(find.text(l10n.glucoseStatsStaleHint), findsOneWidget);
+    });
+
+    testWidgets('a live reading shows no sensor state, button or hint', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        PatientState(
+          readings: [
+            GlucoseReadingItem(
+              value: 110,
+              timestamp: DateTime.now(),
+              trend: GlucoseTrend.stable,
+              rate: 0,
+            ),
+          ],
+          sensorState: SensorUiState(
+            status: SensorConnectionStatus.readingAvailable,
+            session: session,
+          ),
+        ),
+      );
+
+      expect(find.text(l10n.glucoseReconnectButton), findsNothing);
+      expect(find.text(l10n.glucoseStaleBadge), findsNothing);
+      expect(find.text(l10n.glucoseStatsStaleHint), findsNothing);
+    });
+  });
+
   group('sensor strip', () {
     final session = SensorSession(
       sensorId: 'SN12345678ABC',
@@ -386,7 +493,10 @@ class _FakePatientRemote implements PatientRemoteApi {
 
 /// `initialize()` is a no-op so the fake never touches platform channels.
 class _FakeSensorCubit extends SensorCubit {
-  _FakeSensorCubit() : super(repository: _FakeSensorRepository());
+  _FakeSensorCubit() : this._(_FakeSensorRepository());
+  _FakeSensorCubit._(this.fakeRepository) : super(repository: fakeRepository);
+
+  final _FakeSensorRepository fakeRepository;
 
   @override
   Future<void> initialize() async {}
@@ -402,8 +512,10 @@ class _FakeSensorRepository implements SensorRepository {
     SensorBrand brand = SensorBrand.sibionics,
   }) async => null;
 
+  int startMonitoringCalls = 0;
+
   @override
-  Future<void> startMonitoring() async {}
+  Future<void> startMonitoring() async => startMonitoringCalls++;
 
   @override
   Future<void> stopMonitoring() async {}
