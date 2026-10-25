@@ -19,6 +19,7 @@ Glucore é um MVP Flutter (Android-first) para sensores CGM Sibionics, Accu-Chek
 | [../web/README.md](../web/README.md) | Setup e scripts da web | for rodar ou checar a web localmente |
 | [guides/setup-and-build.md](guides/setup-and-build.md) | Comandos, variáveis, restrições de build | for compilar, rodar ou configurar ambiente |
 | [guides/versioning-and-branches.md](guides/versioning-and-branches.md) | Esquema `dev`/`main`, semver, fluxo por versão | for abrir PR, versionar ou decidir destino de uma mudança |
+| [testing/2026-10-22-offline-first-queda-do-sensor.md](testing/2026-10-22-offline-first-queda-do-sensor.md) | Registro de teste no aparelho: queda do sensor no sync, backend inalcançável, troca Wi-Fi → 4G, lacunas de dados | precisar da evidência do offline-first ou do que ficou sem ver |
 | [guides/qa-process.md](guides/qa-process.md) | Gates, checklist de revisão de PR, verificação independente, caso real de reprovação | for abrir ou revisar PR |
 | [guides/deployment.md](guides/deployment.md) | Produção na Oracle Always Free: estado, fluxo CI → GHCR → VM, operação, riscos e pendências | for subir, operar ou atualizar o backend em produção |
 | [guides/deployment.md#web-vercel](guides/deployment.md#web-vercel) | Publicação da web na Vercel: projeto, `VITE_API_URL`, CSP, `CORS_ORIGIN` do gateway, rollback | for publicar ou atualizar a web |
