@@ -59,11 +59,6 @@
   text-decoration: underline;
 }
 
-.menuButton {
-  display: none;
-  margin-left: auto;
-}
-
 .person {
   display: flex;
   flex-direction: column;
@@ -81,8 +76,7 @@
 }
 
 .select,
-.signOut,
-.menuButton {
+.signOut {
   padding: var(--space-1) var(--space-4);
   border: 1px solid var(--color-brand);
   border-radius: var(--radius-pill);
@@ -102,15 +96,14 @@
   padding: var(--space-4);
 }
 
-/* RSP-03: below 640 px the navigation collapses into a menu. The header becomes
-   a grid whose areas follow the order of the markup, so the tab order is the
-   reading order: brand and menu, the open menu, then the person and the controls. */
+/* Below 640 px the header becomes a grid whose areas follow the order of the
+   markup, so the tab order is the reading order: brand and navigation, then the
+   person and the controls. */
 @media (max-width: 639px) {
   .header {
     display: grid;
     grid-template-areas:
-      'brand menu'
-      'nav nav'
+      'brand nav'
       'person controls';
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--space-2) var(--space-3);
@@ -120,23 +113,9 @@
     grid-area: brand;
   }
 
-  .menuButton {
-    grid-area: menu;
-    justify-self: end;
-    display: inline-flex;
-    align-items: center;
-    margin-left: 0;
-  }
-
   .nav {
     grid-area: nav;
-    display: none;
-    flex-direction: column;
     margin-right: 0;
-  }
-
-  .nav[data-open='true'] {
-    display: flex;
   }
 
   .person {
@@ -159,8 +138,7 @@
 @media (max-width: 359px) {
   .header {
     grid-template-areas:
-      'brand menu'
-      'nav nav'
+      'brand nav'
       'person person'
       'controls controls';
   }
