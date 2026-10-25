@@ -102,22 +102,70 @@
   padding: var(--space-4);
 }
 
-/* RSP-03: below 640 px the navigation collapses into a menu. */
+/* RSP-03: below 640 px the navigation collapses into a menu. The header becomes
+   a grid whose areas follow the order of the markup, so the tab order is the
+   reading order: brand and menu, the open menu, then the person and the controls. */
 @media (max-width: 639px) {
+  .header {
+    display: grid;
+    grid-template-areas:
+      'brand menu'
+      'nav nav'
+      'person controls';
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-3);
+  }
+
+  .brand {
+    grid-area: brand;
+  }
+
   .menuButton {
+    grid-area: menu;
+    justify-self: end;
     display: inline-flex;
     align-items: center;
+    margin-left: 0;
   }
 
   .nav {
+    grid-area: nav;
     display: none;
-    order: 10;
-    flex-basis: 100%;
     flex-direction: column;
     margin-right: 0;
   }
 
   .nav[data-open='true'] {
     display: flex;
+  }
+
+  .person {
+    grid-area: person;
+    min-width: 0;
+  }
+
+  .person > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .controls {
+    grid-area: controls;
+  }
+}
+
+/* On the narrowest phones the person and the controls do not fit side by side. */
+@media (max-width: 359px) {
+  .header {
+    grid-template-areas:
+      'brand menu'
+      'nav nav'
+      'person person'
+      'controls controls';
+  }
+
+  .controls {
+    justify-content: flex-end;
   }
 }
