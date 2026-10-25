@@ -3,9 +3,8 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2);
-  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  background: var(--color-canvas);
   color: var(--color-text);
 }
 

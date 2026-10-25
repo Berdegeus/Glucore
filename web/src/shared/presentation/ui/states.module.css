@@ -50,9 +50,10 @@
 .retry {
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--color-brand);
-  border-radius: var(--radius-1);
+  border-radius: var(--radius-pill);
   background: var(--color-brand);
   color: var(--color-on-brand);
   font: inherit;
   cursor: pointer;
+  font-weight: 600;
 }

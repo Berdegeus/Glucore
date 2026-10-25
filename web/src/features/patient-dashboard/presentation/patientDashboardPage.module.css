@@ -20,18 +20,19 @@
 .refresh {
   min-height: var(--control-min-size);
   padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-pill);
   background: var(--color-canvas);
-  color: var(--color-text);
+  color: var(--color-brand);
   font: inherit;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .notice {
   padding: var(--space-4);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-2);
+  border-radius: var(--radius-card);
   background: var(--color-surface);
   color: var(--color-text);
 }

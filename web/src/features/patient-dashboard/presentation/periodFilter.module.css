@@ -13,19 +13,19 @@
 
 .chip {
   padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2);
+  border: 0;
+  border-radius: var(--radius-pill);
   background: var(--color-canvas);
-  color: inherit;
+  color: var(--color-text-muted);
   font: inherit;
+  font-size: 0.8125rem;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .chip[aria-pressed='true'] {
-  border-color: var(--color-brand);
   background: var(--color-brand);
   color: var(--color-on-brand);
-  font-weight: 600;
 }
 
 .custom {
@@ -49,7 +49,7 @@
 .input {
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-1);
+  border-radius: var(--radius-input);
   background: var(--color-canvas);
   color: inherit;
   font: inherit;
@@ -62,7 +62,7 @@
 .apply {
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--color-brand);
-  border-radius: var(--radius-1);
+  border-radius: var(--radius-pill);
   background: var(--color-brand);
   color: var(--color-on-brand);
   font: inherit;

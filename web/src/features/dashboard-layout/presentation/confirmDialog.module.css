@@ -16,9 +16,8 @@
   box-sizing: border-box;
   width: min(100%, 28rem);
   padding: var(--space-5);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2);
-  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  background: var(--color-canvas);
   color: var(--color-text);
 }
 
@@ -41,12 +40,13 @@
 .button {
   min-height: var(--control-min-size);
   padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-pill);
   background: var(--color-canvas);
-  color: var(--color-text);
+  color: var(--color-brand);
   font: inherit;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .danger {
