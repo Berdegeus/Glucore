@@ -24,7 +24,7 @@ SMTP_PORT=587
 SMTP_USER=<login SMTP do Brevo>
 SMTP_PASS=<chave SMTP>
 SMTP_FROM=<remetente verificado no passo 1.2>
-WEB_APP_URL=https://glucore-web.vercel.app
+WEB_APP_URL=https://glucore.vercel.app
 ```
 
 `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` e `SMTP_FROM` são obrigatórios em conjunto; faltando qualquer um, o serviço usa o `ConsoleMailer`. `WEB_APP_URL` é a origem da web: o e-mail linka para `<WEB_APP_URL>/redefinir-senha?token=…`; sem ela, traz só o código (o app Flutter usa o código). Nunca commite a chave SMTP.
