@@ -124,7 +124,7 @@ Criar e conectar o projeto na Vercel exige a conta do dono; o agente não conect
 
 1. **Aviso de falha do deploy automático.** O cron (`59 2 * * *` UTC = 23:59 de Brasília, log em `~/glucore-update.log` na VM) atualiza a produção sozinho com o que estiver na `main` com CI verde, e ninguém é avisado se falhar. Decidir a frequência e como ser avisado (depende do SMTP, item 4).
 3. **Backup fora da VM** (Object Storage grátis de 20 GB ou outra cópia). Guardar a `BACKUP_PASSPHRASE` fora da VM.
-4. **SMTP**: sem ele, "esqueci minha senha" imprime o token no log da VM.
+4. **SMTP**: sem ele, "esqueci minha senha" imprime o token no log da VM. Código e passo a passo prontos (`docs/guides/email-smtp.md`); falta preencher `SMTP_*` e `WEB_APP_URL` no `.env` da VM e conferir a saída na porta 587.
 5. Domínio próprio no lugar do DuckDNS (troca `API_HOST`, `CORS_ORIGIN` e o `API_URL` do app).
 6. `helmet` no gateway; Dockerfiles multi-stage (imagens de ~190 MB comprimidas, ~720 MB na VM).
 7. Ambientes dev/test e migrations como job separado, para subir o tier da rubrica #39.

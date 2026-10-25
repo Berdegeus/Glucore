@@ -93,6 +93,9 @@ function LoginForm({ notice }: { notice: string | null }) {
       <button className={styles.submit} type="submit" disabled={pending}>
         {pending ? 'Entrando…' : 'Entrar'}
       </button>
+      <Link className={styles.link} to="/esqueci-a-senha">
+        Esqueci minha senha
+      </Link>
       <Link className={styles.link} to="/cadastro-profissional">
         Sou profissional de saúde — criar conta
       </Link>

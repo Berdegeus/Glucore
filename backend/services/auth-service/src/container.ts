@@ -57,7 +57,7 @@ export interface ContainerOverrides {
 export function createContainer(env: Env = loadEnv(), overrides: ContainerOverrides = {}): Container {
   const prisma = overrides.prisma ?? defaultPrisma;
   const hasher = overrides.hasher ?? new BcryptPasswordHasher(env.bcryptRounds);
-  const mailer = overrides.mailer ?? createMailer(env.smtp);
+  const mailer = overrides.mailer ?? createMailer(env.smtp, env.webAppUrl);
 
   const sessions = new SessionsService(new PrismaSessionRepository(prisma), hasher);
   const accounts = new AccountsService(new PrismaAccountRepository(prisma), hasher, sessions);

@@ -45,7 +45,7 @@ curl https://<sub>.duckdns.org/health/live
 O primeiro build leva alguns minutos (cada imagem compila os três serviços). O Caddy emite o certificado sozinho quando o DNS já aponta para a VM e a 80/443 estão abertas.
 
 ## 6. SMTP
-Sem `SMTP_HOST/USER/PASS`, "esqueci minha senha" imprime o token no log em vez de mandar e-mail. Preencha os três com um provedor de sua escolha e rode `up -d` de novo.
+Sem `SMTP_HOST/USER/PASS/FROM`, "esqueci minha senha" imprime o token no log em vez de mandar e-mail. Preencha os quatro (e `WEB_APP_URL`, para o link do e-mail) e rode `up -d` de novo. Passo a passo com Brevo grátis: `docs/guides/email-smtp.md`.
 
 ## 7. Backup
 ```bash

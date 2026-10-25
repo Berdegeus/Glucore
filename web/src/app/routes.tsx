@@ -2,6 +2,7 @@ import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import { loadAdminDashboardPage } from '../features/admin';
 import { LoginPage, RequireRole } from '../features/auth';
+import { loadForgotPasswordPage, loadResetPasswordPage } from '../features/password-recovery';
 import { loadPatientDashboardPage } from '../features/patient-dashboard';
 import { loadPatientDetailPage, loadProfessionalDashboardPage, RevokedAccessProvider } from '../features/professional';
 import { loadRegisterProfessionalPage } from '../features/registration';
@@ -16,6 +17,8 @@ const ProfessionalDashboardPage = lazy(loadProfessionalDashboardPage);
 const PatientDetailPage = lazy(loadPatientDetailPage);
 const AdminDashboardPage = lazy(loadAdminDashboardPage);
 const RegisterProfessionalPage = lazy(loadRegisterProfessionalPage);
+const ForgotPasswordPage = lazy(loadForgotPasswordPage);
+const ResetPasswordPage = lazy(loadResetPasswordPage);
 
 /** A page that loads on demand, with a skeleton until its chunk arrives. */
 const lazyPage = (page: ReactNode) => <Suspense fallback={<Skeleton height="12rem" />}>{page}</Suspense>;
@@ -72,7 +75,7 @@ function protectedRoute({ path, requiredRole, page, subpages = [], Provider }: A
 }
 
 /**
- * `/login` and `/cadastro-profissional` are public. `/` goes to the login, which
+ * `/login`, `/cadastro-profissional`, `/esqueci-a-senha` and `/redefinir-senha` are public. `/` goes to the login, which
  * sends someone already signed in on to the home of their role (ACC-02). Anything
  * else is not found.
  */
@@ -81,6 +84,8 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro-profissional" element={lazyPage(<RegisterProfessionalPage />)} />
+      <Route path="/esqueci-a-senha" element={lazyPage(<ForgotPasswordPage />)} />
+      <Route path="/redefinir-senha" element={lazyPage(<ResetPasswordPage />)} />
       {APP_ROUTES.map(protectedRoute)}
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<NotFoundPage />} />

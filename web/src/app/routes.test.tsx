@@ -245,6 +245,27 @@ describe('routes: the professional registration (ACC-02)', () => {
   });
 });
 
+describe('routes: password recovery', () => {
+  it('is reachable by an anonymous visitor from the link of the login page', async () => {
+    mockApi({ role: null });
+    renderApp('/login');
+
+    await userEvent.click(await screen.findByRole('link', { name: 'Esqueci minha senha' }));
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Recuperar senha' }, SLOW)).toBeInTheDocument();
+    expect(where()).toBe('/esqueci-a-senha');
+  });
+
+  it('serves the page the e-mail links to without a redirect to the login', async () => {
+    mockApi({ role: null });
+    renderApp('/redefinir-senha?token=abc');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Redefinir senha' }, SLOW)).toBeInTheDocument();
+    // The token is taken out of the address once read.
+    await waitFor(() => expect(where()).toBe('/redefinir-senha'));
+  });
+});
+
 /** An administrator's account over the gateway: one widget is enough to prove the page renders. */
 function mockAdministrator(role: Role | null = 'ADMINISTRATOR') {
   mockApi({ role });
