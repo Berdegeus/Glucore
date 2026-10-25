@@ -178,6 +178,20 @@ describe('LoginPage professional sign-up link (REG-01)', () => {
 
     const user = userEvent.setup();
     await user.click(submitButton());
+    await user.tab(); // the "Esqueci minha senha" link comes first
+    await user.tab();
+    expect(link).toHaveFocus();
+  });
+});
+
+describe('LoginPage password recovery link', () => {
+  it('points to the recovery page, reachable with the keyboard', async () => {
+    renderLogin();
+    const link = await screen.findByRole('link', { name: 'Esqueci minha senha' });
+    expect(link).toHaveAttribute('href', '/esqueci-a-senha');
+
+    const user = userEvent.setup();
+    await user.click(submitButton());
     await user.tab();
     expect(link).toHaveFocus();
   });

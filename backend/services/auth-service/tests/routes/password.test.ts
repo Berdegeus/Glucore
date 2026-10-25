@@ -1,6 +1,6 @@
 import type { Express } from 'express';
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildTestApp, type RecordingMailer } from '../helpers/app';
 import { disconnect, prisma, truncateAll } from '../helpers/db';
@@ -87,6 +87,24 @@ describe('POST /auth/forgot-password', () => {
     const res = await forgot('not-an-email');
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ error: 'Invalid email' });
+  });
+
+  it('answers the same 200 when the relay fails, and audits the failure', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mailer.failure = new Error('relay down');
+    try {
+      const res = await forgot(user.email);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(NEUTRAL);
+      await vi.waitFor(async () => {
+        expect(
+          await prisma.auditLog.count({ where: { action: 'FORGOT_PASSWORD_DELIVERY_FAILED' } }),
+        ).toBe(1);
+      });
+    } finally {
+      mailer.failure = null;
+      vi.restoreAllMocks();
+    }
   });
 
   it('never writes the reset token into the audit trail', async () => {

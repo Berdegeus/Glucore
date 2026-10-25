@@ -42,10 +42,20 @@ export class PasswordService {
       new Date(Date.now() + RESET_TOKEN_TTL_MS),
     );
 
-    // A delivery failure is now a failure. The version this replaces caught it
-    // and logged the token, which made "SMTP is broken" look exactly like "SMTP
-    // is not configured" — the console mailer is a configured choice instead.
-    await this.mailer.sendPasswordReset(email, token);
+    // Not awaited. Waiting would make a relay failure a 500 (or a slow answer)
+    // only for registered addresses — the enumeration oracle the neutral reply
+    // exists to prevent. A failure is still a failure, just not the caller's:
+    // it is logged loudly and audited, never mistaken for "SMTP not configured".
+    void this.mailer.sendPasswordReset(email, token).catch(async (error: unknown) => {
+      console.error(`[auth] password reset e-mail failed userId=${userId}:`, error);
+      await recordAudit({
+        userId,
+        entity: 'User',
+        action: 'FORGOT_PASSWORD_DELIVERY_FAILED',
+        entityId: userId,
+        ...audit,
+      });
+    });
 
     await recordAudit({
       userId,
