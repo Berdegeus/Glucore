@@ -20,7 +20,7 @@ vi.setConfig({ testTimeout: 30_000 });
 const SLOW = { timeout: 10_000 };
 
 /** The deferred widgets of the contract: the page must never draw, list or name them. */
-const DEFERRED_TITLES = ['Pacientes cadastrados e ativos', 'Leituras por dia', 'Vínculos por semana', 'Alertas da plataforma'];
+const DEFERRED_TITLES = ['Pacientes cadastrados e ativos', 'Vínculos por semana', 'Alertas da plataforma'];
 
 /** The titles of the cards of the grid, in the order they sit. */
 const regionNames = () => screen.getAllByRole('region').flatMap((region) => region.querySelector(':scope > h2')?.textContent ?? []);
@@ -39,17 +39,17 @@ describe('AdminDashboardPage opening (ADM-01, ADM-07)', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: PAGE_TITLE })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '30 dias' })).toHaveAttribute('aria-pressed', 'true');
-    await waitFor(() => expect(regionNames()).toHaveLength(7), SLOW);
+    await waitFor(() => expect(regionNames()).toHaveLength(8), SLOW);
     await within(await card(ADM_KPI_ACCOUNTS_TITLE)).findByText('42', undefined, SLOW);
     expect(admin.overviewRequests.map((url) => url.searchParams.get('days'))).toEqual(['30']);
   });
 
-  it('draws exactly the seven built widgets of the default layout, no error cell and none of the deferred four', async () => {
+  it('draws exactly the eight built widgets of the default layout, no error cell and none of the deferred three', async () => {
     mockAdmin();
     mockLayoutStore(null);
     renderOnContainer(<AdminDashboardPage />);
 
-    await waitFor(() => expect(regionNames()).toHaveLength(7), SLOW);
+    await waitFor(() => expect(regionNames()).toHaveLength(8), SLOW);
     expect(regionNames()).toEqual(REGISTERED_TITLES());
     expect(errors()).toHaveLength(0);
     for (const title of DEFERRED_TITLES) expect(screen.queryByText(title)).not.toBeInTheDocument();
@@ -94,9 +94,9 @@ describe('AdminDashboardPage without access (ADM-05)', () => {
     mockLayoutStore(null);
     renderOnContainer(<AdminDashboardPage />);
 
-    await waitFor(() => expect(errors()).toHaveLength(7), SLOW);
+    await waitFor(() => expect(errors()).toHaveLength(8), SLOW);
     for (const alert of errors()) expect(alert).toHaveTextContent(ERROR_MESSAGE);
-    expect(screen.getAllByRole('button', { name: 'Tentar novamente' })).toHaveLength(7);
+    expect(screen.getAllByRole('button', { name: 'Tentar novamente' })).toHaveLength(8);
   });
 });
 
@@ -149,7 +149,7 @@ describe('AdminDashboardPage customizing the layout (LAY-03, LAY-07)', () => {
     expect(store.puts).toHaveLength(1);
   });
 
-  it('offers none of the deferred four to add, and restores the default after confirming', async () => {
+  it('offers none of the deferred three to add, and restores the default after confirming', async () => {
     const { user, store } = await customizing();
 
     const picker = within(screen.getByRole('region', { name: 'Adicionar ao painel' }));
@@ -166,8 +166,8 @@ describe('AdminDashboardPage customizing the layout (LAY-03, LAY-07)', () => {
   it('shows no cell for a deferred widget while editing the default layout', async () => {
     await customizing(null);
 
-    for (const id of ['adm-active-patients', 'adm-readings-volume', 'adm-grants', 'adm-alerts']) expect(screen.queryByText(id)).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /^Remover / })).toHaveLength(7);
+    for (const id of ['adm-active-patients', 'adm-grants', 'adm-alerts']) expect(screen.queryByText(id)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Remover / })).toHaveLength(8);
   });
 });
 
@@ -176,7 +176,7 @@ describe('AdminDashboardPage accessibility', () => {
     mockAdmin();
     mockLayoutStore(null);
     const { container } = renderOnContainer(<AdminDashboardPage />);
-    await waitFor(() => expect(regionNames()).toHaveLength(7), SLOW);
+    await waitFor(() => expect(regionNames()).toHaveLength(8), SLOW);
     await within(await card(ADM_KPI_ACCOUNTS_TITLE)).findByText('42', undefined, SLOW);
     await screen.findByRole('table', undefined, SLOW);
 
