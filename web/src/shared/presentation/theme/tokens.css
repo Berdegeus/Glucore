@@ -120,6 +120,13 @@
   }
 }
 
+/* Tighter cards on a phone, so a one-column page does not spend its height on padding. */
+@media (max-width: 639px) {
+  :root {
+    --space-card: 1rem;
+  }
+}
+
 button,
 input,
 select,
