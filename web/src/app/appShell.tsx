@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import { useAuth, useSessionRefresh } from '../features/auth';
 import type { Role } from '../shared/domain/role';
@@ -43,27 +42,15 @@ function ThemeSelect() {
 
 /**
  * The frame around every signed-in page: the person's name and role, the
- * navigation of their role (a menu below 640 px, RSP-03), the theme choice
- * (RSP-10) and "Sair" (ACC-11). Pages render in the `<Outlet />`. Everything
- * works from the keyboard (RSP-06): a skip link, a menu button that Escape
- * closes, and native buttons and links.
+ * navigation of their role, the theme choice (RSP-10) and "Sair" (ACC-11).
+ * Pages render in the `<Outlet />`. Each role has a single destination, so the
+ * navigation stays in the header on every width instead of folding into a menu.
+ * Everything works from the keyboard (RSP-06): a skip link and native buttons
+ * and links.
  */
 export function AppShell() {
   const { state, logout } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuButton = useRef<HTMLButtonElement>(null);
   useSessionRefresh();
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
-      setMenuOpen(false);
-      menuButton.current?.focus();
-    }
-    document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [menuOpen]);
 
   if (state.status !== 'authenticated') return null;
   const { account } = state.session;
@@ -75,19 +62,9 @@ export function AppShell() {
       </a>
       <header className={styles.header}>
         <span className={styles.brand}>Glucore</span>
-        <button
-          ref={menuButton}
-          type="button"
-          className={styles.menuButton}
-          aria-expanded={menuOpen}
-          aria-controls="navegacao"
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          Menu
-        </button>
-        <nav id="navegacao" className={styles.nav} data-open={menuOpen} aria-label="Principal">
+        <nav className={styles.nav} aria-label="Principal">
           {NAV_ITEMS[account.role].map((item) => (
-            <NavLink key={item.to} to={item.to} className={styles.link} onClick={() => setMenuOpen(false)}>
+            <NavLink key={item.to} to={item.to} className={styles.link}>
               {item.label}
             </NavLink>
           ))}

@@ -59,11 +59,6 @@
   text-decoration: underline;
 }
 
-.menuButton {
-  display: none;
-  margin-left: auto;
-}
-
 .person {
   display: flex;
   flex-direction: column;
@@ -81,8 +76,7 @@
 }
 
 .select,
-.signOut,
-.menuButton {
+.signOut {
   padding: var(--space-1) var(--space-4);
   border: 1px solid var(--color-brand);
   border-radius: var(--radius-pill);
@@ -95,25 +89,61 @@
 
 .content {
   flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
   padding: var(--space-4);
 }
 
-/* RSP-03: below 640 px the navigation collapses into a menu. */
+/* Below 640 px the header becomes a grid whose areas follow the order of the
+   markup, so the tab order is the reading order: brand and navigation, then the
+   person and the controls. */
 @media (max-width: 639px) {
-  .menuButton {
-    display: inline-flex;
-    align-items: center;
+  .header {
+    display: grid;
+    grid-template-areas:
+      'brand nav'
+      'person controls';
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-3);
+  }
+
+  .brand {
+    grid-area: brand;
   }
 
   .nav {
-    display: none;
-    order: 10;
-    flex-basis: 100%;
-    flex-direction: column;
+    grid-area: nav;
     margin-right: 0;
   }
 
-  .nav[data-open='true'] {
-    display: flex;
+  .person {
+    grid-area: person;
+    min-width: 0;
+  }
+
+  .person > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .controls {
+    grid-area: controls;
+  }
+}
+
+/* On the narrowest phones the person and the controls do not fit side by side. */
+@media (max-width: 359px) {
+  .header {
+    grid-template-areas:
+      'brand nav'
+      'person person'
+      'controls controls';
+  }
+
+  .controls {
+    justify-content: flex-end;
   }
 }

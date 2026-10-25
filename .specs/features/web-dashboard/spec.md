@@ -254,7 +254,7 @@ Os widgets do paciente (`kpi-*`, `card-freshness`, `chart-*`, `table-excursions`
 
 1. The system SHALL dispor a grade de widgets em 1 coluna abaixo de 640 px, 2 colunas de 640 a 1023 px e 4 colunas a partir de 1024 px, com S ocupando 1 coluna, M ocupando 2 e L ocupando a largura total, limitados às colunas disponíveis. `RSP-01`
 2. The system SHALL NOT produzir rolagem horizontal da página em larguras de 320 px a 2560 px. `RSP-02`
-3. WHILE a largura é menor que 640 px, the system SHALL recolher a navegação em um menu e exibir tabelas com rolagem horizontal interna ao componente. `RSP-03`
+3. WHILE a largura é menor que 640 px, the system SHALL manter a navegação no cabeçalho, reorganizado em grade, sem botão de menu (cada papel tem um único destino), e exibir tabelas com rolagem horizontal interna ao componente. `RSP-03`
 4. WHILE a largura é menor que 1024 px, the system SHALL oferecer alvos de toque de pelo menos 44 × 44 px em botões, links e controles de período. `RSP-04`
 5. WHEN o contêiner de um gráfico muda de tamanho (rotação, redimensionamento, mudança de tamanho do widget) THEN the system SHALL redesenhar o gráfico para a nova largura. `RSP-05`
 6. The system SHALL permitir operar login, filtros, personalização e navegação só com teclado, com foco visível em todo controle. `RSP-06`

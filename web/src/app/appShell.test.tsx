@@ -44,8 +44,6 @@ function renderShell(role: Role = 'PATIENT', route = '/paciente') {
 }
 
 const where = () => screen.getByTestId('where').textContent;
-const menuButton = () => screen.getByRole('button', { name: 'Menu' });
-const nav = () => screen.getByRole('navigation', { name: 'Principal' });
 
 describe('AppShell header', () => {
   it('shows the name and the role of the person (ACC-11)', async () => {
@@ -91,55 +89,32 @@ describe('AppShell sign out (ACC-11)', () => {
   });
 });
 
-describe('AppShell menu (RSP-03, RSP-06)', () => {
-  it('opens and closes with Enter and Space on the menu button', async () => {
+describe('AppShell navigation (RSP-03, RSP-06)', () => {
+  it('keeps the navigation in the header, with no menu button to open it', async () => {
     renderShell();
-    const user = userEvent.setup();
     await screen.findByText('Ana Souza');
-    expect(menuButton()).toHaveAttribute('aria-expanded', 'false');
-    expect(nav()).toHaveAttribute('data-open', 'false');
-
-    menuButton().focus();
-    await user.keyboard('{Enter}');
-    expect(menuButton()).toHaveAttribute('aria-expanded', 'true');
-    expect(nav()).toHaveAttribute('data-open', 'true');
-    expect(menuButton()).toHaveAttribute('aria-controls', nav().id);
-
-    await user.keyboard(' ');
-    expect(menuButton()).toHaveAttribute('aria-expanded', 'false');
-    expect(nav()).toHaveAttribute('data-open', 'false');
+    expect(screen.queryByRole('button', { name: 'Menu' })).not.toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Principal' })).toContainElement(screen.getByRole('link', { name: 'Meu painel' }));
   });
 
-  it('closes on Escape from inside the menu and returns focus to the button', async () => {
+  it('reaches the link, the theme and "Sair" with Tab, in reading order', async () => {
     renderShell();
     const user = userEvent.setup();
     await screen.findByText('Ana Souza');
-    await user.click(menuButton());
+    await user.tab();
     await user.tab();
     expect(screen.getByRole('link', { name: 'Meu painel' })).toHaveFocus();
-
-    await user.keyboard('{Escape}');
-    expect(menuButton()).toHaveAttribute('aria-expanded', 'false');
-    expect(menuButton()).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('combobox', { name: 'Tema' })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Sair' })).toHaveFocus();
   });
 
-  it('closes after choosing a destination', async () => {
-    renderShell();
-    const user = userEvent.setup();
-    await screen.findByText('Ana Souza');
-    await user.click(menuButton());
-    await user.click(screen.getByRole('link', { name: 'Meu painel' }));
-    expect(menuButton()).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  it('collapses the navigation below 640px in the stylesheet', () => {
+  it('lays the header out as a grid below 640px without hiding the navigation', () => {
     const css = readFileSync(join(import.meta.dirname, 'appShell.module.css'), 'utf8');
     const media = css.slice(css.indexOf('@media (max-width: 639px)'));
-    expect(media).toMatch(/\.nav\s*\{[^}]*display:\s*none/);
-    expect(media).toMatch(/\.nav\[data-open='true'\]\s*\{[^}]*display:\s*flex/);
-    expect(media).toMatch(/\.menuButton\s*\{[^}]*display:\s*inline-flex/);
-    // Above 640px the menu button stays hidden and the navigation shows.
-    expect(css.slice(0, css.indexOf('@media'))).toMatch(/\.menuButton\s*\{[^}]*display:\s*none/);
+    expect(media).toMatch(/\.header\s*\{[^}]*display:\s*grid/);
+    expect(media).not.toMatch(/\.nav\s*\{[^}]*display:\s*none/);
   });
 });
 
@@ -163,12 +138,9 @@ describe('AppShell theme (RSP-10)', () => {
 });
 
 describe('AppShell accessibility (RSP-06)', () => {
-  it('has no axe violations, with the menu closed and open', async () => {
+  it('has no axe violations', async () => {
     const { container } = renderShell();
     await screen.findByText('Ana Souza');
-    expect(await axe(container)).toHaveNoViolations();
-
-    await userEvent.click(menuButton());
     expect(await axe(container)).toHaveNoViolations();
   });
 });
