@@ -18,6 +18,8 @@ import { HttpProfessionalRepository } from '../features/professional/infrastruct
 import { HttpRedeemRepository } from '../features/professional/infrastructure/httpRedeemRepository';
 import { createRegisterProfessional, type RegistrationUseCases } from '../features/registration/application/registerProfessional';
 import { HttpRegistrationRepository } from '../features/registration/infrastructure/httpRegistrationRepository';
+import { createPasswordRecoveryUseCases, type PasswordRecoveryUseCases } from '../features/password-recovery/application/passwordRecoveryUseCases';
+import { HttpPasswordRecoveryRepository } from '../features/password-recovery/infrastructure/httpPasswordRecoveryRepository';
 import { allDefinitions } from '../features/dashboard-layout/presentation/widgetRegistry';
 import type { Clock, SessionEvents, TimeZoneProvider, TokenStore, Unsubscribe } from '../shared/domain/ports';
 import { JwtExpiryReader } from '../shared/infrastructure/auth/jwtExpiryReader';
@@ -41,6 +43,7 @@ export interface Container {
   useCases: {
     auth: AuthUseCases;
     registration: RegistrationUseCases;
+    passwordRecovery: PasswordRecoveryUseCases;
     professional: ProfessionalUseCases;
     admin: AdminUseCases;
     layout: LayoutUseCases;
@@ -71,6 +74,7 @@ export function createContainer(env: AppEnv): Container {
   const sessions = new HttpSessionRepository(http);
   const accounts = new HttpAccountRepository(http);
   const registrations = new HttpRegistrationRepository(http);
+  const passwordRecovery = new HttpPasswordRecoveryRepository(http);
   const professionals = new HttpProfessionalRepository(http);
   const redemptions = new HttpRedeemRepository(http);
   const admin = new HttpAdminRepository(http);
@@ -97,6 +101,7 @@ export function createContainer(env: AppEnv): Container {
           resolveSession: (token) => resolveSession(token, { accounts, expiryReader }),
         }),
       },
+      passwordRecovery: createPasswordRecoveryUseCases({ recovery: passwordRecovery }),
       professional: createProfessionalUseCases({ professionals, redemptions, timeZone }),
       admin: createAdminUseCases({ admin }),
       // The registry is read at load time: widgets register when their modules load.

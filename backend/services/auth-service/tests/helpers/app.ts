@@ -17,8 +17,12 @@ import type { Mailer } from '../../src/lib/mailer';
 export class RecordingMailer implements Mailer {
   readonly sent: { email: string; token: string }[] = [];
 
+  /** When set, the send rejects after recording, as an unreachable relay would. */
+  failure: Error | null = null;
+
   async sendPasswordReset(email: string, token: string): Promise<void> {
     this.sent.push({ email, token });
+    if (this.failure) throw this.failure;
   }
 
   lastTokenFor(email: string): string | undefined {

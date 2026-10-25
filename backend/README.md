@@ -155,7 +155,8 @@ O app lê `--dart-define=API_URL=http://<ip>:3000` (padrão `http://localhost:30
 | `AUTH_SERVICE_URL` / `GLUCOSE_SERVICE_URL` | não (gateway) | Destinos usados quando `SERVICE_DISCOVERY=env`. Padrões `http://localhost:3002` / `:3001`. |
 | `SERVICE_DISCOVERY` / `CONSUL_HTTP_ADDR` | não | `env` (padrão) ou `consul`; endereço do Consul (padrão `http://localhost:8500`). |
 | `NODE_ENV` | não | Fora de `production`, o handler de erro imprime o stack trace no log. |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | não | Envio do e-mail de recuperação de senha. Sem configuração, o token é impresso no console e a resposta ao cliente não muda. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | não | Envio do e-mail de recuperação de senha (os quatro sem porta são obrigatórios em conjunto). Sem configuração, o token é impresso no console e a resposta ao cliente não muda. |
+| `WEB_APP_URL` | não | Origem da web; o e-mail de recuperação linka para `<WEB_APP_URL>/redefinir-senha?token=…`. Sem ela, o e-mail traz só o código. |
 | `ADMIN_SEED_EMAIL` / `ADMIN_SEED_PASSWORD` | em produção, no primeiro boot (auth) | Cria o primeiro `ADMINISTRATOR` no boot do auth-service (`services/auth-service/src/lib/adminSeed.ts`). É o **único** jeito de existir uma conta de administrador: nenhuma rota cria uma. Só age quando não existe nenhum administrador; depois disso nem lê as variáveis, nunca duplica e nunca redefine a senha. Ausentes: em desenvolvimento o seed é pulado com uma linha de log; em `NODE_ENV=production` o serviço não sobe. Presentes mas inválidas (senha fraca pela política de senha, e-mail malformado, e-mail de uma conta não administradora) o serviço não sobe em nenhum ambiente. A mensagem de erro cita a variável, nunca a senha. |
 
 ## Convenções
@@ -406,7 +407,7 @@ Mudar a faixa alvo também atualiza os limiares de alerta. Erros: `400 Invalid i
 { "message": "If the email is registered, instructions were sent." }
 ```
 
-O token expira em 6 h e invalida tokens anteriores não usados. Sem SMTP configurado, ele aparece no log do servidor.
+O token expira em 6 h e invalida tokens anteriores não usados. O envio não bloqueia a resposta: uma falha do relay é registrada no log e na auditoria (`FORGOT_PASSWORD_DELIVERY_FAILED`) e o cliente recebe a mesma resposta neutra. Sem SMTP configurado, o token aparece no log do servidor.
 
 ### `POST /auth/reset-password` — redefine com o token
 

@@ -22,6 +22,7 @@ Glucore é um MVP Flutter (Android-first) para sensores CGM Sibionics, Accu-Chek
 | [guides/qa-process.md](guides/qa-process.md) | Gates, checklist de revisão de PR, verificação independente, caso real de reprovação | for abrir ou revisar PR |
 | [guides/deployment.md](guides/deployment.md) | Produção na Oracle Always Free: estado, fluxo CI → GHCR → VM, operação, riscos e pendências | for subir, operar ou atualizar o backend em produção |
 | [guides/deployment.md#web-vercel](guides/deployment.md#web-vercel) | Publicação da web na Vercel: projeto, `VITE_API_URL`, CSP, `CORS_ORIGIN` do gateway, rollback | for publicar ou atualizar a web |
+| [guides/email-smtp.md](guides/email-smtp.md) | SMTP do e-mail de recuperação de senha: Brevo grátis passo a passo, variáveis, teste | for configurar ou depurar o envio de e-mail |
 | [guides/kanban-board.md](guides/kanban-board.md) | Board GitHub Projects: views, campos, fluxo de card, IDs para automação via `gh` | for abrir, mover ou automatizar um card do board |
 | [guides/adding-features.md](guides/adding-features.md) | Receitas: nova página, novo campo persistido, nova rota | for adicionar funcionalidade |
 | [reference/platform-channels.md](reference/platform-channels.md) | Contrato exato MethodChannel/EventChannel | for mexer na fronteira Flutter↔Android |
