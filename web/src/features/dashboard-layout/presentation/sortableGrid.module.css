@@ -29,13 +29,14 @@
   justify-content: center;
   min-width: var(--control-min-size);
   min-height: var(--control-min-size);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-pill);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-brand);
   font: inherit;
   cursor: grab;
   touch-action: none;
+  font-weight: 600;
 }
 
 .content {
